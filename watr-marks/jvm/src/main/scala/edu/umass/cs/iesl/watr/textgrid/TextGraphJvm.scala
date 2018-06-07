@@ -28,10 +28,12 @@ import utils.Debugging._
   **/
 
 
-abstract class TextGraphJvm extends TextGraph {
+
+abstract class TextGraphJvm(
+  val shapeIndex: LabeledShapeIndex[GeometricFigure, TextGraphShape.Attr, TextGraphShape]
+) extends TextGraph {
   import TextGraphShape._
 
-  val shapeIndex = new LabeledShapeIndex[GeometricFigure, Attr, TextGraphShape]()
   val L = ShapeLabels
 
   val cellWidth = 10d
@@ -67,10 +69,6 @@ abstract class TextGraphJvm extends TextGraph {
     GraphPaper.boxAt(x0, y0)
       .extendRight(x1-x0)
       .extendDown(y1-y0)
-  }
-
-  def scaledSquare(x: Int, y: Int): Unit = {
-    val graphSquare = GraphPaper.cellAt(x, y)
   }
 
   def rowNumForY(y: FloatExact): Int = {
@@ -114,7 +112,7 @@ abstract class TextGraphJvm extends TextGraph {
       val realBounds = shaveMargin(matrixToRealCoords(graphSquare))
 
       shapeIndex.indexShape{ id =>
-        GlyphShape(realBounds, id, Attr.Glyph(cell))
+        GlyphShape(realBounds, id, Some(cell))
       }
     }
   }
@@ -174,7 +172,7 @@ abstract class TextGraphJvm extends TextGraph {
       shapeIndex.searchShapes(rowQuery)
         .collect{ case g: GlyphShape => g }
         .sortBy(_.shape.minBounds.left)
-        .map(_.attr.glyph)
+        .map(_.attr.get)
     }
     rows
   }
@@ -274,33 +272,67 @@ object TextGraphJvm {
 
   import _root_.io.circe
   import circe._
+  import circe.syntax._
   import circe.literal._
+  import circe.generic.semiauto._
+  import LabeledShapeIndex._
+  import rtrees.RTreeIndex._
+  import GeometryCodecs._
 
-  implicit def EncodeTextGraph: Encoder[TextGraph] = Encoder.instance { textGraph =>
-    ???
+  // implicit val Encode_PageItem: Encoder[PageItem] =  deriveEncoder
+
+  // // TextGraph GridCell ADT
+  // implicit def Encode_GlyphCell: Encoder[TextGraph.GlyphCell]      = deriveEncoder
+  // implicit def Encode_InsertCell: Encoder[TextGraph.InsertCell]    = deriveEncoder
+  // implicit def Encode_SpaceCell: Encoder[TextGraph.SpaceCell.type] = deriveEncoder
+  // implicit def Encode_GridCell: Encoder[TextGraph.GridCell]        = deriveEncoder
+
+  // implicit def Encode_Attr_Glyph: Encoder[Attr.Glyph] =  deriveEncoder
+  // implicit def Encode_Attr_Empty: Encoder[Attr.Empty.type] =  deriveEncoder
+  // implicit def Encode_Attr: Encoder[Attr] =  deriveEncoder
+
+  // implicit def Decode_Attr_Glyph: Decoder[Attr] =  deriveDecoder
+
+  // implicit def EncodeTextGraph: Encoder[TextGraph] = Encoder.instance { textGraph =>
+  //   ???
+  // }
+
+  // implicit def DecodeTextGraph: Decoder[TextGraph] = ???
+
+  implicit def EncodeTextGraphJvm: Encoder[TextGraphJvm] = Encoder.instance { textGraphJvm =>
+    Json.obj(
+      "shapeIndex" := textGraphJvm.shapeIndex,
+      "stableId" := textGraphJvm.stableId
+    )
+
   }
 
-  implicit def DecodeTextGraph: Decoder[TextGraph] = ???
+  implicit def DecodeTextGraphJvm: Decoder[TextGraphJvm] = Decoder.instance { hCursor =>
 
-  implicit def EncodeTextGraphJvm: Encoder[TextGraphJvm] = Encoder.instance { textGraph =>
+    val stableId = hCursor.downField("stableId")
+      .focus.orDie().decodeOrDie[String]()
 
-    ???
+    val shapeIndex = hCursor.downField("shapeIndex").focus.orDie()
+      .decodeOrDie[
+        LabeledShapeIndex[GeometricFigure, TextGraphShape.Attr, TextGraphShape]
+      ]()
+
+    Right(fromShapeIndex(DocumentID(stableId), shapeIndex))
   }
-  implicit def DecodeTextGraphJvm: Decoder[TextGraphJvm] = ???
 
-}
-object ShapeLabels {
-
-  val Cell = Label.auto
-
-
-}
-
-
-object TextGraphBuilder {
 
   def create(id: String@@DocumentID): TextGraphJvm = {
-    new TextGraphJvm {
+    val shapeIndex = LabeledShapeIndex.empty[GeometricFigure, TextGraphShape.Attr, TextGraphShape]
+    new TextGraphJvm(shapeIndex) {
+      def stableId: String@@DocumentID = id
+    }
+  }
+
+  def fromShapeIndex(
+    id: String@@DocumentID,
+    shapeIndex: LabeledShapeIndex[GeometricFigure, TextGraphShape.Attr, TextGraphShape]
+  ): TextGraphJvm = {
+    new TextGraphJvm(shapeIndex) {
       def stableId: String@@DocumentID = id
     }
   }
@@ -353,6 +385,14 @@ object TextGraphBuilder {
     }
     graphPaper
   }
+
+
+
+}
+
+object ShapeLabels {
+
+  val Cell = Label.auto
 
 
 }

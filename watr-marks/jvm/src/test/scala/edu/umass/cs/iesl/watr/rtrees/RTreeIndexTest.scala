@@ -15,11 +15,15 @@ import geometry.GeometryCodecs._
 import _root_.io.circe
 import circe._
 import circe.syntax._
+// import circe.generic.auto._
+import circe.generic._
 
 import watrmarks._
 import TypeTags._
 import utils.DoOrDieHandlers._
+import LabeledShape._
 
+@JsonCodec
 case class TestShape(
   shape: GeometricFigure,
   id: Int@@ShapeID
@@ -32,21 +36,21 @@ case class TestShape(
 
 object TestShape {
 
-  implicit def TestShapeEncoder: Encoder[TestShape] = Encoder.instance[TestShape]{ shape =>
-    Json.obj(
-      "id" := shape.id,
-      "figure" := shape.shape,
-    )
-  }
+  // implicit def TestShapeEncoder: Encoder[TestShape] = Encoder.instance[TestShape]{ shape =>
+  //   Json.obj(
+  //     "id" := shape.id,
+  //     "figure" := shape.shape,
+  //   )
+  // }
 
-  implicit def TestShapeDecoder: Decoder[TestShape] = Decoder.instance[TestShape]{ cursor =>
-    for {
-      id <- cursor.downField("id").as[Int]
-      fig <- cursor.downField("figure").as[GeometricFigure]
-    } yield {
-      TestShape(fig, ShapeID(id))
-    }
-  }
+  // implicit def TestShapeDecoder: Decoder[TestShape] = Decoder.instance[TestShape]{ cursor =>
+  //   for {
+  //     id <- cursor.downField("id").as[Int]
+  //     fig <- cursor.downField("figure").as[GeometricFigure]
+  //   } yield {
+  //     TestShape(fig, ShapeID(id))
+  //   }
+  // }
 
 }
 

@@ -127,7 +127,7 @@ object AnnotationDiffs {
         pageDef.bounds
       )
       docStore.getPageGeometry(pageId)
-      val shapeIndex = new LabeledShapeIndex[GeometricFigure, Unit, IndexShape]
+      val shapeIndex = LabeledShapeIndex.empty[GeometricFigure, Unit, IndexShape]
       (pageDef.pagenum, shapeIndex)
     }.toMap
   }

@@ -149,7 +149,7 @@ protected class AccumulatingTextGraphCodecs(stableId: String@@DocumentID) {
           val dec = decodeGlyphCells.decodeJson(json).map { cells =>
             val atoms = cells.map{ case(char, page, (l, t, w, h)) =>
               val bbox = LTBounds.IntReps(l, t, w, h)
-              CharAtom(
+              PageItem.CharAtom(
                 CharID(-1),
                 PageRegion(
                   StablePage(
@@ -224,9 +224,6 @@ protected class AccumulatingTextGraphCodecs(stableId: String@@DocumentID) {
       Json.obj(
         "i" := List(char.toString())
       )
-
-    case TextGraph.SpaceCell    =>
-      Json.obj()
 
   }}
 

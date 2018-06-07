@@ -16,9 +16,11 @@ import scala.reflect.ClassTag
 import com.google.{common => guava}
 import guava.{collect => gcol}
 import com.github.davidmoten.rtree.{geometry => RG}
+import utils.DoOrDieHandlers._
 
 
 object LabeledShapeIndex {
+
 
   def qualifyCluster(l: Label): Label = { l.qualifiedAs("cluster") }
   def qualifyOrdering(l: Label): Label = { l.qualifiedAs("ordering") }
@@ -34,25 +36,83 @@ object LabeledShapeIndex {
     A <: GeometricFigure,
     W,
     Shape <: LabeledShape.Aux[A, W] : Encoder
-  ]: Encoder[LabeledShapeIndex[A, W, Shape]] =
+  ](implicit
+    RTreeEncoder: Encoder[RTreeIndex[A, W, Shape]]
+  ): Encoder[LabeledShapeIndex[A, W, Shape]] = {
     Encoder.instance[LabeledShapeIndex[A, W, Shape]]{ shapeIndex =>
 
-      val shapes = shapeIndex.getAllShapes.asJson
-
       Json.obj(
-        "shapes" := shapes
+        "rtree" := shapeIndex.shapeRIndex.asJson,
+        "nextId" := shapeIndex.shapeIDGen.peekId.unwrap,
+        "shapeMap" := shapeIndex.shapeMap.values.toList
       )
     }
+  }
+
+  implicit def LabeledShapeIndexDecoder[
+    A <: GeometricFigure,
+    W,
+    Shape <: LabeledShape.Aux[A, W] : Decoder
+  ]: Decoder[LabeledShapeIndex[A, W, Shape]] = {
+    Decoder.instance[LabeledShapeIndex[A, W, Shape]]{ c =>
+
+      val rtreeIndex = RTreeIndex.empty[A, W, Shape]()
+      val rtreeJson = c.downField("rtree").focus.orDie("no shapes field found")
+      val rtree = rtreeJson.decodeOrDie[RTreeIndex[A, W, Shape]]("Invalid shape list")
+      val shapeIndex =  LabeledShapeIndex.withRTree[A, W, Shape](rtree)
+
+
+      val nextId = c.downField("nextId").focus.orDie().decodeOrDie[Int]()
+      shapeIndex.shapeIDGen.setNextId(nextId)
+
+      val shapeMapValues = c.downField("shapeMap").focus.orDie().decodeOrDie[List[Shape]]()
+      shapeMapValues.foreach{ shape =>
+        shapeIndex.shapeMap.put(shape.id.unwrap.longValue(), shape)
+      }
+      Right(shapeIndex)
+    }
+
+  }
+
+
+  def empty[
+    A <: GeometricFigure,
+    W,
+    Shape <: LabeledShape.Aux[A, W]
+  ]: LabeledShapeIndex[A, W, Shape] = {
+    new LabeledShapeIndex[A, W, Shape] {
+      val shapeRIndex: RTreeIndex[A, W, Shape] = RTreeIndex.empty[A, W, Shape]()
+    }
+  }
+
+  def withRTree[
+    A <: GeometricFigure,
+    W,
+    Shape <: LabeledShape.Aux[A, W]
+  ](rtree: RTreeIndex[A, W, Shape]): LabeledShapeIndex[A, W, Shape] = {
+    new LabeledShapeIndex[A, W, Shape] {
+
+      val items = rtree.getItems()
+      val maxId = if (items.isEmpty) 0 else {
+        items.maxBy(_.id.unwrap).id.unwrap
+      }
+      val shapeRIndex: RTreeIndex[A, W, Shape] = rtree
+      shapeIDGen.setNextId(maxId+1)
+      shapeMap ++= items.map{i => (i.id.unwrap.toLong, i)}
+    }
+  }
+
 
 
 }
 
-class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]] {
+abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]] {
 
   import LabeledShapeIndex._
 
   val shapeIDGen = utils.IdGenerator[ShapeID]()
-  val shapeRIndex: RTreeIndex[A, W, Shape] = RTreeIndex.empty[A, W, Shape]()
+  def shapeRIndex: RTreeIndex[A, W, Shape]
+
   val shapeMap: mutable.LongMap[Shape] = {
     mutable.LongMap[Shape]()
   }
@@ -61,7 +121,6 @@ class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]
   type PointShape = LabeledShape[Point, W]
   type RectShape  = LabeledShape[LTBounds, W]
   type AnyShape   = Shape
-
 
   def getAllShapes(): Seq[Shape] = {
     shapeMap.values.toSeq
@@ -132,7 +191,6 @@ class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]
       labels.forall(lshape.hasLabel(_))
     })
   }
-
 
   val disjointSets: mutable.HashMap[Label, OrderedDisjointSet[Shape]] = mutable.HashMap()
 

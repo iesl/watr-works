@@ -28,12 +28,10 @@ trait TextGraphSpec extends FreeSpec with Matchers with TextGraphConstruction {
 
   val stableId = DocumentID("SampleDocument")
 
-
-
   val sampleDoc = "abc\ndef\nghi"
 
   def makeSample(): TextGraphJvm = {
-    val textGraph = TextGraphBuilder.create(stableId)
+    val textGraph = TextGraphJvm.create(stableId)
     val cells = stringToTextGraphCells(stableId, sampleDoc, PageNum(3))
 
     cells.foreach { row =>
@@ -65,7 +63,7 @@ trait TextGraphSpec extends FreeSpec with Matchers with TextGraphConstruction {
          |S.Eng. P-Hall
          |""".stripMargin
     }
-    val textGraph = TextGraphBuilder.create(stableId)
+    val textGraph = TextGraphJvm.create(stableId)
     val cells = stringToTextGraphCells(stableId, rawText, PageNum(0))
 
     cells.foreach { row =>
@@ -142,7 +140,7 @@ class TextGraphTests extends TextGraphSpec {
 
     val bishopClarkGraph = makeBishopClarkSample()
 
-    val graphPaper = TextGraphBuilder.textGraphToGraphPaper(bishopClarkGraph)
+    val graphPaper = TextGraphJvm.textGraphToGraphPaper(bishopClarkGraph)
     println(graphPaper.asMonocolorString())
 
     val labelTrees = bishopClarkGraph.findLabelTrees(bishopClarkGraph.graphArea())

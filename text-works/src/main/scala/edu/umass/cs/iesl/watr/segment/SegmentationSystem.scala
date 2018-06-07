@@ -91,7 +91,7 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
 
   lazy val shapeIndexes: Map[Int@@PageNum, ShapeIndex] = {
     pageAtomsAndGeometry.map { case (items, pageGeometry) =>
-      (pageGeometry.pageNum, new LabeledShapeIndex[GeometricFigure, Unit, DocSegShape[GeometricFigure]])
+      (pageGeometry.pageNum, LabeledShapeIndex.empty[GeometricFigure, Unit, DocSegShape[GeometricFigure]])
     }.toMap
   }
 

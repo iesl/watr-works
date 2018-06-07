@@ -10,7 +10,7 @@ import textreflow.data._
 // import simstring._
 import utils.ExactFloats._
 import TypeTags._
-import geometry.{CharAtom, LTBounds}
+import geometry.{PageItem.CharAtom, LTBounds}
 import geometry.syntax._
 import Constants._
 import textreflow.TextReflowF.TextReflow
@@ -64,7 +64,7 @@ object Utils {
         val yPosition: Int = getYPosition(textReflow = textReflow)
 
         while (componentIndex < component.length && textReflowIndex < indexRange._2) {
-            val currentTextReflowAtom: CharAtom = textReflow.charAtoms()(textReflowIndex)
+            val currentTextReflowAtom: PageItem.CharAtom = textReflow.charAtoms()(textReflowIndex)
             var localReflowCharIndex: Int = 0
             while (localReflowCharIndex < currentTextReflowAtom.char.length) {
                 breakable {

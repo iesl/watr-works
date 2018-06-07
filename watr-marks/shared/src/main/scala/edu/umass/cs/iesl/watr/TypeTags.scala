@@ -166,7 +166,6 @@ trait TypeTagCodecs {
   import _root_.io.circe
   import circe._
 
-  // import cats._
 
   implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)
   implicit def Enc_StringTypeTags[T]: Encoder[String@@T] = Encoder.encodeString.contramap(_.unwrap)
@@ -185,6 +184,9 @@ trait TypeTagCodecs {
 
   implicit val Enc_Int_UserID: Encoder[Int@@UserID] = Encoder.encodeInt.contramap(_.unwrap)
   implicit val Dec_Int_UserID: Decoder[Int@@UserID] = Decoder.decodeInt.map(UserID(_))
+
+  implicit val Enc_Int_CharID: Encoder[Int@@CharID] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit val Dec_Int_CharID: Decoder[Int@@CharID] = Decoder.decodeInt.map(CharID(_))
 
   implicit val Enc_String_EmailAddr: Encoder[String@@EmailAddr] = Encoder.encodeString.contramap(_.unwrap)
   implicit val Dec_String_EmailAddr: Decoder[String@@EmailAddr] = Decoder.decodeString.map(EmailAddr(_))
@@ -205,7 +207,6 @@ trait TypeTagCodecs {
   implicit val Enc_Int_AnnotationID: Encoder[Int@@AnnotationID] = Encoder.encodeInt.contramap(_.unwrap)
   implicit val Dec_Int_AnnotationID: Decoder[Int@@AnnotationID] = Decoder.decodeInt.map(AnnotationID(_))
 
-  // implicit val Dec_IntTypeTag[T]: Decoder[Int@@T] = Decoder.decodeInt.map(T)
 
   // implicit val Enc_XX: Encoder[XX] = deriveEncoder
   // implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)

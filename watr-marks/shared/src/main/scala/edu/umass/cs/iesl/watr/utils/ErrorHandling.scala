@@ -68,6 +68,8 @@ object DoOrDieHandlers {
       }
     }
   }
+
+
   implicit class RicherJson(val self: circe.Json) extends AnyVal {
 
     def decodeOrDie[T: Decoder](msg: String = "")(implicit

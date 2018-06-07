@@ -23,6 +23,7 @@ import io.circe.generic._
 
   */
 
+
 import GeometryCodecs._
 
 
@@ -62,11 +63,13 @@ object PageRegion {
 }
 
 
+@JsonCodec
 case class PageGeometry(
   pageNum: Int@@PageNum,
   bounds: LTBounds
 )
 
+@JsonCodec
 sealed trait PageItem {
   def pageRegion: PageRegion
   def bbox: LTBounds = pageRegion.bbox
@@ -74,6 +77,7 @@ sealed trait PageItem {
 
 object PageItem {
 
+  @JsonCodec
   case class ImageAtom(
     override val pageRegion: PageRegion
   ) extends PageItem
@@ -84,6 +88,7 @@ object PageItem {
   val SLANTED    = 2
   val EMPTY      = 3
 
+  @JsonCodec
   case class Path(
     override val pageRegion: PageRegion,
     points: Seq[Point]
@@ -144,23 +149,31 @@ object PageItem {
       linesWithOrientation.filter(_._2==VERTICAL).map(_._1)
     }
   }
+
+  @JsonCodec
+  case class CharAtom(
+    id: Int@@CharID,
+    override val pageRegion: PageRegion,
+    char: String
+  ) extends PageItem {
+    override def toString = s"CharAtom($char, $pageRegion)"
+  }
+
+  object CharAtom {
+    implicit val EqualCharAtom: Equal[PageItem.CharAtom] =
+      Equal.equal((a, b)  => a.id==b.id )
+
+    import circe.generic.semiauto._
+
+    // implicit def Encode_CharAtom: Encoder[PageItem.CharAtom] = deriveEncoder
+    // implicit def Decode_CharAtom: Decoder[PageItem.CharAtom] =  deriveDecoder
+  }
 }
 
 
-case class CharAtom(
-  id: Int@@CharID,
-  override val pageRegion: PageRegion,
-  char: String
-  // wonkyCharCode: Option[Int] = None
-) extends PageItem {
-  override def toString = s"CharAtom($char, $pageRegion)"
-}
 
 
-object CharAtom {
-  implicit val EqualCharAtom: Equal[CharAtom] =
-    Equal.equal((a, b)  => a.id==b.id )
-}
+
 
 
 object PageComponentImplicits {
@@ -198,7 +211,7 @@ object PageComponentImplicits {
   }
 
 
-  implicit class RicherCharAtom(val charAtom: CharAtom) extends AnyVal {
+  implicit class RicherCharAtom(val charAtom: PageItem.CharAtom) extends AnyVal {
 
     def debugPrint: String = {
       val bbox = charAtom.bbox.prettyPrint

@@ -37,6 +37,7 @@ case class LTBounds(
 
 @JSExportTopLevel("watr.geometry.LTBounds_Companion")
 object LTBounds {
+
   @JSExport("FromInts")
   def FromInts(l: Int, t: Int, w: Int, h: Int) = Ints(l, t, w, h)
 
@@ -153,6 +154,22 @@ case class LBBounds(
   def prettyPrint: String = {
     s"""(l:${left.pp}, b:${bottom.pp}, w:${width.pp}, h:${height.pp})"""
   }
+}
+
+object LBBounds {
+
+  object Doubles {
+    def apply(left: Double, bottom: Double, width: Double, height: Double): LBBounds =
+      LBBounds(left.toFloatExact(), bottom.toFloatExact, width.toFloatExact, height.toFloatExact)
+
+    def unapply(bbox: LBBounds): Option[(Double, Double, Double, Double)] = Some((
+      bbox.left.asDouble,
+      bbox.bottom.asDouble,
+      bbox.width.asDouble,
+      bbox.height.asDouble
+    ))
+  }
+
 }
 
 case class Point(
@@ -310,8 +327,12 @@ object GeometryImplicits extends RectangularCuts {
       case (g1: LTBounds, g2: LBBounds) => g1 === g2.toLTBounds
       case (g1: Point, g2: Point)       => g1.x===g2.x && g1.y===g2.y
       case (g1: Line, g2: Line)         => g1.p1===g2.p1 && g1.p2===g2.p2
-
-      // case (g1: EmptyFigure.type, g2: EmptyFigure.type)         => true
+      case (g1: Trapezoid, g2: Trapezoid) =>
+        (g1.topLeft === g2.topLeft
+          && g1.bottomLeft === g2.bottomLeft
+          && g1.topWidth === g2.topWidth
+          && g1.bottomWidth === g2.bottomWidth
+        )
 
       case (_, _)                       => false
     })
@@ -320,6 +341,7 @@ object GeometryImplicits extends RectangularCuts {
   implicit val EqualLBBounds: Equal[LBBounds] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
   implicit val EqualPoint: Equal[Point] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
   implicit val EqualLine: Equal[Line] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
+  implicit val EqualTrapezoid: Equal[Trapezoid] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
 
 
   def minBoundingRect(fig: GeometricFigure): LTBounds = fig match {
@@ -556,27 +578,47 @@ object GeometryImplicits extends RectangularCuts {
 trait GeometricFigureCodecs extends TypeTagCodecs {
   import io.circe
   import circe.generic.semiauto._
-  import io.circe.{ Decoder, Encoder, ObjectEncoder }, io.circe.generic.auto._
+  import io.circe._, io.circe.generic.auto._
+  import circe.syntax._
+
+  import utils.DoOrDieHandlers._
 
   implicit val Enc_Int_FloatRep: Encoder[Int@@FloatRep] = Encoder.encodeInt.contramap(_.unwrap)
   implicit val Dec_Int_FloatRep: Decoder[Int@@FloatRep] = Decoder.decodeInt.map(FloatRep(_))
 
-  implicit val Enc_LTBoundsObj: ObjectEncoder[LTBounds] = deriveEncoder
+  // implicit val Enc_LTBoundsObj: ObjectEncoder[LTBounds] = deriveEncoder
+  // implicit val Dec_LTBounds: Decoder[LTBounds] = deriveDecoder
+  implicit val Enc_LTBoundsObj: Encoder[LTBounds] = Encoder.instance { bbox =>
+    val LTBounds.IntReps(l, t, w, h) = bbox
+    List(l, t, w, h).asJson
+  }
+
+  implicit val Dec_LTBounds: Decoder[LTBounds] = Decoder.instance { hCursor =>
+    val intVals = hCursor.focus.orDie().decodeOrDie[List[Int]]()
+    intVals match {
+      case List(l, t, w, h) =>
+        Right(LTBounds.IntReps(l, t, w, h))
+
+      case _ =>
+        Left(DecodingFailure("",List()))
+
+    }
+  }
 
   implicit val Enc_LBBounds: ObjectEncoder[LBBounds] = deriveEncoder
-  implicit val Enc_Point: ObjectEncoder[Point] = deriveEncoder
-  implicit val Enc_Line: ObjectEncoder[Line] = deriveEncoder
-  implicit val Enc_Trapezoid: ObjectEncoder[Trapezoid] = deriveEncoder
-  implicit val Enc_StablePage: ObjectEncoder[StablePage] = deriveEncoder
-  implicit val Enc_PageRegion: ObjectEncoder[PageRegion] = deriveEncoder
+  implicit val Dec_LBBounds: Decoder[LBBounds] = deriveDecoder
 
-  implicit val Dec_LTBounds: Decoder[LTBounds] = deriveDecoder
-  implicit val Dec_StablePage: Decoder[StablePage] = deriveDecoder
-  implicit val Dec_PageRegion: Decoder[PageRegion] = deriveDecoder
+  implicit val Enc_Point: ObjectEncoder[Point] = deriveEncoder
+  implicit val Dec_Point: Decoder[Point] = deriveDecoder
+
+  implicit val Enc_Line: ObjectEncoder[Line] = deriveEncoder
+  implicit val Dec_Line: Decoder[Line] = deriveDecoder
+
+  implicit val Enc_Trapezoid: ObjectEncoder[Trapezoid] = deriveEncoder
+  implicit val Dec_Trapezoid: Decoder[Trapezoid] = deriveDecoder
 
   implicit val Enc_GeometricFigure: Encoder[GeometricFigure] = deriveEncoder
   implicit val Dec_GeometricFigure: Decoder[GeometricFigure] = deriveDecoder
-
 
 }
 

@@ -61,7 +61,7 @@ trait TextGridConstruction {
         // TODO make this clipBorder(..)
         val adjustedBbox = pageRegion.bbox.scale(-2.percent).translate(0.1, 0.1)
         val adjRegion = pageRegion.copy(bbox = adjustedBbox)
-        val charAtom = CharAtom(
+        val charAtom = PageItem.CharAtom(
           charIds.nextId,
           adjRegion,
           char.toString

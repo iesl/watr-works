@@ -54,7 +54,7 @@ trait TextReconstruction extends PageScopeSegmenter
     extractedItems.flatMap{
       case item: ExtractedItem.CharItem =>
         val cells = item.char.headOption.map{ char =>
-          val charAtom = CharAtom(
+          val charAtom = PageItem.CharAtom(
             item.id,
             PageRegion(
               StablePage(
@@ -142,7 +142,7 @@ trait TextReconstruction extends PageScopeSegmenter
   //     val init = extractedItems.map{
   //       case item: ExtractedItem.CharItem =>
   //         val cells = item.char.headOption.map{ char =>
-  //           val charAtom = CharAtom(
+  //           val charAtom = PageItem.CharAtom(
   //             item.id,
   //             PageRegion(
   //               StablePage(

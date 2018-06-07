@@ -65,10 +65,10 @@ class MemDocZoningApi extends DocumentZoningApi {
       }
     }
 
-    object charatoms extends DBRelation[CharID, CharAtom] {
+    object charatoms extends DBRelation[CharID, PageItem.CharAtom] {
       object forPage extends EdgeTableOneToMany[PageID, CharID]
 
-      def add(pageId: Int@@PageID, charAtom: CharAtom): Unit = {
+      def add(pageId: Int@@PageID, charAtom: PageItem.CharAtom): Unit = {
         insert(charAtom.id, charAtom)
         forPage.addEdge(pageId, charAtom.id)
       }
@@ -134,11 +134,11 @@ class MemDocZoningApi extends DocumentZoningApi {
     pages.setGeometry(pageId, pageBounds)
   }
 
-  def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit = {
+  def addCharAtom(pageId: Int@@PageID, charAtom: PageItem.CharAtom): Unit = {
     charatoms.add(pageId, charAtom)
   }
 
-  def getCharAtoms(pageId: Int@@PageID): Seq[CharAtom] = {
+  def getCharAtoms(pageId: Int@@PageID): Seq[PageItem.CharAtom] = {
     charatoms.forPage.getEdges(pageId)
       .map(charatoms.unique(_))
   }

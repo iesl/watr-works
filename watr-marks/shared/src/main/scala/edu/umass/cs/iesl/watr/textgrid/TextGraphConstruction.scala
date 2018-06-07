@@ -63,7 +63,7 @@ trait TextGraphConstruction {
           val pageRegion = mkPageRegion(stablePage, x=chnum, y=linenum, w=1, h=1)
           val adjustedBbox = pageRegion.bbox.shave(0.1d.toFloatExact)
           val adjRegion = pageRegion.copy(bbox = adjustedBbox)
-          val charAtom = CharAtom(
+          val charAtom = PageItem.CharAtom(
             charIds.nextId,
             adjRegion,
             char.toString
