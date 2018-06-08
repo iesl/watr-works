@@ -12,6 +12,7 @@ import circe.syntax._
 import utils.DoOrDieHandlers._
 import LabeledSequenceCodecs._
 import TextGridLabelWidget._
+import textboxing.{TextBoxing => TB}, TB._
 
 class TextGraphCodecTests extends TextGraphSpec {
 
@@ -28,20 +29,11 @@ class TextGraphCodecTests extends TextGraphSpec {
     val roundTripGraph = asJson.decodeOrDie[TextGraphJvm]()
     val rtJson = roundTripGraph.asJson
 
-    println("Json Format")
-    println(asJson.pretty(JsonPrettyPrinter))
-
-    // val indentedBlock = textGraphToIndentedBox(roundTripGraph)
-    // val labelTree = textGraphToLabelTree(roundTripGraph)
-    // val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
-    // val emarginBlock = marginalGlossToTextBlock(expMarginals)
-    // val expBlock = emarginBlock + indentedBlock
-    // println("Block Format ")
-    // println(expBlock.toString())
     // val cmpare = asJson.toString().box besideS rtJson.toString().box
     // println("\n\n\n----------------------------------------------")
     // println(cmpare)
     // println("========================================================")
-    // assert(asJson.toString() === rtJson.toString())
+
+    assert(asJson.toString() === rtJson.toString())
   }
 }

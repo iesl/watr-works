@@ -26,24 +26,6 @@ import circe.generic.auto._
 import circe.generic.semiauto._
 
 
-// @JsonCodec
-// sealed trait Attr
-
-// object Attr {
-
-//   @JsonCodec
-//   case class Glyph(
-//     glyph: TextGraph.GridCell
-//   ) extends Attr
-
-//   case object Empty extends Attr {
-//     implicit val EmptyDecoder: Decoder[Empty.type] = deriveDecoder
-//     implicit val EmptyEncoder: Encoder[Empty.type] = deriveEncoder
-//   }
-
-// }
-
-
 @JsonCodec
 sealed trait TextGraphShape extends LabeledShape[GeometricFigure, Option[TextGraph.GridCell]]
 
@@ -70,7 +52,7 @@ object TextGraphShape {
   case class LabelShape(
     shape: LTBounds,
     id: Int@@ShapeID,
-    parent: Option[LabelShape],
+    parent: Option[Int@@ShapeID],
     labels: Set[Label] = Set()
   ) extends TextGraphShape {
     def attr: Option[TextGraph.GridCell] = None
@@ -139,14 +121,12 @@ trait TextGraph { self =>
   def getRows(): Seq[Seq[GridCell]]
 
   def getMatrixContent(fromRow: Int=0, len: Int=Int.MaxValue): Option[MatrixArea.Rows]
-  // def getContent(): Option[MatrixArea.Rows]
 
   def addLabel(row: Int, len: Int, label: Label, parent: Label): Option[LabelShape]
 
   def addLabel(row: Int, len: Int, label: Label): Option[LabelShape]
 
   def findLabelTrees(area: GraphPaper.Box): Seq[Tree[LabelShape]]
-
 
 }
 
@@ -173,21 +153,9 @@ object TextGraph {
     char: Char
   ) extends GridCell
 
-  // implicit val InsertCellEncoder: Encoder[InsertCell] = Encoder[Char].contramap(_.char)
-  // implicit val InsertCellDecoder: Decoder[InsertCell] = Decoder[Char].map(InsertCell(_))
-
-
-  // case object SpaceCell extends GridCell {
-  //   def char: Char = ' '
-
-  //   implicit val SpaceCellDecoder: Decoder[SpaceCell.type] = deriveDecoder
-  //   implicit val SpaceCellEncoder: Encoder[SpaceCell.type] = deriveEncoder
-
-  // }
-
-  // Needed for circe Codec annotations to work properly
   object GridCell {
-    implicit val GraphCellEncoder: Encoder[GridCell] = Encoder.instance[GridCell]{ _ match {
+
+    implicit val Encoder_GraphCell: Encoder[GridCell] = Encoder.instance[GridCell]{ _ match {
       case cell@ TextGraph.GlyphCell(char, headItem, tailItems) =>
 
         val items = (headItem +: tailItems).map{ pageItem =>
@@ -196,20 +164,16 @@ object TextGraph {
 
           val LTBounds.IntReps(l, t, w, h) = pageItem.bbox
           Json.arr(
-            Json.fromString(char.toString()),
-            Json.fromInt(pageNum.unwrap),
-            Json.arr(Json.fromInt(l), Json.fromInt(t), Json.fromInt(w), Json.fromInt(h))
+            char.toString().asJson,
+            pageNum.unwrap.asJson,
+            List(l, t, w, h).asJson
           )
         }
 
-        Json.obj(
-          "g" := items
-        )
+        items.asJson
 
       case cell@ TextGraph.InsertCell(char)     =>
-        Json.obj(
-          "i" := List(char.toString())
-        )
+        char.toString().asJson
 
     }}
 
@@ -217,68 +181,34 @@ object TextGraph {
       c.as[(Seq[(String, Int, (Int, Int, Int, Int))])]
     }
 
-    private def decodeGlyphCell: Decoder[(String, Int, (Int, Int, Int, Int))] = Decoder.instance { c =>
-      c.as[(String, Int, (Int, Int, Int, Int))]
-    }
-    implicit def decodeGraphCell: Decoder[TextGraph.GridCell] = Decoder.instance { c =>
+    implicit def Decoder_GraphCell: Decoder[TextGraph.GridCell] = Decoder.instance { c =>
 
-      c.keys.map(_.toVector) match {
-        case Some(Vector("g")) =>
+      val d: Decoder[TextGraph.GridCell] = decodeGlyphCells.map { cells =>
+        val atoms = cells.map{ case(char, page, (l, t, w, h)) =>
+          val bbox = LTBounds.IntReps(l, t, w, h)
+          PageItem.CharAtom(
+            CharID(-1),
+            PageRegion(
+              StablePage(
+                DocumentID(""),
+                PageNum(page)
+              ),
+              bbox
+            ),
+            char.toString()
+          )
+        }
+        TextGraph.GlyphCell(atoms.head.char.head, atoms.head, atoms.tail)
 
-          val res = c.downField("g").focus.map{ json =>
-            val dec = decodeGlyphCells.decodeJson(json).map { cells =>
-              val atoms = cells.map{ case(char, page, (l, t, w, h)) =>
-                val bbox = LTBounds.IntReps(l, t, w, h)
-                PageItem.CharAtom(
-                  CharID(-1),
-                  PageRegion(
-                    StablePage(
-                      stableId,
-                      PageNum(page)
-                    ),
-                    bbox
-                  ),
-                  char.toString()
-                )
-              }
-              TextGraph.GlyphCell(atoms.head.char.head, atoms.head, atoms.tail)
-            }
+      }.or{
 
-            dec.fold(decFail => {
-              Left(decFail)
-            }, succ => {
-              Right(succ)
-            })
-          }
-
-          res.getOrElse { Left(DecodingFailure("page item grid cell decoding error", List.empty)) }
-
-
-        case Some(Vector("i")) =>
-          val res = c.downField("i").focus.map{ json =>
-            decodeGlyphCell.decodeJson(json)
-              .map { case(char, page, (l, t, w, h)) =>
-                val bbox = LTBounds.IntReps(l, t, w, h)
-
-                val insertAt = PageRegion(
-                  StablePage(
-                    stableId,
-                    PageNum(page)
-                  ),
-                  bbox
-                )
-
-                TextGraph.InsertCell(char.head)
-              }
-          }
-
-          res.getOrElse { Left(DecodingFailure("insert grid cell decoding error", List.empty)) }
-
-        case x => Left(DecodingFailure(s"unknown grid cell type ${x}", List.empty))
+        Decoder.decodeString.map{s => TextGraph.InsertCell(s.head) }
       }
 
+      d(c)
     }
 
   }
 
 }
+

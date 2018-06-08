@@ -177,6 +177,7 @@ abstract class TextGraphJvm(
     rows
   }
 
+
   def addLabel(row: Int, len: Int, label: Label, parent: Label): Option[LabelShape] = {
     _addLabel(label, Some(parent), row, len)
   }
@@ -217,7 +218,7 @@ abstract class TextGraphJvm(
         if (meetsLabelConstraint && isSubArea) {
 
           val newShape = shapeIndex.indexShape{ id =>
-            LabelShape(realBounds, id, Some(overlappedLabel)).addLabels(label)
+            LabelShape(realBounds, id, Some(overlappedLabel.id)).addLabels(label)
           }
 
           Some(newShape.asInstanceOf[LabelShape])
@@ -237,7 +238,7 @@ abstract class TextGraphJvm(
 
     val parentChildPairs = labelShapes.map{ labelShape =>
       val id = labelShape.id.unwrap
-      val parentId = labelShape.parent.map(_.id.unwrap).getOrElse(0)
+      val parentId = labelShape.parent.map(_.unwrap).getOrElse(0)
       (parentId, id)
     }
     val idTrees0 = ts.makeTreeFromPairs(parentChildPairs)
@@ -279,32 +280,12 @@ object TextGraphJvm {
   import rtrees.RTreeIndex._
   import GeometryCodecs._
 
-  // implicit val Encode_PageItem: Encoder[PageItem] =  deriveEncoder
-
-  // // TextGraph GridCell ADT
-  // implicit def Encode_GlyphCell: Encoder[TextGraph.GlyphCell]      = deriveEncoder
-  // implicit def Encode_InsertCell: Encoder[TextGraph.InsertCell]    = deriveEncoder
-  // implicit def Encode_SpaceCell: Encoder[TextGraph.SpaceCell.type] = deriveEncoder
-  // implicit def Encode_GridCell: Encoder[TextGraph.GridCell]        = deriveEncoder
-
-  // implicit def Encode_Attr_Glyph: Encoder[Attr.Glyph] =  deriveEncoder
-  // implicit def Encode_Attr_Empty: Encoder[Attr.Empty.type] =  deriveEncoder
-  // implicit def Encode_Attr: Encoder[Attr] =  deriveEncoder
-
-  // implicit def Decode_Attr_Glyph: Decoder[Attr] =  deriveDecoder
-
-  // implicit def EncodeTextGraph: Encoder[TextGraph] = Encoder.instance { textGraph =>
-  //   ???
-  // }
-
-  // implicit def DecodeTextGraph: Decoder[TextGraph] = ???
 
   implicit def EncodeTextGraphJvm: Encoder[TextGraphJvm] = Encoder.instance { textGraphJvm =>
     Json.obj(
       "shapeIndex" := textGraphJvm.shapeIndex,
       "stableId" := textGraphJvm.stableId
     )
-
   }
 
   implicit def DecodeTextGraphJvm: Decoder[TextGraphJvm] = Decoder.instance { hCursor =>

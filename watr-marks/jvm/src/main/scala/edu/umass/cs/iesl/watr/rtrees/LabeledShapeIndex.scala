@@ -44,7 +44,7 @@ object LabeledShapeIndex {
       Json.obj(
         "rtree" := shapeIndex.shapeRIndex.asJson,
         "nextId" := shapeIndex.shapeIDGen.peekId.unwrap,
-        "shapeMap" := shapeIndex.shapeMap.values.toList
+        "shapeMap" := shapeIndex.shapeMap.values.toList.sortBy(_.id.unwrap)
       )
     }
   }

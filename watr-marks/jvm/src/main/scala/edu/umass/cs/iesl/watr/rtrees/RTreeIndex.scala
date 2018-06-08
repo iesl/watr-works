@@ -69,7 +69,7 @@ object RTreeIndex {
       val shapes = shapeIndex.getItems
 
       Json.obj(
-        "shapes" := shapes
+        "shapes" := shapes.sortBy(_.id.unwrap)
       )
     }
 
