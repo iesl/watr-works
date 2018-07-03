@@ -28,6 +28,7 @@ class TextGraphCodecTests extends TextGraphSpec {
     val asJson = textGraph.asJson
     val roundTripGraph = asJson.decodeOrDie[TextGraphJvm]()
     val rtJson = roundTripGraph.asJson
+    println(asJson)
 
     // val cmpare = asJson.toString().box besideS rtJson.toString().box
     // println("\n\n\n----------------------------------------------")
@@ -36,4 +37,5 @@ class TextGraphCodecTests extends TextGraphSpec {
 
     assert(asJson.toString() === rtJson.toString())
   }
+
 }

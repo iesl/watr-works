@@ -25,7 +25,7 @@ object TextGridOutputFormats  {
     *         occurrence counts per page or across document
     *      Per-line:
     *         Text as String (optional)
-    *         Loci (glyph-type, char, page, bbox), where glyph-type==(insert|glyph)  (required)
+    *         Glyphs (glyph-type, char, page, bbox), where glyph-type==(insert|glyph)  (required)
     *      Preamble major/minor/git version info
     *      BIO Label key
     *

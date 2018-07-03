@@ -201,7 +201,6 @@ object ProcessPipelineSteps {
             pdfPath <- pdfEntry.asPath.toEither.left.map(_.toString())
           } yield {
 
-
             // val output = Processable.getTextgridOutputFile(m, conf.ioConfig)
             // val ammPath = nioToAmm(output)
 
@@ -237,7 +236,7 @@ object ProcessPipelineSteps {
 
           val jsonOutput = time("build json output") {  TextGraphIO.jsonOutputGridPerPage(segmentation) }
 
-          val gridJsStr = jsonOutput.noSpaces
+          val gridJsStr = jsonOutput.pretty(JsonPrettyPrinter)
 
           time("write textgrid.json") {
             log.trace(s"writing textgrid.json to ${outputFile}")
@@ -340,10 +339,10 @@ object ProcessPipelineSteps {
 
 
 
-  val jsonPrinter = circe.Printer(
+  val JsonPrettyPrinter = circe.Printer(
     preserveOrder = true,
     dropNullValues = false,
-    indent = "    ",
+    indent = "  ",
     lbraceRight = "",
     rbraceLeft = "\n",
     lbracketRight = "",

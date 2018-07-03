@@ -16,8 +16,8 @@ trait TextReconstruction extends PageScopeSegmenter
 
   lazy val textReconstruction = self
 
-  def getTextGraph(): TextGraph = {
-    val textGraph = TextGraphBuilder.create(docScope.stableId)
+  def getTextGraph(): TextGraphJvm = {
+    val textGraph = TextGraphJvm.create(docScope.stableId)
 
     val textLineReprShape = LB.CapDescenderBand
     val rows1 = getLabeledShapes(textLineReprShape)
@@ -82,11 +82,6 @@ trait TextReconstruction extends PageScopeSegmenter
   }
 
 
-
-
-
-
-
   import utils.SlicingAndDicing._
   import scalaz.syntax.std.list._
 
@@ -103,7 +98,7 @@ trait TextReconstruction extends PageScopeSegmenter
       pairwiseDist < splitValue
     })
 
-    wordGroups.toList.intersperse(List(TextGraph.SpaceCell)).flatten.toList
+    wordGroups.toList.intersperse(List(TextGraph.InsertCell(' '))).flatten.toList
   }
 
 

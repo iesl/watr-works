@@ -20,6 +20,8 @@ object LabelTarget {
     val value = a;
   }
 
+  case class LabelAttr[A](a: A) extends LabelTarget
+  case class Thing[A](a: A) extends LabelTarget
 }
 
 @JSExportAll
@@ -68,6 +70,7 @@ trait LabelTarget {
 
 }
 
+
 object LabeledSequence {
 
   def addBioLabel(label: Label, cells: Seq[LabelTarget]): Unit = {
@@ -82,6 +85,9 @@ object LabeledSequence {
     }
   }
 
+  import LabelTarget.Thing
+
+  case class Things[A](labelTargets: Seq[Thing[A]]) extends LabeledSequence[Thing[A]]
 }
 
 trait LabeledSequence[A <: LabelTarget] {

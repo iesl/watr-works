@@ -97,7 +97,6 @@ trait TextGraphSpec extends FreeSpec with Matchers with TextGraphConstruction {
     colonLeft = " ",
     colonRight = " "
   )
-
 }
 
 class TextGraphTests extends TextGraphSpec {
@@ -112,45 +111,68 @@ class TextGraphTests extends TextGraphSpec {
 
   import TextGraphShape._
 
-  "apply nested labels" in {
-    val textGraph = makeSample()
+  // "apply nested labels" in {
+  //   val textGraph = makeSample()
 
-    val l0 = textGraph.addLabel(0, 1, Label(s"L0"))
-    println(s"Added (0): ${l0}")
+  //   val l0 = textGraph.addLabel(0, 1, Label(s"L0"))
+  //   println(s"Added (0): ${l0}")
 
-    for {
-      i <- 1 until 4
-    } {
-      val l1 = textGraph.addLabel(0, 1, Label(s"L${i}"), Label(s"L${i-1}"))
-      println(s"Added (${i}): ${l1}")
-    }
+  //   for {
+  //     i <- 1 until 4
+  //   } {
+  //     val l1 = textGraph.addLabel(0, 1, Label(s"L${i}"), Label(s"L${i-1}"))
+  //     println(s"Added (${i}): ${l1}")
+  //   }
 
 
-    val labelTrees = textGraph.findLabelTrees(textGraph.graphArea())
-    labelTrees.foreach { tree =>
-      println(s"Tree==== ")
-      println(tree.drawBox)
-    }
+  //   val labelTrees = textGraph.findLabelTrees(textGraph.graphArea())
+  //   labelTrees.foreach { tree =>
+  //     println(s"Tree==== ")
+  //     println(tree.drawBox)
+  //   }
 
-  }
+  // }
 
 
 
   "apply labels" in {
 
+  }
+
+  "convert region-based labels to sequence-based labels" in {
     val bishopClarkGraph = makeBishopClarkSample()
 
     val graphPaper = TextGraphJvm.textGraphToGraphPaper(bishopClarkGraph)
-    println(graphPaper.asMonocolorString())
+    infobox("bishopClarkGraph", graphPaper.asMonocolorString())
 
     val labelTrees = bishopClarkGraph.findLabelTrees(bishopClarkGraph.graphArea())
     labelTrees.foreach { tree =>
-      println(s"Tree==== ")
-      println(tree.drawBox)
+      infobox("==Tree==", tree.drawBox)
     }
 
+    val matrixContent = bishopClarkGraph.getMatrixContent()
+    matrixContent.map { matrixRows =>
 
-    // println(bishopClarkGraph.toText())
+      val rowIntervals = matrixRows.rows.map { matrixRow =>
+        val rowNum = matrixRow.area.origin.y
+        val rowBegin = matrixRow.area.origin.x
+        val rowLen = matrixRow.area.width
+        (rowBegin, rowLen)
+      }
+
+      labelTrees.map { tree =>
+        tree.map { labelShape =>
+          labelShape.graphBox()
+        }
+      }
+
+
+
+    }
+
+    //
+
+
   }
 
   // val thingCount = 10

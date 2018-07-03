@@ -3,7 +3,16 @@ package utils
 
 import TypeTags._
 
+object Maths {
+
+  def clamp(low: Int, high: Int)(i: Int): Int =
+    math.max(low, math.min(i, high))
+
+}
+
 object EnrichNumerics {
+
+
   def fmt = (d: Double) => {
     f"${d}%1.2f"
   }
@@ -121,8 +130,6 @@ object EnrichNumerics {
   implicit class RicherFloat_EnrichNumerics(val d: Float) extends AnyVal {
     def nan = java.lang.Float.isNaN(d)
     def inf = java.lang.Float.isInfinite(d)
-    // def prettyPrint:String = fmt(d.toDouble)
-    // def pp(): String = fmt(d.toDouble)
   }
 
 }

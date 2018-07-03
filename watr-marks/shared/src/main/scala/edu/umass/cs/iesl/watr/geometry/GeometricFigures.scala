@@ -617,7 +617,7 @@ trait GeometricFigureCodecs extends TypeTagCodecs {
   implicit val Enc_Trapezoid: ObjectEncoder[Trapezoid] = deriveEncoder
   implicit val Dec_Trapezoid: Decoder[Trapezoid] = deriveDecoder
 
-  implicit val Enc_GeometricFigure: Encoder[GeometricFigure] = deriveEncoder
+  implicit val Enc_GeometricFigure: ObjectEncoder[GeometricFigure] = deriveEncoder
   implicit val Dec_GeometricFigure: Decoder[GeometricFigure] = deriveDecoder
 
 }

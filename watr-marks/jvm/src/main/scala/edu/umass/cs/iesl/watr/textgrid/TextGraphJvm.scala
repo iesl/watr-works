@@ -16,6 +16,7 @@ import textboxing.{TextBoxing => TB}, TB._
 
 import utils.DoOrDieHandlers._
 import utils.Debugging._
+import utils.Maths._
 
 /**
   *
@@ -28,56 +29,13 @@ import utils.Debugging._
   **/
 
 
-
 abstract class TextGraphJvm(
   val shapeIndex: LabeledShapeIndex[GeometricFigure, TextGraphShape.Attr, TextGraphShape]
 ) extends TextGraph {
   import TextGraphShape._
+  // import TextGraph._
 
   val L = ShapeLabels
-
-  val cellWidth = 10d
-  val cellHeight = 10d
-  val cellMargin = 0.1
-
-  def shaveMargin(b: LTBounds): LTBounds = b.shave(cellMargin)
-
-  def matrixToRealCoords(box: GraphPaper.Box): LTBounds = {
-    val width = (box.spanRight+1) * cellWidth
-    val height = (box.spanDown+1) * cellHeight
-    LTBounds.Doubles(
-      box.origin.x * cellWidth,
-      box.origin.y * cellHeight,
-      width, height
-    )
-  }
-
-  def matrixToRealCoords(gpCell: GraphPaper.GridCell): LTBounds = {
-    LTBounds.Doubles(
-      gpCell.x * cellWidth,
-      gpCell.y * cellHeight,
-      cellWidth,
-      cellHeight
-    )
-  }
-
-  def realToMatrixCoords(realBounds: LTBounds): GraphPaper.Box = {
-    val y0 = rowNumForY(realBounds.top)
-    val y1 = rowNumForY(realBounds.bottom)
-    val x0 = colNumForX(realBounds.left)
-    val x1 = colNumForX(realBounds.right)
-    GraphPaper.boxAt(x0, y0)
-      .extendRight(x1-x0)
-      .extendDown(y1-y0)
-  }
-
-  def rowNumForY(y: FloatExact): Int = {
-    math.floor(y.asDouble() / cellHeight).toInt
-  }
-
-  def colNumForX(x: FloatExact): Int = {
-    math.floor(x.asDouble() / cellWidth).toInt
-  }
 
   def graphHeight(): Int = {
     if (shapeIndex.getAllShapes().nonEmpty) {
@@ -117,12 +75,51 @@ abstract class TextGraphJvm(
     }
   }
 
+  // def glyphCells(): Seq[GlyphShape] = {
+  def glyphCells(): Seq[(GlyphShape, GraphPaper.GridCell)] = {
+    for {
+      cell <- graphArea().getCells()
+      query = shaveMargin(matrixToRealCoords(cell))
+      cellGlyphs = shapeIndex.searchShapes(query).collect{ case g: GlyphShape => g }
+      if cellGlyphs.nonEmpty
+    } yield {
+      (cellGlyphs.head, cell)
+    }
+  }
+
+  def toLabeledSequence(): LabeledSequence.Things[GlyphShape] = {
+    val allLabelTrees = findLabelTrees(graphArea())
+    for {
+      labelTree <- allLabelTrees
+      level <- labelTree.levels
+      labelShape <- level
+    } {
+      labelShape
+
+    }
+    val labeledSequence = for {
+      (glyphShape, glyphCell) <- glyphCells()
+    } yield {
+
+      val attr = LabelTarget.Thing(glyphShape)
+      val labelTreeAtCell = findLabelTrees(glyphCell.toBox())
+      if (labelTreeAtCell.isEmpty) {
+
+      }
+
+      attr
+    }
+    val things = LabeledSequence.Things(labeledSequence)
+
+    // things.addBioLabel(label: Label, begin: Int, len: Int)
+
+    things
+  }
+
   def getMatrixContent(fromRow: Int=0, len: Int=Int.MaxValue): Option[MatrixArea.Rows] = {
     val height = graphHeight()
     val width = graphWidth()
 
-    def clamp(low: Int, high: Int)(i: Int): Int =
-      math.max(low, math.min(i, high))
 
     val start = clamp(0, height)(fromRow)
     val end = clamp(start, height)(start+len)
@@ -164,7 +161,7 @@ abstract class TextGraphJvm(
 
     val rowBoxes = for {
       y <- 0 until height
-    } yield GraphPaper.boxAt(0, y).extendRight(width-1)
+    } yield GraphPaper.boxAt(0, y).setWidth(width)
 
     val rows = rowBoxes.toList.map{ box =>
       val realBox = matrixToRealCoords(box)
@@ -282,9 +279,17 @@ object TextGraphJvm {
 
 
   implicit def EncodeTextGraphJvm: Encoder[TextGraphJvm] = Encoder.instance { textGraphJvm =>
+    val textRows = textGraphJvm.getRows().map{ row =>
+      val glyphs = row.map { _.asJson }
+      val lines = row.map(_.char).mkString.asJson
+      (lines, glyphs)
+    }
+
     Json.obj(
-      "shapeIndex" := textGraphJvm.shapeIndex,
-      "stableId" := textGraphJvm.stableId
+      "stableId" := textGraphJvm.stableId,
+      "lines" := textRows.map(_._1),
+      "glyphs" := textRows.map(_._2),
+      // "shapeIndex" := textGraphJvm.shapeIndex,
     )
   }
 

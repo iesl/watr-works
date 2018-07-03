@@ -22,7 +22,7 @@ object TextGraphIO {
       .map { pageSegmenter =>
         val textGraph = pageSegmenter.getTextGraph()
         // val rows = textGraph.rows.length
-        // val gridJs = textGraph.toJson()
+        val gridJs = textGraph.asJson
 
 
         val LTBounds.IntReps(l, t, w, h) = pageSegmenter.pageGeometry
@@ -30,7 +30,7 @@ object TextGraphIO {
 
         Json.obj(
           "pageGeometry" := geom,
-          // "textgrid" := gridJs
+          "textgrid" := gridJs
         )
       }
 

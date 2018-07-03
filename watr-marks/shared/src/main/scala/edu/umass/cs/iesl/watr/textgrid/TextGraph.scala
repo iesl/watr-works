@@ -9,6 +9,8 @@ import geometry.PageComponentImplicits._
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 import utils.GraphPaper
+import GraphPaper.CellDimensions
+import utils.ExactFloats._
 
 import utils.{Cursor, Cursors, Window}
 import utils.SlicingAndDicing._
@@ -27,7 +29,15 @@ import circe.generic.semiauto._
 
 
 @JsonCodec
-sealed trait TextGraphShape extends LabeledShape[GeometricFigure, Option[TextGraph.GridCell]]
+sealed trait TextGraphShape extends LabeledShape[GeometricFigure, Option[TextGraph.GridCell]] {
+
+  import TextGraph._
+
+  def graphBox(): GraphPaper.Box = {
+    realToMatrixCoords(shape.minBounds)
+  }
+
+}
 
 object TextGraphShape {
   import GeometryCodecs._
@@ -132,6 +142,49 @@ trait TextGraph { self =>
 
 object TextGraph {
 
+  val cellWidth = 10d
+  val cellHeight = 10d
+  val cellMargin = 0.1
+
+  def shaveMargin(b: LTBounds): LTBounds = b.shave(cellMargin)
+
+  def matrixToRealCoords(box: GraphPaper.Box): LTBounds = {
+    val width = (box.spanRight+1) * cellWidth
+    val height = (box.spanDown+1) * cellHeight
+    LTBounds.Doubles(
+      box.origin.x * cellWidth,
+      box.origin.y * cellHeight,
+      width, height
+    )
+  }
+
+  def matrixToRealCoords(gpCell: GraphPaper.GridCell): LTBounds = {
+    LTBounds.Doubles(
+      gpCell.x * cellWidth,
+      gpCell.y * cellHeight,
+      cellWidth,
+      cellHeight
+    )
+  }
+
+  def realToMatrixCoords(realBounds: LTBounds): GraphPaper.Box = {
+    val y0 = rowNumForY(realBounds.top)
+    val y1 = rowNumForY(realBounds.bottom)
+    val x0 = colNumForX(realBounds.left)
+    val x1 = colNumForX(realBounds.right)
+    GraphPaper.boxAt(x0, y0)
+      .extendRight(x1-x0)
+      .extendDown(y1-y0)
+  }
+
+  def rowNumForY(y: FloatExact): Int = {
+    math.floor(y.asDouble() / cellHeight).toInt
+  }
+
+  def colNumForX(x: FloatExact): Int = {
+    math.floor(x.asDouble() / cellWidth).toInt
+  }
+
   sealed trait GridCell {
     def char: Char
   }
@@ -211,4 +264,3 @@ object TextGraph {
   }
 
 }
-
