@@ -14,7 +14,7 @@ abstract class GraphPaper {
   def drawChar(cell: GridCell, char: Char): Unit
   def drawBox(box: Box, borderChars: BorderChars = BorderLineStyle.SingleWidth): Unit
   def applyBgColor(box: Box, color: Color): Unit
-  def applyColor(box: Box, color: Color): Unit
+  def applyFgColor(box: Box, color: Color): Unit
   def gradientHorizontal(gridbox: Box): Unit
   def cellDimensions(): CellDimensions
 
@@ -86,11 +86,7 @@ object GraphPaper {
   case class GridCell(
     x: Int, y: Int
   ) {
-
-    def toBox(): Box = {
-      Box(this, 0, 0)
-    }
-
+    def toBox(): Box = Box(this, 0, 0)
   }
 
   def cellAt(x: Int, y: Int) = GridCell(x, y)
@@ -132,6 +128,19 @@ object GraphPaper {
       )
     }
 
+    def union(box2: Box): Box = {
+      val minX = math.min(origin.x, box2.origin.x)
+      val minY = math.min(origin.y, box2.origin.y)
+
+      val maxRight = math.max(right, box2.right)
+      val maxBottom = math.max(bottom, box2.bottom)
+
+      Box(GridCell(minX, minY),
+        maxRight - minX,
+        maxBottom - minY
+      )
+    }
+
 
     def toLTBounds(): LTBounds = {
       LTBounds.Ints(left, top, spanRight+1, spanDown+1)
@@ -169,6 +178,11 @@ object GraphPaper {
       } yield GridCell(x, y)
     }
 
+    def getRows(): Seq[Box] = {
+      (top to bottom).map{ y =>
+        boxAt(left, y).setWidth(width)
+      }
+    }
   }
 
   case class BorderChars(str: String) {
@@ -198,6 +212,12 @@ object GraphPaper {
       case Dir.Left        => chars(9+2)
       case Dir.Right       => chars(9+3)
       case _ => sys.error(s"no endcaps for dir ${dir}")
+    }
+  }
+
+  def union(boxes: Seq[Box]): Option[Box]= {
+    boxes.headOption.map{ bhead =>
+      boxes.tail.foldLeft(bhead)(_ union _)
     }
   }
 

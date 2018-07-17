@@ -58,23 +58,44 @@ object TextGraphShape {
     )
   }
 
-  @JsonCodec
-  case class LabelShape(
-    shape: LTBounds,
+  // @JsonCodec
+  // case class LabeledArea(
+  //   shape: LTBounds,
+  //   id: Int@@ShapeID,
+  //   parent: Option[Int@@ShapeID],
+  //   labels: Set[Label] = Set()
+  // ) extends TextGraphShape {
+  //   def attr: Option[TextGraph.GridCell] = None
+
+  //   def addLabels(l: Label*): LabeledArea = copy(
+  //     labels = this.labels ++ l.toSet
+  //   )
+  // }
+
+  case class LabeledSeq(
+    shape: LTBounds, // min bounds around all lines in sequence
     id: Int@@ShapeID,
+    begin: Int,
+    len: Int,
     parent: Option[Int@@ShapeID],
-    labels: Set[Label] = Set()
+    labels: Set[Label] = Set(),
+    rowSpans: Seq[(Int, Int)] = List()
   ) extends TextGraphShape {
     def attr: Option[TextGraph.GridCell] = None
-
-    def addLabels(l: Label*): LabelShape = copy(
+    def addLabels(l: Label*): LabeledSeq = copy(
       labels = this.labels ++ l.toSet
     )
+
+    def span(): (Int, Int) = {
+
+      ???
+    }
+
   }
 
-  implicit val ShowLabelShape: Show[LabelShape] = Show.shows[LabelShape]{ shape =>
-    s"<shape#${shape.id}>"
-  }
+  // implicit val ShowLabeledArea: Show[LabeledArea] = Show.shows[LabeledArea]{ shape =>
+  //   s"<shape#${shape.id}>"
+  // }
 
 }
 
@@ -132,11 +153,11 @@ trait TextGraph { self =>
 
   def getMatrixContent(fromRow: Int=0, len: Int=Int.MaxValue): Option[MatrixArea.Rows]
 
-  def addLabel(row: Int, len: Int, label: Label, parent: Label): Option[LabelShape]
+  def addLabel(row: Int, len: Int, label: Label, parent: Label): Option[LabeledSeq]
 
-  def addLabel(row: Int, len: Int, label: Label): Option[LabelShape]
+  def addLabel(row: Int, len: Int, label: Label): Option[LabeledSeq]
 
-  def findLabelTrees(area: GraphPaper.Box): Seq[Tree[LabelShape]]
+  def findLabelTrees(area: GraphPaper.Box): Seq[Tree[LabeledSeq]]
 
 }
 
@@ -146,25 +167,21 @@ object TextGraph {
   val cellHeight = 10d
   val cellMargin = 0.1
 
-  def shaveMargin(b: LTBounds): LTBounds = b.shave(cellMargin)
+  private def shaveMargin(b: LTBounds): LTBounds = b.shave(cellMargin)
 
   def matrixToRealCoords(box: GraphPaper.Box): LTBounds = {
     val width = (box.spanRight+1) * cellWidth
     val height = (box.spanDown+1) * cellHeight
-    LTBounds.Doubles(
+    val asReal = LTBounds.Doubles(
       box.origin.x * cellWidth,
       box.origin.y * cellHeight,
       width, height
     )
+    shaveMargin(asReal)
   }
 
   def matrixToRealCoords(gpCell: GraphPaper.GridCell): LTBounds = {
-    LTBounds.Doubles(
-      gpCell.x * cellWidth,
-      gpCell.y * cellHeight,
-      cellWidth,
-      cellHeight
-    )
+    matrixToRealCoords(gpCell.toBox())
   }
 
   def realToMatrixCoords(realBounds: LTBounds): GraphPaper.Box = {
@@ -225,7 +242,7 @@ object TextGraph {
 
         items.asJson
 
-      case cell@ TextGraph.InsertCell(char)     =>
+      case cell@ TextGraph.InsertCell(char) =>
         char.toString().asJson
 
     }}
@@ -236,7 +253,7 @@ object TextGraph {
 
     implicit def Decoder_GraphCell: Decoder[TextGraph.GridCell] = Decoder.instance { c =>
 
-      val d: Decoder[TextGraph.GridCell] = decodeGlyphCells.map { cells =>
+      val decode: Decoder[TextGraph.GridCell] = decodeGlyphCells.map { cells =>
         val atoms = cells.map{ case(char, page, (l, t, w, h)) =>
           val bbox = LTBounds.IntReps(l, t, w, h)
           PageItem.CharAtom(
@@ -251,14 +268,14 @@ object TextGraph {
             char.toString()
           )
         }
+
         TextGraph.GlyphCell(atoms.head.char.head, atoms.head, atoms.tail)
 
-      }.or{
-
+      }.or {
         Decoder.decodeString.map{s => TextGraph.InsertCell(s.head) }
       }
 
-      d(c)
+      decode(c)
     }
 
   }

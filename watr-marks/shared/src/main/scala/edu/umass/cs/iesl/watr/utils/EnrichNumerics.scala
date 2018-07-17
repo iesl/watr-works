@@ -77,6 +77,10 @@ object EnrichNumerics {
 
     def contains(i: Int): Boolean = min <= i && i < max
 
+    def contains(i: RangeInt): Boolean =
+      contains(i.min) && contains(i.max)
+
+      // min <= i && i < max
     def intersect(r2: RangeInt): Option[RangeInt] =
       rangeIntersection(theRange, r2)
 

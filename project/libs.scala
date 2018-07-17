@@ -15,7 +15,7 @@ trait LibVersions {
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
-  val http4sVersion       = "0.18.13"
+  val http4sVersion       = "0.18.15"
   val fs2Version          = "0.10.5"
   val circeJsonVersion    = "0.9.3"
 
@@ -63,7 +63,7 @@ object DatabaseLibs extends LibVersions {
     "org.tpolecat"      %% "doobie-hikari"     % doobieVersion,
     "org.tpolecat"      %% "doobie-specs2"     % doobieVersion % "test",
     "org.postgresql"     % "postgresql"        % postgresqlV,
-    "org.javassist"      % "javassist"         % "3.23.0-GA",
+    "org.javassist"      % "javassist"         % "3.23.1-GA",
     "com.impossibl.pgjdbc-ng" % "pgjdbc-ng"  % "0.7.1"
   )
 
@@ -99,7 +99,7 @@ trait CommonLibs extends LibVersions {
   )
 
   val http4s = Seq(
-    "org.reactormonk" %% "cryptobits"           % "1.1",
+    "org.reactormonk" %% "cryptobits"           % "1.2",
     "org.http4s"      %% "http4s-dsl"           % http4sVersion,
     "org.http4s"      %% "http4s-blaze-server"  % http4sVersion,
     "org.http4s"      %% "http4s-blaze-client"  % http4sVersion,

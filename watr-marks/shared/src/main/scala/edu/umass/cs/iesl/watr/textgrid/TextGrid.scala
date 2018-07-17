@@ -30,11 +30,6 @@ trait TextGrid { self =>
     def labelTargets(): Seq[GridCell] = self.gridCells()
   }
 
-  // object rowLabels extends LabeledSequence[Row] {
-  //   def labelTargets(): Seq[Row] = self.rows()
-  // }
-
-
   def rows(): Seq[Row]
 
   def toText(): String = {
@@ -53,6 +48,7 @@ trait TextGrid { self =>
   def gridCells(): Seq[GridCell] = {
     indexedCells.map(_._1)
   }
+
   def indexedCells(): Seq[(GridCell, Int, Int)] = {
     for {
       (row, rowNum) <- rows.zipWithIndex

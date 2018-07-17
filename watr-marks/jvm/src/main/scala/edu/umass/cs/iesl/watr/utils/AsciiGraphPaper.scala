@@ -22,6 +22,12 @@ class AsciiGraphPaper(
     CellDimensions(1, 1)
   }
 
+  val colorMods: mutable.ArrayBuffer[
+    mutable.ArrayBuffer[fansi.Attrs]
+  ] = mutable.ArrayBuffer.tabulate(height, width){ case (y, x) =>
+      fansi.Attrs.Empty
+  }
+
   val charMods: mutable.ArrayBuffer[
     mutable.ArrayBuffer[fansi.Attrs]
   ] = mutable.ArrayBuffer.tabulate(height, width){ case (y, x) =>
@@ -72,22 +78,40 @@ class AsciiGraphPaper(
     }
   }
 
-  def applyBgColor(box: Box, color: Color): Unit = {
-    val x = box.origin.x
-    val y = box.origin.y
-    val xy = charMods(y)(x)
-    val rgb = color.toRGB
-    val fansiColor = fansi.Back.True(rgb.red, rgb.green, rgb.blue)
-    charMods(y)(x) = xy ++ fansiColor
+  private def modColor(cell: GridCell, a: fansi.Attrs): Unit = {
+    val y = cell.y
+    val x = cell.x
+    val qq = colorMods(y)(x)
+    colorMods(y)(x) = qq ++ a
+  }
+  private def modFormat(cell: GridCell, a: fansi.Attrs): Unit = {
+    val y = cell.y
+    val x = cell.x
+    val qq = charMods(y)(x)
+    charMods(y)(x) = qq ++ a
   }
 
-  def applyColor(box: Box, color: Color): Unit = {
-    val x = box.origin.x
-    val y = box.origin.y
-    val xy = charMods(y)(x)
+  def underline(box: Box): Unit = {
+    box.getCells().foreach { cell =>
+      modFormat(cell, fansi.Underlined.On)
+    }
+  }
+
+  def applyBgColor(box: Box, color: Color): Unit = {
+    val rgb = color.toRGB
+    val fansiColor = fansi.Back.True(rgb.red, rgb.green, rgb.blue)
+    box.getCells().foreach { cell =>
+      modColor(cell, fansiColor)
+    }
+  }
+
+
+  def applyFgColor(box: Box, color: Color): Unit = {
     val rgb = color.toRGB
     val fansiColor = fansi.Color.True(rgb.red, rgb.green, rgb.blue)
-    charMods(y)(x) = xy ++ fansiColor
+    box.getCells().foreach { cell =>
+      modColor(cell, fansiColor)
+    }
   }
 
   def gradientHorizontal(gridbox: Box): Unit = {
@@ -106,8 +130,8 @@ class AsciiGraphPaper(
     } {
       // g = (g + 3) % 256
       b = (b + 2) % 256
-      val qq = charMods(y)(x)
-      charMods(y)(x) = qq ++ fansi.Back.True(r,g,b)
+      val qq = colorMods(y)(x)
+      colorMods(y)(x) = qq ++ fansi.Back.True(r,g,b)
     }
   }
 
@@ -115,8 +139,9 @@ class AsciiGraphPaper(
     if (useColor) {
       val rws = charBuffer.zipWithIndex.map{ case (charRow, rowNum) =>
         val chs = charRow.zipWithIndex.map{ case (char, colNum) =>
-          val mod = charMods(rowNum)(colNum)
-          mod(char.toString())
+          val clr = colorMods(rowNum)(colNum)
+          val fmt = charMods(rowNum)(colNum)
+          clr(fmt(char.toString()))
         }
         chs.mkString
       }
@@ -127,9 +152,14 @@ class AsciiGraphPaper(
   }
 
   def asMonocolorString(): String = {
-    charBuffer
-      .map(_.mkString)
-      .mkString("\n")
+    val rws = charBuffer.zipWithIndex.map{ case (charRow, rowNum) =>
+      val chs = charRow.zipWithIndex.map{ case (char, colNum) =>
+        val fmt = charMods(rowNum)(colNum)
+        fmt(char.toString())
+      }
+      chs.mkString
+    }
+    rws.mkString("\n")
   }
 
 }

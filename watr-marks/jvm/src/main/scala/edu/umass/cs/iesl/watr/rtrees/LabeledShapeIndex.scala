@@ -131,7 +131,7 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
   }
 
 
-  def indexShape(f: Int@@ShapeID => Shape): Shape = {
+  def indexShape[S <: Shape](f: Int@@ShapeID => S): S = {
     val lshape = f(shapeIDGen.nextId)
     shapeRIndex.add(lshape)
     shapeMap.put(lshape.id.unwrap.toLong, lshape)

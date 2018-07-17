@@ -37,7 +37,7 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
   .jvmSettings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++ Seq(
       Lib.ammoniteOps,
-      "org.scala-js"               %% "scalajs-stubs"          % "0.6.23" % "provided",
+      "org.scala-js"               %% "scalajs-stubs"          % "0.6.24" % "provided",
       "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
       "com.github.davidmoten"       % "rtree"                  % "0.8.6",
       "com.github.davidmoten"       % "flatbuffers-java"       % "1.9.0.1",
@@ -61,7 +61,7 @@ lazy val textworks = (project in file("text-works"))
     Lib.fs2 ++
     Lib.circeJson ++ Seq(
       "co.fs2" %% "fs2-io" % Lib.fs2Version,
-      "org.apache.pdfbox" % "pdfbox" % "2.0.10",
+      "org.apache.pdfbox" % "pdfbox" % "2.0.11",
       Lib.guava,
       "com.vividsolutions" % "jts-core" % "1.14.0",
       Lib.scopt,

@@ -17,6 +17,9 @@ import textboxing.{TextBoxing => TB}, TB._
 import utils.DoOrDieHandlers._
 import utils.Debugging._
 import utils.Maths._
+import utils.SlicingAndDicing._
+import utils.Color
+import utils.EnrichNumerics._
 
 /**
   *
@@ -33,9 +36,7 @@ abstract class TextGraphJvm(
   val shapeIndex: LabeledShapeIndex[GeometricFigure, TextGraphShape.Attr, TextGraphShape]
 ) extends TextGraph {
   import TextGraphShape._
-  // import TextGraph._
 
-  val L = ShapeLabels
 
   def graphHeight(): Int = {
     if (shapeIndex.getAllShapes().nonEmpty) {
@@ -60,14 +61,13 @@ abstract class TextGraphJvm(
     GraphPaper.boxAt(0, 0).setWidth(width).setHeight(height)
   }
 
-
   def appendRow(cells: Seq[GridCell]): Unit = {
     val nextRow = graphHeight()
     for {
       (cell, i) <- cells.zipWithIndex
     } {
       val graphSquare = GraphPaper.cellAt(i, nextRow)
-      val realBounds = shaveMargin(matrixToRealCoords(graphSquare))
+      val realBounds = matrixToRealCoords(graphSquare)
 
       shapeIndex.indexShape{ id =>
         GlyphShape(realBounds, id, Some(cell))
@@ -75,11 +75,10 @@ abstract class TextGraphJvm(
     }
   }
 
-  // def glyphCells(): Seq[GlyphShape] = {
   def glyphCells(): Seq[(GlyphShape, GraphPaper.GridCell)] = {
     for {
       cell <- graphArea().getCells()
-      query = shaveMargin(matrixToRealCoords(cell))
+      query = matrixToRealCoords(cell)
       cellGlyphs = shapeIndex.searchShapes(query).collect{ case g: GlyphShape => g }
       if cellGlyphs.nonEmpty
     } yield {
@@ -87,34 +86,6 @@ abstract class TextGraphJvm(
     }
   }
 
-  def toLabeledSequence(): LabeledSequence.Things[GlyphShape] = {
-    val allLabelTrees = findLabelTrees(graphArea())
-    for {
-      labelTree <- allLabelTrees
-      level <- labelTree.levels
-      labelShape <- level
-    } {
-      labelShape
-
-    }
-    val labeledSequence = for {
-      (glyphShape, glyphCell) <- glyphCells()
-    } yield {
-
-      val attr = LabelTarget.Thing(glyphShape)
-      val labelTreeAtCell = findLabelTrees(glyphCell.toBox())
-      if (labelTreeAtCell.isEmpty) {
-
-      }
-
-      attr
-    }
-    val things = LabeledSequence.Things(labeledSequence)
-
-    // things.addBioLabel(label: Label, begin: Int, len: Int)
-
-    things
-  }
 
   def getMatrixContent(fromRow: Int=0, len: Int=Int.MaxValue): Option[MatrixArea.Rows] = {
     val height = graphHeight()
@@ -126,11 +97,10 @@ abstract class TextGraphJvm(
 
     val rowBoxes = for {
       y <- start until end
-    } yield GraphPaper.boxAt(0, y).extendRight(width-1)
+    } yield GraphPaper.boxAt(0, y).setWidth(width)
 
     val rows = rowBoxes.toList.map{ box =>
-      val realBox = matrixToRealCoords(box)
-      val rowQuery = shaveMargin(realBox)
+      val rowQuery = matrixToRealCoords(box)
       val rowGlyphs = shapeIndex.searchShapes(rowQuery)
         .collect{ case g: GlyphShape => g }
         .sortBy(_.shape.minBounds.left)
@@ -139,9 +109,7 @@ abstract class TextGraphJvm(
         val rowRealBounds = rowGlyphs.map(_.shape).reduce(_ union _)
         val rowMatrixBounds = realToMatrixCoords(rowRealBounds)
 
-        Some(
-          (MatrixArea.Row(rowMatrixBounds, rowGlyphs),
-            rowRealBounds))
+        Some((MatrixArea.Row(rowMatrixBounds, rowGlyphs), rowRealBounds))
 
       } else None
     }
@@ -164,8 +132,7 @@ abstract class TextGraphJvm(
     } yield GraphPaper.boxAt(0, y).setWidth(width)
 
     val rows = rowBoxes.toList.map{ box =>
-      val realBox = matrixToRealCoords(box)
-      val rowQuery = shaveMargin(realBox)
+      val rowQuery = matrixToRealCoords(box)
       shapeIndex.searchShapes(rowQuery)
         .collect{ case g: GlyphShape => g }
         .sortBy(_.shape.minBounds.left)
@@ -175,63 +142,117 @@ abstract class TextGraphJvm(
   }
 
 
-  def addLabel(row: Int, len: Int, label: Label, parent: Label): Option[LabelShape] = {
-    _addLabel(label, Some(parent), row, len)
+  def addLabel(row: Int, len: Int, label: Label, parent: Label): Option[LabeledSeq] = {
+    // _addLabel(label, Some(parent), row, len)
+    ???
   }
 
-  def addLabel(row: Int, len: Int, label: Label): Option[LabelShape] = {
-    _addLabel(label, None, row, len)
+  def addLabel(row: Int, len: Int, label: Label): Option[LabeledSeq] = {
+    // _addLabel(label, None, row, len)
+    ???
   }
 
-  private def _addLabel(label: Label, parent: Option[Label], fromRow: Int, len: Int): Option[LabelShape] = {
 
-    getMatrixContent(fromRow, len).flatMap{ content =>
+  // private def _addLabel(label: Label, parent: Option[Label], fromRow: Int, len: Int): Option[LabeledSeq] = {
 
-      val labelStacks = getLabeledRegionStacks(content.area)
+  //   getMatrixContent(fromRow, len).flatMap{ content =>
 
-      val validUnlabeledTarget = labelStacks.isEmpty && parent.isEmpty
+  //     val labelStacks = getLabeledRegionStacks(content.area)
 
-      val singleOverlappedLabel = labelStacks.length == 1
+  //     val validUnlabeledTarget = labelStacks.isEmpty && parent.isEmpty
 
-      val validLabeledTarget = labelStacks.length == 1 && {
-        parent.exists{ parentLabel =>
-          labelStacks.head.head.hasLabel(parentLabel)
+  //     val singleOverlappedLabel = labelStacks.length == 1
+
+  //     val validLabeledTarget = labelStacks.length == 1 && {
+  //       parent.exists{ parentLabel =>
+  //         labelStacks.head.head.hasLabel(parentLabel)
+  //       }
+  //     }
+
+  //     val realBounds = matrixToRealCoords(content.area)
+
+  //     if (validUnlabeledTarget) {
+  //       val newShape = shapeIndex.indexShape{ id =>
+  //         LabeledSeq(realBounds, id, None).addLabels(label)
+  //       }
+  //       Some(newShape.asInstanceOf[LabeledSeq])
+  //     } else if (singleOverlappedLabel && parent.isDefined) {
+  //       val parentLabel = parent.orDie("")
+  //       val overlappedLabel = labelStacks.head.head
+  //       val meetsLabelConstraint = overlappedLabel.hasLabel(parentLabel)
+  //       val isSubArea = realBounds.isContainedBy(overlappedLabel.bounds)
+
+  //       if (meetsLabelConstraint && isSubArea) {
+
+  //         val newShape = shapeIndex.indexShape{ id =>
+  //           LabeledSeq(realBounds, id, Some(overlappedLabel.id)).addLabels(label)
+  //         }
+
+  //         Some(newShape.asInstanceOf[LabeledSeq])
+  //       } else None
+
+  //     } else None
+  //   }
+
+  // }
+
+  def labelSequence(label: Label, parent: Option[Label], begin: Int, len: Int): Option[LabeledSeq] = {
+    val cellsToLabel = glyphCells().drop(begin).take(len)
+
+    val rowsOfCells = cellsToLabel.groupByPairs {
+      case ((_, graphSquare1), (_, graphSquare2)) =>
+        graphSquare1.y == graphSquare2.y
+    }
+
+    val rowMinBounds = rowsOfCells.map{ row =>
+      GraphPaper.union(row.map(_._2.toBox()))
+    }
+
+    GraphPaper.union(rowMinBounds.flatten).map{ minBounds =>
+      val realBounds = matrixToRealCoords(minBounds)
+
+      // parent label constraints:
+      val newlabelRange = RangeInt(begin, len)
+
+      val labelStacks = getLabeledRegionStacks(minBounds)
+
+      val overlappingLabelStacks = labelStacks.filter{ labelStack =>
+        labelStack.headOption.exists { labeledSeq =>
+          val seqRange = RangeInt(labeledSeq.begin, labeledSeq.len)
+          seqRange.contains(newlabelRange)
         }
       }
 
-      val realBounds = shaveMargin(matrixToRealCoords(content.area))
+      val validUnlabeledTarget = overlappingLabelStacks.isEmpty && parent.isEmpty
 
-      if (validUnlabeledTarget) {
-        val newShape = shapeIndex.indexShape{ id =>
-          LabelShape(realBounds, id, None).addLabels(label)
-        }
-        Some(newShape.asInstanceOf[LabelShape])
-      } else if (singleOverlappedLabel && parent.isDefined) {
-        val parentLabel = parent.orDie("")
-        val overlappedLabel = labelStacks.head.head
-        val meetsLabelConstraint = overlappedLabel.hasLabel(parentLabel)
-        val isSubArea = realBounds.isContainedBy(overlappedLabel.bounds)
+      val rowSpans = rowMinBounds.map{_ match {
+        case Some(box) => (box.origin.x, box.width)
+        case None => (0, 0)
+      }}
 
-        if (meetsLabelConstraint && isSubArea) {
-
-          val newShape = shapeIndex.indexShape{ id =>
-            LabelShape(realBounds, id, Some(overlappedLabel.id)).addLabels(label)
-          }
-
-          Some(newShape.asInstanceOf[LabelShape])
-        } else None
-
-      } else None
+      shapeIndex.indexShape { shapeId =>
+        LabeledSeq(
+          realBounds,
+          shapeId,
+          begin, len,
+          None,
+          Set(label),
+          rowSpans
+        )
+      }
     }
+  }
 
+
+  def queryShapes(box: GraphPaper.Box): Seq[TextGraphShape] = {
+    val query = matrixToRealCoords(box)
+    shapeIndex.searchShapes(query)
   }
 
   val ts = TreeShaper[Int]
 
-  def findLabelTrees(area: GraphPaper.Box): Seq[Tree[LabelShape]] = {
-    val realBounds = shaveMargin(matrixToRealCoords(area))
-    val labelShapes = shapeIndex.searchShapes(realBounds)
-      .collect{ case g: LabelShape => g }
+  def findLabelTrees(area: GraphPaper.Box): Seq[Tree[LabeledSeq]] = {
+    val labelShapes = queryShapes(area).collect{ case g: LabeledSeq => g }
 
     val parentChildPairs = labelShapes.map{ labelShape =>
       val id = labelShape.id.unwrap
@@ -249,7 +270,7 @@ abstract class TextGraphJvm(
     shapeTrees
   }
 
-  def getLabeledRegionStacks(area: GraphPaper.Box): Seq[Seq[LabelShape]] = {
+  def getLabeledRegionStacks(area: GraphPaper.Box): Seq[Seq[LabeledSeq]] = {
 
     val labelTrees = findLabelTrees(area)
 
@@ -299,9 +320,9 @@ object TextGraphJvm {
       .focus.orDie().decodeOrDie[String]()
 
     val shapeIndex = hCursor.downField("shapeIndex").focus.orDie()
-      .decodeOrDie[
-        LabeledShapeIndex[GeometricFigure, TextGraphShape.Attr, TextGraphShape]
-      ]()
+      .decodeOrDie[ LabeledShapeIndex[
+        GeometricFigure, TextGraphShape.Attr, TextGraphShape
+      ] ]()
 
     Right(fromShapeIndex(DocumentID(stableId), shapeIndex))
   }
@@ -361,7 +382,8 @@ object TextGraphJvm {
 
     val height = textGraph.graphHeight()
     val width = textGraph.graphWidth()
-    val graphPaper = new AsciiGraphPaper(width, height, false)
+    println(s"w/h = ${width}/${height }")
+    val graphPaper = new AsciiGraphPaper(width, height, true)
     for {
       (cells, rowNum) <- textGraph.getRows().zipWithIndex
       (cell, colNum) <- cells.zipWithIndex
@@ -369,16 +391,26 @@ object TextGraphJvm {
       val graphSquare = GraphPaper.cellAt(colNum, rowNum)
       graphPaper.drawChar(graphSquare, cell.char)
     }
+
+    textGraph.shapeIndex.getAllShapes()
+      .collect {
+        case shape: TextGraphShape.LabeledSeq =>
+          val bbox = shape.graphBox()
+          println(s"shape: ${shape}  == bbox: ${bbox}")
+          val c = Color(128, 128, 200)
+          graphPaper.applyBgColor(bbox, c)
+
+          bbox.getRows().zip(shape.rowSpans)
+            .foreach{ case (rowBox, (begin, len)) =>
+              println(s"row: ${rowBox}  (${begin} - ${len})")
+              val underlineBox = rowBox.translate(begin, 0)
+                .setWidth(len)
+
+              graphPaper.underline(underlineBox)
+            }
+      }
+
     graphPaper
   }
-
-
-
-}
-
-object ShapeLabels {
-
-  val Cell = Label.auto
-
 
 }

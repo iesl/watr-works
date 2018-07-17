@@ -13,7 +13,6 @@ class LabeledShapeIndexTest extends FlatSpec {
 
 }
 
-
 import geometry._
 import geometry.syntax._
 import TypeTags._

@@ -52,10 +52,13 @@ trait TextGraphConstruction {
     val stablePage = StablePage(stableId, pageNum)
     val pageLines = linesWithLeftPadding(initText)
 
-    val rows = for {
+    for {
       ((lpad, line), linenum)   <- pageLines.zipWithIndex
     } yield {
-      for { (char, ichar) <- line.toList.zipWithIndex } yield {
+      val leadingPad = (0 until lpad).map(_ => TextGraph.InsertCell(' '))
+
+
+      val lineGlyphs = for { (char, ichar) <- line.toList.zipWithIndex } yield {
         if (char == ' ') {
           TextGraph.InsertCell(' ')
         } else {
@@ -71,8 +74,9 @@ trait TextGraphConstruction {
           TextGraph.GlyphCell(char, charAtom)
         }
       }
+
+      leadingPad ++ lineGlyphs
     }
-    rows
 
   }
 
