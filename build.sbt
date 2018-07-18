@@ -37,11 +37,12 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
   .jvmSettings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++ Seq(
       Lib.ammoniteOps,
+      Lib.guava % Optional,
+      "com.lodborg"                 % "interval-tree"          % "1.0.0",
       "org.scala-js"               %% "scalajs-stubs"          % "0.6.24" % "provided",
       "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
       "com.github.davidmoten"       % "rtree"                  % "0.8.6",
       "com.github.davidmoten"       % "flatbuffers-java"       % "1.9.0.1",
-      Lib.guava % Optional,
       "ichi.bench" % "thyme"        % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
     ))
 
@@ -119,27 +120,3 @@ lazy val watrcolorServer = (project in file("watr-color-server"))
   .dependsOn(watrmarksJVM, watrshed)
 
 
-// lazy val micrositeSettings = Seq(
-//   micrositeName                 := "WatrWorks",
-//   micrositeDescription          := "Text Extraction and Annotation Suite",
-//   micrositeAuthor               := "IESL",
-//   micrositeHomepage             := "https://iesl.github.io/watr-works/",
-//   micrositeOrganizationHomepage := "http://www.iesl.cs.umass.edu/",
-//   micrositeDocumentationUrl     := "/watr-works/docs/",
-//   micrositeBaseUrl              := "/watr-works",
-//   micrositeGithubRepo           := "watr-works",
-//   micrositeGithubOwner          := "IESL",
-//   micrositePushSiteWith         := GitHub4s,
-//   micrositeGithubToken          := sys.env.get("GITHUB_MICROSITES_TOKEN"),
-//   includeFilter in Jekyll       := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.md"
-// )
-
-// lazy val watrdocs = (project in file("watr-docs"))
-//   .settings(SensibleProject.settings: _*)
-//   .settings(moduleName := "watrworks-documentation")
-//   .settings(name := "watrworks-documentation")
-//   .settings(micrositeSettings: _*)
-//   .enablePlugins(MicrositesPlugin)
-//   .dependsOn(watrmarksJVM)
-//   .dependsOn(textworks)
-//   .dependsOn(watrshed)
