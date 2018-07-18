@@ -18,9 +18,9 @@ class TextGraphOutputBuilder(textGraph: TextGraph) {
   def getSerialization(): AccumulatingTextGraphCodecs = {
     val codecs = new AccumulatingTextGraphCodecs(textGraph.stableId)
 
-    textGraph.getMatrixContent().foreach{ content =>
-      content
-    }
+    // textGraph.getMatrixContent().foreach{ content =>
+    //   content
+    // }
     // textGraph.rows.zipWithIndex
     //   .foreach{ case (row, rowi) =>
     //     row.serialize(codecs)

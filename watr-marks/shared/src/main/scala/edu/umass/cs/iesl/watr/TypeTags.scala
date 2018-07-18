@@ -24,7 +24,6 @@ sealed trait RelationID
 
 sealed trait PageNum
 
-sealed trait Interval
 sealed trait Offset
 sealed trait Length
 
@@ -127,7 +126,6 @@ trait TypeTags extends TypeTagUtils {
   val RelationID = Tag.of[RelationID]
 
   val PageNum = Tag.of[PageNum]
-  val Interval = Tag.of[Interval]
   val Offset = Tag.of[Offset]
   val Length = Tag.of[Length]
 

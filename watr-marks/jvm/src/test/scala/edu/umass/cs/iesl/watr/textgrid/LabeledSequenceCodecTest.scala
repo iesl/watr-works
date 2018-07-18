@@ -6,6 +6,8 @@ import scalaz.{@@ => _, _}, Scalaz._
 
 import LabeledSequenceCodecs._
 import LabeledSequencePrinting._
+import LabeledSequence.Things
+import LabelTarget.Thing
 
 
 object ArbitraryStuff extends LabeledSequenceThings {
@@ -19,15 +21,15 @@ object ArbitraryStuff extends LabeledSequenceThings {
 
   val genThing = for {
     c <- arbitrary[Char]
-  } yield Thing(c)
+  } yield Thing[Char](c)
 
 
-  def genThings(): Gen[LabeledSequence[Thing]] = for {
+  def genThings(): Gen[LabeledSequence[Thing[Char]]] = for {
     i <- Gen.choose(0, 20)
-    l <- listOf[Thing](genThing)
+    l <- listOf[Thing[Char]](genThing)
   } yield Things(l)
 
-  implicit lazy val arbitraryLabeledSequence: Arbitrary[LabeledSequence[Thing]] = {
+  implicit lazy val arbitraryLabeledSequence: Arbitrary[LabeledSequence[Thing[Char]]] = {
     Arbitrary(genThings())
   }
 
@@ -46,7 +48,7 @@ object ArbitraryStuff extends LabeledSequenceThings {
 object LabeledSequenceCodecChecks extends Properties("LabeledSequenceCodecChecks") with LabeledSequenceThings {
   import ArbitraryStuff._
 
-  property("json <--> LabeledSequence") = Prop.forAll{ (labeledSequence: LabeledSequence[Thing]) =>
+  property("json <--> LabeledSequence") = Prop.forAll{ (labeledSequence: LabeledSequence[Thing[Char]]) =>
     // TODO
     true
   }

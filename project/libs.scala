@@ -23,7 +23,7 @@ trait LibVersions {
 
   val catsV               = "1.1.0"
   val catsEffectV         = "0.10.1"
-  val postgresqlV         = "42.2.2"
+  val postgresqlV         = "42.2.4"
   val freestyleV          = "0.7.0"
   val guavaV              = "23.0"
 }

@@ -7,14 +7,13 @@ import circe.syntax._
 import LabeledSequenceCodecs._
 import LabeledSequencePrinting._
 import org.scalatest._
-
-case class Thing(a: Char) extends LabelTarget
-case class Things(labelTargets: Seq[Thing]) extends LabeledSequence[Thing]
+import LabeledSequence.Things
+import LabelTarget.Thing
 
 trait LabeledSequenceThings {
 
-  def unlabeledThings(len: Int): Things = {
-    Things(('a' to 'z').take(len).map(Thing(_)))
+  def unlabeledThings(len: Int): Things[Char] = {
+    Things(('a' to 'z').take(len).map(Thing[Char](_)))
   }
 
 }

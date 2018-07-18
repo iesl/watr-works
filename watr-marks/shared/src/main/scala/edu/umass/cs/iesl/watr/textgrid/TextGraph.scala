@@ -9,6 +9,7 @@ import geometry.PageComponentImplicits._
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 import utils.GraphPaper
+import utils.Interval, Interval._
 import GraphPaper.CellDimensions
 import utils.ExactFloats._
 
@@ -28,7 +29,7 @@ import circe.generic.auto._
 import circe.generic.semiauto._
 
 
-@JsonCodec
+// @JsonCodec
 sealed trait TextGraphShape extends LabeledShape[GeometricFigure, Option[TextGraph.GridCell]] {
 
   import TextGraph._
@@ -56,46 +57,24 @@ object TextGraphShape {
     def addLabels(l: Label*): GlyphShape = copy(
       labels = this.labels ++ l.toSet
     )
+    val cell = attr.get
+    val char = cell.char
   }
-
-  // @JsonCodec
-  // case class LabeledArea(
-  //   shape: LTBounds,
-  //   id: Int@@ShapeID,
-  //   parent: Option[Int@@ShapeID],
-  //   labels: Set[Label] = Set()
-  // ) extends TextGraphShape {
-  //   def attr: Option[TextGraph.GridCell] = None
-
-  //   def addLabels(l: Label*): LabeledArea = copy(
-  //     labels = this.labels ++ l.toSet
-  //   )
-  // }
 
   case class LabeledSeq(
     shape: LTBounds, // min bounds around all lines in sequence
     id: Int@@ShapeID,
-    begin: Int,
-    len: Int,
+    span: Interval.Ints,
     parent: Option[Int@@ShapeID],
     labels: Set[Label] = Set(),
-    rowSpans: Seq[(Int, Int)] = List()
+    rowSpans: Seq[Interval.Ints] = List()
   ) extends TextGraphShape {
     def attr: Option[TextGraph.GridCell] = None
+
     def addLabels(l: Label*): LabeledSeq = copy(
       labels = this.labels ++ l.toSet
     )
-
-    def span(): (Int, Int) = {
-
-      ???
-    }
-
   }
-
-  // implicit val ShowLabeledArea: Show[LabeledArea] = Show.shows[LabeledArea]{ shape =>
-  //   s"<shape#${shape.id}>"
-  // }
 
 }
 
@@ -108,12 +87,19 @@ object MatrixArea {
   case class Row(
     area: GraphPaper.Box,
     glyphs: Seq[TextGraphShape.GlyphShape]
-  ) extends MatrixArea
+  ) extends MatrixArea {
+    def text(): String = glyphs.map(_.char).mkString
+  }
 
   case class Rows(
     area: GraphPaper.Box,
     rows: Seq[Row]
-  ) extends MatrixArea
+  ) extends MatrixArea {
+    def lines(): Seq[String] = {
+      rows.map(_.text())
+    }
+
+  }
 
 }
 
@@ -126,8 +112,8 @@ trait TextGraph { self =>
   def stableId: String@@DocumentID
 
   def toText(): String = {
-    getRows().map{ row =>
-      row.map(_.char).mkString
+    getRows().map{ rows =>
+      rows.rows.map(_.glyphs.map(_.char)).mkString
     }.mkString("\n")
   }
 
@@ -149,9 +135,10 @@ trait TextGraph { self =>
   }
 
   def appendRow(row: Seq[GridCell]): Unit
-  def getRows(): Seq[Seq[GridCell]]
 
-  def getMatrixContent(fromRow: Int=0, len: Int=Int.MaxValue): Option[MatrixArea.Rows]
+  def clipToInterval(begin: Int, len: Int): Option[MatrixArea.Rows]
+  def clipToRows(fromRow: Int=0, len: Int=Int.MaxValue): Option[MatrixArea.Rows]
+  def getRows(): Option[MatrixArea.Rows]
 
   def addLabel(row: Int, len: Int, label: Label, parent: Label): Option[LabeledSeq]
 

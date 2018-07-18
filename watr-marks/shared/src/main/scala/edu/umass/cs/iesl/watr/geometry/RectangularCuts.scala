@@ -2,6 +2,8 @@ package edu.umass.cs.iesl.watr
 package geometry
 
 import utils.ExactFloats._
+import utils.Interval
+import utils.Interval._
 import utils.{RelativeDirection => Dir}
 import TypeTags._
 import utils.EnrichNumerics._
@@ -185,7 +187,7 @@ trait RectangularCuts extends GeometricOps {
 
     def leftBaseAngleType(tolerance: Double = defaultAngleTolerance): AngleType = {
       val lla = leftBaseAngle()
-      val deg90 = DoubleInterval(pi2-tolerance, tolerance*2)
+      val deg90 = Interval.Doubles(pi2-tolerance, tolerance*2)
 
       if (lla.withinRange(deg90)) AngleType.Right
       else if (lla < pi2) AngleType.Acute
@@ -195,7 +197,7 @@ trait RectangularCuts extends GeometricOps {
 
     def rightBaseAngleType(tolerance: Double = defaultAngleTolerance): AngleType = {
       val lra = rightBaseAngle()
-      val deg90 = DoubleInterval(pi2-tolerance, tolerance*2)
+      val deg90 = Interval.Doubles(pi2-tolerance, tolerance*2)
 
       if (lra.withinRange(deg90)) AngleType.Right
       else if (lra < pi2) AngleType.Acute

@@ -17,15 +17,6 @@ object ExactFloats {
     val epsilon = FloatRep(1)
   }
 
-  type FloatExactInterval = (FloatExact, FloatExact)@@Interval
-
-
-  implicit class RicherFloatExactInterval(val theRange: FloatExactInterval) extends AnyVal {
-    def min: FloatExact = theRange.unwrap._1
-    def max: FloatExact = theRange.unwrap._1+theRange.unwrap._2
-    def len: FloatExact = theRange.unwrap._2
-  }
-
   def max(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = FloatRep(math.max(d1.unwrap, d2.unwrap))
   def min(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = FloatRep(math.min(d1.unwrap, d2.unwrap))
 
@@ -98,13 +89,14 @@ object ExactFloats {
       else 1
     }
 
+    import Interval._
 
-    def plusOrMinus(i: Double@@Percent): FloatExactInterval ={
+    def plusOrMinus(i: Double@@Percent): Interval.FloatExacts ={
       val half = self * i.unwrap
-      Interval((self-half, self+half))
+      Interval.FloatExacts(self-half, self+half)
     }
 
-    def withinRange(r: FloatExactInterval): Boolean = {
+    def withinRange(r: Interval.FloatExacts): Boolean = {
       r.min <= self && self <= r.max
     }
   }

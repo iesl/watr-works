@@ -56,9 +56,6 @@ object LabeledSequencePrinting {
     ???
   }
 
-
-
-
   def formatBioLabelSequence[A <: LabelTarget](labeledSequence: LabeledSequence[A], oriention: Orientation): TB.Box = {
     val zero1 = List[Label]()
     val zero2 = List[TB.Box]()

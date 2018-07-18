@@ -19,6 +19,8 @@ import utils.Debugging._
 import utils.Maths._
 import utils.SlicingAndDicing._
 import utils.Color
+import utils.Interval
+import Interval._
 import utils.EnrichNumerics._
 
 /**
@@ -86,11 +88,28 @@ abstract class TextGraphJvm(
     }
   }
 
+  def clipToInterval(begin: Int, len: Int): Option[MatrixArea.Rows] = {
+    val clippedCells = glyphCells().drop(begin).take(len)
 
-  def getMatrixContent(fromRow: Int=0, len: Int=Int.MaxValue): Option[MatrixArea.Rows] = {
+    val rowsOfCells = clippedCells.groupByPairs {
+      case ((_, graphSquare1), (_, graphSquare2)) =>
+        graphSquare1.y == graphSquare2.y
+    }
+
+    val matrixRows = rowsOfCells.map{ cellRow =>
+      val rowBox = GraphPaper.union(cellRow.map(_._2.toBox())).orDie("")
+      val rowGlyphs = cellRow.map(_._1)
+      MatrixArea.Row(rowBox, rowGlyphs)
+    }
+
+    GraphPaper.union(matrixRows.map(_.area)).map{ minBounds =>
+      MatrixArea.Rows(minBounds, matrixRows)
+    }
+  }
+
+  def clipToRows(fromRow: Int, len: Int): Option[MatrixArea.Rows] = {
     val height = graphHeight()
     val width = graphWidth()
-
 
     val start = clamp(0, height)(fromRow)
     val end = clamp(start, height)(start+len)
@@ -121,24 +140,12 @@ abstract class TextGraphJvm(
       val rowsMatrixBounds = realToMatrixCoords(rowsRealBounds)
       Some(MatrixArea.Rows(rowsMatrixBounds, nonEmptyRows.map(_._1)))
     } else None
+
   }
 
-  def getRows(): Seq[Seq[GridCell]] = {
-    val height = graphHeight()
-    val width = graphWidth()
 
-    val rowBoxes = for {
-      y <- 0 until height
-    } yield GraphPaper.boxAt(0, y).setWidth(width)
-
-    val rows = rowBoxes.toList.map{ box =>
-      val rowQuery = matrixToRealCoords(box)
-      shapeIndex.searchShapes(rowQuery)
-        .collect{ case g: GlyphShape => g }
-        .sortBy(_.shape.minBounds.left)
-        .map(_.attr.get)
-    }
-    rows
+  def getRows(): Option[MatrixArea.Rows] = {
+    clipToRows(0, Int.MaxValue)
   }
 
 
@@ -197,6 +204,17 @@ abstract class TextGraphJvm(
   // }
 
   def labelSequence(label: Label, parent: Option[Label], begin: Int, len: Int): Option[LabeledSeq] = {
+    // val clippedArea = clipToInterval(begin, len)
+    // clippedArea.map{ rows =>
+    //   val rowSpans = rows.rows.map{_.area match {
+    //     case Some(box) => Interval.Ints(box.origin.x, box.width)
+    //     case None => Interval.Ints(0, 0)
+    //   }}
+    //   rows.rows.map{ row =>
+    //   }
+    // }
+
+
     val cellsToLabel = glyphCells().drop(begin).take(len)
 
     val rowsOfCells = cellsToLabel.groupByPairs {
@@ -212,29 +230,28 @@ abstract class TextGraphJvm(
       val realBounds = matrixToRealCoords(minBounds)
 
       // parent label constraints:
-      val newlabelRange = RangeInt(begin, len)
+      val newlabelRange = Interval.Ints(begin, len)
 
       val labelStacks = getLabeledRegionStacks(minBounds)
 
       val overlappingLabelStacks = labelStacks.filter{ labelStack =>
         labelStack.headOption.exists { labeledSeq =>
-          val seqRange = RangeInt(labeledSeq.begin, labeledSeq.len)
-          seqRange.contains(newlabelRange)
+          labeledSeq.span.contains(newlabelRange)
         }
       }
 
       val validUnlabeledTarget = overlappingLabelStacks.isEmpty && parent.isEmpty
 
       val rowSpans = rowMinBounds.map{_ match {
-        case Some(box) => (box.origin.x, box.width)
-        case None => (0, 0)
+        case Some(box) => Interval.Ints(box.origin.x, box.width)
+        case None => Interval.Ints(0, 0)
       }}
 
       shapeIndex.indexShape { shapeId =>
         LabeledSeq(
           realBounds,
           shapeId,
-          begin, len,
+          Interval.Ints(begin, len),
           None,
           Set(label),
           rowSpans
@@ -270,6 +287,13 @@ abstract class TextGraphJvm(
     shapeTrees
   }
 
+  def findLabelTrees0(begin: Int, len: Int): Seq[Tree[LabeledSeq]] = {
+
+
+
+    ???
+  }
+
   def getLabeledRegionStacks(area: GraphPaper.Box): Seq[Seq[LabeledSeq]] = {
 
     val labelTrees = findLabelTrees(area)
@@ -300,9 +324,11 @@ object TextGraphJvm {
 
 
   implicit def EncodeTextGraphJvm: Encoder[TextGraphJvm] = Encoder.instance { textGraphJvm =>
-    val textRows = textGraphJvm.getRows().map{ row =>
-      val glyphs = row.map { _.asJson }
-      val lines = row.map(_.char).mkString.asJson
+    val textRows = textGraphJvm.getRows().map{ rows =>
+
+      val glyphs = rows.rows.map { row => row.glyphs.asJson }
+      // val glyphs = row.map { _.asJson }
+      val lines = rows.lines().mkString.asJson
       (lines, glyphs)
     }
 
@@ -319,12 +345,13 @@ object TextGraphJvm {
     val stableId = hCursor.downField("stableId")
       .focus.orDie().decodeOrDie[String]()
 
-    val shapeIndex = hCursor.downField("shapeIndex").focus.orDie()
-      .decodeOrDie[ LabeledShapeIndex[
-        GeometricFigure, TextGraphShape.Attr, TextGraphShape
-      ] ]()
+    // val shapeIndex = hCursor.downField("shapeIndex").focus.orDie()
+    //   .decodeOrDie[ LabeledShapeIndex[
+    //     GeometricFigure, TextGraphShape.Attr, TextGraphShape
+    //   ] ]()
 
-    Right(fromShapeIndex(DocumentID(stableId), shapeIndex))
+    // Right(fromShapeIndex(DocumentID(stableId), shapeIndex))
+    ???
   }
 
 
@@ -382,27 +409,25 @@ object TextGraphJvm {
 
     val height = textGraph.graphHeight()
     val width = textGraph.graphWidth()
-    println(s"w/h = ${width}/${height }")
     val graphPaper = new AsciiGraphPaper(width, height, true)
     for {
-      (cells, rowNum) <- textGraph.getRows().zipWithIndex
-      (cell, colNum) <- cells.zipWithIndex
+      rows <- textGraph.getRows()
+      (row, rowNum) <- rows.rows.zipWithIndex
+      (glyphShape, colNum) <- row.glyphs.zipWithIndex
     } {
       val graphSquare = GraphPaper.cellAt(colNum, rowNum)
-      graphPaper.drawChar(graphSquare, cell.char)
+      graphPaper.drawChar(graphSquare, glyphShape.char)
     }
 
     textGraph.shapeIndex.getAllShapes()
       .collect {
         case shape: TextGraphShape.LabeledSeq =>
           val bbox = shape.graphBox()
-          println(s"shape: ${shape}  == bbox: ${bbox}")
-          val c = Color(128, 128, 200)
+          val c = Color(32, 0, 255)
           graphPaper.applyBgColor(bbox, c)
 
           bbox.getRows().zip(shape.rowSpans)
-            .foreach{ case (rowBox, (begin, len)) =>
-              println(s"row: ${rowBox}  (${begin} - ${len})")
+            .foreach{ case (rowBox, Interval.Ints(begin, len)) =>
               val underlineBox = rowBox.translate(begin, 0)
                 .setWidth(len)
 

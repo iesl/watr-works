@@ -136,7 +136,6 @@ class TextGraphTests extends TextGraphSpec {
   //     println(s"Added (${i}): ${l1}")
   //   }
 
-
   //   val labelTrees = textGraph.findLabelTrees(textGraph.graphArea())
   //   labelTrees.foreach { tree =>
   //     println(s"Tree==== ")
