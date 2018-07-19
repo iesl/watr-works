@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textgrid
+package textgraph
 
 import TypeTags._
 import textboxing.{TextBoxing => TB}, TB._

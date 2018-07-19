@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textgrid
+package annots
 
 import geometry._
 import TypeTags._

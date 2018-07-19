@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textgrid
+package annots
 
 import scalaz.{@@ => _, _} // , Scalaz._
 import watrmarks._

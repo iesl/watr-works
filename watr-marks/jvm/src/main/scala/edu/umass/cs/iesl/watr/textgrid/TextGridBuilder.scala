@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textgrid
+package textgrid 
 
 import TypeTags._
 import corpora._

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textgrid
+package annots 
 
 import _root_.io.circe
 import circe.syntax._

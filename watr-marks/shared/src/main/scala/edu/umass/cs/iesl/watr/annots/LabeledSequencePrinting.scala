@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textgrid
+package annots
 
 import scala.collection.mutable
 import watrmarks._
