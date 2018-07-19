@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textgrid
+package textgraph
 
 import geometry._
 import geometry.syntax._

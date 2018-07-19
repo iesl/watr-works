@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textgrid
+package utils.intervals
 
 import java.util.Comparator
 
@@ -19,12 +19,9 @@ import java.util.Comparator
  limitations under the License.
  */
 
-
-// TODO this is clearly more general than summingbird, and should be extended to be a ring (add union, etc...)
-
 /**
- * Represents a single interval on a T with an Ordering
- */
+  * Represents a single interval on a T with an Ordering
+  */
 sealed trait Interval[T] extends java.io.Serializable {
   def contains(t: T)(implicit ord: Ordering[T]): Boolean
 
@@ -33,56 +30,57 @@ sealed trait Interval[T] extends java.io.Serializable {
   final def &&(that: Interval[T])(implicit ord: Ordering[T]) = intersect(that)
 
   /**
-   * Map the Interval with a non-decreasing function.
-   * If you use a non-monotonic function (like x^2)
-   * then the result is meaningless.
-   * TODO: It might be good to have types for these properties in algebird.
-   */
+    * Map the Interval with a non-decreasing function.
+    * If you use a non-monotonic function (like x^2)
+    * then the result is meaningless.
+    * TODO: It might be good to have types for these properties in algebird.
+    */
   def mapNonDecreasing[U](fn: T => U): Interval[U]
 
 
 
-	/**
-	 * A {@link Comparator} that only considers the start points of the intervals. It can not and must
-	 * not be used as a standalone {@link Comparator}. It only serves to create a more readable and
-	 * modular code.
-	 */
-	def compareStarts(other: Interval[T]): Int = {
-		if (start == null && other.start == null)
-			 0;
-		else if (start == null)
-			 -1;
-		else if (other.start == null)
-			 1;
+  /**
+    * A {@link Comparator} that only considers the start points of the intervals. It can not and must
+    * not be used as a standalone {@link Comparator}. It only serves to create a more readable and
+    * modular code.
+    *  src:lordberg
+    */
+  def compareStarts(other: Interval[T]): Int = {
+    if (start == null && other.start == null)
+      0;
+    else if (start == null)
+      -1;
+    else if (other.start == null)
+      1;
     else {
 
-		val compare = start.compareTo(other.start);
-		if (compare != 0) compare;
-		  else if (isStartInclusive ^ other.isStartInclusive)
-			 isStartInclusive ? -1 : 1;
-		else 0;
+      val compare = start.compareTo(other.start);
+      if (compare != 0) compare;
+      else if (isStartInclusive ^ other.isStartInclusive)
+        isStartInclusive ? -1 : 1;
+      else 0;
     }
-	}
+  }
 
-	// /**
-	//  * A {@link Comparator} that only considers the end points of the intervals. It can not and must
-	//  * not be used as a standalone {@link Comparator}. It only serves to create a more readable and
-	//  * modular code.
-	//  */
-	// private int compareEnds(Interval<T> other){
-	// 	if (end == null && other.end == null)
-	// 		return 0;
-	// 	if (end == null)
-	// 		return 1;
-	// 	if (other.end == null)
-	// 		return -1;
-	// 	int compare = end.compareTo(other.end);
-	// 	if (compare != 0)
-	// 		return compare;
-	// 	if (isEndInclusive ^ other.isEndInclusive)
-	// 		return isEndInclusive ? 1 : -1;
-	// 	return 0;
-	// }
+  // /**
+  //  * A {@link Comparator} that only considers the end points of the intervals. It can not and must
+  //  * not be used as a standalone {@link Comparator}. It only serves to create a more readable and
+  //  * modular code.
+  //  */
+  // private int compareEnds(Interval<T> other){
+  // 	if (end == null && other.end == null)
+  // 		return 0;
+  // 	if (end == null)
+  // 		return 1;
+  // 	if (other.end == null)
+  // 		return -1;
+  // 	int compare = end.compareTo(other.end);
+  // 	if (compare != 0)
+  // 		return compare;
+  // 	if (isEndInclusive ^ other.isEndInclusive)
+  // 		return isEndInclusive ? 1 : -1;
+  // 	return 0;
+  // }
 
 
 }
@@ -102,60 +100,60 @@ case class Empty[T]() extends Interval[T] {
 }
 
 object Interval extends java.io.Serializable {
-	/**
-	 * A comparator that can be used as a parameter for sorting functions. The start comparator sorts the intervals
-	 * in <em>ascending</em> order by placing the intervals with a smaller start point before intervals with greater
-	 * start points. This corresponds to a line sweep from left to right.
-	 * <p>
-	 * Intervals with start point null (negative infinity) are considered smaller than all other intervals.
-	 * If two intervals have the same start point, the closed start point is considered smaller than the open one.
-	 * For example, [0, 2) is considered smaller than (0, 2).
-	 * </p>
-	 * <p>
-	 * To ensure that this comparator can also be used in sets it considers the end points of the intervals, if the
-	 * start points are the same. Otherwise the set will not be able to handle two different intervals, sharing
-	 * the same starting point, and omit one of the intervals.
-	 * </p>
-	 * <p>
-	 * Since this is a static method of a generic class, it involves unchecked calls to class methods. It is left to
-	 * ths user to ensure that she compares intervals from the same class, otherwise an exception might be thrown.
-	 * </p>
-	 */
-	 def sweepLeftToRight[T]: Comparator[Interval[T]] = new Comparator[Interval[T]]() {
+  /**
+    * A comparator that can be used as a parameter for sorting functions. The start comparator sorts the intervals
+    * in <em>ascending</em> order by placing the intervals with a smaller start point before intervals with greater
+    * start points. This corresponds to a line sweep from left to right.
+    * <p>
+    * Intervals with start point null (negative infinity) are considered smaller than all other intervals.
+    * If two intervals have the same start point, the closed start point is considered smaller than the open one.
+    * For example, [0, 2) is considered smaller than (0, 2).
+    * </p>
+    * <p>
+    * To ensure that this comparator can also be used in sets it considers the end points of the intervals, if the
+    * start points are the same. Otherwise the set will not be able to handle two different intervals, sharing
+    * the same starting point, and omit one of the intervals.
+    * </p>
+    * <p>
+    * Since this is a static method of a generic class, it involves unchecked calls to class methods. It is left to
+    * ths user to ensure that she compares intervals from the same class, otherwise an exception might be thrown.
+    * </p>
+    */
+  def sweepLeftToRight[T]: Comparator[Interval[T]] = new Comparator[Interval[T]]() {
 
-		def compare(a: Interval[T], b: Interval[T]): Int = {
-			val compare = a.compareStarts(b);
-			if (compare != 0)
-				return compare;
-			compare = a.compareEnds(b);
-			if (compare != 0)
-				return compare;
-			return a.compareSpecialization(b);
-		}
-	}
+    def compare(a: Interval[T], b: Interval[T]): Int = {
+      val compare = a.compareStarts(b);
+      if (compare != 0)
+        return compare;
+      compare = a.compareEnds(b);
+      if (compare != 0)
+        return compare;
+      return a.compareSpecialization(b);
+    }
+  }
 
   /**
-   * Class that only exists so that [[leftClosedRightOpen]] and
-   * [[leftOpenRightClosed]] can retain the type information of the
-   * returned interval. The compiler doesn't know anything about
-   * ordering, so without [[MaybeEmpty]] the only valid return type
-   * is [[Interval[T]]].
-   */
+    * Class that only exists so that [[leftClosedRightOpen]] and
+    * [[leftOpenRightClosed]] can retain the type information of the
+    * returned interval. The compiler doesn't know anything about
+    * ordering, so without [[MaybeEmpty]] the only valid return type
+    * is [[Interval[T]]].
+    */
   sealed abstract class MaybeEmpty[T, NonEmpty[t] <: Interval[t]] {
     def isEmpty: Boolean
   }
   object MaybeEmpty {
 
     /**
-     * Represents an empty interval.
-     */
+      * Represents an empty interval.
+      */
     case class SoEmpty[T, NonEmpty[t] <: Interval[t]]() extends MaybeEmpty[T, NonEmpty] {
       override def isEmpty = true
     }
 
     /**
-     * Represents a non-empty interval.
-     */
+      * Represents a non-empty interval.
+      */
     case class NotSoEmpty[T, NonEmpty[t] <: Interval[t]](get: NonEmpty[T]) extends MaybeEmpty[T, NonEmpty] {
       override def isEmpty = false
     }
@@ -198,10 +196,10 @@ object Interval extends java.io.Serializable {
     else MaybeEmpty.SoEmpty[T, ExLowExUp]()
 
   /**
-   * This is here for binary compatibility reasons. These methods should
-   * be moved to Interval, which should also be an abstract class for
-   * better binary compatibility at the next incompatible change
-   */
+    * This is here for binary compatibility reasons. These methods should
+    * be moved to Interval, which should also be an abstract class for
+    * better binary compatibility at the next incompatible change
+    */
   implicit final class IntervalMethods[T](val intr: Interval[T]) extends AnyVal {
     def isEmpty(implicit succ: Successible[T], pred: Predecessible[T]): Boolean = intr match {
       case Empty()    => true
@@ -223,11 +221,11 @@ object Interval extends java.io.Serializable {
     }
 
     /**
-     * If this returns Some(t), then intr.contains(t) and there
-     * is no s less than t such that intr.contains(s)
-     *
-     * if this returns None, it may be Empty, Upper or Universe
-     */
+      * If this returns Some(t), then intr.contains(t) and there
+      * is no s less than t such that intr.contains(s)
+      *
+      * if this returns None, it may be Empty, Upper or Universe
+      */
     def boundedLeast(implicit succ: Successible[T]): Option[T] = intr match {
       case Empty()                => None
       case Universe()             => None
@@ -237,11 +235,11 @@ object Interval extends java.io.Serializable {
     }
 
     /**
-     * If this returns Some(t), then intr.contains(t) and there
-     * is no s greater than t such that intr.contains(s)
-     *
-     * if this returns None, it may be Empty, Lower, or Universe
-     */
+      * If this returns Some(t), then intr.contains(t) and there
+      * is no s greater than t such that intr.contains(s)
+      *
+      * if this returns None, it may be Empty, Lower, or Universe
+      */
     def boundedGreatest(implicit pred: Predecessible[T]): Option[T] =
       intr match {
         case Empty()                => None
@@ -257,26 +255,26 @@ object Interval extends java.io.Serializable {
 sealed trait Lower[T] extends Interval[T] {
 
   /**
-   * This may give a false positive (but should try not to).
-   * Note the case of (0,1) for the integers. If they were doubles,
-   * this would intersect, but since there are no members of the
-   * set Int that are bigger than 0 and less than 1, they don't really
-   * intersect. So, ordering is not enough here. You need a stronger
-   * notion, which we don't have a typeclass for.
-   */
+    * This may give a false positive (but should try not to).
+    * Note the case of (0,1) for the integers. If they were doubles,
+    * this would intersect, but since there are no members of the
+    * set Int that are bigger than 0 and less than 1, they don't really
+    * intersect. So, ordering is not enough here. You need a stronger
+    * notion, which we don't have a typeclass for.
+    */
   def intersects(u: Upper[T])(implicit ord: Ordering[T]): Boolean
 
   /**
-   * The smallest value that is contained here
-   * This is an Option, because of cases like ExclusiveLower(Int.MaxValue)
-   * which are pathological and equivalent to Empty
-   */
+    * The smallest value that is contained here
+    * This is an Option, because of cases like ExclusiveLower(Int.MaxValue)
+    * which are pathological and equivalent to Empty
+    */
   def least(implicit s: Successible[T]): Option[T]
   def strictLowerBound(implicit p: Predecessible[T]): Option[T]
 
   /**
-   * Iterates all the items in this Lower[T] from lowest to highest
-   */
+    * Iterates all the items in this Lower[T] from lowest to highest
+    */
   def toIterable(implicit s: Successible[T]): Iterable[T] =
     least match {
       case Some(l) => s.iterateNext(l)
@@ -286,17 +284,17 @@ sealed trait Lower[T] extends Interval[T] {
 sealed trait Upper[T] extends Interval[T] {
 
   /**
-   * The smallest value that is contained here
-   * This is an Option, because of cases like ExclusiveUpper(Int.MinValue),
-   * which are pathological and equivalent to Empty
-   */
+    * The smallest value that is contained here
+    * This is an Option, because of cases like ExclusiveUpper(Int.MinValue),
+    * which are pathological and equivalent to Empty
+    */
   def greatest(implicit p: Predecessible[T]): Option[T]
   // The smallest value that is not present
   def strictUpperBound(implicit s: Successible[T]): Option[T]
 
   /**
-   * Iterates all the items in this Upper[T] from highest to lowest
-   */
+    * Iterates all the items in this Upper[T] from highest to lowest
+    */
   def toIterable(implicit p: Predecessible[T]): Iterable[T] =
     greatest match {
       case Some(g) => p.iteratePrev(g)
@@ -426,9 +424,9 @@ case class Intersection[L[t] <: Lower[t], U[t] <: Upper[t], T](lower: L[T], uppe
     lower.least.filter(upper.contains(_)(s.ordering))
 
   /**
-   * Goes from lowest to highest for all items
-   * that are contained in this Intersection
-   */
+    * Goes from lowest to highest for all items
+    * that are contained in this Intersection
+    */
   def leastToGreatest(implicit s: Successible[T]): Iterable[T] = {
     val self = this
     implicit val ord: Ordering[T] = s.ordering
@@ -443,9 +441,9 @@ case class Intersection[L[t] <: Lower[t], U[t] <: Upper[t], T](lower: L[T], uppe
     upper.greatest.filter(lower.contains(_)(p.ordering))
 
   /**
-   * Goes from highest to lowest for all items
-   * that are contained in this Intersection
-   */
+    * Goes from highest to lowest for all items
+    * that are contained in this Intersection
+    */
   def greatestToLeast(implicit p: Predecessible[T]): Iterable[T] = {
     val self = this
     implicit val ord: Ordering[T] = p.ordering
@@ -457,17 +455,17 @@ case class Intersection[L[t] <: Lower[t], U[t] <: Upper[t], T](lower: L[T], uppe
   }
 
   /**
-   * Some intervals can actually be synonyms for empty:
-   * (0,0) for instance, contains nothing. This cannot be normalized to
-   * [a, b) form, thus we return an option
-   * Also, there are cases like [Int.MinValue, Int.MaxValue] that cannot
-   * are actually equivalent to Universe.
-   * The bottom line: if this returns None, it just means you can't express
-   * it this way, it does not mean it is empty or universe, etc... (there
-   * are other cases).
-   */
+    * Some intervals can actually be synonyms for empty:
+    * (0,0) for instance, contains nothing. This cannot be normalized to
+    * [a, b) form, thus we return an option
+    * Also, there are cases like [Int.MinValue, Int.MaxValue] that cannot
+    * are actually equivalent to Universe.
+    * The bottom line: if this returns None, it just means you can't express
+    * it this way, it does not mean it is empty or universe, etc... (there
+    * are other cases).
+    */
   def toLeftClosedRightOpen(
-      implicit s: Successible[T]): Option[Intersection[InclusiveLower, ExclusiveUpper, T]] =
+    implicit s: Successible[T]): Option[Intersection[InclusiveLower, ExclusiveUpper, T]] =
     for {
       l <- lower.least
       g <- upper.strictUpperBound if s.ordering.lt(l, g)
@@ -476,14 +474,14 @@ case class Intersection[L[t] <: Lower[t], U[t] <: Upper[t], T](lower: L[T], uppe
 
 
 /**
- * This is a typeclass to represent things which increase. Note that it is important
- * that a value after being incremented is always larger than it was before. Note
- * that next returns Option because this class comes with the notion of the "greatest"
- * key, which is None. Ints, for example, will cycle if next(java.lang.Integer.MAX_VALUE)
- * is called, therefore we need a notion of what happens when we hit the bounds at
- * which our ordering is violating. This is also useful for closed sets which have a fixed
- * progression.
- */
+  * This is a typeclass to represent things which increase. Note that it is important
+  * that a value after being incremented is always larger than it was before. Note
+  * that next returns Option because this class comes with the notion of the "greatest"
+  * key, which is None. Ints, for example, will cycle if next(java.lang.Integer.MAX_VALUE)
+  * is called, therefore we need a notion of what happens when we hit the bounds at
+  * which our ordering is violating. This is also useful for closed sets which have a fixed
+  * progression.
+  */
 trait Successible[T] extends Serializable {
   def next(old: T): Option[T]
   def next(old: Option[T]): Option[T] = old.flatMap(next)
@@ -502,11 +500,11 @@ trait Successible[T] extends Serializable {
   }
 
   /**
-   * The law is:
-   * {{{
-   * next(t).map(ordering.lt(t, _)).getOrElse(true)
-   * }}}
-   */
+    * The law is:
+    * {{{
+    * next(t).map(ordering.lt(t, _)).getOrElse(true)
+    * }}}
+    */
   def ordering: Ordering[T]
 
   @deprecated("use ordering instead", since = "0.13.0")
@@ -516,9 +514,9 @@ trait Successible[T] extends Serializable {
 object Successible {
 
   /**
-   * This makes it easy to construct from a function when T has an ordering, which is common
-   * Note, your function must respect the ordering
-   */
+    * This makes it easy to construct from a function when T has an ordering, which is common
+    * Note, your function must respect the ordering
+    */
   def fromNextOrd[T](nextFn: T => Option[T])(implicit ord: Ordering[T]): Successible[T] = new Successible[T] {
     def next(t: T) = nextFn(t)
     def ordering = ord
@@ -534,9 +532,9 @@ object Successible {
     new IntegralSuccessible[N]
 
   /**
-   * The difference between this and the default ordering on Option[T] is that it treats None
-   * as the max value, instead of the minimum value.
-   */
+    * The difference between this and the default ordering on Option[T] is that it treats None
+    * as the max value, instead of the minimum value.
+    */
   def optionOrdering[T](implicit ord: Ordering[T]): Ordering[Option[T]] =
     new Ordering[Option[T]] {
       def compare(left: Option[T], right: Option[T]) =
@@ -571,11 +569,11 @@ class IntegralSuccessible[T: Integral] extends Successible[T] {
 
 
 /**
- * This is a typeclass to represent things which are countable down. Note that it is important
- * that a value prev(t) is always less than t. Note
- * that prev returns Option because this class comes with the notion that some items may reach a minimum
- * key, which is None.
- */
+  * This is a typeclass to represent things which are countable down. Note that it is important
+  * that a value prev(t) is always less than t. Note
+  * that prev returns Option because this class comes with the notion that some items may reach a minimum
+  * key, which is None.
+  */
 trait Predecessible[T] extends java.io.Serializable {
   def prev(old: T): Option[T]
   def prev(old: Option[T]): Option[T] = old.flatMap(prev)
@@ -594,12 +592,12 @@ trait Predecessible[T] extends java.io.Serializable {
   }
 
   /**
-   * The law is:
-   *
-   * {{{
-   * prev(t).map(ordering.lt(_, t)).getOrElse(true)
-   * }}}
-   */
+    * The law is:
+    *
+    * {{{
+    * prev(t).map(ordering.lt(_, t)).getOrElse(true)
+    * }}}
+    */
   def ordering: Ordering[T]
 
   @deprecated("use ordering instead", since = "0.13.0")
@@ -609,9 +607,9 @@ trait Predecessible[T] extends java.io.Serializable {
 object Predecessible extends java.io.Serializable {
 
   /**
-   * This makes it easy to construct from a function when T has an ordering, which is common
-   * Note, your function must respect the ordering
-   */
+    * This makes it easy to construct from a function when T has an ordering, which is common
+    * Note, your function must respect the ordering
+    */
   def fromPrevOrd[T](prevFn: T => Option[T])(implicit ord: Ordering[T]): Predecessible[T] =
     new Predecessible[T] {
       def prev(t: T) = prevFn(t)

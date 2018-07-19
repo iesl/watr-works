@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textgrid
+package utils.intervals
 
 import java.util.{
   NavigableSet,
