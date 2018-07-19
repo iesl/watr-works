@@ -34,11 +34,6 @@ object LabelTreeNode {
 object LabeledSequenceTreeTransforms {
 
   // def gridCellsToLabelTree(gridCells: Seq[TextGrid.GridCell]): Tree[LabelTreeNode] = {
-  //   textGridToLabelTree(
-  //     TextGrid.fromCells(DocumentID(""), gridCells)
-  //   )
-  // }
-
   def labeledSequenceToLabelTree[A <: LabelTarget](labeledSequence: LabeledSequence[A]): Tree[LabelTreeNode[A]] = {
     val init = Tree.Node[LabelTreeNode[A]](LabelTreeNode.RootNode, Stream.empty)
     var currLoc = init.loc
