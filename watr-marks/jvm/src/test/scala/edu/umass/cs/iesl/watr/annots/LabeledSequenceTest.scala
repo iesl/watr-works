@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package annots 
+package annots
 
 import _root_.io.circe
 import circe.syntax._
@@ -10,13 +10,6 @@ import org.scalatest._
 import LabeledSequence.Things
 import LabelTarget.Thing
 
-trait LabeledSequenceThings {
-
-  def unlabeledThings(len: Int): Things[Char] = {
-    Things(('a' to 'z').take(len).map(Thing[Char](_)))
-  }
-
-}
 
 trait LabeledSequenceTestBasics
     extends FreeSpec

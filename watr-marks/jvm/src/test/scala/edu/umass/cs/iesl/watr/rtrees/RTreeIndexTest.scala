@@ -91,7 +91,7 @@ object RTreeIndexProps extends Properties("RTreeIndex") {
 
   import ArbitraryGeometry._
   import RTreeIndex._
-  import textgrid.ArbitraryStuff._
+  import ArbitraryStuff._
 
   property("json <--> RTreeIndex") = forAll{ (example: List[LTBounds]) =>
     val rtreeIndex = RTreeIndex.empty[GeometricFigure, Unit, TestShape]()

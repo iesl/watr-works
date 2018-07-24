@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package textgrid
 
 import geometry._
+import annots._
 import TypeTags._
 
 import _root_.io.circe

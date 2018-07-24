@@ -21,7 +21,7 @@ object LabeledShapeIndexProps extends Properties("LabeledShapeIndex") {
 
   import geometry.ArbitraryGeometry._
   import RTreeIndex._
-  import textgrid.ArbitraryStuff._
+  import ArbitraryStuff._
   import LabeledShapeIndex._
   import TestShape._
   import utils.DoOrDieHandlers._

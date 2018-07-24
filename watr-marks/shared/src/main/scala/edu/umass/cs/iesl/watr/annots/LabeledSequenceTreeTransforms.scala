@@ -31,6 +31,37 @@ object LabelTreeNode {
   }
 }
 
+sealed trait LabeledRowElem {
+  def labels(): List[Label]
+  def getRowText(): String
+}
+
+object LabeledRowElem {
+
+  case class CellGroupRow[A <: LabelTarget](
+    override val labels: List[Label],
+    cells: Seq[LabelTreeNode.CellGroup[A]],
+    depthMod: Int = 0
+  )(implicit ShowA: Show[A]) extends LabeledRowElem {
+
+    val showA = ShowA
+
+    def getRowText(): String = {
+      cells.map(_.cells.map(ShowA.shows(_)).mkString).mkString
+    }
+
+  }
+
+  case class HeadingRow(
+    override val labels: List[Label],
+    heading: String
+  ) extends LabeledRowElem {
+    def getRowText: String = heading
+  }
+
+}
+
+
 object LabeledSequenceTreeTransforms {
 
   // def gridCellsToLabelTree(gridCells: Seq[TextGrid.GridCell]): Tree[LabelTreeNode] = {

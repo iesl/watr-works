@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package textgraph
 
 import geometry._
+import annots._
 
 import TypeTags._
 import LabeledSequenceTreeTransforms._
@@ -11,7 +12,7 @@ import circe.syntax._
 
 import utils.DoOrDieHandlers._
 import LabeledSequenceCodecs._
-import TextGridLabelWidget._
+// import TextGridLabelWidget._
 import textboxing.{TextBoxing => TB}, TB._
 
 class TextGraphCodecTests extends TextGraphSpec {

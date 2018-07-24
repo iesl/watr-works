@@ -4,13 +4,14 @@ package textgrid
 import geometry._
 
 import TypeTags._
-import LabeledSequenceTreeTransforms._
+
+import annots.LabeledSequenceTreeTransforms._
+import annots.LabeledSequenceCodecs._
 
 import _root_.io.circe
 import circe.syntax._
 
 // import utils.DoOrDieHandlers._
-import LabeledSequenceCodecs._
 import TextGridLabelWidget._
 // import textboxing.{TextBoxing => TB}, TB._
 // import utils.{Cursor, Cursors, Window}

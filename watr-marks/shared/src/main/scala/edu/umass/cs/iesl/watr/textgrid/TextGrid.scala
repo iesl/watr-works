@@ -8,6 +8,7 @@ import geometry.syntax._
 import geometry.PageComponentImplicits._
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
+import annots._
 
 import utils.{Cursor, Cursors, Window}
 import utils.SlicingAndDicing._

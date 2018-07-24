@@ -12,17 +12,8 @@ import scalaz.{@@ => _, _} , Scalaz._
 import _root_.io.circe, circe._, circe.syntax._
 import textboxing.{TextBoxing => TB}, TB._
 import TextGridLabelWidget._
-import LabeledSequenceTreeTransforms._
+import annots.LabeledSequenceTreeTransforms._
 
-trait TextGridSpec extends FreeSpec with Matchers with TextGridTestExamples with LabeledSequenceThings {
-
-
-  def infobox(heading: String, b: TB.Box): Unit = {
-    info(heading)
-    info("\n" + indent(4, b).toString() + "\n")
-  }
-
-}
 
 class TextGridLabelWidgetTests extends TextGridSpec {
   import geometry._

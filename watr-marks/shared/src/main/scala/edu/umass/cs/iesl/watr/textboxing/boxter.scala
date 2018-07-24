@@ -499,6 +499,14 @@ object TextBoxing extends ToListOps with ToIdOps {
 
     lr + (tb % b % tb) + lr
   }
+  def borderTop(b:Box): Box = {
+    val tb = borderTB("-")(b)
+    tb % b
+  }
+  def borderBottom(b:Box): Box = {
+    val tb = borderTB("-")(b)
+    b % tb
+  }
 
 
   def padLine(lc:String, rc:String, fill:String, space:String)(l:String): String = {

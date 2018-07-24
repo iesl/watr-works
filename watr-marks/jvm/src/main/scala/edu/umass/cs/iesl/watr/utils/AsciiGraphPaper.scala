@@ -5,8 +5,8 @@ import scala.collection.mutable
 import utils.{RelativeDirection => Dir}
 
 class AsciiGraphPaper(
-  override val width: Int,
-  override val height: Int,
+  val width: Int,
+  val height: Int,
   useColor: Boolean=true
 ) extends GraphPaper {
 

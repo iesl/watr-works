@@ -1,6 +1,8 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
+import annots._
+
 trait TextGridConstruction {
   import geometry._
 
