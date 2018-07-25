@@ -63,7 +63,7 @@ object TreeNode {
       root
     } else {
 
-      if (interval.isLeftOf(root.midpoint)){
+      if (interval.isLeftOfPoint(root.midpoint, inclusive=true)){
         // println(s"leftOf mid")
         root.left = addInterval(tree, root.left, interval);
       } else {
@@ -112,12 +112,12 @@ object TreeNode {
       res
     } else if (Interval.ord(point, root.midpoint) <= 0){
       val rights = root.increasing
-        .takeWhile { ! _.isRightOf(point, inclusive=true) }
+        .takeWhile { ! _.isRightOfPoint(point, inclusive=true) }
 
       TreeNode.query(root.left, point, res ++ rights)
     } else {
       val lefts = root.decreasing
-        .takeWhile { ! _.isLeftOf(point, inclusive=true) }
+        .takeWhile { ! _.isLeftOfPoint(point, inclusive=true) }
 
       TreeNode.query(root.right, point, res ++ lefts);
     }
@@ -158,7 +158,7 @@ object TreeNode {
         deleteNode(root)
       } else root.balanceOut()
 
-    } else if (interval.isLeftOf(root.midpoint)){
+    } else if (interval.isLeftOfPoint(root.midpoint, inclusive=true)){
       root.left = removeInterval(tree, root.left, interval);
       root.balanceOut();
     } else {
@@ -496,12 +496,12 @@ class TreeNode[T: Ordering: MidpointHelper](
 
     if (Interval.ord(midpoint, from.midpoint) < 0){
       val rights = from.increasing
-        .takeWhile { ! _.isRightOf(midpoint, inclusive=true) }
+        .takeWhile { ! _.isRightOfPoint(midpoint, inclusive=true) }
 
       tmp ++= rights
     } else {
       val lefts = from.decreasing
-        .takeWhile { ! _.isLeftOf(midpoint) }
+        .takeWhile { ! _.isLeftOfPoint(midpoint, inclusive=true) }
 
       tmp ++= lefts
     }

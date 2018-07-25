@@ -128,7 +128,7 @@ class IntervalTree[T: Ordering: MidpointHelper] {
           result ++= TreeNode.rangeQueryLeft(node.left, interval);
           result ++= TreeNode.rangeQueryRight(node.right, interval);
           node = null
-        } else if (interval.isLeftOf(node.midpoint)) {
+        } else if (interval.isLeftOfPoint(node.midpoint, inclusive=true)) {
 
           val incs = node.increasing
             .takeWhile { interval.intersects(_) }
@@ -192,6 +192,14 @@ class IntervalTree[T: Ordering: MidpointHelper] {
   def contains(t: T): Boolean = {
     query(t).exists { interval =>
       interval.isPoint() && interval.start.exists(_==t)
+    }
+  }
+
+  def iterator(): Iterator[Interval[T]]  = {
+    if (root == null){
+      Iterator[Interval[T]]()
+    } else {
+      root.intervalIterator()
     }
   }
 

@@ -6,49 +6,47 @@ import org.scalatest._
 class IntervalTreeNodeTest extends FlatSpec with Matchers {
 
 
-	// public void test_iteratorNormal(){
-	// 	IntervalTree<Integer> tree = new IntervalTree<>();
-	// 	Interval<Integer>[] arr = new IntegerInterval[]{
-	// 			Interval.bounded.create.open(6, 10),
-	// 			Interval.bounded.create.closed(2, 100),
-	// 			Interval.bounded.create.closed(8, 20),
-	// 			Interval.bounded.create.closed(-2, 0),
-	// 			Interval.bounded.create.leftOpenRightClosed(-3, 0),
-	// 			Interval.bounded.create.leftClosedRightOpen(10, 20),
-	// 			Interval.bounded.create.leftClosedRightOpen(11, 14),
-	// 			Interval.bounded.create.closed(-20, -10),
-	// 			Interval.bounded.create.closed(-14, -11),
-	// 			Interval.bounded.create.open(-14, -10),
-	// 			Interval.bounded.create.open(0, 4)
-	// 	};
-	// 	for (Interval<Integer> interval: arr)
-	// 		tree.add(interval);
-	// 	List<Interval<Integer>> list = new ArrayList<>();
-	// 	for (Interval<Integer> interval: tree)
-	// 		list.add(interval);
+	it should "_iteratorNormal" in {
+		val tree = new IntervalTree[Int]();
+    val arr = List(
+				Interval.bounded.create.open(6, 10),
+				Interval.bounded.create.closed(2, 100),
+				Interval.bounded.create.closed(8, 20),
+				Interval.bounded.create.closed(-2, 0),
+				Interval.bounded.create.leftOpenRightClosed(-3, 0),
+				Interval.bounded.create.leftClosedRightOpen(10, 20),
+				Interval.bounded.create.leftClosedRightOpen(11, 14),
+				Interval.bounded.create.closed(-20, -10),
+				Interval.bounded.create.closed(-14, -11),
+				Interval.bounded.create.open(-14, -10),
+				Interval.bounded.create.open(0, 4)
+    )
+		for (interval <- arr)
+			tree.add(interval);
 
-	// 	assertThat(new HashSet<>(Arrays.asList(arr)), is(new HashSet<>(list)));
-	// 	assertEquals(arr.length, list.size());
-	// }
+    assert(tree.iterator().toSet == arr.toSet)
 
-	//
-	// public void test_iteratorEmpty(){
-	// 	IntervalTree<Integer> tree = new IntervalTree<>();
-	// 	assert(! tree.iterator().hasNext());
-	// 	tree.add(Interval.bounded.create.closed(1, 3));
-	// 	Iterator<Interval<Integer>> it = tree.iterator();
-	// 	it.next();
-	// 	assert(! it.hasNext());
-	// 	try{
-	// 		it.next();
-	// 		fail();
-	// 	} catch (Exception e){
-	// 		assert(e instanceof NoSuchElementException);
-	// 	}
-	// }
+	}
+
+
+	it should "_iteratorEmpty" in {
+		val tree = new IntervalTree[Int]();
+		assert(! tree.iterator().hasNext);
+		tree.add(Interval.bounded.create.closed(1, 3));
+		val it = tree.iterator();
+		it.next();
+		assert(! it.hasNext);
+		try{
+			it.next();
+			fail();
+		} catch {
+      case e: Exception =>
+        assert(e.isInstanceOf[NoSuchElementException]);
+		}
+	}
 
 	//
-	// public void test_iteratorBackToRootWithMultipleIntervals(){
+	// it should "_iteratorBackToRootWithMultipleIntervals" in {
 	// 	IntervalTree<Integer> tree = new IntervalTree<>();
 	// 	Set<Interval<Integer>> set = new HashSet<>(new ArrayList<Interval<Integer>>(Arrays.asList(
 	// 			Interval.bounded.create.leftOpenRightClosed(12, 22),
@@ -64,7 +62,7 @@ class IntervalTreeNodeTest extends FlatSpec with Matchers {
 	// }
 
 	//
-	// public void test_iteratorRemove(){
+	// it should "_iteratorRemove" in {
 	// 	IntervalTree<Integer> tree = new IntervalTree<>();
 	// 	Interval<Integer> target = Interval.bounded.create.leftOpenRightClosed(12, 22);
 	// 	Interval<Integer> root = Interval.bounded.create.leftClosedRightOpen(2, 10);
@@ -89,7 +87,7 @@ class IntervalTreeNodeTest extends FlatSpec with Matchers {
 	// }
 
 	//
-	// public void test_iteratorRemoveChangesTheRoot(){
+	// it should "_iteratorRemoveChangesTheRoot" in {
 	// 	IntervalTree<Integer> tree = new IntervalTree<>();
 	// 	Interval<Integer> target = Interval.bounded.create.leftOpenRightClosed(12, 22);
 	// 	Interval<Integer> root = Interval.bounded.create.leftClosedRightOpen(2, 10);
@@ -121,7 +119,7 @@ class IntervalTreeNodeTest extends FlatSpec with Matchers {
 	// }
 
 	//
-	// public void test_iteratorRemoveIntervalWithoutDeletingNode(){
+	// it should "_iteratorRemoveIntervalWithoutDeletingNode" in {
 	// 	IntervalTree<Integer> tree = new IntervalTree<>();
 	// 	IntegerInterval[] arr = new IntegerInterval[]{
 	// 			Interval.bounded.create.leftClosedRightOpen(20, 30),
@@ -159,7 +157,7 @@ class IntervalTreeNodeTest extends FlatSpec with Matchers {
 	// }
 
 	//
-	// public void test_iteratorRemoveDeletesInnerNode(){
+	// it should "_iteratorRemoveDeletesInnerNode" in {
 	// 	IntervalTree<Integer> tree = new IntervalTree<>();
 	// 	val target = Interval.bounded.create.open(40, 50);
 	// 	IntegerInterval[] arr = new IntegerInterval[]{
@@ -195,7 +193,7 @@ class IntervalTreeNodeTest extends FlatSpec with Matchers {
 	// }
 
 	//
-	// public void test_iteratorRemoveDeletesInnerNodeAndPromotesTheSubtreeRoot(){
+	// it should "_iteratorRemoveDeletesInnerNodeAndPromotesTheSubtreeRoot" in {
 	// 	IntervalTree<Integer> tree = new IntervalTree<>();
 	// 	IntegerInterval target = Interval.bounded.create.open(40, 50);
 	// 	IntegerInterval[] arr = new IntegerInterval[]{

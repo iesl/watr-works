@@ -440,6 +440,16 @@ class Interval[T: Numeric: MidpointHelper](
     * @param query The point.
     * @return {@code true}, if the current interval contains the {@code query} point or false otherwise.
     */
+  def contains(query: T): Boolean = {
+    contains(Some(query))
+  }
+
+  /**
+    * Determines if the current interval contains a query point.
+    *
+    * @param query The point.
+    * @return {@code true}, if the current interval contains the {@code query} point or false otherwise.
+    */
   def contains(query: Option[T]): Boolean = {
     (query.isDefined && nonEmpty() && {
       val startCompare = if (start.isEmpty)  1 else Interval.ord(query, start)
@@ -494,7 +504,7 @@ class Interval[T: Numeric: MidpointHelper](
 	 * @return {@code true}, if the current interval is entirely to the right of the {@code other}
 	 * interval, or {@code false} instead.
 	 */
-	def isRightOf(point: T, inclusive: Boolean): Boolean = {
+	def isRightOfPoint(point: T, inclusive: Boolean=true): Boolean = {
     start.map{ st =>
       val compare = Interval.ord(point, st)
 
@@ -503,22 +513,11 @@ class Interval[T: Numeric: MidpointHelper](
     } getOrElse(false)
 	}
 
-	def isRightOf(point: Option[T], inclusive: Boolean): Boolean = {
-    point.map(isRightOf(_, inclusive))
+
+	def isRightOfPoint(point: Option[T], inclusive: Boolean): Boolean = {
+    point.map(isRightOfPoint(_, inclusive))
       .getOrElse(false)
 	}
-
-	/**
-	 * This method checks, if this current interval is entirely to the right of a point. More formally,
-	 * the method will return true, if for every point {@code x} from the current interval the inequality
-	 * {@code x} &gt; {@code point} holds. This formal definition implies in particular that if the start point
-	 * of the current interval is equal to the reference {@code point} and the end point is open, the method
-	 * will return {@code true}.
-	 *
-	 * @param point The reference point
-	 * @return {@code true}, if the current interval is entirely to the right of the {@code other}
-	 * interval, or {@code false} instead.
-	 */
 
 	/**
 	 * This method checks, if this current interval is entirely to the right of another interval
@@ -533,7 +532,7 @@ class Interval[T: Numeric: MidpointHelper](
 	 * interval, or {@code false} instead.
 	 */
 	def isRightOf(other: Interval[T]): Boolean = {
-    Interval.nonEmpty(other) && isRightOf(other.end, other.isEndInclusive)
+    Interval.nonEmpty(other) && isRightOfPoint(other.end, other.isEndInclusive)
 	}
 
 	/**
@@ -549,7 +548,7 @@ class Interval[T: Numeric: MidpointHelper](
 	 * @return {@code true}, if the current interval is entirely to the left of the {@code other}
 	 * interval, or {@code false} instead.
 	 */
-	def isLeftOf(point: T, inclusive: Boolean): Boolean = {
+	def isLeftOfPoint(point: T, inclusive: Boolean=true): Boolean = {
 		end.nonEmpty && {
 		  val compare = Interval.ord(point, end)
 
@@ -558,25 +557,18 @@ class Interval[T: Numeric: MidpointHelper](
     }
   }
 
-	def isLeftOf(point: Option[T], inclusive: Boolean): Boolean = {
-    point.map(isLeftOf(_, inclusive))
+
+	def isLeftOfPoint(point: Option[T], inclusive: Boolean): Boolean = {
+    point.map(isLeftOfPoint(_, inclusive))
       .getOrElse(false)
 	}
 
-	/**
-	 * This method checks, if this current interval is entirely to the left of a point. More formally,
-	 * the method will return true, if for every point {@code x} from the current interval the inequality
-	 * {@code x} &lt; {@code point} holds. This formal definition implies in particular that if the end point
-	 * of the current interval is equal to the reference {@code point} and the end point is open, the method
-	 * will return {@code true}.
-	 *
-	 * @param point The reference point
-	 * @return {@code true}, if the current interval is entirely to the left of the {@code other}
-	 * interval, or {@code false} instead.
-	 */
-	def isLeftOf(point: Option[T]): Boolean = {
-		return isLeftOf(point, true);
-	}
+	// def isLeftOf(point: Option[T]): Boolean = {
+	// 	return isLeftOf(point, true);
+	// }
+	// def isLeftOf(point: T): Boolean = {
+	// 	return isLeftOf(point, true);
+	// }
 
 	/**
 	 * This method checks, if this current interval is entirely to the left of another interval
@@ -591,7 +583,7 @@ class Interval[T: Numeric: MidpointHelper](
 	 * interval, or {@code false} instead.
 	 */
 	def isLeftOf(other: Interval[T]): Boolean = {
-		Interval.nonEmpty(other) && isLeftOf(other.start, other.isStartInclusive)
+		Interval.nonEmpty(other) && isLeftOfPoint(other.start, other.isStartInclusive)
 	}
 
   override def equals(obj: Any): Boolean = {
