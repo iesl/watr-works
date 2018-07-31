@@ -135,18 +135,11 @@ class IntervalTree[T: Ordering: MidpointHelper] {
 
           result ++= incs
 
-          // println(s"query(): increasing: [${node.increasing.mkString}]")
-          // println(s"       : interval  : [${interval}]")
-          // println(s"       : intersects: [${incs.mkString}]")
 
           node = node.left;
         } else {
           val decs = node.decreasing
             .takeWhile { interval.intersects(_) }
-
-          // println(s"query(): decreasing: [${node.decreasing.mkString}]")
-          // println(s"       : interval  : [${interval}]")
-          // println(s"       : intersects: [${decs.mkString}]")
 
           result ++= decs
 

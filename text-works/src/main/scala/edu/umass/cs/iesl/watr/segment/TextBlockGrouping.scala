@@ -132,6 +132,7 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
           val noNonTextOverlaps = hasNoNonTextOverlaps(queryRect)
 
           traceLog.trace {
+            // figure(queryRect) tagged s"" withInfoText("...") withSearchableText("")
             figure(queryRect) tagged s"Expansion Rect noLeftOverlaps=${noLeftOverlaps} && noRightOverlaps=${noRightOverlaps} inOrder=${inOrderTopToBottom} && glyphCountsMatch=${glyphCountsMatch} && noNonTextOverlaps=${noNonTextOverlaps} && consecutive=${consecutive}  ${currLineText}"
           }
 

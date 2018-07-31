@@ -77,9 +77,12 @@ object WatrTable extends App with utils.AppMainBasics {
     val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
 
 
+    replMain()
+
     replMain().run(
       "corpusAccessApi" -> corpusAccessApi
     )
+
 
     corpusAccessApi.corpusAccessDB.shutdown()
   }

@@ -3,65 +3,66 @@ package table
 
 import scalaz.{@@ => _, _} // , Scalaz._
 
+import TypeTags._
 import corpora._
 import utils.DoOrDieHandlers._
 import _root_.io.circe, circe._
 import circe.syntax._
 import textgrid._
+import textgraph._
+import annots._
 import geometry._
 
 import LabeledSequenceTreeTransforms._
 import com.github.tototoshi.csv._
-import ammonite.{ops => fs} // , fs._
+import ammonite.{ops => fs}  , fs._
 
 
 object AnnotationExporters {
 
-  def writeLabelSpanCsv(stableId: String@@DocumentID)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
-    val annotApi = corpusAccessApi.annotApi
-    val docStore = corpusAccessApi.docStore
-    val docId = docStore.getDocument(stableId).orDie(s"no document for ${stableId}")
-    val csvFile = new java.io.File("out.csv")
-    val csvWriter = CSVWriter.open(csvFile, append=true)
-
-    val annots = annotApi.listDocumentAnnotations(docId)
-    annots.foreach { annotId =>
-      val annotRec = annotApi.getAnnotationRecord(annotId)
-      annotRec.body.foreach { body =>
-        body match {
-          case AnnotationBody.TextGrid(textGridDef) =>
-            val textGrid = TextGrid.fromJsonStr(textGridDef)
-            // Iterate over all labeled spans
-            val labelTree: Tree[LabelTreeNode[TextGrid.GridCell]] = ??? // textGridToLabelTree(textGrid)
-            val labelSpanTree = labelTreeToSpanTree(labelTree)
-
-            val grid1Cells = textGrid.indexedCells()
-            labelSpanTree.flatten.foreach { case (maybeLabel, start, len) =>
-
-              val text = grid1Cells.slice(start, start+len).map(_._1.char).mkString
-
-              grid1Cells.slice(start, start+len).map{ case (gridCell, row, col) =>
-                val bbox = gridCell.pageRegion.bbox
-
-                val LTBounds.Doubles(left, top, w, h) = bbox
-
-              }
-              val encText = Json.fromString(text).noSpaces
-              maybeLabel.foreach { l =>
-                csvWriter.writeRow(List(stableId.unwrap, l.fqn, encText))
-              }
-            }
-        }
-      }
-
-    }
-
-    csvWriter.close()
-  }
+  // def writeLabelSpanCsv(stableId: String@@DocumentID)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+  //    (deleted)
 
   import RelationModel._
 
+  def writeAllAnnotations(rootPath: String)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    val docStore = corpusAccessApi.docStore
+    val docCount = docStore.getDocumentCount
+    val batchSize = 200
+    var offset = 0
+    while (offset < docCount) {
+
+      val batchExport = for {
+        stableId <- docStore.getDocuments(batchSize, offset)
+      } yield {
+        exportAnnotations(stableId)
+      }
+
+      val batchJson = batchExport.asJson
+      val annotPath = fs.pwd / rootPath / s"batch-${offset}-annots.json"
+
+      fs.write(annotPath, batchJson.spaces2)
+
+      offset = offset + batchSize
+    }
+
+  }
   def writeDocumentAnnotations(stableId: String@@DocumentID, rootPath: String)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+
+    val annotJson = exportAnnotations(stableId)
+    val outputStr = annotJson.spaces2
+
+    val outputRoot = fs.pwd / rootPath / stableId.unwrap
+    val annotPath = outputRoot / s"${stableId}-annots.json"
+
+    if (!fs.exists(outputRoot)) {
+      fs.mkdir(outputRoot)
+    }
+
+    fs.write(annotPath, outputStr)
+  }
+
+  def exportAnnotations(stableId: String@@DocumentID)(implicit corpusAccessApi: CorpusAccessApi): Json = {
     val annotApi = corpusAccessApi.annotApi
     val docStore = corpusAccessApi.docStore
     val docId = docStore.getDocument(stableId).orDie(s"no document for ${stableId}")
@@ -88,20 +89,12 @@ object AnnotationExporters {
 
     }
 
-    val allannotJson = Json.obj(
+    Json.obj(
       "stableId" := stableId,
       "annotations" := allAnnotJsons
     )
 
-    val outputStr = allannotJson.spaces2
-
-    val outputRoot = fs.pwd / rootPath / stableId.unwrap
-    val annotPath = outputRoot / s"${stableId}-annots.json"
-
-    if (!fs.exists(outputRoot)) {
-      fs.mkdir(outputRoot)
-    }
-
-    fs.write(annotPath, outputStr)
   }
+
+
 }

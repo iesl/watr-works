@@ -79,6 +79,7 @@ case class IOConfig(
 )
 
 
+
 object ProcessPipelineSteps {
   private[this] val log = org.log4s.getLogger
 
@@ -129,6 +130,22 @@ object ProcessPipelineSteps {
 
   def initMarkedInput(): fs2.Pipe[IO, ProcessableInput, MarkedInput] = {
     _.map { Right(_) }
+  }
+
+  def filterInputMatchRegex(regex: Option[String]): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
+    _.map {
+      case r@ Right(p@ Processable.CorpusFile(corpusEntry)) =>
+        val filterMatches = regex.map { re =>
+          corpusEntry.entryDescriptor.matches(re)
+        } getOrElse(true)
+
+        if (filterMatches) {
+          r
+        } else {
+          Left(p)
+        }
+      case x => x
+    }
   }
 
   def pickupTextgridFiles(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedOutput] = {
@@ -229,23 +246,21 @@ object ProcessPipelineSteps {
   }
 
   def writeExtractedTextFile(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
-    inStream => {
-      inStream.map {
-        case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
-          val outputFile = Processable.getTextgridOutputFile(input, conf.ioConfig)
+    _.map {
+      case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
+        val outputFile = Processable.getTextgridOutputFile(input, conf.ioConfig)
 
-          val jsonOutput = time("build json output") {  TextGraphIO.jsonOutputGridPerPage(segmentation) }
+        val jsonOutput = time("build json output") {  TextGraphIO.jsonOutputGridPerPage(segmentation) }
 
-          val gridJsStr = jsonOutput.pretty(JsonPrettyPrinter)
+        val gridJsStr = jsonOutput.pretty(JsonPrettyPrinter)
 
-          time("write textgrid.json") {
-            log.trace(s"writing textgrid.json to ${outputFile}")
-            fs.write(outputFile.toFsPath(), gridJsStr)
-          }
-          m
+        time("write textgrid.json") {
+          log.trace(s"writing textgrid.json to ${outputFile}")
+          fs.write(outputFile.toFsPath(), gridJsStr)
+        }
+        m
 
-        case x => x
-      }
+      case x => x
     }
   }
 
@@ -314,26 +329,24 @@ object ProcessPipelineSteps {
     }
 
 
-  def markUnextractedProcessables(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
-    s => s.map { minput =>
-      minput match {
-        case Right(input) =>
+  def markUnextractedProcessables(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedInput] = _.map {
+    markedInput => markedInput match {
+      case Right(input) =>
 
-          input match {
-            case m@ Processable.CorpusFile(corpusEntry) =>
-              val textGridFile = Processable.getTextgridOutputFile(m, conf.ioConfig)
-              val isProcessed = fs.exists(textGridFile.toFsPath())
-              if (isProcessed) {
-                log.info(s"Already processed ${corpusEntry}: ${textGridFile}")
-                Left(input)
-              } else {
-                Right(input)
-              }
+        input match {
+          case m@ Processable.CorpusFile(corpusEntry) =>
+            val textGridFile = Processable.getTextgridOutputFile(m, conf.ioConfig)
+            val isProcessed = fs.exists(textGridFile.toFsPath())
+            if (isProcessed) {
+              log.info(s"Already processed ${corpusEntry}: ${textGridFile}")
+              Left(input)
+            } else {
+              Right(input)
+            }
 
-            case _ => ???
-          }
-        case m => m
-      }
+          case _ => ???
+        }
+      case m => m
     }
   }
 

@@ -11,6 +11,7 @@ import geometry._
 import TextGridLabelWidget._
 import utils.ExactFloats._
 import scala.collection.mutable
+import annots._
 
 @JSExportTopLevel("watr.textgrid.TextGridInterop")
 object TextGridInterop {

@@ -586,14 +586,15 @@ trait GeometricFigureCodecs extends TypeTagCodecs {
   implicit val Enc_Int_FloatRep: Encoder[Int@@FloatRep] = Encoder.encodeInt.contramap(_.unwrap)
   implicit val Dec_Int_FloatRep: Decoder[Int@@FloatRep] = Decoder.decodeInt.map(FloatRep(_))
 
-  // implicit val Enc_LTBoundsObj: ObjectEncoder[LTBounds] = deriveEncoder
-  // implicit val Dec_LTBounds: Decoder[LTBounds] = deriveDecoder
-  implicit val Enc_LTBoundsObj: Encoder[LTBounds] = Encoder.instance { bbox =>
+  // val Enc_LTBounds_v1: ObjectEncoder[LTBounds] = deriveEncoder
+  val Dec_LTBounds_v1: Decoder[LTBounds] = deriveDecoder
+
+  implicit val Enc_LTBounds: Encoder[LTBounds] = Encoder.instance { bbox =>
     val LTBounds.IntReps(l, t, w, h) = bbox
     List(l, t, w, h).asJson
   }
 
-  implicit val Dec_LTBounds: Decoder[LTBounds] = Decoder.instance { hCursor =>
+  val Dec_LTBounds_v2: Decoder[LTBounds] = Decoder.instance { hCursor =>
     val intVals = hCursor.focus.orDie().decodeOrDie[List[Int]]()
     intVals match {
       case List(l, t, w, h) =>
@@ -601,9 +602,10 @@ trait GeometricFigureCodecs extends TypeTagCodecs {
 
       case _ =>
         Left(DecodingFailure("",List()))
-
     }
   }
+
+  implicit val Dec_LTBounds = Dec_LTBounds_v1.or(Dec_LTBounds_v2)
 
   implicit val Enc_LBBounds: ObjectEncoder[LBBounds] = deriveEncoder
   implicit val Dec_LBBounds: Decoder[LBBounds] = deriveDecoder

@@ -71,6 +71,10 @@ trait TextGraphSpec extends FreeSpec with Matchers with TextGraphConstruction {
     }
 
     labelSpans.foreach { case ((begin, len), label, parent)=>
+      val clipped = textGraph.clipToRows(begin, len)
+      clipped.foreach { rows =>
+        rows.rows
+      }
       parent match {
         case Some(p) =>
           textGraph.labelSequence(label, parent, begin, len)

@@ -33,15 +33,6 @@ object OldZoneFormats extends TypeTagCodecs  {
 
 }
 
-/*
-
- ** Create clean, new-style database.
- ** Import 250+gold, get report as to which pdfs are missing
- ** Add missing PDFs
- ** Import UmaCzi gold-50 labels (which are part of pmid-1296)
- ** Run diffs/reports
-
- */
 object ImportZoneFormatToAnnot {
   import OldZoneFormats._
   val R = RelationModel
@@ -74,7 +65,7 @@ object ImportZoneFormatToAnnot {
   }
 
 
-  def importZoneUberJson(jsonFilename: String, skipImportIfNotInCorpus: Boolean, pathSuffix: String)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+  def importZoneUberJson(jsonFilename: String, pathSuffix: String)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     val annotApi = corpusAccessApi.annotApi
     val docStore = corpusAccessApi.docStore
 
@@ -85,27 +76,29 @@ object ImportZoneFormatToAnnot {
     println(s"decoded ${jsonSeq.length} old zone sets")
 
     oldDocZones.foreach { docZones =>
-      println(s"importing ${docZones.stableId}")
+      val stableId = DocumentID(docZones.stableId)
+      println(s"importing ${stableId}")
+      if (docStore.getDocument(stableId).isEmpty) {
+        println(s"Adding document ${stableId} with ${docZones.pageGeometries.length} pages")
+        val docId = docStore.addDocument(stableId)
+        docZones.pageGeometries.zipWithIndex.foreach {  case (pageBounds, n) =>
+          val pageNum = PageNum(n)
+          val pageId = docStore.addPage(docId, pageNum)
+          docStore.setPageGeometry(pageId, pageBounds)
+        }
+      }
       docZones.zones.foreach{ docZone =>
         val label = Labels.fromString(docZone.label)
         val newZone = AnnotatedLocation.Zone(docZone.regions)
-        val stableId = newZone.stableId
-        val maybeDocId = docStore.getDocument(stableId)
-        if (maybeDocId.isDefined) {
-          val annotId = annotApi.createAnnotation(label, newZone)
-          annotApi.setCorpusPath(annotId, CorpusPath(s"Bioarxiv.UmaCzi2018.250PlusGold.${pathSuffix}"))
+        val docId = docStore.getDocument(stableId).orDie("Document should have been created by this point")
 
-          docZone.glyphDefs.foreach { glyphs =>
-            annotApi.updateBody(annotId, AnnotationBody.TextGrid(glyphs))
-          }
-        } else {
+        val annotId = annotApi.createAnnotation(label, newZone)
+        annotApi.setCorpusPath(annotId, CorpusPath(s"Bioarxiv.UmaCzi2018.${pathSuffix}"))
 
-          if (skipImportIfNotInCorpus) {
-            println(".. skipping ")
-          } else {
-            println(s"ERROR: annotation for ${stableId}, PDF not in database")
-          }
+        docZone.glyphDefs.foreach { glyphs =>
+          annotApi.updateBody(annotId, AnnotationBody.TextGrid(glyphs))
         }
+
       }
     }
   }

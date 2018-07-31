@@ -13,6 +13,8 @@ import cats.effect._
 
 import models._
 
+import watrmarks._
+
 trait CorpusListingServices extends Http4sDsl[IO] with ServiceCommons with WorkflowCodecs { self =>
   // Mounted at /api/v1xx/corpus/entries/..
 
@@ -32,11 +34,18 @@ trait CorpusListingServices extends Http4sDsl[IO] with ServiceCommons with Workf
       } yield {
         val annots = annotApi.listDocumentAnnotations(docId)
         val annotCount = annots.length
+        val labels = annots.map{ annotId =>
+          val rec = annotApi.getAnnotationRecord(annotId)
+          rec.label
+        }
+
+        val uniqLabels: List[Label] = labels.toSet.toList.sortBy { l: Label => l.fqn }
 
         Json.obj(
           "num" := skip+i,
           "stableId" := stableId.unwrap,
-          "labelCount" := annotCount
+          "labelCount" := annotCount,
+          "labels" := uniqLabels
         )
 
       }).asJson

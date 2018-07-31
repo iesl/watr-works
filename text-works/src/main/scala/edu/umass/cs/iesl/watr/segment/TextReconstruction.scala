@@ -1,7 +1,8 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-import textgrid._
+// import textgrid._
+import textgraph._
   // import watrmarks._
 import geometry._
 import utils.ExactFloats._

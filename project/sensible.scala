@@ -85,9 +85,14 @@ object SensibleProject extends CommonLibs {
   // These settings are required to make Ammonite Repl work properly
   lazy val runForked = Seq(
     Compile / run / fork := true,
-    Compile / run / connectInput := false,
+    Compile / run / connectInput := true,
     Compile / run / baseDirectory := baseDirectory.value / "..",
     outputStrategy := Some(StdoutOutput),
+  )
+
+  lazy val runUnforked = Seq(
+    Compile / run / fork := false,
+    Compile / run / baseDirectory := baseDirectory.value / "..",
   )
 
 
@@ -134,4 +139,3 @@ object SensibleProject extends CommonLibs {
   )
 
 }
-

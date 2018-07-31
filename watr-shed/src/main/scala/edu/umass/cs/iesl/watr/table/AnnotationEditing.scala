@@ -7,7 +7,10 @@ import corpora._
 
 import geometry._
 import geometry.syntax._
+
 import textgrid._
+import textgraph._
+import annots._
 import utils.{RelativeDirection => Dir}
 import utils.DoOrDieHandlers._
 import utils._
