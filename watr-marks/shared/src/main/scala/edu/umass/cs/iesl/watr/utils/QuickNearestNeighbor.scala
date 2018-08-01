@@ -28,6 +28,12 @@ object QuickNearestNeighbors {
 
       FloatRep(max)
     }
+    def minValue(): Int@@FloatRep = {
+      val min = (centroid.value.unwrap +:
+        neighbors.map(_.value.unwrap)).min
+
+      FloatRep(min)
+    }
 
     override def toString(): String = {
       val cstr = centroid.toString()

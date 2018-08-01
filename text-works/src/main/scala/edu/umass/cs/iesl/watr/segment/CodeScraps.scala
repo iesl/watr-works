@@ -1352,18 +1352,3 @@
 //   clusterColumnPoints(baseLineLeftPoints, LB.LeftAlignedColEnd, leftAlignedPoints=true)
 // }
 
-// def boundedHLine(bbox: LTBounds, atY: Int@@FloatRep): Line = {
-//   val LTBounds(x, y, w, h) = bbox
-//   Line(
-//     Point(x, atY),
-//     Point(x+w, atY)
-//   )
-// }
-
-// def boundedVerticalLine(bbox: LTBounds, atX: Int@@FloatRep): Line = {
-//   val LTBounds(x, y, w, h) = bbox
-//   Line(
-//     Point(atX, y),
-//     Point(atX, y+h)
-//   )
-// }

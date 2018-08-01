@@ -74,17 +74,32 @@ object WatrTable extends App with utils.AppMainBasics {
   import SharedInit._
 
   def run(args: Array[String]): Unit = {
-    val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
+    val argMap = argsToMap(args)
 
+    implicit val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
 
-    replMain()
+    val doQuickRun = argMap.get("quick-run").nonEmpty
 
-    replMain().run(
-      "corpusAccessApi" -> corpusAccessApi
-    )
+    if (doQuickRun) {
+      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*021923.d"))
+      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*023135.d"))
+      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*033811.d"), Some("ReferenceBlock"))
+      RefBlockLabelConversion.convertAllRefLabels(1000, 0, None, Some("ReferenceBlock"))
+      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*008607.d"), Some("ReferenceBlock"))
+      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*013698.d"), Some("ReferenceBlock"))
+    } else {
 
+      replMain()
+
+      replMain().run(
+        "corpusAccessApi" -> corpusAccessApi
+      )
+    }
 
     corpusAccessApi.corpusAccessDB.shutdown()
+
+
+
   }
 
 

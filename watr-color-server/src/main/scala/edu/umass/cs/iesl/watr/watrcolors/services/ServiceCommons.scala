@@ -80,6 +80,8 @@ trait ServiceCommons extends Http4sDsl[IO] with  HttpPayloads { self =>
 
   object StartQP extends OptionalQueryParamDecoderMatcher[Int]("start")
   object LengthQP extends OptionalQueryParamDecoderMatcher[Int]("len")
+  object LabelFilterQP extends OptionalQueryParamDecoderMatcher[String]("lbl")
+  object ArtifactnameFilterQP extends OptionalQueryParamDecoderMatcher[String]("name")
 
   def decodeOrErr[T: Decoder](req: Request[IO]): IO[T] = {
     for {

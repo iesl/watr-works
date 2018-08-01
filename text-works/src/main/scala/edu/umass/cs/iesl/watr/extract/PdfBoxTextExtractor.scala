@@ -234,6 +234,8 @@ class PdfBoxTextExtractor(
   val priorCharWindowSize = 3
   var priorCharWindow: List[ExtractedItem.CharItem] = List()
 
+  val spaceChars = List[Char](' ', '\t', '\n', '\r')
+
   override protected def showGlyph(
     textRenderingMatrix: Matrix,
     pdFont: PDFont,
@@ -247,8 +249,11 @@ class PdfBoxTextExtractor(
       throw new PageLimitExceeded()
     }
 
-    val isSpace = code == 32 && {
-      unicode == null || unicode.headOption.exists(_ == ' ')
+
+    val isSpace = spaceChars.exists { ch =>
+      code == ch.toInt && {
+        unicode == null || unicode.headOption.exists(_ == ch)
+      }
     }
 
     if (!isSpace) {
@@ -285,15 +290,21 @@ class PdfBoxTextExtractor(
               priorCharWindow = List(nextItem)
             }
 
-            val isAsciiCode = unicode != null && unicode.forall(_.toInt == code)
-            if (isAsciiCode) {
-              strRepr.headOption.foreach { ch =>
-                fontProps.initGlyphEvidence(ch, glyphProps, pageNum,
-                  priorCharWindow.take(priorCharWindowSize).reverse
-                )
-              }
-
+            strRepr.headOption.foreach { ch =>
+              fontProps.initGlyphEvidence(ch, glyphProps, pageNum,
+                priorCharWindow.take(priorCharWindowSize).reverse
+              )
             }
+            // val isAsciiCode = unicode != null && unicode.forall(_.toInt == code)
+            // if (isAsciiCode) {
+            //   strRepr.headOption.foreach { ch =>
+            //     fontProps.initGlyphEvidence(ch, glyphProps, pageNum,
+            //       priorCharWindow.take(priorCharWindowSize).reverse
+            //     )
+            //   }
+            // } else {
+            //   // println(s"nonAscii: '${strRepr}' font:${fontProps.name}")
+            // }
 
             addItem(nextItem)
           }

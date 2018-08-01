@@ -23,15 +23,27 @@ object RefBlockLabelConversion {
   import apps._
   import apps.ProcessPipelineSteps._
   import cats.effect._
+  import segment.ReferenceBlockConversion._
 
-  val ReferenceBlock          = Label.auto
-  val PartialRefBegin         = Label.auto
-  val PartialRefEnd           = Label.auto
-  val Reference               = Label.auto
-  val LeftHangingIndentColumn = Label.auto
-  val LeftJustifiedColumn     = Label.auto
-  val AlphabeticRefMarker     = Label.auto
-  val NumericRefMarker        = Label.auto
+  def filterInputHasLabel(label: Option[Label])(implicit corpusAccessApi: CorpusAccessApi): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
+    _.map {
+      case r@ Right(p@ Processable.CorpusFile(corpusEntry)) if label.isDefined =>
+        val annotApi = corpusAccessApi.annotApi
+        val docStore = corpusAccessApi.docStore
+        val stableId = DocumentID(corpusEntry.entryDescriptor)
+        val docId = docStore.getDocument(stableId).orDie(s"no document for ${stableId}")
+        val docLabels = annotApi.listDocumentAnnotations(docId).map { id =>
+          annotApi.getAnnotationRecord(id).label
+        }
+
+        if (docLabels.exists(_ == label.get)) {
+          r
+        } else Left(p)
+
+      case x => x
+    }
+  }
+
 
 
   def convertReferenceBlockLabelsToReferenceLabels()(implicit corpusAccessApi: CorpusAccessApi): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = _.map {
@@ -42,6 +54,7 @@ object RefBlockLabelConversion {
         val stableId = DocumentID(corpusEntry.entryDescriptor)
 
         println(s"Converting ${stableId} reference labels...")
+
 
         val docId = docStore.getDocument(stableId).orDie(s"no document for ${stableId}")
 
@@ -60,22 +73,15 @@ object RefBlockLabelConversion {
             region.page
           }
 
-          zonesByPage.map { case (stablePage, pageZonesAndLabels) =>
-
-            val labelsOnPage = pageZonesAndLabels.map(_._2)
-
+          zonesByPage.foreach { case (stablePage, pageZonesAndLabels) =>
             val refBlockZones = pageZonesAndLabels.filter(_._2 == ReferenceBlock).map(_._1)
 
-            // Query for LeftHangingIndentColumn blocks
-            //   if nonEmpty: Build reference bounds pairwise between hanging indents (+ last wrt RefBlock bottom)
-
-            // Build pairwise line-space histogram, try to draw reference separator lines base on those
-            //   if histogram has enough variation to make 2 clean bins (inter/intra reference), build ref-bounds between separator lines
-
-            // Query for labeled refs, see if they match the inferred versions
-
-            // Query for partials, and delete any inferred refs that they cover
-
+            if (refBlockZones.nonEmpty) {
+              val pageNum = stablePage.pageNum
+              println(s"Found ReferenceBlock on page ${pageNum}")
+              val pageSegmenter = segmentation.pageSegmenters.find(_.pageNum == pageNum).headOption.orDie(s"no segmenter found for page ${pageNum}")
+              pageSegmenter.convertReferenceBlocks(pageZonesAndLabels)
+            }
           }
         }
 
@@ -85,7 +91,7 @@ object RefBlockLabelConversion {
     markedOutput
   }
 
-  def convertAllRefLabels(n: Int=Int.MaxValue, skip: Int=0, regexFilter: Option[String])(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+  def convertAllRefLabels(n: Int=Int.MaxValue, skip: Int=0, regexFilter: Option[String], labelFilter: Option[String])(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     val conf = TextWorksConfig.Config(IOConfig(
       inputMode = Some(InputMode.CorpusFile(corpusAccessApi.corpus.corpusRoot.toNIO)),
       outputPath= None,
@@ -96,6 +102,7 @@ object RefBlockLabelConversion {
       .drop(skip.toLong).take(n.toLong)
       .through(initMarkedInput())
       .through(filterInputMatchRegex(regexFilter))
+      .through(filterInputHasLabel(labelFilter.map(s => Label(s))))
       .through(runSegmentation(conf))
       .through(convertReferenceBlockLabelsToReferenceLabels())
       .through(cleanTraceLogArtifacts(conf))
@@ -105,8 +112,5 @@ object RefBlockLabelConversion {
       .unsafeRunSync()
 
   }
-
-
-
 
 }

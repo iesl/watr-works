@@ -115,7 +115,7 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
     docScope.docStats.getTable[Int@@PageNum, String@@ScaledFontID, List[Int@@FloatRep]]("PagewiseLineWidths")
   }
 
-  def getFontsWithOccuranceCounts(): Seq[(String@@ScaledFontID, Int)] = {
+  def getFontsWithDocwideOccuranceCounts(): Seq[(String@@ScaledFontID, Int)] = {
     fontDefs.fontProperties.flatMap{ fontProps =>
       if (fontProps.isNatLangFont()) {
         fontProps.getScalingFactors().map{ scalingFactor =>

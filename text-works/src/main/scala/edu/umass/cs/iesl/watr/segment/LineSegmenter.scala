@@ -23,7 +23,9 @@ trait LineSegmentation extends PageScopeSegmenter
   lazy val lineSegmenter = self
 
   def doLineJoining(focalFont: String@@ScaledFontID, baselineShape: LineShape): Unit = {
+    println(s"doLineJoining(${focalFont}, ${baselineShape})")
     val baselineFonts = getFontsForShape(baselineShape)
+
 
     assume(baselineFonts.size==1)
     assume(baselineFonts.contains(focalFont))
@@ -33,11 +35,11 @@ trait LineSegmentation extends PageScopeSegmenter
     val charItems = getCharsForShape(baselineShape)
 
     // val metrics = scaledFontMetrics.fontMetrics.orDie(s"font metrics ${focalFont} not found")
-    val headItem = charItems.head
+    // val headItem = charItems.head
     // val trueBaseline = 0
     // headItem.char
     // headItem.fontProps
-    headItem.glyphProps.scalingFactor
+    // headItem.glyphProps.scalingFactor
 
 
     val heights = charItems.map{ item =>
@@ -137,10 +139,12 @@ trait LineSegmentation extends PageScopeSegmenter
       val bottomLines = allClusterBounds.map(_.toLine(Dir.Bottom))
       figure(bottomLines:_*) tagged "ContiguousGlyphBounds"
     }
+
+    println(s"doLineJoining(): done")
   }
 
   def joinFontBaselines(label: Label): Unit = {
-    val fontsByMostOccuring = docScope.getFontsWithOccuranceCounts()
+    val fontsByMostOccuring = docScope.getFontsWithDocwideOccuranceCounts()
       .sortBy(_._2).reverse.map(_._1)
 
     //... Filter to fonts on page
@@ -154,6 +158,8 @@ trait LineSegmentation extends PageScopeSegmenter
     ): Unit = scaledFontIds match {
 
       case headFontId :: tailFontIds =>
+        println(s"joinLinesLoop(depth=${depth}): ${headFontId} of ${tailFontIds.length}")
+        println(s"                             : lineShapes len = ${lineShapes.length}")
         val markedLineSpans = collectSpanEither[LineShape](lineShapes, { lineShape =>
           getFontsForShape(lineShape).contains(headFontId)
         })
@@ -169,6 +175,7 @@ trait LineSegmentation extends PageScopeSegmenter
         }}
 
       case Nil =>
+        println(s"joinFontBaselines: Nil")
     }
 
     val startingLines = getLabeledLines(label)
@@ -177,7 +184,6 @@ trait LineSegmentation extends PageScopeSegmenter
   }
 
 
-  // def findLineCharsInPageBand(pageBand: RectShape, rootChar: ExtractedItem.CharItem): Unit = {
   def findLineCharsInPageBand(pageSlice: LTBounds, rootChar: ExtractedItem.CharItem, outputLabel: Label): Option[AnyShape] = {
     val glyphsInBand = searchForRects(pageSlice, LB.Glyph)
 
@@ -219,7 +225,7 @@ trait LineSegmentation extends PageScopeSegmenter
   }
 
   def generatePageRules(startingShapeLabel: Label, outputLabel: Label): Unit = {
-    val fontsByMostOccuring = docScope.getFontsWithOccuranceCounts()
+    val fontsByMostOccuring = docScope.getFontsWithDocwideOccuranceCounts()
       .sortBy(_._2).reverse.map(_._1)
 
 
@@ -354,7 +360,7 @@ trait LineSegmentation extends PageScopeSegmenter
 
     // combineCombiningMarks()
 
-    // assert(index contains (LB.CharRunFontBaseline))
+    val charRunBaselineShapes = getLabeledLines(LB.CharRunFontBaseline)
     // recordNatLangVerticalLineSpacingStats(charRunBaselineShapes)
     // recordCharRunWidths(charRunBaselineShapes)
     // joinFontBaselines(LB.CharRunFontBaseline)

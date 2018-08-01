@@ -8,6 +8,7 @@ trait PageLevelFunctions extends ColumnFinding
     with TextReconstruction
     with TextBlockGrouping
     with ShapeFunctions
+    with ReferenceBlockConverter
 
 object PageSegmenter {
   import SegmentationSystem._

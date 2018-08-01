@@ -21,7 +21,7 @@ trait ColumnFinding extends PageScopeSegmenter
 
   var pageVerticalJumps: mutable.ListBuffer[Int@@FloatRep] = mutable.ListBuffer()
 
-  def addPageVerticalJumps(jumps: Seq[Int@@FloatRep]): Unit = {
+  protected def addPageVerticalJumps(jumps: Seq[Int@@FloatRep]): Unit = {
     pageVerticalJumps ++= jumps
   }
 
