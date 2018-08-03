@@ -81,12 +81,15 @@ object WatrTable extends App with utils.AppMainBasics {
     val doQuickRun = argMap.get("quick-run").nonEmpty
 
     if (doQuickRun) {
+      val doc = "10.1101-009837.d"
       // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*021923.d"))
       // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*023135.d"))
       // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*033811.d"), Some("ReferenceBlock"))
-      RefBlockLabelConversion.convertAllRefLabels(1000, 0, None, Some("ReferenceBlock"))
+      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, None, Some("ReferenceBlock"))
       // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*008607.d"), Some("ReferenceBlock"))
-      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*013698.d"), Some("ReferenceBlock"))
+      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(doc), Some("ReferenceBlock"))
+      // AnnotationExporters.writeAllLabeledTexts("tmp.d", watrmarks.Label("Reference"))
+      AnnotationExporters.writeAllAnnotations("tmp.d")
     } else {
 
       replMain()

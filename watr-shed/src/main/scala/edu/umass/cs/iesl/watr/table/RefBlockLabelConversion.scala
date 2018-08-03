@@ -80,7 +80,20 @@ object RefBlockLabelConversion {
               val pageNum = stablePage.pageNum
               println(s"Found ReferenceBlock on page ${pageNum}")
               val pageSegmenter = segmentation.pageSegmenters.find(_.pageNum == pageNum).headOption.orDie(s"no segmenter found for page ${pageNum}")
-              pageSegmenter.convertReferenceBlocks(pageZonesAndLabels)
+              val maybeRefs = pageSegmenter.convertReferenceBlocks(pageZonesAndLabels)
+              maybeRefs.foreach { refBounds =>
+                refBounds.foreach{ case (bbox, textGrid) =>
+
+                  val zone = AnnotatedLocation.Zone(List(
+                    PageRegion(stablePage, bbox)
+                  ))
+                  val annotId = annotApi.createAnnotation(Reference, zone)
+                  annotApi.setCorpusPath(annotId, CorpusPath("References.AutoLabeled"))
+                  val gridAsJson = textGrid.toJson().noSpaces
+                  val body = AnnotationBody.TextGrid(gridAsJson)
+                  annotApi.updateBody(annotId, body)
+                }
+              }
             }
           }
         }

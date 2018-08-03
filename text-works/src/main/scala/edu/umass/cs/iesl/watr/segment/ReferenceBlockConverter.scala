@@ -14,6 +14,7 @@ import corpora._
 import utils.SlicingAndDicing._
 import utils.DoOrDieHandlers._
 import utils.QuickNearestNeighbors._
+import textgrid._
 
 import TypeTags._
 
@@ -23,6 +24,7 @@ object ReferenceBlockConversion {
   val PartialRefBegin         = Label.auto
   val PartialRefEnd           = Label.auto
   val Reference               = Label.auto
+  // val ReferenceAuto           = Label.auto
   val LeftHangingIndentColumn = Label.auto
   val LeftJustifiedColumn     = Label.auto
   val AlphabeticRefMarker     = Label.auto
@@ -43,6 +45,7 @@ object ReferenceBlockConversion {
 
 trait ReferenceBlockConverter extends PageScopeSegmenter
     with FontAndGlyphMetrics
+    with TextReconstruction
     with TextBlockGrouping { self =>
 
 
@@ -88,12 +91,12 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
 
         queryRect.intersects(item.minBBox)
       }
+
       if (includedCharItems.nonEmpty) {
         val leftmostItem = includedCharItems.minBy(_.minBBox.left)
         val fontOffsets = docScope.fontDefs.getScaledFontOffsets(leftmostItem.scaledFontId)
         val baselineOffsets = fontOffsets.forBaseline(leftmostItem.fontBbox.bottom)
         val baseline = baselineOffsets.baseline
-        // val midrise = baselineOffsets.midrise
         val capline = baselineOffsets.cap
         val adjHeight = baseline - capline
         val LTBounds(l, t, w, h) = leftmostItem.minBBox
@@ -103,7 +106,6 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
           LTBounds(l, capline, w, adjHeight)
         }
 
-        // Some(leftmostItem.minBBox)
         Some(adjustedBbox)
       } else None
     }.flatten
@@ -117,7 +119,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
     }
   }
 
-  def convertReferenceBlocks(pageZonesAndLabels: Seq[(AnnotatedLocation.Zone, Label)]): Unit = {
+  def convertReferenceBlocks(pageZonesAndLabels: Seq[(AnnotatedLocation.Zone, Label)]): Option[Seq[(LTBounds, TextGrid)]] = {
     pageZonesAndLabels.foreach { case (zone: AnnotatedLocation.Zone, label: watrmarks.Label) =>
       assume(zone.regions.length == 1)
       val zoneRegion = zone.regions.head
@@ -176,10 +178,13 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
           findCandidateMinBounds(candidateBounds)
         }
 
+        referenceMinBounds.foreach { refMinBounds =>
+          indexShape(refMinBounds, Reference)
+        }
+
         traceLog.trace {
           figure(referenceMinBounds:_*).tagged(s"Final Hanging Reference Min Bounds (${referenceMinBounds.length})" )
         }
-
 
       } else if (leftJustifiedColumnShapes.nonEmpty) {
 
@@ -197,17 +202,14 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
         }
         val sortedYJumps = yJumpBins.sortBy(_.size()).reverse
 
-        println(s"sortedYJumps: Sorted Bins")
-        println(sortedYJumps.mkString("\n  ", "\n  ", "\n"))
-
-        println(s"leftmostChar bounds")
-        println(leftmostCharBounds.map(_.prettyPrint).mkString("\n  ", "\n  ", "\n"))
-
-        println(s"leftmostCharBottoms")
-        println(leftmostCharBottoms.map(_.pp).mkString("\n  ", "\n  ", "\n"))
-
-        println(s"yDeltas")
-        println(yDeltas.map(_.pp)mkString("\n  ", "\n  ", "\n"))
+        // println(s"sortedYJumps: Sorted Bins")
+        // println(sortedYJumps.mkString("\n  ", "\n  ", "\n"))
+        // println(s"leftmostChar bounds")
+        // println(leftmostCharBounds.map(_.prettyPrint).mkString("\n  ", "\n  ", "\n"))
+        // println(s"leftmostCharBottoms")
+        // println(leftmostCharBottoms.map(_.pp).mkString("\n  ", "\n  ", "\n"))
+        // println(s"yDeltas")
+        // println(yDeltas.map(_.pp)mkString("\n  ", "\n  ", "\n"))
 
         val maxJumpForIntraRefLines = sortedYJumps.headOption.map(_.maxValue()).orDie("no y-jump val 1 clusters??")
 
@@ -221,7 +223,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
           val jumpThreshold = ((maxJumpForIntraRefLines + minJumpForInterRefLines) / 2) + 0.1d
           // val jumpThreshold = minJumpForInterRefLines - 1d
 
-          println(s"Jump threshold: ${jumpThreshold};  max-intra/min-inter = (${maxJumpForIntraRefLines}, ${minJumpForInterRefLines})")
+          // println(s"Jump threshold: ${jumpThreshold};  max-intra/min-inter = (${maxJumpForIntraRefLines}, ${minJumpForInterRefLines})")
 
           val groupedIntoRefs = leftmostCharBounds.groupByPairs{ case (bbox1, bbox2) =>
             val vspace = bbox2.bottom - bbox1.bottom
@@ -247,6 +249,11 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
           val referenceMinBounds = nonIntersectingCandidates.map{ bounds =>
             findCandidateMinBounds(bounds)
           }
+
+          referenceMinBounds.foreach { refMinBounds =>
+            indexShape(refMinBounds, Reference)
+          }
+
           traceLog.trace {
             figure(referenceMinBounds:_*).tagged(s"Final Justified Reference Min Bounds (${referenceMinBounds.length})" )
           }
@@ -256,6 +263,21 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
         println(s"ERROR: Refblock had neither hanging indent or justified column labels")
       }
     }}
+
+    referenceBlockZones.map { zones => zones.flatMap { refBlockZone =>
+      val refBlockRegion = refBlockZone.regions.headOption.orDie(s"no regions found in zone ${refBlockZone}")
+      val stablePage = refBlockRegion.page
+      val referenceShapes = searchForRects(refBlockRegion.bbox, Reference)
+      referenceShapes.map{ referenceShape =>
+        val textGrid = getTextGrid(Some(referenceShape.shape))
+        println(s"-- Reference ---")
+        println(textGrid.toText())
+        println
+
+        (referenceShape.shape, textGrid)
+      }.sortBy(_._1.top)
+    }}
+
   }
 
 }

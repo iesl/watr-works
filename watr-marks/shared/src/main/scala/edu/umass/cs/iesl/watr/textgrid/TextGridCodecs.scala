@@ -85,13 +85,13 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
     val rows = rowsM.orDie(s"could not decode textgrid rows")
 
     val textGrid = TextGrid.fromRows(stableId,  rows)
-    for {
-      l <- cursor.downField("labels").success
-      m <- l.downField("cellLabels").success
-      focus <- m.focus
-    } yield {
-      LabeledSequenceCodecs.decodeAndApplyBioLabels(focus, textGrid.cellLabels)
-    }
+    // for {
+    //   l <- cursor.downField("labels").success
+    //   m <- l.downField("cellLabels").success
+    //   focus <- m.focus
+    // } yield {
+    //   LabeledSequenceCodecs.decodeAndApplyBioLabels(focus, textGrid.cellLabels)
+    // }
     textGrid
   }
 
