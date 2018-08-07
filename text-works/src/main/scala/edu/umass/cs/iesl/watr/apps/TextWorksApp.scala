@@ -47,7 +47,7 @@ object TextWorksConfig {
 
     help("help")
 
-    /// IO Config options
+    // IO Config options
     note("Specify exactly one input mode: corpus|file|file-list \n")
 
 

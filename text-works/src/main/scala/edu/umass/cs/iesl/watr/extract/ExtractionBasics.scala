@@ -181,24 +181,41 @@ case class PageSpaceTransforms(
 
 case class FontBaselineOffsets(
   scaledFontId : String@@ScaledFontID,
-  cap          : Int@@FloatRep,
-  ascent       : Int@@FloatRep,
-  midrise      : Int@@FloatRep,
-  baseline     : Int@@FloatRep,
-  descent      : Int@@FloatRep,
-  bottom       : Int@@FloatRep,
+  fontBaseline : Int@@FloatRep,
+  private val _top          : Int@@FloatRep,
+  private val _cap          : Int@@FloatRep,
+  private val _ascent       : Int@@FloatRep,
+  private val _midrise      : Int@@FloatRep,
+  private val _baseline     : Int@@FloatRep,
+  private val _descent      : Int@@FloatRep,
+  private val _bottom       : Int@@FloatRep,
 ) {
-  def forBaseline(fontBaseline: Int@@FloatRep): FontBaselineOffsets = {
-    FontBaselineOffsets(
-      scaledFontId,
-      cap      = fontBaseline - cap     ,
-      ascent   = fontBaseline - ascent  ,
-      midrise  = fontBaseline - midrise ,
-      baseline = fontBaseline - baseline,
-      descent  = fontBaseline - descent ,
-      bottom   = fontBaseline - bottom
-    )
+  override def toString(): String = {
+    s"""|(${scaledFontId} @ ${fontBaseline.pp} =
+        |top: ${topLine.pp}+${_top.pp},
+        |cap: ${capLine.pp}+${_cap.pp},
+        |asc: ${ascentLine.pp}+${_ascent.pp},
+        |mid: ${midriseLine.pp}+${_midrise.pp}
+        |bas: ${baseLine.pp}+${_baseline.pp}
+        |des: ${descentLine.pp}+${_descent.pp}
+        |bot: ${bottomLine.pp}+${_bottom.pp})
+        |""".stripMargin.replaceAll("\n", " ")
+
   }
+
+  val topLine      = fontBaseline - _top
+  val capLine      = fontBaseline - _cap
+  val ascentLine   = fontBaseline - _ascent
+  val midriseLine  = fontBaseline - _midrise
+  val baseLine     = fontBaseline - _baseline
+  val descentLine  = fontBaseline - _descent
+  val bottomLine   = fontBaseline - _bottom
+
+
+  def forBaseline(fontBaseline: Int@@FloatRep): FontBaselineOffsets = {
+    copy(fontBaseline = fontBaseline)
+  }
+
 }
 
 case class FontBaselineOffsetsAccum(
@@ -209,6 +226,7 @@ case class FontBaselineOffsetsAccum(
   midrises      : Seq[ExtractedItem.CharItem],
   baselines     : Seq[ExtractedItem.CharItem],
   descents      : Seq[ExtractedItem.CharItem],
+  tops          : Seq[ExtractedItem.CharItem],
   bottoms       : Seq[ExtractedItem.CharItem],
 )
 

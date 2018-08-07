@@ -288,8 +288,17 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     shapeIndex.setShapeAttribute[Set[String@@ScaledFontID]](shape.id, LB.Fonts, fontIds)
   }
 
+
   protected def getFontsForShape(shape: DocSegShape[GeometricFigure]): Set[String@@ScaledFontID] = {
     shapeIndex.getShapeAttribute[Set[String@@ScaledFontID]](shape.id, LB.Fonts).get
+  }
+
+  protected def setPrimaryFontForShape(shape: DocSegShape[GeometricFigure], fontId: String@@ScaledFontID): Unit = {
+    shapeIndex.setShapeAttribute[String@@ScaledFontID](shape.id, LB.PrimaryFont, fontId)
+  }
+
+  protected def getPrimaryFontForShape(shape: DocSegShape[GeometricFigure]): Option[String@@ScaledFontID] = {
+    shapeIndex.getShapeAttribute[String@@ScaledFontID](shape.id, LB.PrimaryFont)
   }
 
   protected def queriesAllEmpty(queryRect: LTBounds, labels: Label*): Boolean = {

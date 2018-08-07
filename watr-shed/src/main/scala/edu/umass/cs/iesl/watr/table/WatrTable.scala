@@ -79,17 +79,20 @@ object WatrTable extends App with utils.AppMainBasics {
     implicit val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
 
     val doQuickRun = argMap.get("quick-run").nonEmpty
+    // Extra space:
+    // 10.1101-009449.d
+    // 10.1101-013177.d
+    // 10.1101-015883.d
 
     if (doQuickRun) {
-      val doc = "10.1101-009837.d"
-      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*021923.d"))
-      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*023135.d"))
-      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*033811.d"), Some("ReferenceBlock"))
+      // val doc = "101002zaac201200197.pdf.d"
+      val doc = "1703.00175.pdf.d"
       // RefBlockLabelConversion.convertAllRefLabels(1000, 0, None, Some("ReferenceBlock"))
-      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(".*008607.d"), Some("ReferenceBlock"))
       // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(doc), Some("ReferenceBlock"))
       // AnnotationExporters.writeAllLabeledTexts("tmp.d", watrmarks.Label("Reference"))
-      AnnotationExporters.writeAllAnnotations("tmp.d")
+      // AnnotationExporters.writeAllAnnotations("tmp.d")
+      InitialSegmentationCommands.extractTextToFile(10, 0, Some(doc))
+      // InitialSegmentationCommands.extractTextToFile()
     } else {
 
       replMain()

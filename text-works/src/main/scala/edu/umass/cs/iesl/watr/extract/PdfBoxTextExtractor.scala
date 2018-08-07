@@ -235,12 +235,15 @@ class PdfBoxTextExtractor(
   var priorCharWindow: List[ExtractedItem.CharItem] = List()
 
   val spaceChars = List[Char](' ', '\t', '\n', '\r')
+  val MacWordToPdfWeirdSpaceEncoding = List(9,13,32,160)
+
+  var dbgI = 0
 
   override protected def showGlyph(
     textRenderingMatrix: Matrix,
     pdFont: PDFont,
     code: Int,
-    unicode: String,
+    unicodeStr: String,
     displacement: Vector
   ): Unit = {
 
@@ -248,15 +251,31 @@ class PdfBoxTextExtractor(
       log.warn(s"Truncating page ${pageNum}. Limit of ${MAX_EXTRACTED_CHARS_PER_PAGE} glyphs/page exceeded")
       throw new PageLimitExceeded()
     }
+    // val isPage0 = pageNum.unwrap == 0
+    // if (isPage0) {
+    //   println(s"(${dbgI}). showGlyph: c:${code}  u:'${unicodeStr}' [${unicodeStr.map(_.toInt).mkString(','.toString)}]")
+    //   dbgI += 1
+    // }
 
+    val isMacWordToPdfWeirdSpaceEncoding = if (unicodeStr !=null) {
+        unicodeStr.toList.map { _.toInt } == MacWordToPdfWeirdSpaceEncoding
+      } else false
 
-    val isSpace = spaceChars.exists { ch =>
-      code == ch.toInt && {
-        unicode == null || unicode.headOption.exists(_ == ch)
-      }
-    }
+    val unicode = if (unicodeStr !=null) {
+      unicodeStr.toCharArray().filterNot { char =>
+        char <= ' '
+      }.mkString
+    } else ""
 
-    if (!isSpace) {
+    // val isSpace = spaceChars.exists { ch =>
+    //   code == ch.toInt && {
+    //     unicode == null || unicode.toList.map(_.toInt).exists(_ <= 32)
+    //   }
+    // }
+
+    val shouldExtract = !isMacWordToPdfWeirdSpaceEncoding && unicode.nonEmpty
+
+    if (shouldExtract) {
       totalCharCount = totalCharCount + 1
 
       val glyphProps = calculateGlyphBounds(textRenderingMatrix, pdFont, code)
@@ -295,16 +314,6 @@ class PdfBoxTextExtractor(
                 priorCharWindow.take(priorCharWindowSize).reverse
               )
             }
-            // val isAsciiCode = unicode != null && unicode.forall(_.toInt == code)
-            // if (isAsciiCode) {
-            //   strRepr.headOption.foreach { ch =>
-            //     fontProps.initGlyphEvidence(ch, glyphProps, pageNum,
-            //       priorCharWindow.take(priorCharWindowSize).reverse
-            //     )
-            //   }
-            // } else {
-            //   // println(s"nonAscii: '${strRepr}' font:${fontProps.name}")
-            // }
 
             addItem(nextItem)
           }

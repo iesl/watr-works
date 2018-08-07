@@ -30,6 +30,7 @@ object SegmentationLabels extends DocSegLabels {
   val BaselineMidriseBand     = Label.auto
 
   val Fonts                   = Label.auto :: Attr
+  val PrimaryFont             = Label.auto :: Attr
 
   val ExtractedItems          = Label.auto
 

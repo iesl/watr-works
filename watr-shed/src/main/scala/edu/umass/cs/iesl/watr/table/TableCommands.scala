@@ -137,16 +137,29 @@ object InitialSegmentationCommands {
   }
 
 
-  def segmentAll(n: Int=Int.MaxValue, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+  def extractTextToFile(n: Int=Int.MaxValue, skip: Int=0, regexFilter: Option[String]=None)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     val conf = TextWorksConfig.Config(IOConfig(
       inputMode = Some(InputMode.CorpusFile(corpusAccessApi.corpus.corpusRoot.toNIO)),
       outputPath= None,
-      overwrite = true
+      overwrite = true,
+      pathFilter = regexFilter
+    ))
+
+    runTextExtractionPipeline(conf)
+  }
+
+  def segmentAll(n: Int=Int.MaxValue, skip: Int=0, regexFilter: Option[String]=None)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    val conf = TextWorksConfig.Config(IOConfig(
+      inputMode = Some(InputMode.CorpusFile(corpusAccessApi.corpus.corpusRoot.toNIO)),
+      outputPath= None,
+      overwrite = true,
+      pathFilter = regexFilter
     ))
 
     val processStream = createInputStream[IO](conf.ioConfig)
-      .drop(skip.toLong).take(n.toLong)
       .through(initMarkedInput())
+      // .through(filterInputMatchRegex(regexFilter))
+      .drop(skip.toLong).take(n.toLong)
       .through(cleanDBArtifacts(conf))
       .through(cleanFileArtifacts(conf))
       .through(markUnextractedProcessables(conf))

@@ -15,6 +15,7 @@ import formats._
 import corpora._
 import _root_.io.circe, circe._, circe.syntax._
 
+import textgrid._
 
 sealed trait InputMode
 
@@ -85,8 +86,12 @@ object ProcessPipelineSteps {
 
   def runTextExtractionPipeline(conf: TextWorksConfig.Config): Unit = {
 
+    val takeN = conf.ioConfig.numToRun.toLong
+    val skipN = conf.ioConfig.numToSkip.toLong
+
     val processStream = createInputStream[IO](conf.ioConfig)
       .through(initMarkedInput())
+      .drop(skipN).take(takeN)
       .through(cleanFileArtifacts(conf))
       .through(markUnextractedProcessables(conf))
       .through(runSegmentation(conf))
@@ -250,12 +255,16 @@ object ProcessPipelineSteps {
       case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
         val outputFile = Processable.getTextgridOutputFile(input, conf.ioConfig)
 
-        val jsonOutput = time("build json output") {  TextGraphIO.jsonOutputGridPerPage(segmentation) }
+        val jsonOutput = time("build json output") {
+          // Output options
+          TextGridOutputFormats.jsonOutputGridPerPage(segmentation)
+        }
 
         val gridJsStr = jsonOutput.pretty(JsonPrettyPrinter)
 
+        log.trace(s"writing textgrid.json")
+
         time("write textgrid.json") {
-          log.trace(s"writing textgrid.json to ${outputFile}")
           fs.write(outputFile.toFsPath(), gridJsStr)
         }
         m
@@ -275,7 +284,7 @@ object ProcessPipelineSteps {
         } else None
 
         traceLogRoot.foreach { rootPath =>
-          println("writing font summary")
+          log.trace(s"writing font summary")
 
           val docScopeLogs = segmentation.docScope.emitLogs().asJson
 
@@ -284,14 +293,16 @@ object ProcessPipelineSteps {
             docScopeLogs.pretty(PrettyPrint2Spaces)
           )
 
+          log.trace(s"writing tracelogs")
           val pageLogs = segmentation.pageSegmenters
             .foldLeft(List[Json]()) {
               case (accum, pageSegmenter) =>
                 accum ++ pageSegmenter.emitLogs()
             }
 
+          // pageLogs.asJson.pretty(PrettyPrint2Spaces)
           fs.write(rootPath / "tracelog.json",
-            pageLogs.asJson.pretty(PrettyPrint2Spaces)
+            pageLogs.asJson.noSpaces
           )
         }
       }

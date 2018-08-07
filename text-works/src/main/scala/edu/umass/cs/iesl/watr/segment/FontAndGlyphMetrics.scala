@@ -24,87 +24,109 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
       lineShape <- pageSeg.getLabeledLines(lineLabel)
     } yield {
 
-        val chars = pageSeg.getCharsForShape(lineShape)
-        val scaledFontId = chars.head.scaledFontId
+      val chars = pageSeg.getCharsForShape(lineShape)
+      val scaledFontId = chars.head.scaledFontId
 
-        val fontBoundsBottoms = chars.map(_.fontBbox.bottom.unwrap)
-        val fontBoundsBottom = fontBoundsBottoms.head
-        val nonMatching = fontBoundsBottoms.filterNot(_ == fontBoundsBottom).length
+      val fontBoundsBottoms = chars.map(_.fontBbox.bottom.unwrap)
+      val fontBoundsBottom = fontBoundsBottoms.head
+      val nonMatching = fontBoundsBottoms.filterNot(_ == fontBoundsBottom).length
 
-        assume(nonMatching == 0)
+      assume(nonMatching == 0)
 
-        val midrisers = chars.filter(charItem => CharClasses.Midrisers.contains(charItem.char))
-        val ascenders = chars.filter(charItem => CharClasses.Ascenders.contains(charItem.char))
-        val descenders = chars.filter(charItem => CharClasses.Descenders.contains(charItem.char))
-        val caps = chars.filter(charItem => CharClasses.Caps.contains(charItem.char))
+      val midrisers = chars.filter(charItem => CharClasses.Midrisers.contains(charItem.char))
+      val ascenders = chars.filter(charItem => CharClasses.Ascenders.contains(charItem.char))
+      val descenders = chars.filter(charItem => CharClasses.Descenders.contains(charItem.char))
+      val caps = chars.filter(charItem => CharClasses.Caps.contains(charItem.char))
 
-        // val letterT = chars.filter(_.char == 't')
-        // val letterI = chars.filter(_.char == 'i')
-        // val allIds = chars.map(_.id)
-        // val letterIds = (midrisers ++ ascenders ++ descenders ++ letterT ++ letterI ++ caps).map(_.id)
-        // val otherIds = allIds.toSet - letterIds
-
-        // val otherChars = chars.filter(charItem => otherIds.contains(charItem.id))
-        // val midriseOffsets = midrisers.map{ charItem =>
-        //   (charItem.fontBbox.bottom - charItem.minBBox.top , charItem)
-        // }
-        // val tAscentOffset = letterT.map{ charItem =>
-        //   (charItem.fontBbox.bottom - charItem.minBBox.top , charItem)
-        // }
+      val topsAndBottoms = chars.map{c => (c.minBBox.top, c.minBBox.bottom, c)}
+      val maxTop = topsAndBottoms.minBy(_._1)
+      val minBottom = topsAndBottoms.maxBy(_._2)
+      val maxTopEvidence = Seq(maxTop._3)
+      val minBottomEvidence = Seq(minBottom._3)
 
 
-        FontBaselineOffsetsAccum(
-          scaledFontId,
-          fontBaseline = FloatRep(fontBoundsBottom),
-          caps     = caps,
-          ascents  = ascenders,
-          midrises = midrisers,
-          baselines= midrisers,
-          descents = descenders,
-          bottoms  = descenders,
-        )
+
+      FontBaselineOffsetsAccum(
+        scaledFontId,
+        fontBaseline = FloatRep(fontBoundsBottom),
+        caps         = caps,
+        ascents      = ascenders,
+        midrises     = midrisers,
+        baselines    = midrisers,
+        descents     = descenders,
+        tops         = maxTopEvidence,
+        bottoms      = minBottomEvidence,
+      )
     }
 
     val allFontIds = docScope.fontDefs.getNatLangFontIdentifiers()
 
-    // TODO: only run until each offset has been set
     allFontIds.foreach{ scaledFontId =>
 
-      val baselineOffset = findMostCommonOffsetBy(offsetEvidence, scaledFontId,
+      var baselineOffset = findMostCommonOffsetBy(offsetEvidence, scaledFontId,
         _.baselines, _.minBBox.bottom)
 
-      val midriseOffset = findMostCommonOffsetBy(offsetEvidence, scaledFontId,
+      var midriseOffset = findMostCommonOffsetBy(offsetEvidence, scaledFontId,
         _.midrises, _.minBBox.top)
 
-      val capsOffset = findMostCommonOffsetBy(offsetEvidence, scaledFontId,
+      var capsOffset = findMostCommonOffsetBy(offsetEvidence, scaledFontId,
         _.caps, _.minBBox.top)
 
-      val ascentOffset = findMostCommonOffsetBy(offsetEvidence, scaledFontId,
+      var ascentOffset = findMostCommonOffsetBy(offsetEvidence, scaledFontId,
         _.ascents, _.minBBox.top)
 
       val descentOffset = findMostCommonOffsetBy(offsetEvidence, scaledFontId,
         _.descents, _.minBBox.bottom)
 
+
+      val topOffsets = findCountedOffsetsBy(offsetEvidence, scaledFontId,
+        _.tops, _.minBBox.top)
+
+      val topOffset = topOffsets.map(_._2._1).max
+
+      val bottomOffsets = findCountedOffsetsBy(offsetEvidence, scaledFontId,
+        _.bottoms, _.minBBox.bottom)
+
+      val bottomOffset = bottomOffsets.map(_._2._1).min
+
+      if (capsOffset == FloatExact.zero) {
+        capsOffset = topOffset
+      }
+      if (ascentOffset == FloatExact.zero) {
+        ascentOffset = topOffset
+      }
+
+      // default to 77% , 23% of topLine offset for mid/baseline
+      if (midriseOffset == FloatExact.zero) {
+        midriseOffset = (topOffset * 0.77.toFloatExact())
+      }
+      if (baselineOffset == FloatExact.zero) {
+        baselineOffset = (topOffset * 0.23.toFloatExact())
+      }
+
+
       docScope.fontDefs.setScaledFontOffsets(scaledFontId,
         FontBaselineOffsets(
           scaledFontId,
-          cap      = capsOffset,
-          ascent   = ascentOffset,
-          midrise  = midriseOffset,
-          baseline = baselineOffset,
-          descent  = descentOffset,
-          bottom   = descentOffset
+          fontBaseline = FloatExact.zero,
+          _cap      = capsOffset,
+          _ascent   = ascentOffset,
+          _midrise  = midriseOffset,
+          _baseline = baselineOffset,
+          _descent  = descentOffset,
+          _top      = topOffset,
+          _bottom   = bottomOffset
         )
       )
     }
   }
 
-  def findMostCommonOffsetBy(
+  def findCountedOffsetsBy(
     offsetEvidence: Seq[FontBaselineOffsetsAccum],
     scaledFontId: String@@ScaledFontID,
     f: FontBaselineOffsetsAccum => Seq[CharItem],
     dist: CharItem => Int@@FloatRep
-  ): Int@@FloatRep = {
+  ): Seq[(Int, (Int@@FloatRep, CharItem))] = {
 
     val fontEvidence = offsetEvidence
       .filter(_.scaledFontId === scaledFontId)
@@ -114,6 +136,17 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
         (ev.fontBaseline - dist(charItem), charItem)
       }
     }.uniqueCountBy(_._2.char)
+
+    offsetCountsByChar
+  }
+
+  def findMostCommonOffsetBy(
+    offsetEvidence: Seq[FontBaselineOffsetsAccum],
+    scaledFontId: String@@ScaledFontID,
+    f: FontBaselineOffsetsAccum => Seq[CharItem],
+    dist: CharItem => Int@@FloatRep
+  ): Int@@FloatRep = {
+    val offsetCountsByChar = findCountedOffsetsBy(offsetEvidence, scaledFontId, f, dist)
 
     if (offsetCountsByChar.nonEmpty) {
       val mostCommonOffsetRec = offsetCountsByChar.maxBy(_._1)

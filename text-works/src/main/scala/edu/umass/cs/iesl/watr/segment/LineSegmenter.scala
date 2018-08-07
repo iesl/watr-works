@@ -5,11 +5,13 @@ package segment
 import geometry._
 import geometry.syntax._
 import extract._
+import shapeless.Lazy
 import utils.ExactFloats._
 import utils.FunctionalHelpers._
 import utils.SlicingAndDicing._
 import watrmarks._
-// import textboxing.{TextBoxing => TB}, TB._
+import textboxing.{TextBoxing => TB}, TB._
+import utils.DoOrDieHandlers._
 import utils.SlicingAndDicing._
 
 import TypeTags._
@@ -184,29 +186,92 @@ trait LineSegmentation extends PageScopeSegmenter
   }
 
 
-  def findLineCharsInPageBand(pageSlice: LTBounds, rootChar: ExtractedItem.CharItem, outputLabel: Label): Option[AnyShape] = {
+  def findLineCharsInPageBand(pageSlice: LTBounds, rootChar: ExtractedItem.CharItem, outputLabel: Label): Option[RectShape] = {
     val glyphsInBand = searchForRects(pageSlice, LB.Glyph)
 
     val glyphsWithChar = glyphsInBand.map { g =>
       (g, getCharsForShape(g).head)
     }
 
-    val orderedById = glyphsWithChar.sortBy(_._2.id)
+    var dbgGrid = Lazy[TB.Grid]{ TB.Grid.widthAligned() }
 
-    val consecutiveSets = orderedById.groupByPairs { case ((bbox1, char1), (bbox2, char2)) =>
-      char1.id.unwrap == char2.id.unwrap - 1
+    dbgGrid = dbgGrid.map { grid =>
+      var g = TB.Grid.widthAligned(
+        (8, AlignRight), // h-dist
+        (1, AlignLeft),  // space
+        (1, AlignLeft),  // line text (char(s))
+        (1, AlignLeft),  // space
+      )
+
+      g = g.addRow(
+        "H-Dst|||",
+        " ",
+        ">",
+        " "
+      )
+      g = g.addRow("        ", " ", " ", " ")
+      g
     }
 
-    val setWithRootChar = consecutiveSets.filter { charSet =>
+
+    // val orderedById = glyphsWithChar.sortBy(_._2.id)
+    val orderedById = glyphsWithChar.sortBy(_._1.shape.left)
+
+    val rootCharOffsets = docScope.fontDefs.getScaledFontOffsets(rootChar.scaledFontId)
+    val capDescentDist = rootCharOffsets.descentLine - rootCharOffsets.capLine
+    val whitespaceCutoff = capDescentDist * 3
+    val dbgChars = orderedById.map(_._2.char).mkString
+
+
+
+    // println(s"findLineCharsInPageBand: ${dbgChars}")
+    // println(s"                       : ${pageSlice}")
+    // println(s"                       : ${rootCharOffsets}: capDescentDist=${capDescentDist}, ws cutoff=${whitespaceCutoff}")
+    val consecutiveSets = orderedById.groupByPairs { case ((bbox1, char1), (bbox2, char2)) =>
+      val hdist = bbox2.shape.left - bbox1.shape.right
+      val isClose = hdist < whitespaceCutoff
+      val isConsecutive = char1.id.unwrap == char2.id.unwrap - 1
+
+      isClose && isConsecutive
+    }
+
+    val hDists: Seq[Int@@FloatRep] = orderedById.sliding(2).toList.map { w => w.toList match {
+      case (bbox1, char1) :: (bbox2, char2) :: Nil => bbox2.shape.left - bbox1.shape.right
+      case _ => FloatExact.zero
+    } }
+
+
+    val indexedSets = consecutiveSets.zipWithIndex
+    val setWithRootChar = indexedSets.filter { case (charSet, setNum) =>
       charSet.map(_._2.id).contains(rootChar.id)
     }
 
     if (setWithRootChar.nonEmpty) {
-      val charSetWithRootChar = setWithRootChar.flatMap(_.map(_._2))
+      val setNum = setWithRootChar.head._2
+      val lenBeforeRoot = indexedSets.takeWhile(_._2 < setNum).map(_._1.length).sum
+      val lenAfterRoot = indexedSets.drop(setNum+1).map(_._1.length).sum
+      val indicator = (" "*lenBeforeRoot) + ("="*setWithRootChar.head._1.length) + (" "*lenAfterRoot)
+
+      val charSetWithRootChar = setWithRootChar.flatMap(_._1.map(_._2))
+
+      orderedById.zip(hDists :+ FloatExact.zero).zip(indicator.toList)
+        .foreach{ case (((glyphShape, charItem), hDist), indicatorSym) =>
+          dbgGrid = dbgGrid.map { grid =>
+            grid.addRow(
+              hDist.pp(),
+              "",
+              charItem.char.toString(),
+              indicatorSym.toString(),
+            )
+          }
+        }
+
+      println("Debug Grid")
+      println(dbgGrid.value.toBox().transpose())
 
 
       setWithRootChar.foreach { charSet =>
-        charSet.map(_._1).foreach { unindexShape(_) }
+        charSet._1.map(_._1).foreach { unindexShape(_) }
       }
 
       val fontIds = charSetWithRootChar.map(_.scaledFontId).toSet
@@ -215,7 +280,7 @@ trait LineSegmentation extends PageScopeSegmenter
       charBounds.withinRegion(pageSlice)
         .adjacentRegions(Dir.Top, Dir.Center, Dir.Bottom)
         .map{ textRegion =>
-          val pageBand = indexShape(textRegion, outputLabel)
+          val pageBand = indexShape(textRegion, outputLabel).asRectShape
           setExtractedItemsForShape(pageBand, charSetWithRootChar)
           setFontsForShape(pageBand, fontIds)
           pageBand
@@ -252,17 +317,80 @@ trait LineSegmentation extends PageScopeSegmenter
         }
 
         linesAndOffsetsAndHeadChar.foreach { case (lineShape, offsetsAtLine, headChar) =>
-          val capDescentBandHeight = offsetsAtLine.descent - offsetsAtLine.cap
+          val capDescentBandHeight = offsetsAtLine.descentLine - offsetsAtLine.capLine
+          println(s"generatePageRules: offsetsAtLine: ${offsetsAtLine}")
 
           pageHorizontalSlice(
-            offsetsAtLine.cap.asDouble(),
+            offsetsAtLine.capLine.asDouble(),
             capDescentBandHeight.asDouble()
-          ).map{ slice =>
+          ).foreach{ slice =>
             val maybeBand = findLineCharsInPageBand(slice, headChar, outputLabel)
 
-            maybeBand.foreach { band =>
+
+            maybeBand.foreach { capDescentBand =>
+              val baselineMidriseHeight = offsetsAtLine.baseLine - offsetsAtLine.midriseLine
+              val superSubCutoffY = offsetsAtLine.midriseLine + (baselineMidriseHeight / 3)
+              println(s"generatePageRules: baselineMidriseHeight=${baselineMidriseHeight}")
+
+              val capDescentRect = capDescentBand.shape
+              val (maybeUpper, maybeLower) = capDescentRect.splitHorizontal(superSubCutoffY)
+              val upperBand = maybeUpper.orDie(s"Could not split CapDescenderBand (${capDescentRect}) into upper/lower at ${superSubCutoffY}; ${offsetsAtLine}")
+              val lowerBand = maybeLower.orDie(s"Could not split CapDescenderBand (${capDescentRect}) into upper/lower at ${superSubCutoffY}; ${offsetsAtLine}")
+
               traceLog.trace {
-                traceLog.shape(band) tagged s"Caps Descender Page Rules Font#${depth}. ${headFontId}"
+                traceLog.figure(capDescentRect) tagged s"CapDescenderBand Clipped"
+              }
+              traceLog.trace {
+                traceLog.figure(upperBand) tagged s"Upper Superscript bounds"
+              }
+              traceLog.trace {
+                traceLog.figure(lowerBand) tagged s"Lower Subscript bounds"
+              }
+
+              // val (maybeCapMidrise, maybMidriseDescent) = capDescentRect.splitHorizontal(offsetsAtLine.midrise)
+              // val capsMidriseBand = maybeCapMidrise.orDie(s"Could not split CapDescenderBand (${capDescentRect}) into upper/lower")
+              // val midriseDescentBand = maybMidriseDescent.orDie(s"Could not split CapDescenderBand (${capDescentRect}) into upper/lower")
+              // val (maybeMidriseBaseline, maybeBaselineDescent) = midriseDescentBand.splitHorizontal(offsetsAtLine.baseline)
+
+              // val midriseBaselineBand = maybeMidriseBaseline.orDie(s"Could not split midriseDescentBand (${midriseDescentBand}) into upper/lower")
+              // val baselineDescentBand = maybeBaselineDescent.orDie(s"Could not split midriseDescentBand (${midriseDescentBand}) into upper/lower")
+
+
+              val charsInBand = getCharsForShape(capDescentBand)
+
+              val eitherSuperScriptOrNot = collectSpanEither[ExtractedItem.CharItem](charsInBand, { c =>
+                val isRaised = c.minBBox.isStrictlyAbove(lowerBand)
+                c.scaledFontId != headFontId && isRaised
+              })
+              val superScriptChars = eitherSuperScriptOrNot.collect { case e@ Right(i) => e }
+
+              superScriptChars.foreach {
+                case Right(charSpan) =>
+                  val minBounds = charSpan.map(_.minBBox).reduce(_ union _)
+                  traceLog.trace {
+                    traceLog.figure(minBounds) tagged s"Superscript MinBounds"
+                  }
+              }
+
+              val eitherSubScriptOrNot = collectSpanEither[ExtractedItem.CharItem](charsInBand, { c =>
+                // && c.minBBox.intersects(baselineDescentBand)
+                // val isContained1 = c.minBBox.isContainedBy(lowerBand)
+                val isLowered = c.minBBox.isStrictlyBelow(upperBand)
+                c.scaledFontId != headFontId && isLowered
+              })
+
+              val subScriptChars = eitherSubScriptOrNot.collect { case e@ Right(i) => e }
+
+              subScriptChars.foreach {
+                case Right(charSpan) =>
+                  val minBounds = charSpan.map(_.minBBox).reduce(_ union _)
+                  traceLog.trace {
+                    traceLog.figure(minBounds) tagged s"SubScript MinBounds"
+                  }
+              }
+
+              traceLog.trace {
+                traceLog.shape(capDescentBand) tagged s"${outputLabel} Font#${depth}. ${headFontId}"
               }
             }
           }
@@ -286,7 +414,10 @@ trait LineSegmentation extends PageScopeSegmenter
         indexShape(item.minBBox, LB.PathBounds)
       }
 
-    traceLog.trace { shape(pathShapes:_*) tagged "Path Line Bounds" }
+    traceLog.trace {
+      shape(pathShapes:_*) tagged "Path Line Bounds"
+    }
+
   }
 
   def indexImageRegionsAndDeleteOverlaps(): Unit = {

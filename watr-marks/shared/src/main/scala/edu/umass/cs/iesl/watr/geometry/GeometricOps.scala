@@ -295,9 +295,6 @@ trait GeometricOps {
 
     def isStrictlyBelow(other: LTBounds): Boolean = {
       other.isStrictlyAbove(self)
-      // val myTop = self.toPoint(Dir.Top).y
-      // val otherBottom = other.toPoint(Dir.Bottom).y
-      // myTop > otherBottom
     }
 
     def isStrictlyLeftOf(other: LTBounds): Boolean = {
