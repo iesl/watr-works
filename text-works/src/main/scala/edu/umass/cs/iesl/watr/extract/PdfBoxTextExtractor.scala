@@ -77,10 +77,6 @@ class PdfBoxTextExtractor(
     combiningMarks = item :: combiningMarks
   }
 
-  // def stashChar(c: Char): Unit = {
-  //   // addCharItem(CharItem(charIdGen.nextId, charBounds, c))
-  // }
-
   def traceFunc()(implicit enc: sourcecode.Enclosing): Unit = {
     println(s"running ${enc.value}")
   }
@@ -231,6 +227,31 @@ class PdfBoxTextExtractor(
     showGlyph(textRenderingMatrix, font, code, unicode, displacement)
   }
 
+  def getRotation(matrix: Matrix): Int = {
+    // val matrixValues = matrix.getValuesAsDouble()
+    // val matrixAsString = matrixValues.map(_.map(_.toString).mkString(", ")).mkString("{\n  ", "\n  ", "\n}")
+    // println(s"${matrixAsString}")
+    // val scaleX = matrix.getScaleX
+    // val scaleY = matrix.getScaleY
+
+    val scalingX = matrix.getScalingFactorX
+    val scalingY = matrix.getScalingFactorY
+
+    val m01 = matrix.getValue(0, 1)
+    // val m10 = matrix.getValue(1, 0)
+    val sinTheta = m01 / scalingY
+    // val sinThetaX = m10 / scalingX
+    val arcSinTheta = math.asin(sinTheta.toDouble)
+    // val arcX = math.asin(sinThetaX.toDouble)
+
+    val degreeRot = arcSinTheta * 57.2958
+
+    // println(s"scale x/y ${scaleX}/${scaleY} or scaling ${scalingX}/${scalingY}")
+    // println(s" m01/10: ${m01}, ${m10}: atan x/y ${arcX}/${arcY} sinTheta x/y ${sinThetaX}/${sinThetaY}, rot=${degreeRot}")
+
+    math.round(degreeRot).toInt
+  }
+
   val priorCharWindowSize = 3
   var priorCharWindow: List[ExtractedItem.CharItem] = List()
 
@@ -251,15 +272,16 @@ class PdfBoxTextExtractor(
       log.warn(s"Truncating page ${pageNum}. Limit of ${MAX_EXTRACTED_CHARS_PER_PAGE} glyphs/page exceeded")
       throw new PageLimitExceeded()
     }
+
     // val isPage0 = pageNum.unwrap == 0
     // if (isPage0) {
-    //   println(s"(${dbgI}). showGlyph: c:${code}  u:'${unicodeStr}' [${unicodeStr.map(_.toInt).mkString(','.toString)}]")
+    //   println(s"> ${unicodeStr} ${code} ${pdFont.getName}")
     //   dbgI += 1
     // }
 
     val isMacWordToPdfWeirdSpaceEncoding = if (unicodeStr !=null) {
-        unicodeStr.toList.map { _.toInt } == MacWordToPdfWeirdSpaceEncoding
-      } else false
+      unicodeStr.toList.map { _.toInt } == MacWordToPdfWeirdSpaceEncoding
+    } else false
 
     val unicode = if (unicodeStr !=null) {
       unicodeStr.toCharArray().filterNot { char =>
@@ -267,11 +289,6 @@ class PdfBoxTextExtractor(
       }.mkString
     } else ""
 
-    // val isSpace = spaceChars.exists { ch =>
-    //   code == ch.toInt && {
-    //     unicode == null || unicode.toList.map(_.toInt).exists(_ <= 32)
-    //   }
-    // }
 
     val shouldExtract = !isMacWordToPdfWeirdSpaceEncoding && unicode.nonEmpty
 
@@ -296,17 +313,40 @@ class PdfBoxTextExtractor(
 
         def appendChar(strRepr: String): Unit = {
           if (isContained) {
-            val nextItem = CharItem(charIdGen.nextId, strRepr, fontProps, glyphProps)
-            val sameFont = priorCharWindow.headOption.exists(_.fontProps==nextItem.fontProps)
-            val sameScalingFactor = priorCharWindow.headOption.exists(_.glyphProps.scalingFactor == nextItem.glyphProps.scalingFactor)
-            val sameFontBaseline = priorCharWindow.headOption.exists(_.fontBbox.bottom == nextItem.fontBbox.bottom)
+            // val nextItem = CharItem(charIdGen.nextId, strRepr, fontProps, glyphProps)
+            val sameFont = priorCharWindow.headOption.exists(_.fontProps==fontProps)
+            val sameScalingFactor = priorCharWindow.headOption.exists(_.glyphProps.scalingFactor == glyphProps.scalingFactor)
+
+            val sameFontBaseline = priorCharWindow.headOption.exists{lastGlyph =>
+              val sameRotation = lastGlyph.glyphProps.rotation == glyphProps.rotation
+              val baselinesMatch = glyphProps.rotation match {
+                case 0 =>
+                  lastGlyph.fontBbox.bottom == glyphProps.fontBBox.bottom
+                case 90 =>
+                  lastGlyph.fontBbox.right == glyphProps.fontBBox.right
+                case 180 =>
+                  lastGlyph.fontBbox.top == glyphProps.fontBBox.top
+                case x => false
+              }
+
+              sameRotation && baselinesMatch
+            }
+
+
+            val isNotRotated = glyphProps.rotation == 0
 
             val similarGlyph = sameFont && sameScalingFactor && sameFontBaseline
 
-            if (similarGlyph) {
+            val nextItem = if (similarGlyph) {
+              val prevItem = priorCharWindow.head
+              // val updatedItem = nextItem.copy(glyphProps=nextItem.glyphProps.copy(prevSimilar=prevItem.id))
+              val nextItem = CharItem(charIdGen.nextId, strRepr, fontProps, glyphProps.copy(prevSimilar=prevItem.id))
               priorCharWindow = nextItem :: priorCharWindow
+              nextItem
             } else {
+              val nextItem = CharItem(charIdGen.nextId, strRepr, fontProps, glyphProps)
               priorCharWindow = List(nextItem)
+              nextItem
             }
 
             strRepr.headOption.foreach { ch =>
@@ -315,7 +355,10 @@ class PdfBoxTextExtractor(
               )
             }
 
-            addItem(nextItem)
+            if (isNotRotated) {
+              addItem(nextItem)
+            }
+
           }
         }
 
@@ -353,6 +396,8 @@ class PdfBoxTextExtractor(
     textRenderingMatrix.concatenate(font.getFontMatrix)
     val affineTr = textRenderingMatrix.createAffineTransform()
 
+    val glyphRotation = getRotation(textRenderingMatrix)
+
     def trans(p: GeneralPath): Shape = {
       val sh = affineTr.createTransformedShape(p.getBounds2D)
       pageSpaceTransform.transform(sh)
@@ -361,7 +406,9 @@ class PdfBoxTextExtractor(
     var initGlyphProps = GlyphProps(
       None,
       trans(getFontBounds(font).toGeneralPath()),
-      affineTr
+      affineTr,
+      glyphRotation,
+      CharID(0)
     )
 
     if (font.isInstanceOf[PDType3Font]) {
@@ -559,7 +606,6 @@ object PdfBoxTextExtractor {
   }
 
   def main(args: Array[String]): Unit = {
-    println("Hello")
 
     extractPages(DocumentID("dummy"), fs.pwd / RelPath(args(0)))
 

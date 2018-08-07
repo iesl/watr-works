@@ -123,11 +123,11 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       }
     }
 
-    time("findContiguousBlocks") {
-      pageSegmenters.foreach { p =>
-        p.findContiguousBlocks(LB.CapDescenderBand)
-      }
-    }
+    // time("findContiguousBlocks") {
+    //   pageSegmenters.foreach { p =>
+    //     p.findContiguousBlocks(LB.CapDescenderBand)
+    //   }
+    // }
 
   }
 

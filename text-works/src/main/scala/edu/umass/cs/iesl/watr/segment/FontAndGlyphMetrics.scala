@@ -82,12 +82,14 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
       val topOffsets = findCountedOffsetsBy(offsetEvidence, scaledFontId,
         _.tops, _.minBBox.top)
 
-      val topOffset = topOffsets.map(_._2._1).max
+      val topOffsetDeltas = topOffsets.map(_._2._1)
+      val topOffset = if (topOffsetDeltas.nonEmpty) topOffsetDeltas.max else FloatExact.zero
 
       val bottomOffsets = findCountedOffsetsBy(offsetEvidence, scaledFontId,
         _.bottoms, _.minBBox.bottom)
 
-      val bottomOffset = bottomOffsets.map(_._2._1).min
+      val bottomOffsetDeltas = bottomOffsets.map(_._2._1)
+      val bottomOffset = if (bottomOffsetDeltas.nonEmpty) bottomOffsetDeltas.min else FloatExact.zero
 
       if (capsOffset == FloatExact.zero) {
         capsOffset = topOffset

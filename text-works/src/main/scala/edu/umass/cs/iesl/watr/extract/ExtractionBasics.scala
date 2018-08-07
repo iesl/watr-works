@@ -137,7 +137,9 @@ object ExtractedItem {
 case class GlyphProps(
   finalGlyphBounds: Option[Shape],
   finalFontBounds: Shape,
-  finalAffineTrans: AffineTransform
+  finalAffineTrans: AffineTransform,
+  rotation: Int,
+  prevSimilar: Int@@CharID
 ) {
 
   lazy val fontBBox = finalFontBounds.getBounds2D().toLTBounds
@@ -147,10 +149,6 @@ case class GlyphProps(
     val normDet = determinant * 1000 * 1000
     ScalingFactor(normDet.toInt)
   }
-
-
-  // def baselineOffset: Int@@FloatRep
-  // def baselineOffset: Int@@FloatRep
 }
 
 case class PageSpaceTransforms(
@@ -262,14 +260,12 @@ case class FontProperties(
   var docWideBigramCount = 0
   var docWideTrigramCount = 0
 
-  def initGlyphEvidence(c: Char, glyphProps: GlyphProps, pageNum: Int@@PageNum, priorSimilarChars: Seq[ExtractedItem.CharItem]): Unit = {
+  def initGlyphEvidence(char: Char, glyphProps: GlyphProps, pageNum: Int@@PageNum, priorSimilarChars: Seq[ExtractedItem.CharItem]): Unit = {
     val bbox = glyphProps.glyphBBox
     val height = bbox.height.asDouble()
     val scalingFactor = glyphProps.scalingFactor
 
-    // offsetToBaseline.set(c, scalingFactor, )
-
-    val recentSimilarTextWindow = priorSimilarChars.map(_.char).mkString
+    val recentSimilarTextWindow = char.toLower + priorSimilarChars.map(_.char).mkString.toLowerCase()
 
     val hasBigram = CharClasses.hasCommonBigram(recentSimilarTextWindow.take(2))
     val hasTrigram = CharClasses.hasCommonTrigram(recentSimilarTextWindow.take(3))
@@ -284,22 +280,22 @@ case class FontProperties(
 
     totalGlyphOccurrenceCounts.modifyOrSet(pageNum, scalingFactor, _+1, 0)
 
-    val shouldRecord = 32 < c && c < 128
+    val shouldRecord = 32 < char && char < 128
     if (shouldRecord) {
-      asciiHeightsPerScaleFactor.set(scalingFactor, c, height)
+      asciiHeightsPerScaleFactor.set(scalingFactor, char, height)
       asciiHeightsPerScaleFactorInv.modifyOrSet(
         scalingFactor,
         bbox.height,
         { letters =>
-          if (letters.contains(c)) letters
-          else (letters + c).sorted
+          if (letters.contains(char)) letters
+          else (letters + char).sorted
         },
-        c.toString()
+        char.toString()
       )
 
     }
 
-    val i = CharClasses.MostFrequentLetters.indexOf(c)
+    val i = CharClasses.MostFrequentLetters.indexOf(char.toLower)
     if (i >= 0) {
       alphaEvidence(i) = alphaEvidence(i) + 1
     }

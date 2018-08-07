@@ -293,6 +293,16 @@ trait GeometricOps {
       myBottom < otherTop
     }
 
+    def isStrictlyAbove(yVal: Int@@FloatRep): Boolean = {
+      val myBottom = self.toPoint(Dir.Bottom).y
+      myBottom < yVal
+    }
+
+    def isStrictlyBelow(yVal: Int@@FloatRep): Boolean = {
+      val myTop = self.toPoint(Dir.Top).y
+      myTop > yVal
+    }
+
     def isStrictlyBelow(other: LTBounds): Boolean = {
       other.isStrictlyAbove(self)
     }
