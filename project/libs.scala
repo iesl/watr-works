@@ -21,7 +21,7 @@ trait LibVersions {
 
   val ammoniteVersion     = "1.1.2"
 
-  val catsV               = "1.1.0"
+  val catsV               = "1.2.0"
   val catsEffectV         = "0.10.1"
   val postgresqlV         = "42.2.4"
   val freestyleV          = "0.7.0"

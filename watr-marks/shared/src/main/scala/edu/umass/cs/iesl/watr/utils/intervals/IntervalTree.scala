@@ -43,7 +43,7 @@ object IntervalTree {
 
 import textboxing.{TextBoxing => TB}, TB._
 
-class IntervalTree[T: Ordering: MidpointHelper] {
+class IntervalTree[T: Ordering: MidpointHelper, W] {
 
   import collection.mutable
 
@@ -52,7 +52,7 @@ class IntervalTree[T: Ordering: MidpointHelper] {
     * The root of the current interval tree. It is {@code null} initially, when the tree is
     * empty and may change as the result of adding or removing intervals to the tree.
     */
-  var root: TreeNode[T] = null
+  var root: TreeNode[T, W] = null
 
   /**
     * The size of the interval tree, or the amount of intervals stored in it.
@@ -80,7 +80,7 @@ class IntervalTree[T: Ordering: MidpointHelper] {
     * @return {@code true}, if the tree has been modified as a result of the operation,
     *         or {@code false} otherwise.
     */
-  def add(interval: Interval[T]): Boolean = {
+  def add(interval: Interval[T, W]): Boolean = {
     if (interval.isEmpty()) false else {
 
       val sizeBeforeOperation = size;
@@ -100,8 +100,8 @@ class IntervalTree[T: Ordering: MidpointHelper] {
     * @param point The query point.
     * @return A set containing all intervals from the tree, intersecting the query point.
     */
-  def query(point: T): Set[Interval[T]] = {
-    TreeNode.query(root, point,  Set[Interval[T]]())
+  def query(point: T): Set[Interval[T, W]] = {
+    TreeNode.query(root, point,  Set[Interval[T, W]]())
   }
 
   /**
@@ -115,12 +115,12 @@ class IntervalTree[T: Ordering: MidpointHelper] {
     * @param interval The query interval.
     * @return A set containing all intervals from the tree, intersecting the query interval.
     */
-  def query(interval: Interval[T]): Set[Interval[T]] = {
+  def query(interval: Interval[T, W]): Set[Interval[T, W]] = {
 
     if (root == null || interval.isEmpty()) {
       Set()
     } else {
-      val result = mutable.Set[Interval[T]]()
+      val result = mutable.Set[Interval[T, W]]()
       var node = root;
       while (node != null){
         if (interval.contains(node.midpoint)){
@@ -161,7 +161,7 @@ class IntervalTree[T: Ordering: MidpointHelper] {
     * @param interval
     * @return
     */
-  def remove(interval: Interval[T]): Boolean = {
+  def remove(interval: Interval[T, W]): Boolean = {
     (interval.nonEmpty() && root != null &&
       false
     )
@@ -179,7 +179,7 @@ class IntervalTree[T: Ordering: MidpointHelper] {
   }
 
   def isEmpty(): Boolean = size == 0
-  def contains(interval: Interval[T]): Boolean = {
+  def contains(interval: Interval[T, W]): Boolean = {
     query(interval).contains(interval)
   }
   def contains(t: T): Boolean = {
@@ -188,9 +188,9 @@ class IntervalTree[T: Ordering: MidpointHelper] {
     }
   }
 
-  def iterator(): Iterator[Interval[T]]  = {
+  def iterator(): Iterator[Interval[T, W]]  = {
     if (root == null){
-      Iterator[Interval[T]]()
+      Iterator[Interval[T, W]]()
     } else {
       root.intervalIterator()
     }

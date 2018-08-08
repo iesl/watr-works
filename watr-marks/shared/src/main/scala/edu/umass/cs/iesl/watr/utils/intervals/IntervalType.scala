@@ -18,8 +18,9 @@ object Interval {
     * start points are the same. Otherwise the set will not be able to handle two different intervals, sharing
     * the same starting point, and omit one of the intervals.
     */
-  class IncreaseOrdering[T] extends Ordering[Interval[T]] {
-    def compare(a:Interval[T], b:Interval[T]): Int = {
+
+  class IncreaseOrdering[T] extends Ordering[Interval[T, _]] {
+    def compare(a:Interval[T, _], b:Interval[T, _]): Int = {
       var compare = a.compareStarts(b);
       if (compare != 0)
         compare;
@@ -30,6 +31,14 @@ object Interval {
         else a.compareSpecialization(b);
       }
     }
+  }
+
+  implicit val increaseIntervalOrderingInt: IncreaseOrdering[Int] = {
+    new Interval.IncreaseOrdering[Int]
+  }
+
+  implicit val increaseIntervalOrderingDouble: IncreaseOrdering[Double] = {
+    new Interval.IncreaseOrdering[Double]
   }
 
   /**
@@ -49,8 +58,8 @@ object Interval {
     * ths user to ensure that she compares intervals from the same class, otherwise an exception might be thrown.
     *
     */
-  class DecreaseOrdering[T] extends Ordering[Interval[T]] {
-    def compare(a:Interval[T], b:Interval[T]): Int = {
+  class DecreaseOrdering[T] extends Ordering[Interval[T, _]] {
+    def compare(a:Interval[T, _], b:Interval[T, _]): Int = {
 
       var compare = b.compareEnds(a);
       if (compare != 0)
@@ -87,7 +96,7 @@ object Interval {
   }
 
 
-  def nonEmpty[T](interval: Interval[T]): Boolean = {
+  def nonEmpty[T](interval: Interval[T, _]): Boolean = {
     interval != null && interval.nonEmpty()
   }
 
@@ -95,56 +104,60 @@ object Interval {
   object bounded {
     object create {
 
-      def leftClosedRightOpen[T: Numeric: MidpointHelper](lower: T, upper: T): Interval[T] = {
-        new Interval[T](Some(lower), Some(upper),
+      def leftClosedRightOpen[T: Numeric: MidpointHelper, W](lower: T, upper: T): Interval[T, Unit] = {
+        new Interval[T, Unit](Some(lower), Some(upper),
           isStartInclusive=true,
-          isEndInclusive=false
+          isEndInclusive=false,
+          ()
         )
       }
 
-      def leftOpenRightClosed[T: Numeric: MidpointHelper](lower: T, upper: T): Interval[T] = {
-        new Interval[T](Some(lower), Some(upper),
+      def leftOpenRightClosed[T: Numeric: MidpointHelper](lower: T, upper: T): Interval[T, Unit] = {
+        new Interval[T, Unit](Some(lower), Some(upper),
           isStartInclusive=false,
-          isEndInclusive=true
+          isEndInclusive=true,
+          ()
         )
       }
 
-      def closed[T: Numeric: MidpointHelper](lower: T, upper: T): Interval[T] = {
-        new Interval[T](Some(lower), Some(upper),
+      def closed[T: Numeric: MidpointHelper](lower: T, upper: T): Interval[T, Unit] = {
+        new Interval[T, Unit](Some(lower), Some(upper),
           isStartInclusive=true,
-          isEndInclusive=true
+          isEndInclusive=true,
+          ()
         )
       }
 
-      def open[T: Numeric: MidpointHelper](lower: T, upper: T): Interval[T] = {
-        new Interval[T](Some(lower), Some(upper),
+      def open[T: Numeric: MidpointHelper](lower: T, upper: T): Interval[T, Unit] = {
+        new Interval[T, Unit](Some(lower), Some(upper),
           isStartInclusive=false,
-          isEndInclusive=false
+          isEndInclusive=false,
+          ()
         )
       }
     }
 
 
 
-    def leftClosedRightOpen[T: Numeric: MidpointHelper](lower: T, upper: T): Option[Interval[T]] = {
+    def leftClosedRightOpen[T: Numeric: MidpointHelper](lower: T, upper: T): Option[Interval[T, Unit]] = {
       if (Ordering[T].lt(lower, upper)) {
         Some(create.leftClosedRightOpen(lower, upper))
       } else None
     }
 
-    def leftOpenRightClosed[T: Numeric: MidpointHelper](lower: T, upper: T): Option[Interval[T]] = {
+    def leftOpenRightClosed[T: Numeric: MidpointHelper](lower: T, upper: T): Option[Interval[T, Unit]] = {
       if (Ordering[T].lt(lower, upper)) {
         Some(create.leftOpenRightClosed(lower, upper))
       } else None
     }
 
-    def closed[T: Numeric: MidpointHelper](lower: T, upper: T): Option[Interval[T]] = {
+    def closed[T: Numeric: MidpointHelper](lower: T, upper: T): Option[Interval[T, Unit]] = {
       if (Ordering[T].lteq(lower, upper)) {
         Some(create.closed(lower, upper))
       } else None
     }
 
-    def open[T: Numeric: MidpointHelper](lower: T, upper: T): Option[Interval[T]] = {
+    def open[T: Numeric: MidpointHelper](lower: T, upper: T): Option[Interval[T, Unit]] = {
       if (Ordering[T].lt(lower, upper)) {
         Some(create.open(lower, upper))
       } else None
@@ -153,43 +166,48 @@ object Interval {
   }
 
   object unbounded {
-    def leftOpen[T: Numeric: MidpointHelper](value: T): Interval[T] = {
-      new Interval[T](
+    def leftOpen[T: Numeric: MidpointHelper](value: T): Interval[T, Unit] = {
+      new Interval[T, Unit](
         Some(value), None,
         isStartInclusive=false,
-        isEndInclusive=true
+        isEndInclusive=true,
+        ()
       )
     }
 
-    def leftClosed[T: Numeric: MidpointHelper](value: T): Interval[T] = {
-      new Interval[T](
+    def leftClosed[T: Numeric: MidpointHelper](value: T): Interval[T, Unit] = {
+      new Interval[T, Unit](
         Some(value), None,
         isStartInclusive=true,
-        isEndInclusive=true
+        isEndInclusive=true,
+        ()
       )
     }
 
-    def rightOpen[T: Numeric: MidpointHelper](value: T): Interval[T] = {
-      new Interval[T](
+    def rightOpen[T: Numeric: MidpointHelper](value: T): Interval[T, Unit] = {
+      new Interval[T, Unit](
         None, Some(value),
         isStartInclusive=true,
-        isEndInclusive=false
+        isEndInclusive=false,
+        ()
       )
     }
 
-    def rightClosed[T: Numeric: MidpointHelper](value: T): Interval[T] = {
-      new Interval[T](
+    def rightClosed[T: Numeric: MidpointHelper](value: T): Interval[T, Unit] = {
+      new Interval[T, Unit](
         None, Some(value),
         isStartInclusive=true,
-        isEndInclusive=true
+        isEndInclusive=true,
+        ()
       )
     }
 
-    def apply[T: Numeric: MidpointHelper](): Interval[T] = {
-      new Interval[T](
+    def apply[T: Numeric: MidpointHelper](): Interval[T, Unit] = {
+      new Interval[T, Unit](
         None, None,
         isStartInclusive=true,
-        isEndInclusive=true
+        isEndInclusive=true,
+        ()
       )
     }
 
@@ -198,8 +216,8 @@ object Interval {
 }
 
 trait MidpointHelper[T] {
-  def getMidpoint(t: Interval[T]): Option[T]
-	def isEmpty(t: Interval[T]): Boolean
+  def getMidpoint(t: Interval[T, _]): Option[T]
+	def isEmpty(t: Interval[T, _]): Boolean
   def minValue(): T
   def maxValue(): T
 
@@ -209,11 +227,11 @@ trait MidpointHelper[T] {
 
 object MidpointHelper {
 
-	def _startEndDefined[T: Numeric](t: Interval[T]): Boolean = {
+	def _startEndDefined[T: Numeric](t: Interval[T, _]): Boolean = {
     t.start.nonEmpty && t.end.nonEmpty
   }
 
-	def _isEmpty[T: Numeric](t: Interval[T]): Boolean = {
+	def _isEmpty[T: Numeric](t: Interval[T, _]): Boolean = {
     val compare = Interval.ord(t.start, t.end)
 
     compare > 0 || (
@@ -221,15 +239,15 @@ object MidpointHelper {
     )
   }
 
-	def start[T](t: Interval[T]): T = t.start.orDie("undefined t.start")
-	def end[T](t: Interval[T]): T = t.end.orDie("undefined t.end")
+	def start[T](t: Interval[T, _]): T = t.start.orDie("undefined t.start")
+	def end[T](t: Interval[T, _]): T = t.end.orDie("undefined t.end")
 
 
   implicit object IntMidpointHelper extends MidpointHelper[Int] {
     def minValue(): Int = Int.MinValue
     def maxValue(): Int = Int.MaxValue
 
-    def getMidpoint(t: Interval[Int]): Option[Int] = {
+    def getMidpoint(t: Interval[Int, _]): Option[Int] = {
       // println(s"getMidpoint(${t}): isEmpty=${isEmpty(t)}")
       if (isEmpty(t)) None else {
         val from = t.start.map(_.toLong).getOrElse(Int.MinValue.toLong)
@@ -241,7 +259,7 @@ object MidpointHelper {
       }
     }
 
-    def isEmpty(t: Interval[Int]): Boolean = {
+    def isEmpty(t: Interval[Int, _]): Boolean = {
       _startEndDefined(t) && {
         lazy val isOneGreater = start(t) + 1 == end(t)
         lazy val emptyInt = isOneGreater && !t.isEndInclusive && !t.isStartInclusive
@@ -266,7 +284,7 @@ object MidpointHelper {
     def maxValue(): Double = Double.MaxValue
 
 
-    def getMidpoint(t: Interval[Double]): Option[Double] = {
+    def getMidpoint(t: Interval[Double, _]): Option[Double] = {
       if (isEmpty(t)) None else {
         // Handle empty values
         val mid = if (!_startEndDefined(t))
@@ -289,7 +307,7 @@ object MidpointHelper {
         Some(mid)
       }
     }
-    def isEmpty(t: Interval[Double]): Boolean = {
+    def isEmpty(t: Interval[Double, _]): Boolean = {
       _startEndDefined(t) && _isEmpty(t)
     }
     override val increaseIntervalOrdering: Interval.IncreaseOrdering[Double] = {
@@ -304,11 +322,12 @@ object MidpointHelper {
 }
 
 
-class Interval[T: Numeric: MidpointHelper](
+class Interval[T: Numeric: MidpointHelper, W](
   val start: Option[T],
   val end: Option[T],
   val isStartInclusive: Boolean,
-  val isEndInclusive: Boolean
+  val isEndInclusive: Boolean,
+  val attr: W
 ) {
 
   val mphelp = implicitly[MidpointHelper[T]]
@@ -367,7 +386,7 @@ class Interval[T: Numeric: MidpointHelper](
 	 * @param other The other interval
 	 * @return The intersection of the current interval wih the {@code other} interval.
     */
-  def getIntersection(other: Interval[T]): Interval[T] = {
+  def getIntersection(other: Interval[T, _]): Interval[T, _] = {
 
     if (other == null || isEmpty() || other.isEmpty()) {
       null
@@ -424,9 +443,9 @@ class Interval[T: Numeric: MidpointHelper](
             isNewEndInclusive = other.isEndInclusive;
           }
         }
-        val intersection = new Interval[T](
+        val intersection = new Interval[T, Unit](
           newStart, newEnd,
-          isNewStartInclusive, isNewEndInclusive
+          isNewStartInclusive, isNewEndInclusive, ()
         )
         if (intersection.isEmpty()) null else intersection
       }
@@ -470,7 +489,7 @@ class Interval[T: Numeric: MidpointHelper](
     * @return {@code true}, if the interval {@code another} is contained in the current interval in
     * its entirety, or {@code false} otherwise.
     */
-  def contains(another: Interval[T]): Boolean = {
+  def contains(another: Interval[T, _]): Boolean = {
     (another != null && nonEmpty() && another.nonEmpty() && {
       val intersection = getIntersection(another);
 		  intersection != null && intersection.equals(another);
@@ -486,7 +505,7 @@ class Interval[T: Numeric: MidpointHelper](
 	  * @param query The interval being checked for intersection with the current interval.
 	  * @return {@code true}, if the two intervals intersect or {@code false} otherwise.
 	  */
-	def intersects(query: Interval[T]): Boolean = {
+	def intersects(query: Interval[T, _]): Boolean = {
     query != null && getIntersection(query) != null
   }
 
@@ -531,7 +550,7 @@ class Interval[T: Numeric: MidpointHelper](
 	 * @return {@code true}, if the current interval is entirely to the right of the {@code other}
 	 * interval, or {@code false} instead.
 	 */
-	def isRightOf(other: Interval[T]): Boolean = {
+	def isRightOf(other: Interval[T, _]): Boolean = {
     Interval.nonEmpty(other) && isRightOfPoint(other.end, other.isEndInclusive)
 	}
 
@@ -563,12 +582,6 @@ class Interval[T: Numeric: MidpointHelper](
       .getOrElse(false)
 	}
 
-	// def isLeftOf(point: Option[T]): Boolean = {
-	// 	return isLeftOf(point, true);
-	// }
-	// def isLeftOf(point: T): Boolean = {
-	// 	return isLeftOf(point, true);
-	// }
 
 	/**
 	 * This method checks, if this current interval is entirely to the left of another interval
@@ -582,16 +595,16 @@ class Interval[T: Numeric: MidpointHelper](
 	 * @return {@code true}, if the current interval is entirely to the left of the {@code other}
 	 * interval, or {@code false} instead.
 	 */
-	def isLeftOf(other: Interval[T]): Boolean = {
+	def isLeftOf(other: Interval[T, _]): Boolean = {
 		Interval.nonEmpty(other) && isLeftOfPoint(other.start, other.isStartInclusive)
 	}
 
   override def equals(obj: Any): Boolean = {
-    if (obj == null || !(obj.isInstanceOf[Interval[T]])) {
+    if (obj == null || !(obj.isInstanceOf[Interval[T, _]])) {
       false;
     } else {
 
-      val other = obj.asInstanceOf[Interval[T]];
+      val other = obj.asInstanceOf[Interval[T, _]];
       if (start.isEmpty ^ other.start.isEmpty)
         false;
       else if (end.isEmpty ^ other.end.isEmpty)
@@ -622,7 +635,7 @@ class Interval[T: Numeric: MidpointHelper](
 	 * not be used as a standalone {@link Comparator}. It only serves to create a more readable and
 	 * modular code.
     */
-  def compareStarts(other: Interval[T]): Int = {
+  def compareStarts(other: Interval[T, _]): Int = {
     if (start.isEmpty && other.start.isEmpty)
       0;
     else if (start.isEmpty)
@@ -645,7 +658,7 @@ class Interval[T: Numeric: MidpointHelper](
    * not be used as a standalone {@link Comparator}. It only serves to create a more readable and
 	 * modular code.
     */
-  def compareEnds(other: Interval[T]): Int = {
+  def compareEnds(other: Interval[T, _]): Int = {
     if (end.isEmpty && other.end.isEmpty)
        0;
     else if (end.isEmpty)
@@ -663,7 +676,7 @@ class Interval[T: Numeric: MidpointHelper](
     }
 	}
 
-	def compareSpecialization(other: Interval[T]): Int = {
+	def compareSpecialization(other: Interval[T, _]): Int = {
 		0
 	}
 }

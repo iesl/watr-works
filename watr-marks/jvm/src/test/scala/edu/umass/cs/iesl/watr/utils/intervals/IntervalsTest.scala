@@ -73,7 +73,7 @@ class IntervalsTest extends FlatSpec with Matchers {
 
 
   it should "test_hashSet" in {
-    val set = Set[Interval[Int]](
+    val set = Set[Interval[Int, Unit]](
       Interval.bounded.create.closed(1, 10),
       Interval.bounded.create.open(1, 10),
       Interval.bounded.create.leftClosedRightOpen(1, 10),

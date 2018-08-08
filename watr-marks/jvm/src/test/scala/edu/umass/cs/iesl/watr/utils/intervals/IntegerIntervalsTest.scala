@@ -27,7 +27,7 @@ class IntegerIntervalsTest extends FlatSpec with Matchers {
       assert(sorted == expectedOrder)
     }
 
-    val fns = List[Int => Interval[Int]](
+    val fns = List[Int => Interval[Int, Unit]](
       Interval.unbounded.rightOpen(_),
       Interval.unbounded.rightClosed(_),
       (i => Interval.unbounded[Int]()),

@@ -14,12 +14,12 @@ object TreeNode {
     * @param interval The initial interval stored in the node. The middlepoint of
     *                 the node will be set based on this interval.
     */
-  def apply[T: Ordering: MidpointHelper](interval: Interval[T]) =
-    new TreeNode[T](interval)
+  def apply[T: Ordering: MidpointHelper, W](interval: Interval[T, W]) =
+    new TreeNode[T, W](interval)
 
   import Interval._
 
-  private def appendIntervalToNode[T: Ordering: MidpointHelper](node: TreeNode[T], interval: Interval[T]): Unit = {
+  private def appendIntervalToNode[T: Ordering: MidpointHelper, W](node: TreeNode[T, W], interval: Interval[T, W]): Unit = {
 
     val decreaseOrd = new DecreaseOrdering[T]()
     val increaseOrd = new IncreaseOrdering[T]()
@@ -42,17 +42,17 @@ object TreeNode {
     * @return The new root of the subtree. It may be different than the current root,
     *         if the subtree had to be rebalanced after the operation.
     */
-  def addInterval[T: Ordering: MidpointHelper](
-    tree: IntervalTree[T],
-    root: TreeNode[T],
-    interval: Interval[T]
-  ): TreeNode[T] = {
+  def addInterval[T: Ordering: MidpointHelper, W](
+    tree: IntervalTree[T, W],
+    root: TreeNode[T, W],
+    interval: Interval[T, W]
+  ): TreeNode[T, W] = {
     // println(s"addInterval( ${interval} )")
     // println(s"${tree.asBox()}")
 
     val res = if (root == null) {
       tree.size = tree.size+1;
-      TreeNode[T](interval);
+      TreeNode[T, W](interval);
     } else if (interval.contains(root.midpoint)){
 
       // println(s"contains mid=true")
@@ -91,7 +91,7 @@ object TreeNode {
     * @return The height of the subtree rooted at {@code node}. Returns 0, if {@code node}
     * is {@code null}.
     */
-  def height[T](node: TreeNode[T]): Int = {
+  def height[T](node: TreeNode[T, _]): Int = {
     if(node == null) 0 else node._height
   }
 
@@ -107,7 +107,7 @@ object TreeNode {
     *            the query point.
     * @return The set of all intervals from the current subtree, containing the query.
     */
-  def query[T: Ordering](root: TreeNode[T], point: T, res: Set[Interval[T]]):  Set[Interval[T]] = {
+  def query[T: Ordering, W](root: TreeNode[T, W], point: T, res: Set[Interval[T, W]]):  Set[Interval[T, W]] = {
     if (root == null) {
       res
     } else if (Interval.ord(point, root.midpoint) <= 0){
@@ -142,7 +142,7 @@ object TreeNode {
     *         interval has been removed. This could be {@code null} if the interval
     *         was the last one stored at the subtree.
     */
-  def  removeInterval[T](tree: IntervalTree[T], root: TreeNode[T], interval: Interval[T]): TreeNode[T] = {
+  def  removeInterval[T, W](tree: IntervalTree[T, W], root: TreeNode[T, W], interval: Interval[T, W]): TreeNode[T, W] = {
     if (root == null) {
       null
     } else if (interval.contains(root.midpoint)){
@@ -176,7 +176,7 @@ object TreeNode {
     * @return The new root of the subtree rooted at the node to be deleted. It may
     *         be {@code null}, if the deleted node was the last in the subtree.
     */
-  def deleteNode[T](root: TreeNode[T]): TreeNode[T] = {
+  def deleteNode[T, W](root: TreeNode[T, W]): TreeNode[T, W] = {
     if (root.left == null && root.right == null) null else {
       if (root.left == null){
         // If the left child is empty, then the right subtree can consist of at most
@@ -185,8 +185,8 @@ object TreeNode {
         root.right;
       } else {
         var  node = root.left;
-        // val Stack[TreeNode[T]] stack = new Stack[]();
-        val stack = mutable.Stack[TreeNode[T]]();
+        // val Stack[TreeNode[T, W]] stack = new Stack[]();
+        val stack = mutable.Stack[TreeNode[T, W]]();
         while (node.right != null){
           stack.push(node);
           node = node.right;
@@ -223,10 +223,10 @@ object TreeNode {
     * @param query   The query interval.
     * @param result  The set which stores all intervals in the tree, intersecting the query.
     */
-  def rangeQueryLeft[T](node: TreeNode[T], query: Interval[T]): Set[Interval[T]] = {
+  def rangeQueryLeft[T, W](node: TreeNode[T, W], query: Interval[T, _]): Set[Interval[T, W]] = {
     // println(s"rangeQueryLeft(${node}, q=${query})")
 
-    def _loop(node: TreeNode[T], acc: Set[Interval[T]]): Set[Interval[T]] = {
+    def _loop(node: TreeNode[T, W], acc: Set[Interval[T, W]]): Set[Interval[T, W]] = {
       // println(s"rangeQueryLeft(): acc = ${acc}")
       if (node == null) acc else {
         if (query.contains(node.midpoint)) {
@@ -279,10 +279,10 @@ object TreeNode {
     * @param result  The set which stores all intervals in the tree, intersecting the query.
     */
 
-  def rangeQueryRight[T](node: TreeNode[T], query: Interval[T]): Set[Interval[T]] = {
+  def rangeQueryRight[T, W](node: TreeNode[T, W], query: Interval[T, _]): Set[Interval[T, W]] = {
     // println(s"rangeQueryRight(${node}, q=${query})")
 
-    def _loop(node: TreeNode[T], acc: Set[Interval[T]]): Set[Interval[T]] = {
+    def _loop(node: TreeNode[T, W], acc: Set[Interval[T, W]]): Set[Interval[T, W]] = {
       // println(s"rangeQueryRight(): acc = ${acc}")
       if (node == null) acc else {
         if (query.contains(node.midpoint)) {
@@ -297,7 +297,7 @@ object TreeNode {
       }
     }
 
-    _loop(node, Set[Interval[T]]())
+    _loop(node, Set[Interval[T, W]]())
     // while (node != null) {
     // 	if (query.contains(node.midpoint)) {
     // 		result.addAll(node.increasing);
@@ -319,8 +319,8 @@ object TreeNode {
   }
 }
 
-class TreeNode[T: Ordering: MidpointHelper](
-  init: Interval[T]
+class TreeNode[T: Ordering: MidpointHelper, W](
+  init: Interval[T, W]
 ) { self =>
 
   import TreeNode._
@@ -383,16 +383,16 @@ class TreeNode[T: Ordering: MidpointHelper](
     * starting points.
     */
 
-  var increasing: mutable.ArrayBuffer[Interval[T]] = {
-    mutable.ArrayBuffer[Interval[T]](init)
+  var increasing: mutable.ArrayBuffer[Interval[T, W]] = {
+    mutable.ArrayBuffer[Interval[T, W]](init)
   }
 
   /**
     * A set containing all {@link Interval}s stored in this node, ordered by their
     * end points.
     */
-  var decreasing: mutable.ArrayBuffer[Interval[T]] = {
-    mutable.ArrayBuffer[Interval[T]](init)
+  var decreasing: mutable.ArrayBuffer[Interval[T, W]] = {
+    mutable.ArrayBuffer[Interval[T, W]](init)
   }
 
 
@@ -402,14 +402,14 @@ class TreeNode[T: Ordering: MidpointHelper](
     * {@code null} or have a midpoint, smaller than the midpoint of the current node. More
     * formally, {@code left.midpoint.compareTo(this.midpoint) < 0} must evaluate to {@code true}.
     */
-  var left: TreeNode[T] = null
+  var left: TreeNode[T, W] = null
 
   /**
     * A pointer to the right child of the current node. The right child must either be
     * {@code null} or have a midpoint, larger than the midpoint of the current node. More
     * formally, {@code right.midpoint.compareTo(this.midpoint) > 0} must evaluate to {@code true}.
     */
-  var right: TreeNode[T] = null
+  var right: TreeNode[T, W] = null
 
   var _height: Int = 1
 
@@ -424,7 +424,7 @@ class TreeNode[T: Ordering: MidpointHelper](
     * triggered by a {@link #removeInterval(IntervalTree, TreeNode, Interval)} operation
     * and the removed interval had been the last one in the subtree.
     */
-  def balanceOut(): TreeNode[T] = {
+  def balanceOut(): TreeNode[T, W] = {
     val balance = height(left) - height(right);
     if (balance < -1){
       // The tree is right-heavy.
@@ -455,7 +455,7 @@ class TreeNode[T: Ordering: MidpointHelper](
     * @return The new root of the subtree rooted at the current node, after the
     * rotation has been performed.
     */
-  def leftRotate(): TreeNode[T] = {
+  def leftRotate(): TreeNode[T, W] = {
     val head = right;
     right = head.left;
     head.left = this;
@@ -473,8 +473,8 @@ class TreeNode[T: Ordering: MidpointHelper](
     * @return The new root of the subtree rooted at the current node, after the
     * rotation has been performed.
     */
-  private def  rightRotate(): TreeNode[T] = {
-    var head: TreeNode[T]  = left;
+  private def  rightRotate(): TreeNode[T, W] = {
+    var head: TreeNode[T, W]  = left;
     left = head.right;
     head.right = this;
     _height = Math.max(height(right), height(left)) + 1;
@@ -491,8 +491,8 @@ class TreeNode[T: Ordering: MidpointHelper](
     * @param from The target node, from which intervals will be assimilated.
     * @return The new root of subtree, rooted at the current node.
     */
-  private def assimilateOverlappingIntervals(from: TreeNode[T]): TreeNode[T] = {
-    val tmp: mutable.ArrayBuffer[Interval[T]] = mutable.ArrayBuffer();
+  private def assimilateOverlappingIntervals(from: TreeNode[T, W]): TreeNode[T, W] = {
+    val tmp: mutable.ArrayBuffer[Interval[T, W]] = mutable.ArrayBuffer();
 
     if (Interval.ord(midpoint, from.midpoint) < 0){
       val rights = from.increasing
@@ -522,16 +522,16 @@ class TreeNode[T: Ordering: MidpointHelper](
 
 
 
-  def intervalIterator(): Iterator[Interval[T]]  = {
+  def intervalIterator(): Iterator[Interval[T, W]]  = {
     new TreeNodeIterator()
   }
 
-  def rightIntervalIterator(): Iterator[Interval[T]]  = {
+  def rightIntervalIterator(): Iterator[Interval[T, W]]  = {
     if (right == null) Iterator.empty
     else right.intervalIterator()
   }
 
-  def leftIntervalIterator(): Iterator[Interval[T]]  = {
+  def leftIntervalIterator(): Iterator[Interval[T, W]]  = {
     if (left == null) Iterator.empty
     else left.intervalIterator()
   }
@@ -543,19 +543,19 @@ class TreeNode[T: Ordering: MidpointHelper](
     * traversal we keep a stack of the currently traversed branch of the tree.
     */
 
-  class TreeNodeIterator extends Iterator[Interval[T]] {
-    val stack = mutable.ArrayStack[TreeNode[T]]();
+  class TreeNodeIterator extends Iterator[Interval[T, W]] {
+    val stack = mutable.ArrayStack[TreeNode[T, W]]();
     var subtreeRoot = self
-    var currentNode: TreeNode[T] = null
-    var currentInterval: Interval[T] = null
-    // Iterator<Interval[T]] iterator = Collections.emptyIterator();
-    var iterator = Iterator[Interval[T]]();
+    var currentNode: TreeNode[T, W] = null
+    var currentInterval: Interval[T, W] = null
+    // Iterator<Interval[T, W]] iterator = Collections.emptyIterator();
+    var iterator = Iterator[Interval[T, W]]();
 
     override def hasNext: Boolean = {
       return subtreeRoot != null || stack.nonEmpty || iterator.hasNext
     }
 
-    override def next(): Interval[T] = {
+    override def next(): Interval[T, W] = {
       if (!iterator.hasNext) {
         while (subtreeRoot != null) {
           stack.push(subtreeRoot);

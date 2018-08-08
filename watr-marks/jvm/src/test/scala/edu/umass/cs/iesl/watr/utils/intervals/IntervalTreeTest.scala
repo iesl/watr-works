@@ -7,7 +7,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
   it should "deleteNodeAfterAssimilation" in {
 
-		val tree = new IntervalTree[Int]()
+		val tree = new IntervalTree[Int, Unit]()
 
     val a = Interval.bounded.closed(0, 100).get
     val b = Interval.bounded.leftClosedRightOpen(30, 40).get
@@ -32,7 +32,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
 	it should "removeIntervalForcesRootDelete" in {
-		val tree = new IntervalTree[Int]();
+		val tree = new IntervalTree[Int, Unit]();
 		val a = Interval.bounded.closed(20, 30).get
 		val b = Interval.bounded.leftClosedRightOpen(0, 10).get
 		val c = Interval.bounded.leftOpenRightClosed(40, 50).get
@@ -55,7 +55,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
 	it should "removeFromNodeWithEmptyLeftChild" in {
-		val tree = new IntervalTree[Int]();
+		val tree = new IntervalTree[Int, Unit]();
 		val a = Interval.bounded.closed(20, 30).get
 		val b = Interval.bounded.leftOpenRightClosed(40, 50).get
 		tree.add(a);
@@ -73,7 +73,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "removeRootThenAssimilateIntervalsFromInnerNodeAfterBubbleUp" in {
-    val tree = new IntervalTree[Int]();
+    val tree = new IntervalTree[Int, Unit]();
     val a = Interval.bounded.closed(20, 30).get
     val b = Interval.bounded.leftClosedRightOpen(0, 10).get
     val c = Interval.bounded.leftOpenRightClosed(40, 50 ).get
@@ -97,7 +97,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "removeRootReplaceWithDeepNodeLeftAndAssimilateIntervals" in {
-  	val tree = new IntervalTree[Int]();
+  	val tree = new IntervalTree[Int, Unit]();
   	val a = Interval.bounded.closed(0, 100).get
   	val b = Interval.bounded.leftClosedRightOpen(10, 30).get;
   	val c = Interval.bounded.leftOpenRightClosed(60, 70).get
@@ -125,7 +125,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "removeRootReplaceWithDeepAssimilatingAnotherInnerNode" in {
-  	val tree = new IntervalTree[Int]();
+  	val tree = new IntervalTree[Int, Unit]();
   	val a = Interval.bounded.closed(0, 100).get
   	val b = Interval.bounded.leftClosedRightOpen(10, 40).get;
   	val c = Interval.bounded.leftOpenRightClosed(60, 70).get
@@ -157,7 +157,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "addEmptyInterval" in {
-  	val tree = new IntervalTree[Int]();
+  	val tree = new IntervalTree[Int, Unit]();
   	val a = Interval.bounded.open(5, 6).get
   	tree.add(a);
   	assert(null == tree.root);
@@ -165,14 +165,14 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
 	it should "removeFromEmptyTree" in {
-		val tree = new IntervalTree[Int]();
+		val tree = new IntervalTree[Int, Unit]();
 		tree.remove(Interval.bounded.closed(10, 20).get)
 		assert(null == tree.root);
 	}
 
 
 	it should "removeEmptyInterval" in {
-		val tree = new IntervalTree[Int]();
+		val tree = new IntervalTree[Int, Unit]();
 		val a = Interval.bounded.open(1, 4).get
 		tree.add(a);
     val emptyInterval = Interval.bounded.create.closed(
@@ -186,7 +186,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 	}
 
 	it should "removeNonExistingInterval" in {
-		var tree = new IntervalTree[Int]();
+		var tree = new IntervalTree[Int, Unit]();
 		val a = Interval.bounded.closed(20, 30).get
 		val b = Interval.bounded.leftClosedRightOpen(0, 10).get;
 		val c = Interval.bounded.leftOpenRightClosed(40, 50).get
@@ -204,7 +204,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 		assert(tree.root.right.decreasing.contains(c));
 		assert(1 == tree.root.right.decreasing.size);
 
-		tree = new IntervalTree[Int]();
+		tree = new IntervalTree[Int, Unit]();
 		tree.add(a);
 		tree.remove(Interval.bounded.open(10, 40).get)
 		assert(tree.root.decreasing.contains(a));
@@ -214,7 +214,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 	}
 
 	it should "queryIntervalNormal" in {
-		val tree = new IntervalTree[Int]();
+		val tree = new IntervalTree[Int, Unit]();
 		val a = Interval.unbounded.rightClosed(22);
 		val b = Interval.bounded.closed(7, 13).get
 		val c = Interval.bounded.open(21, 24).get
@@ -238,7 +238,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
 	it should "queryIntervalOpenAndClosedEndpoints" in {
-		val tree = new IntervalTree[Int]();
+		val tree = new IntervalTree[Int, Unit]();
 		val aa = Interval.unbounded.rightClosed(18);
 		val ab = Interval.unbounded.leftClosed(18);
 
@@ -287,7 +287,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "queryIntervalReturnsASuperInterval" in {
-  	val tree = new IntervalTree[Int]();
+  	val tree = new IntervalTree[Int, Unit]();
   	val a = Interval.bounded.leftClosedRightOpen(8, 20).get;
   	val query = Interval.bounded.open(0, 100).get
   	tree.add(a);
@@ -298,7 +298,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "queryIntervalChangesInTheTreeDontAffectReturnedSet" in {
-    val tree = new IntervalTree[Int]();
+    val tree = new IntervalTree[Int, Unit]();
     val aa = Interval.unbounded.rightClosed(18);
     val ab = Interval.unbounded.leftClosed(18);
     val ac = Interval.unbounded.leftOpen(18);
@@ -331,7 +331,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "queryIntervalWithNewEndPoints" in {
-  	val tree = new IntervalTree[Int]();
+  	val tree = new IntervalTree[Int, Unit]();
   	val a = Interval.bounded.closed(1, 5).get
   	val b = Interval.bounded.open(7, 20).get
   	val c = Interval.bounded.leftClosedRightOpen(5, 18).get;
@@ -349,7 +349,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "queryIntervalOffByOne" in {
-  	var tree = new IntervalTree[Int]();
+  	var tree = new IntervalTree[Int, Unit]();
   	var a = Interval.bounded.open(1, 5).get
   	tree.add(a);
   	assert(0 == tree.query(Interval.bounded.create.open(4, 20)).size)
@@ -357,7 +357,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
   	assert(1 == tree.query(Interval.bounded.create.leftClosedRightOpen(4, 20)).size);
   	assert(0 == tree.query(Interval.bounded.create.leftOpenRightClosed(4, 20)).size)
 
-  	tree = new IntervalTree[Int]();
+  	tree = new IntervalTree[Int, Unit]();
   	a = Interval.bounded.create.closed(1, 5)
   	tree.add(a);
   	assert(1 == tree.query(Interval.bounded.create.open(4, 20)).size)
@@ -365,7 +365,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
   	assert(1 == tree.query(Interval.bounded.create.leftClosedRightOpen(4, 20)).size);
   	assert(1 == tree.query(Interval.bounded.create.leftOpenRightClosed(4, 20)).size)
 
-  	tree = new IntervalTree[Int]();
+  	tree = new IntervalTree[Int, Unit]();
   	a = Interval.bounded.create.open(1, 5)
   	tree.add(a);
   	assert(0 == tree.query(Interval.bounded.create.open(-5, 2)).size)
@@ -373,7 +373,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
   	assert(0 == tree.query(Interval.bounded.create.leftClosedRightOpen(-5, 2)).size);
   	assert(1 == tree.query(Interval.bounded.create.leftOpenRightClosed(-5, 2)).size)
 
-  	tree = new IntervalTree[Int]();
+  	tree = new IntervalTree[Int, Unit]();
   	a = Interval.bounded.create.closed(1, 5)
   	tree.add(a);
   	assert(1 == tree.query(Interval.bounded.create.open(-5, 2)).size)
@@ -384,7 +384,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "queryIntervalOppositeEndpointsEqual" in {
-  	var tree = new IntervalTree[Int]();
+  	var tree = new IntervalTree[Int, Unit]();
   	var a = Interval.bounded.create.open(1, 5)
   	tree.add(a);
 
@@ -393,7 +393,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 		assert(0 == tree.query(Interval.bounded.create.leftClosedRightOpen(5, 10)).size);
 		assert(0 == tree.query(Interval.bounded.create.leftOpenRightClosed(5, 10)).size)
 
-		tree = new IntervalTree[Int]();
+		tree = new IntervalTree[Int, Unit]();
 		a = Interval.bounded.create.closed(1, 5)
 		tree.add(a);
 
@@ -402,7 +402,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 		assert(1 == tree.query(Interval.bounded.create.leftClosedRightOpen(5, 10)).size);
 		assert(0 == tree.query(Interval.bounded.create.leftOpenRightClosed(5, 10)).size)
 
-		tree = new IntervalTree[Int]();
+		tree = new IntervalTree[Int, Unit]();
 		a = Interval.bounded.create.open(1, 5)
 		tree.add(a);
 
@@ -411,7 +411,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 		assert(0 == tree.query(Interval.bounded.create.leftClosedRightOpen(-8, 1)).size);
 		assert(0 == tree.query(Interval.bounded.create.leftOpenRightClosed(-8, 1)).size)
 
-		tree = new IntervalTree[Int]();
+		tree = new IntervalTree[Int, Unit]();
 		a = Interval.bounded.create.closed(1, 5)
 		tree.add(a);
 
@@ -423,7 +423,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "rangeQueryToRightIntersectsMoreThanTwoMidpoints" in {
-    val tree = new IntervalTree[Int]();
+    val tree = new IntervalTree[Int, Unit]();
     val arr = List(
       Interval.bounded.create.open(6, 10),
       Interval.bounded.create.closed(-5, 0),
@@ -446,7 +446,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
    */
 
   it should "rangeQueryLeftWithOnlyRightGrandchildContainingValidResults" in {
-    val tree = new IntervalTree[Int]();
+    val tree = new IntervalTree[Int, Unit]();
     val arr = List(
       Interval.bounded.create.open(6, 10),
       Interval.bounded.create.closed(-5, 0),
@@ -467,7 +467,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
     */
 
   it should "rangeQueryLeftWithRootOfSubtreeAndRightGrandchildContainingResults" in {
-    val tree = new IntervalTree[Int]();
+    val tree = new IntervalTree[Int, Unit]();
     val arr = List(
       Interval.bounded.create.open(6, 10),
       Interval.bounded.create.closed(12, 30),
@@ -492,7 +492,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
       */
 
   it should "rangeQueryLeftSubtreeMidpointNotInQuery" in {
-    val tree = new IntervalTree[Int]();
+    val tree = new IntervalTree[Int, Unit]();
     val arr = List(
 
       Interval.bounded.create.open(6, 10),
@@ -517,7 +517,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
     */
 
   it should "rangeQueryRightWithOnlyLeftGrandchildContainingValidResults" in {
-    val tree = new IntervalTree[Int]();
+    val tree = new IntervalTree[Int, Unit]();
     val arr = List(
       Interval.bounded.create.open(6, 10),
       Interval.bounded.create.closed(-5, 0),
@@ -542,7 +542,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
     */
 
   it should "rangeQueryRightWithRootOfSubtreeAndLeftGrandchildContainingResults" in {
-    val tree = new IntervalTree[Int]();
+    val tree = new IntervalTree[Int, Unit]();
       val arr = List(
       Interval.bounded.create.open(6, 10),
       Interval.bounded.create.closed(-5, 0),
@@ -562,7 +562,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
     it should "rangeQueryEmptyResult" in {
-      val tree = new IntervalTree[Int]();
+      val tree = new IntervalTree[Int, Unit]();
       assert(tree.query(Interval.unbounded[Int]()).isEmpty);
       tree.add(Interval.bounded.create.open(6, 10))
       tree.add(Interval.bounded.create.closed(-5, 0))
@@ -574,7 +574,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
     it should "sizeAfterAddingNonExistingIntervals" in {
-    	val tree = new IntervalTree[Int]();
+    	val tree = new IntervalTree[Int, Unit]();
       val arr = List(
         Interval.bounded.create.closed(5, 25),
         Interval.bounded.create.leftClosedRightOpen(30, 50),
@@ -595,7 +595,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "sizeAfterAddingExistingIntervals" in {
-    val tree = new IntervalTree[Int]();
+    val tree = new IntervalTree[Int, Unit]();
     val arr = List(
       Interval.bounded.create.closed(5, 25),
       Interval.bounded.create.leftClosedRightOpen(30, 50),
@@ -617,7 +617,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "sizeAfterRemovingNonExistingIntervals" in {
-  	val tree = new IntervalTree[Int]();
+  	val tree = new IntervalTree[Int, Unit]();
       val arr = List(
 
   			Interval.bounded.create.closed(5, 25),
@@ -649,7 +649,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "sizeAfterRemovingExistingIntervals" in {
-    val tree = new IntervalTree[Int]();
+    val tree = new IntervalTree[Int, Unit]();
     val arr = List(
       Interval.bounded.create.closed(5, 25),
       Interval.bounded.create.leftClosedRightOpen(30, 50),
@@ -674,7 +674,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "clearOnEmptyTree" in {
-  	val tree = new IntervalTree[Int]();
+  	val tree = new IntervalTree[Int, Unit]();
   	tree.clear();
   	assert(tree.isEmpty);
   	assert(0 == tree.size);
@@ -684,7 +684,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "clearOnNonEmptyTree" in {
-		val tree = new IntervalTree[Int]();
+		val tree = new IntervalTree[Int, Unit]();
 		tree.add(Interval.unbounded());
 		tree.add(Interval.bounded.create.leftClosedRightOpen(1, 5));
 		tree.add(Interval.unbounded.rightOpen(228));
@@ -697,7 +697,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "contains" in {
-    val tree = new IntervalTree[Int]();
+    val tree = new IntervalTree[Int, Unit]();
     val arr = List(
       Interval.bounded.create.leftClosedRightOpen(5, 22),
       Interval.bounded.create.open(23, 90),
@@ -737,7 +737,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
   it should "containsBroken" in {
-  	val tree = new IntervalTree[Int]();
+  	val tree = new IntervalTree[Int, Unit]();
   	assert(! tree.contains(Interval.unbounded.leftClosed(1)));
   	assert(! tree.contains(Interval.bounded.create.closed(100, 0)))
   	assert(! tree.contains(9));
@@ -751,7 +751,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 
 
 	it should "firstTest" in {
-		var tree = new IntervalTree[Int]();
+		var tree = new IntervalTree[Int, Unit]();
 
 		tree.add(Interval.bounded.create.closed(10, 20))
 		tree.add(Interval.bounded.create.leftClosedRightOpen(20, 40));
@@ -768,7 +768,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 		assert(5 == tree.query(11).size);
 		assert(3 == tree.query(-8).size);
 
-		tree = new IntervalTree[Int]();
+		tree = new IntervalTree[Int, Unit]();
 		tree.add(Interval.bounded.create.open(10, 20))
 		tree.add(Interval.bounded.create.open(10, 12))
 		tree.add(Interval.bounded.create.closed(-1000, 8))
@@ -777,14 +777,14 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 		assert(0 == tree.query(9).size);
 		assert(1 == tree.query(0).size);
 
-		tree = new IntervalTree[Int]();
+		tree = new IntervalTree[Int, Unit]();
 		tree.add(Interval.unbounded.leftOpen(7450));
 		tree.add(Interval.unbounded.rightOpen(209));
 		tree.add(Interval.unbounded.rightClosed(2774));
 
 		assert(1 == tree.query(8659).size);
 
-		tree = new IntervalTree[Int]();
+		tree = new IntervalTree[Int, Unit]();
 		tree.add(Interval.unbounded.rightOpen(6213));
 		tree.add(Interval.unbounded.leftClosed(684));
 		tree.add(Interval.bounded.create.open(-4657, -4612))
