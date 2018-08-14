@@ -209,8 +209,7 @@ case class FontBaselineOffsets(
   val descentLine  = fontBaseline - _descent
   val bottomLine   = fontBaseline - _bottom
 
-
-  def forBaseline(fontBaseline: Int@@FloatRep): FontBaselineOffsets = {
+  def forFontBoxBottom(fontBaseline: Int@@FloatRep): FontBaselineOffsets = {
     copy(fontBaseline = fontBaseline)
   }
 
@@ -259,8 +258,9 @@ case class FontProperties(
 
   var docWideBigramCount = 0
   var docWideTrigramCount = 0
+  var docWideLigatureCount = 0
 
-  def initGlyphEvidence(char: Char, glyphProps: GlyphProps, pageNum: Int@@PageNum, priorSimilarChars: Seq[ExtractedItem.CharItem]): Unit = {
+  def initGlyphEvidence(unicodeStr: String, char: Char, glyphProps: GlyphProps, pageNum: Int@@PageNum, priorSimilarChars: Seq[ExtractedItem.CharItem]): Unit = {
     val bbox = glyphProps.glyphBBox
     val height = bbox.height.asDouble()
     val scalingFactor = glyphProps.scalingFactor
@@ -270,17 +270,19 @@ case class FontProperties(
     val hasBigram = CharClasses.hasCommonBigram(recentSimilarTextWindow.take(2))
     val hasTrigram = CharClasses.hasCommonTrigram(recentSimilarTextWindow.take(3))
 
+    val isLigature = CharClasses.Ligatures.All.contains(unicodeStr)
+
     if (hasBigram) { docWideBigramCount += 1 }
     if (hasTrigram) { docWideTrigramCount += 1 }
-
+    if (isLigature) { docWideLigatureCount += 1 }
 
     if (hasBigram || hasTrigram) {
       natLangGlyphOccurrenceCounts.modifyOrSet(pageNum, scalingFactor, _+1, 0)
     }
-
     totalGlyphOccurrenceCounts.modifyOrSet(pageNum, scalingFactor, _+1, 0)
 
-    val shouldRecord = 32 < char && char < 128
+    val shouldRecord = (32 < char && char < 128 || isLigature)
+
     if (shouldRecord) {
       asciiHeightsPerScaleFactor.set(scalingFactor, char, height)
       asciiHeightsPerScaleFactorInv.modifyOrSet(
@@ -304,7 +306,8 @@ case class FontProperties(
   def isNatLangFont(): Boolean = {
     val nonZeros = alphaEvidence.count(_ > 0)
     val hasNgrams = docWideBigramCount > 2 || docWideTrigramCount > 2
-    nonZeros > 4 || hasNgrams
+    val hasLigatures = docWideLigatureCount > 0
+    nonZeros > 4 || hasNgrams || hasLigatures
   }
 
   def getScaledMetrics(scalingFactor: Int@@ScalingFactor): Option[ScaledMetrics] = {

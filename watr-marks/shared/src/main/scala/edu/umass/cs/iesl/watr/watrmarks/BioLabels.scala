@@ -69,6 +69,7 @@ object Labels {
 object Label {
   import io.circe
   import circe._
+  import scalaz.{@@ => _, Ordering => _, _} // , Scalaz._
 
   def auto(implicit name: sourcecode.Name): Label = {
     Label(name.value)
@@ -76,6 +77,10 @@ object Label {
 
   implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)
   implicit val Dec_Label: Decoder[Label] = Decoder.decodeString.map(Label(_))
+
+  implicit object LabelShow extends Show[Label] {
+    override def shows(f: Label): String = f.fqn
+  }
 }
 
 

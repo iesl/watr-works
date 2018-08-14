@@ -31,6 +31,9 @@ object SegmentationLabels extends DocSegLabels {
 
   val Fonts                   = Label.auto :: Attr
   val PrimaryFont             = Label.auto :: Attr
+  val FontBaselineOffsets     = Label.auto :: Attr
+  val FontIndex               = Label.auto :: Attr
+  val LabeledIntervals        = Label.auto :: Attr
 
   val ExtractedItems          = Label.auto
 

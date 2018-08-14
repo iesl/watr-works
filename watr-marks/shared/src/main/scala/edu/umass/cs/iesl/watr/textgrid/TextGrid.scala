@@ -194,6 +194,18 @@ object TextGrid {
     }
 
     def isGlyphCell(): Boolean
+
+    val prepended = mutable.ArrayBuffer[Char]()
+    val appended = mutable.ArrayBuffer[Char]()
+    def prepend(ch: Char): Unit = prepended.prepend(ch)
+    def append(ch: Char): Unit = appended.append(ch)
+
+    def expand(): Seq[GridCell]= {
+      val pre = prepended.map(createInsert(_))
+      val post =appended.map(createInsert(_))
+
+      pre ++ (this +: post)
+    }
   }
 
   def mbrRegionFunc(h: PageItem, tail: Seq[PageItem]): PageRegion = {
@@ -222,6 +234,8 @@ object TextGrid {
 
   @JSExportAll
   trait Row extends LabelTarget with LabeledSequence[GridCell] {
+
+    def expand(): Row = Row.fromCells(cells().flatMap(_.expand()))
 
     def cells(): Seq[GridCell] = labelTargets()
 

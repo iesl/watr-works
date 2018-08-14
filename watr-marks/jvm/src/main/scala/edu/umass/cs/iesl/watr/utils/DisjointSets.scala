@@ -26,15 +26,17 @@ class DisjointSet[A] {
   /**
     * Add a new singleton set with only x in it (assuming x is not already known)
     */
-  def add(x: A) = {
-    assume(!contains(x))
-    parent(x) = new Node(x)
+  def add(x: A): Unit = {
+    if(!contains(x))
+      parent(x) = new Node(x)
   }
 
   /**
     * Union the sets containing x and y
     */
   def union(x: A, y: A) = {
+    add(x); add(y)
+
     val (xRoot, yRoot) = (x.root, y.root)
     if (xRoot != yRoot) {
       if (xRoot.rank < yRoot.rank) {        // change the root of the shorter/less-depth one
@@ -106,6 +108,14 @@ object DisjointSet {
     * @return a disjoint set with each element in its own set
     */
   def apply[A](elements: A*) = {
+    val d = empty[A]
+    elements foreach {e => d add e}
+    d
+  }
+  /**
+    * @return a disjoint set with each element in its own set
+    */
+  def fromElements[A](elements: Seq[A]) = {
     val d = empty[A]
     elements foreach {e => d add e}
     d

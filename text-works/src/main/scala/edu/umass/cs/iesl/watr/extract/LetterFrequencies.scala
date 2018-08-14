@@ -12,7 +12,7 @@ object CharClasses {
     val I = "i"
   }
 
-  object Ligature {
+  object Ligatures {
     val ST        = 'ﬆ'
     val STLong    = 'ﬅ'
     val FF        = 'ﬀ'
@@ -24,6 +24,20 @@ object CharClasses {
     val OEUpper   = 'Œ'
     val IJLower   = 'ĳ'
     val IJUpper   = 'Ĳ'
+
+    val All = List(
+      "ﬆ",
+      "ﬅ",
+      "ﬀ",
+      "ﬄ",
+      "ﬃ",
+      "ﬂ",
+      "ﬁ",
+      "œ",
+      "Œ",
+      "ĳ",
+      "Ĳ",
+    )
   }
 
   val Caps = ('A'.toInt to 'Z'.toInt).map(_.toChar).mkString

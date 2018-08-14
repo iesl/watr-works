@@ -3,6 +3,8 @@ package utils.intervals
 
 import utils.DoOrDieHandlers._
 
+import scalaz.{@@ => _, Ordering => _, _} // , Scalaz._
+
 object Interval {
 
   /**
@@ -19,8 +21,8 @@ object Interval {
     * the same starting point, and omit one of the intervals.
     */
 
-  class IncreaseOrdering[T] extends Ordering[Interval[T, _]] {
-    def compare(a:Interval[T, _], b:Interval[T, _]): Int = {
+  class IncreaseOrdering[T] extends Ordering[Interval[T, Any]] {
+    def compare(a:Interval[T, Any], b:Interval[T, Any]): Int = {
       var compare = a.compareStarts(b);
       if (compare != 0)
         compare;
@@ -33,12 +35,25 @@ object Interval {
     }
   }
 
-  implicit val increaseIntervalOrderingInt: IncreaseOrdering[Int] = {
-    new Interval.IncreaseOrdering[Int]
+  implicit def defaultIntervalOrdering[T, W](): Ordering[Interval[T, W]] = {
+    // new Interval.IncreaseOrdering[Int]()
+    new Ordering[Interval[T, W]] {
+      def compare(a:Interval[T, W], b:Interval[T, W]): Int = {
+        var compare = a.compareStarts(b);
+        if (compare != 0)
+          compare;
+        else {
+          compare = a.compareEnds(b);
+          if (compare != 0)
+            compare;
+          else a.compareSpecialization(b);
+        }
+      }
+    }
   }
 
-  implicit val increaseIntervalOrderingDouble: IncreaseOrdering[Double] = {
-    new Interval.IncreaseOrdering[Double]
+  def increaseIntervalOrderingDouble: IncreaseOrdering[Double] = {
+    new Interval.IncreaseOrdering[Double]()
   }
 
   /**
@@ -101,10 +116,20 @@ object Interval {
   }
 
 
+  // implicit object StringShow extends Show[String] {
+  //   override def show(f: String): Cord = new Cord(FingerTree.three("\"", f, "\"")(Cord.sizer).toTree)
+  //   override def shows(f: String): String = f
+  // }
+
+  implicit object UnitShow extends Show[Unit] {
+    // override def show(f: Unit): Cord = new Cord(FingerTree.three("\"", f, "\"")(Cord.sizer).toTree)
+    override def shows(f: Unit): String = ""
+  }
+
   object bounded {
     object create {
 
-      def leftClosedRightOpen[T: Numeric: MidpointHelper, W](lower: T, upper: T): Interval[T, Unit] = {
+      def leftClosedRightOpen[T: Numeric: MidpointHelper](lower: T, upper: T): Interval[T, Unit] = {
         new Interval[T, Unit](Some(lower), Some(upper),
           isStartInclusive=true,
           isEndInclusive=false,
@@ -322,7 +347,7 @@ object MidpointHelper {
 }
 
 
-class Interval[T: Numeric: MidpointHelper, W](
+class Interval[T: Numeric: MidpointHelper, +W: Show](
   val start: Option[T],
   val end: Option[T],
   val isStartInclusive: Boolean,
@@ -330,15 +355,24 @@ class Interval[T: Numeric: MidpointHelper, W](
   val attr: W
 ) {
 
+  import Interval._
+
+
   val mphelp = implicitly[MidpointHelper[T]]
 
+  def withAttr[W2: Show](w2: W2): Interval[T, W2] = {
+    new Interval[T, W2](start, end, isStartInclusive, isEndInclusive, w2)
+  }
 
   override def toString(): String = {
     val startstr = start.map(_.toString()).getOrElse("∞")
     val endstr = end.map(_.toString()).getOrElse("∞")
     val lp = if (isStartInclusive) "[" else "("
     val rp = if (isEndInclusive) "]" else ")"
-    s"${lp}${startstr}, ${endstr}${rp}"
+    val attrStr = implicitly[Show[W]].shows(attr)
+    val att = if (attrStr.isEmpty()) "" else s" #${attrStr}#"
+
+    s"${lp}${startstr}, ${endstr}<${att}>${rp}"
 
   }
 
@@ -386,11 +420,12 @@ class Interval[T: Numeric: MidpointHelper, W](
 	 * @param other The other interval
 	 * @return The intersection of the current interval wih the {@code other} interval.
     */
-  def getIntersection(other: Interval[T, _]): Interval[T, _] = {
+  def getIntersection(other: Interval[T, Any]): Interval[T, Unit] = {
 
     if (other == null || isEmpty() || other.isEmpty()) {
       null
     } else {
+
       val cmpThisOther = mphelp.increaseIntervalOrdering.compare(this, other)
 
       // Make sure that the one with the smaller starting point gets intersected with the other.

@@ -12,7 +12,6 @@ import utils._
 import TypeTags._
 import scala.collection.mutable
 
-
 case class DocSegShape[+T <: GeometricFigure](
   id: Int@@ShapeID,
   shape: T,
@@ -40,16 +39,6 @@ object SegmentationSystem {
 
   type ShapeIndex = LabeledShapeIndex[GeometricFigure, Unit, DocSegShape[GeometricFigure]]
 
-  // type LineShape = DocSegShape[Line]
-  // type PointShape = DocSegShape[Point]
-  // type RectShape = DocSegShape[LTBounds]
-  // type AnyShape = DocSegShape[GeometricFigure]
-
-  // implicit class RicherLabeledShapesX[A <: GeometricFigure](val s: Seq[DocSegShape[A]])
-  //     extends LabeledShapesCoercion[A, Unit](s)
-
-  // implicit class RicherLabeledShapeX[A <: GeometricFigure](val theShape: DocSegShape[A])
-  //     extends LabeledShapeCoercion[A, Unit](theShape)
 
   implicit class SS_LabeledShapeCoercion[+A <: GeometricFigure](val theShape: DocSegShape[A]) {
     def asLineShape: LineShape = theShape.asInstanceOf[LineShape]
@@ -62,12 +51,6 @@ object SegmentationSystem {
     def asPointShapes: Seq[PointShape] = theShapes.asInstanceOf[Seq[PointShape]]
     def asRectShapes: Seq[RectShape] = theShapes.asInstanceOf[Seq[RectShape]]
   }
-
-  // implicit class RicherLabeledShape[A <: GeometricFigure](val theShape: LabeledShape[A]) {
-  //   def asLineShape: LineShape = theShape.asInstanceOf[LineShape]
-  //   def asPointShape: PointShape = theShape.asInstanceOf[PointShape]
-  //   def asRectShape: RectShape = theShape.asInstanceOf[RectShape]
-  // }
 
 }
 
@@ -284,6 +267,26 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
       .collect{ case i: ExtractedItem.CharItem =>  i }
   }
 
+
+  import utils.intervals.Interval
+
+  protected def setLabeledIntervalsForShape(shape: DocSegShape[GeometricFigure], intervals: Seq[Interval[Int, Label]]): Unit = {
+    shapeIndex.setShapeAttribute[Seq[Interval[Int, Label]]](shape.id, LB.LabeledIntervals, intervals)
+  }
+
+
+  protected def getLabeledIntervalsForShape(shape: DocSegShape[GeometricFigure]): Option[Seq[Interval[Int, Label]]] = {
+    shapeIndex.getShapeAttribute[Seq[Interval[Int, Label]]](shape.id, LB.LabeledIntervals)
+  }
+
+  protected def setFontIndexForShape(shape: DocSegShape[GeometricFigure], i: Int): Unit = {
+    shapeIndex.setShapeAttribute[Int](shape.id, LB.FontIndex, i)
+  }
+
+  protected def getFontIndexForShape(shape: DocSegShape[GeometricFigure]): Int = {
+    shapeIndex.getShapeAttribute[Int](shape.id, LB.FontIndex).get
+  }
+
   protected def setFontsForShape(shape: DocSegShape[GeometricFigure], fontIds: Set[String@@ScaledFontID]): Unit = {
     shapeIndex.setShapeAttribute[Set[String@@ScaledFontID]](shape.id, LB.Fonts, fontIds)
   }
@@ -299,6 +302,14 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
 
   protected def getPrimaryFontForShape(shape: DocSegShape[GeometricFigure]): Option[String@@ScaledFontID] = {
     shapeIndex.getShapeAttribute[String@@ScaledFontID](shape.id, LB.PrimaryFont)
+  }
+
+  protected def setFontOffsetsForShape(shape: DocSegShape[GeometricFigure], offsets: FontBaselineOffsets): Unit = {
+    shapeIndex.setShapeAttribute[FontBaselineOffsets](shape.id, LB.FontBaselineOffsets, offsets)
+  }
+
+  protected def getFontOffsetsForShape(shape: DocSegShape[GeometricFigure]): Option[FontBaselineOffsets] = {
+    shapeIndex.getShapeAttribute[FontBaselineOffsets](shape.id, LB.FontBaselineOffsets)
   }
 
   protected def queriesAllEmpty(queryRect: LTBounds, labels: Label*): Boolean = {
@@ -342,7 +353,11 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     dists :+ 0d.toFloatExact()
   }
 
+  def idsAreConsecutive(id1: Int@@CharID, id2: Int@@CharID): Boolean =
+    id1.unwrap == id2.unwrap - 1
+
+  def itemsAreConsecutive(item1: ExtractedItem, item2: ExtractedItem): Boolean =
+    idsAreConsecutive(item1.id, item2.id)
+
+
 }
-
-
-

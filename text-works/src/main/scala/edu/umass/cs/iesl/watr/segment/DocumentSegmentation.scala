@@ -111,15 +111,15 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       }
     }
 
-    time("findLineLayoutMetrics") {
-      findLineLayoutMetrics(LB.CharRunFontBaseline)
+    time("computeScaledFontHeightMetrics") {
+      computeScaledFontHeightMetrics(LB.CharRunFontBaseline)
     }
 
     // outputTableData();
 
-    time("generatePageRules") {
+    time("findLineShapesFromFontBaselines") {
       pageSegmenters.foreach { p =>
-        p.generatePageRules(LB.CharRunFontBaseline, LB.CapDescenderBand)
+        p.findTextLineShapesFromFontBaselines()
       }
     }
 

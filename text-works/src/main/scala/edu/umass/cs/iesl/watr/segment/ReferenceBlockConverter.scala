@@ -94,7 +94,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
       if (includedCharItems.nonEmpty) {
         val leftmostItem = includedCharItems.minBy(_.minBBox.left)
         val fontOffsets = docScope.fontDefs.getScaledFontOffsets(leftmostItem.scaledFontId)
-        val baselineOffsets = fontOffsets.forBaseline(leftmostItem.fontBbox.bottom)
+        val baselineOffsets = fontOffsets.forFontBoxBottom(leftmostItem.fontBbox.bottom)
         val baseline = baselineOffsets.baseLine
         val capline = baselineOffsets.capLine
         val adjHeight = baseline - capline

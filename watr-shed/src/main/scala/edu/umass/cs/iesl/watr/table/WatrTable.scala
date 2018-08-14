@@ -83,10 +83,11 @@ object WatrTable extends App with utils.AppMainBasics {
     // 10.1101-009449.d
     // 10.1101-013177.d
     // 10.1101-015883.d
-
     if (doQuickRun) {
       // val doc = "101002zaac201200197.pdf.d"
-      val doc = "1703.00175.pdf.d"
+      val doc = "acsami.7b00496.pdf.d"
+      // val doc = "101021ja070464y.pdf.d"
+      // val doc = "1703.00175.pdf.d"
       // RefBlockLabelConversion.convertAllRefLabels(1000, 0, None, Some("ReferenceBlock"))
       // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(doc), Some("ReferenceBlock"))
       // AnnotationExporters.writeAllLabeledTexts("tmp.d", watrmarks.Label("Reference"))

@@ -18,7 +18,7 @@ import TypeTags._
 
 trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
 
-  def findLineLayoutMetrics(lineLabel: Label): Unit = {
+  def computeScaledFontHeightMetrics(lineLabel: Label): Unit = {
     val offsetEvidence = for {
       pageSeg <- pageSegmenters
       lineShape <- pageSeg.getLabeledLines(lineLabel)
@@ -43,8 +43,6 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
       val minBottom = topsAndBottoms.maxBy(_._2)
       val maxTopEvidence = Seq(maxTop._3)
       val minBottomEvidence = Seq(minBottom._3)
-
-
 
       FontBaselineOffsetsAccum(
         scaledFontId,

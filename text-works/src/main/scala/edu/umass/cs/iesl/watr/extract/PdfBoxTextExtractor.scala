@@ -350,7 +350,7 @@ class PdfBoxTextExtractor(
             }
 
             strRepr.headOption.foreach { ch =>
-              fontProps.initGlyphEvidence(ch, glyphProps, pageNum,
+              fontProps.initGlyphEvidence(unicodeStr, ch, glyphProps, pageNum,
                 priorCharWindow.take(priorCharWindowSize).reverse
               )
             }
