@@ -13,10 +13,71 @@ import ExtractedItem._
 import geometry._
 import geometry.syntax._
 import utils.QuickNearestNeighbors._
+import scala.collection.mutable
 
 import TypeTags._
 
 trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
+  private def createFontNameVariants(scaledFontId: String@@ScaledFontID): Seq[(String, Int@@ScalingFactor, String@@ScaledFontID)] = {
+    val (fontName, scalingFactor) = FontDefs.splitScaledFontId(scaledFontId)
+    val variations = mutable.ArrayBuffer[String](fontName)
+    if (fontName.contains("+")) {
+      val split = fontName.split("[+]")
+      variations.append(split(1))
+    }
+    if (fontName.contains(",")) {
+      val split = fontName.split(",")
+      variations.append(split(0))
+    }
+
+    variations.toSeq.map{ variant =>
+      (variant, scalingFactor, scaledFontId)
+    }
+  }
+
+  def computeScaledSymbolicFontMetrics(): Unit = {
+    val natLangFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang=true)
+
+    val natLangVariantNames = natLangFontIds.flatMap{ scaledFontId =>
+      createFontNameVariants(scaledFontId)
+    }
+
+    val symbolicFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang=false)
+
+    symbolicFontIds.foreach { scaledSymFontId =>
+      val (symFontName, symScalingFactor) = FontDefs.splitScaledFontId(scaledSymFontId)
+
+      val symVariants = createFontNameVariants(scaledSymFontId)
+      val symVariantNames = symVariants.map(_._1)
+
+      val matchingVariantName = natLangVariantNames.find { case (name, scalingFactor, natScaledFontId) =>
+        symVariantNames.contains(name)
+      }
+
+      matchingVariantName.foreach { case (variantName, scalingFactor, natScaledFontId) =>
+
+        val matchingNatLangFont = docScope.fontDefs.getScaledFontOffsets(natScaledFontId)
+        val rescaledOffsets = matchingNatLangFont.rescaledAs(variantName, symScalingFactor)
+        println(s"Symbolic Font matches Nat Lang Font, rescaling Nat Lang: ")
+        println(s"    ${matchingNatLangFont}")
+        println(s"        To: ")
+        println(s"    ${rescaledOffsets}")
+        docScope.fontDefs.setScaledFontOffsets(scaledSymFontId, rescaledOffsets)
+      }
+    }
+
+    // val offsetEvidence = for {
+    //   pageSeg <- pageSegmenters
+    // }  {
+    //   val symbolicGlyphs = pageSeg.pageItems
+    //     .collect{ case c: CharItem => c }
+    //     .filterNot { _.fontProps.isNatLangFont() }
+
+    //   symbolicGlyphs.groupBy { item =>
+    //     item.scaledFontId
+    //   }
+    // }
+  }
 
   def computeScaledFontHeightMetrics(lineLabel: Label): Unit = {
     val offsetEvidence = for {
@@ -57,7 +118,7 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
       )
     }
 
-    val allFontIds = docScope.fontDefs.getNatLangFontIdentifiers()
+    val allFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang=true)
 
     allFontIds.foreach{ scaledFontId =>
 

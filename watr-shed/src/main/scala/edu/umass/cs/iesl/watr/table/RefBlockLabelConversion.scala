@@ -55,15 +55,22 @@ object RefBlockLabelConversion {
 
         println(s"Converting ${stableId} reference labels...")
 
-
         val docId = docStore.getDocument(stableId).orDie(s"no document for ${stableId}")
 
-        val docAnnots = annotApi.listDocumentAnnotations(docId)
-          .map { id =>
-            val rec = annotApi.getAnnotationRecord(id)
-            (rec.location, rec.label)
+        annotApi.listDocumentAnnotations(docId).foreach { id =>
+          val rec = annotApi.getAnnotationRecord(id)
+          if (rec.annotPath == Some(CorpusPath("References.AutoLabeled"))) {
+            annotApi.deleteAnnotation(id)
           }
-          .collect{ case (z: AnnotatedLocation.Zone, l: watrmarks.Label) => (z, l) }
+        }
+
+        val docAnnots = annotApi.listDocumentAnnotations(docId).map { id =>
+          val rec = annotApi.getAnnotationRecord(id)
+          (rec.location, rec.label)
+        }.collect{ case (z: AnnotatedLocation.Zone, l: watrmarks.Label) =>
+            (z, l)
+        }
+
 
         if (docAnnots.isEmpty) {
           println(s"No annotation in ${stableId}")
@@ -81,8 +88,9 @@ object RefBlockLabelConversion {
               println(s"Found ReferenceBlock on page ${pageNum}")
               val pageSegmenter = segmentation.pageSegmenters.find(_.pageNum == pageNum).headOption.orDie(s"no segmenter found for page ${pageNum}")
               val maybeRefs = pageSegmenter.convertReferenceBlocks(pageZonesAndLabels)
+
               maybeRefs.foreach { refBounds =>
-                refBounds.foreach{ case (bbox, textGrid) =>
+                refBounds.foreach{ case (bbox, textGrid, pageRegion) =>
 
                   val zone = AnnotatedLocation.Zone(List(
                     PageRegion(stablePage, bbox)
@@ -107,17 +115,20 @@ object RefBlockLabelConversion {
   def convertAllRefLabels(n: Int=Int.MaxValue, skip: Int=0, regexFilter: Option[String], labelFilter: Option[String])(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     val conf = TextWorksConfig.Config(IOConfig(
       inputMode = Some(InputMode.CorpusFile(corpusAccessApi.corpus.corpusRoot.toNIO)),
+      numToRun=n, numToSkip=skip,
       outputPath= None,
       overwrite = true
     ))
 
     val processStream = createInputStream[IO](conf.ioConfig)
-      .drop(skip.toLong).take(n.toLong)
       .through(initMarkedInput())
       .through(filterInputMatchRegex(regexFilter))
       .through(filterInputHasLabel(labelFilter.map(s => Label(s))))
+      .through(dropSkipAndRun(conf.ioConfig))
+      .through(cleanFileArtifacts(conf))
       .through(runSegmentation(conf))
       .through(convertReferenceBlockLabelsToReferenceLabels())
+      .through(writeExtractedTextFile(conf))
       .through(cleanTraceLogArtifacts(conf))
       .through(writeTraceLogs(conf))
 

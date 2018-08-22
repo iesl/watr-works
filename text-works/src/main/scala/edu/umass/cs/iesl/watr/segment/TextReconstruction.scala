@@ -106,26 +106,34 @@ trait TextReconstruction extends PageScopeSegmenter
 
 
 
-  private def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact =  {
-    val charSpacings = qnn(
-      pairwiseItemDistances(sortedLineCCs), 0.5d
-    )
 
-    if (charSpacings.length == 1) {
-      val charWidths = sortedLineCCs.map(_.bbox.width)
-      charWidths.max
-    } else if (charSpacings.length > 1) {
-      val mostCommonSpacingBin = charSpacings.head
-      val mostCommonSpacing = mostCommonSpacingBin.maxValue
-      val largerSpacings = charSpacings.filter(b => b.centroid.value > mostCommonSpacing*2)
-      if (largerSpacings.nonEmpty) {
-        val nextCommonSpacing = largerSpacings.head.centroid.value
-          (mostCommonSpacing + nextCommonSpacing) / 2
+  private def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact =  {
+    if (sortedLineCCs.isEmpty) 0d.toFloatExact() else {
+
+      val charSpacings = qnn(
+        pairwiseItemDistances(sortedLineCCs), 0.5d
+      )
+
+      if (charSpacings.length == 1) {
+        val charWidths = sortedLineCCs.map(_.bbox.width)
+        if (charWidths.isEmpty) {
+          println(s"sortedLineCCs: ${sortedLineCCs}")
+          println(s"charSpacings: ${charSpacings}")
+        }
+        charWidths.max
+      } else if (charSpacings.length > 1) {
+        val mostCommonSpacingBin = charSpacings.head
+        val mostCommonSpacing = mostCommonSpacingBin.maxValue
+        val largerSpacings = charSpacings.filter(b => b.centroid.value > mostCommonSpacing*2)
+        if (largerSpacings.nonEmpty) {
+          val nextCommonSpacing = largerSpacings.head.centroid.value
+            (mostCommonSpacing + nextCommonSpacing) / 2
+        } else {
+          mostCommonSpacing + 1.0
+        }
       } else {
-        mostCommonSpacing + 1.0
+        0.toFloatExact()
       }
-    } else {
-      0.toFloatExact()
     }
   }
 

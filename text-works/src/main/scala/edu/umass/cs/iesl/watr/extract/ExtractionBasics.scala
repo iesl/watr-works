@@ -55,15 +55,6 @@ protected object ExtractionImplicits {
     ScaledFontID(s"${name}x${scalingFactor.unwrap}")
   }
 
-  def splitScaledFontId(scaledFontId: String@@ScaledFontID): (String, Int@@ScalingFactor) = {
-    val str = scaledFontId.unwrap
-    val n = str.lastIndexOf("x")
-
-    val (name, scaling0) = scaledFontId.unwrap.splitAt(n)
-    val scaling = scaling0.drop(1).toInt
-
-    (name, ScalingFactor(scaling.toInt))
-  }
 }
 
 import ExtractionImplicits._
@@ -211,6 +202,26 @@ case class FontBaselineOffsets(
 
   def forFontBoxBottom(fontBaseline: Int@@FloatRep): FontBaselineOffsets = {
     copy(fontBaseline = fontBaseline)
+  }
+
+  def rescaledAs(newName: String, newScalingFactor: Int@@ScalingFactor): FontBaselineOffsets = {
+    val (fontName, scalingFactor) = FontDefs.splitScaledFontId(scaledFontId)
+
+    // val scaleDist = math.abs(newScalingFactor.unwrap - scalingFactor.unwrap)
+    // val adj = scaleDist.toDouble * 0.25
+    val scalingRatio = newScalingFactor.unwrap.toDouble / scalingFactor.unwrap
+
+    FontBaselineOffsets(
+      makeScaledFontId(newName, newScalingFactor),
+      fontBaseline = FloatExact.zero,
+      _cap      = _cap      * scalingRatio,
+      _ascent   = _ascent   * scalingRatio,
+      _midrise  = _midrise  * scalingRatio,
+      _baseline = _baseline * scalingRatio,
+      _descent  = _descent  * scalingRatio,
+      _top      = _top      * scalingRatio,
+      _bottom   = _bottom   * scalingRatio
+    )
   }
 
 }
@@ -412,6 +423,18 @@ case class FontProperties(
   }
 }
 
+object FontDefs {
+  def splitScaledFontId(scaledFontId: String@@ScaledFontID): (String, Int@@ScalingFactor) = {
+    val str = scaledFontId.unwrap
+    val n = str.lastIndexOf("x")
+
+    val (name, scaling0) = scaledFontId.unwrap.splitAt(n)
+    val scaling = scaling0.drop(1).toInt
+
+    (name, ScalingFactor(scaling.toInt))
+  }
+
+}
 
 class FontDefs(pageCount: Int) {
 
@@ -421,29 +444,30 @@ class FontDefs(pageCount: Int) {
     fontProperties.find(_.name == fontName)
   }
 
-  def getScaledFont(scaledFontId: String@@ScaledFontID): Option[ScaledMetrics] = {
-    val (fontName, scalingFactor) = splitScaledFontId(scaledFontId)
-    val fontProps = fontProperties.find(_.name == fontName).head
-    fontProps.getScaledMetrics(scalingFactor)
-  }
 
   private val scaledFontBaselineOffsets = mutable.HashMap[String@@ScaledFontID, FontBaselineOffsets]()
+
   def setScaledFontOffsets(scaledFontId: String@@ScaledFontID, fontBaselineOffsets: FontBaselineOffsets): Unit = {
     scaledFontBaselineOffsets.put(scaledFontId, fontBaselineOffsets)
   }
+
+  def hasScaledFontOffsets(scaledFontId: String@@ScaledFontID): Boolean = {
+    scaledFontBaselineOffsets.contains(scaledFontId)
+  }
   def getScaledFontOffsets(scaledFontId: String@@ScaledFontID): FontBaselineOffsets = {
+    if (!scaledFontBaselineOffsets.contains(scaledFontId)) {
+
+      val keyValPair = scaledFontBaselineOffsets.toList. mkString("{\n  ", "\n  ", "\n}")
+      println(s"getScaledFontOffsets(${scaledFontId}): missing: $keyValPair")
+
+    }
     scaledFontBaselineOffsets(scaledFontId)
   }
 
-  def getNatLangFontIdentifiers(): Seq[String@@ScaledFontID] = {
-    fontProperties.flatMap { p =>
-      if (p.isNatLangFont()) Some(p.getFontIdentifiers)
-      else None
-    }.flatten
-  }
-
-  def getFontIdentifiers(): Seq[String@@ScaledFontID] = {
-    fontProperties.flatMap { _.getFontIdentifiers }
+  def getFontIdentifiers(isNatLang: Boolean): Seq[String@@ScaledFontID] = {
+    fontProperties
+      .filter { p => isNatLang == p.isNatLangFont() }
+      .flatMap(_.getFontIdentifiers)
   }
 
   def addFont(pdFont: PDFont): FontProperties = {

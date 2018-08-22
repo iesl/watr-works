@@ -10,7 +10,7 @@ import utils.SlicingAndDicing._
 import watrmarks._
 import annots._
 import corpora._
-  // import textboxing.{TextBoxing => TB}, TB._
+import textboxing.{TextBoxing => TB}, TB._
 import utils.SlicingAndDicing._
 import utils.DoOrDieHandlers._
 import utils.QuickNearestNeighbors._
@@ -24,7 +24,6 @@ object ReferenceBlockConversion {
   val PartialRefBegin         = Label.auto
   val PartialRefEnd           = Label.auto
   val Reference               = Label.auto
-  // val ReferenceAuto           = Label.auto
   val LeftHangingIndentColumn = Label.auto
   val LeftJustifiedColumn     = Label.auto
   val AlphabeticRefMarker     = Label.auto
@@ -82,8 +81,8 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
     val halfWidth = shiftedDown.width / 2
     val queryRect = shiftedDown.shave(Dir.Right, halfWidth)
 
-    val fontBaselines = searchForLines(queryRect, LB.CharRunFontBaseline)
-    val ySortedBaselines = fontBaselines.sortBy(_.shape.p1.y)
+    val fontBaselines = searchForRects(queryRect, LB.BaselineMidriseBand)
+    val ySortedBaselines = fontBaselines.sortBy(_.shape.bottom)
 
     val leftmostCharBounds = ySortedBaselines.map { fontBaseline =>
       val baselineItems = getCharsForShape(fontBaseline)
@@ -93,19 +92,25 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
       }
       if (includedCharItems.nonEmpty) {
         val leftmostItem = includedCharItems.minBy(_.minBBox.left)
-        val fontOffsets = docScope.fontDefs.getScaledFontOffsets(leftmostItem.scaledFontId)
-        val baselineOffsets = fontOffsets.forFontBoxBottom(leftmostItem.fontBbox.bottom)
-        val baseline = baselineOffsets.baseLine
-        val capline = baselineOffsets.capLine
-        val adjHeight = baseline - capline
         val LTBounds(l, t, w, h) = leftmostItem.minBBox
-        val adjustedBbox = if (adjHeight.unwrap == 0) {
-          leftmostItem.minBBox
-        } else {
-          LTBounds(l, capline, w, adjHeight)
-        }
 
-        Some(adjustedBbox)
+        if (docScope.fontDefs.hasScaledFontOffsets(leftmostItem.scaledFontId)) {
+          val fontOffsets = docScope.fontDefs.getScaledFontOffsets(leftmostItem.scaledFontId)
+          val baselineOffsets = fontOffsets.forFontBoxBottom(leftmostItem.fontBbox.bottom)
+          val baseline = baselineOffsets.baseLine
+          val capline = baselineOffsets.capLine
+          val adjHeight = baseline - capline
+          val adjustedBbox = if (adjHeight.unwrap == 0) {
+            leftmostItem.minBBox
+          } else {
+            LTBounds(l, capline, w, adjHeight)
+          }
+
+          Some(adjustedBbox)
+
+        } else  {
+          Some(leftmostItem.minBBox)
+        }
       } else None
     }.flatten
 
@@ -118,7 +123,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
     }
   }
 
-  def convertReferenceBlocks(pageZonesAndLabels: Seq[(AnnotatedLocation.Zone, Label)]): Option[Seq[(LTBounds, TextGrid)]] = {
+  def convertReferenceBlocks(pageZonesAndLabels: Seq[(AnnotatedLocation.Zone, Label)]): Option[Seq[(LTBounds, TextGrid, PageRegion)]] = {
     pageZonesAndLabels.foreach { case (zone: AnnotatedLocation.Zone, label: watrmarks.Label) =>
       assume(zone.regions.length == 1)
       val zoneRegion = zone.regions.head
@@ -192,69 +197,78 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
 
         val leftJustifiedColumnShape = leftJustifiedColumnShapes.head
         val leftmostCharBounds = queryForLeftmostCharsInColumn(leftJustifiedColumnShape.bounds, refBlockRegion.bbox)
+        if (leftmostCharBounds.isEmpty) {
+          println(s"Warning: no chars found in left-justified column")
 
-        val leftmostCharBottoms = leftmostCharBounds.map(_.bottom)
-        val yDeltas = findDeltas(leftmostCharBottoms)
-        val yJumpClusters = qnn(yDeltas, tolerance = 1d)
-        val yJumpBins = yJumpClusters.filter { bin =>
-          bin.size() > 0
-        }
-        val sortedYJumps = yJumpBins.sortBy(_.size()).reverse
+        } else {
 
-        // println(s"sortedYJumps: Sorted Bins")
-        // println(sortedYJumps.mkString("\n  ", "\n  ", "\n"))
-        // println(s"leftmostChar bounds")
-        // println(leftmostCharBounds.map(_.prettyPrint).mkString("\n  ", "\n  ", "\n"))
-        // println(s"leftmostCharBottoms")
-        // println(leftmostCharBottoms.map(_.pp).mkString("\n  ", "\n  ", "\n"))
-        // println(s"yDeltas")
-        // println(yDeltas.map(_.pp)mkString("\n  ", "\n  ", "\n"))
 
-        val maxJumpForIntraRefLines = sortedYJumps.headOption.map(_.maxValue()).orDie("no y-jump val 1 clusters??")
+          val leftmostCharBottoms = leftmostCharBounds.map(_.bottom)
+          val yDeltas = findDeltas(leftmostCharBottoms)
+          val yJumpClusters = qnn(yDeltas, tolerance = 1d)
+          val yJumpBins = yJumpClusters.filter { bin =>
+            bin.size() > 0
+          }
+          val sortedYJumps = yJumpBins.sortBy(_.size()).reverse
 
-        val maybeMinJumpForInterRefLines = sortedYJumps.drop(1).headOption.map(_.minValue())
+          // println(s"sortedYJumps: Sorted Bins")
+          // println(sortedYJumps.mkString("\n  ", "\n  ", "\n"))
 
-        if (maybeMinJumpForInterRefLines.isEmpty) {
-          println("No suitable y-jumps for inter-reference gaps")
-        }
+          // println(s"leftmostChar bounds")
+          // println(leftmostCharBounds.map(_.prettyPrint).mkString("\n  ", "\n  ", "\n"))
 
-        maybeMinJumpForInterRefLines.map{ minJumpForInterRefLines =>
-          val jumpThreshold = ((maxJumpForIntraRefLines + minJumpForInterRefLines) / 2) + 0.1d
-          // val jumpThreshold = minJumpForInterRefLines - 1d
+          // println(s"leftmostCharBottoms")
+          // println(leftmostCharBottoms.map(_.pp).mkString("\n  ", "\n  ", "\n"))
 
-          // println(s"Jump threshold: ${jumpThreshold};  max-intra/min-inter = (${maxJumpForIntraRefLines}, ${minJumpForInterRefLines})")
+          // println(s"yDeltas")
+          // println(yDeltas.map(_.pp).mkString("\n  ", "\n  ", "\n"))
 
-          val groupedIntoRefs = leftmostCharBounds.groupByPairs{ case (bbox1, bbox2) =>
-            val vspace = bbox2.bottom - bbox1.bottom
-            vspace < jumpThreshold
+          val maxJumpForIntraRefLines = sortedYJumps.headOption.map(_.maxValue()).orDie("no y-jump val 1 clusters??")
+
+          val maybeMinJumpForInterRefLines = sortedYJumps.drop(1).headOption.map(_.minValue())
+
+          if (maybeMinJumpForInterRefLines.isEmpty) {
+            println("No suitable y-jumps for inter-reference gaps")
           }
 
-          val candidateBounds = groupedIntoRefs.map { refLeftChars =>
-            val leftCharMinBounds = refLeftChars.reduce(_ union _)
-            traceLog.trace {
-              figure(leftCharMinBounds).tagged(s"Reference LeftChar Bounds")
+          maybeMinJumpForInterRefLines.map{ minJumpForInterRefLines =>
+            val jumpThreshold = ((maxJumpForIntraRefLines + minJumpForInterRefLines) / 2) + 0.1d
+            // val jumpThreshold = minJumpForInterRefLines - 1d
+
+            // println(s"Jump threshold: ${jumpThreshold};  max-intra/min-inter = (${maxJumpForIntraRefLines}, ${minJumpForInterRefLines})")
+
+            val groupedIntoRefs = leftmostCharBounds.groupByPairs{ case (bbox1, bbox2) =>
+              val vspace = bbox2.bottom - bbox1.bottom
+              vspace < jumpThreshold
             }
-            val referenceCandidateBounds = leftCharMinBounds.withinRegion(refBlockRegion.bbox)
-              .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
-              .orDie("What happened here?")
 
-            referenceCandidateBounds
-          }
+            val candidateBounds = groupedIntoRefs.map { refLeftChars =>
+              val leftCharMinBounds = refLeftChars.reduce(_ union _)
+              traceLog.trace {
+                figure(leftCharMinBounds).tagged(s"Reference LeftChar Bounds")
+              }
+              val referenceCandidateBounds = leftCharMinBounds.withinRegion(refBlockRegion.bbox)
+                .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
+                .orDie("What happened here?")
 
-          val nonIntersectingCandidates = filterPrelabeledRegions(refBlockRegion.bbox, candidateBounds)
+              referenceCandidateBounds
+            }
 
-          traceLog.trace { figure(nonIntersectingCandidates:_*).tagged(s"Left-Justified Reference Candidate Bounds") }
+            val nonIntersectingCandidates = filterPrelabeledRegions(refBlockRegion.bbox, candidateBounds)
 
-          val referenceMinBounds = nonIntersectingCandidates.map{ bounds =>
-            findCandidateMinBounds(bounds)
-          }
+            traceLog.trace { figure(nonIntersectingCandidates:_*).tagged(s"Left-Justified Reference Candidate Bounds") }
 
-          referenceMinBounds.foreach { refMinBounds =>
-            indexShape(refMinBounds, Reference)
-          }
+            val referenceMinBounds = nonIntersectingCandidates.map{ bounds =>
+              findCandidateMinBounds(bounds)
+            }
 
-          traceLog.trace {
-            figure(referenceMinBounds:_*).tagged(s"Final Justified Reference Min Bounds (${referenceMinBounds.length})" )
+            referenceMinBounds.foreach { refMinBounds =>
+              indexShape(refMinBounds, Reference)
+            }
+
+            traceLog.trace {
+              figure(referenceMinBounds:_*).tagged(s"Final Justified Reference Min Bounds (${referenceMinBounds.length})" )
+            }
           }
         }
 
@@ -263,20 +277,186 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
       }
     }}
 
-    referenceBlockZones.map { zones => zones.flatMap { refBlockZone =>
+    val autoLabeledBlocks = referenceBlockZones.map { zones => zones.flatMap { refBlockZone =>
       val refBlockRegion = refBlockZone.regions.headOption.orDie(s"no regions found in zone ${refBlockZone}")
       val stablePage = refBlockRegion.page
       val referenceShapes = searchForRects(refBlockRegion.bbox, Reference)
-      referenceShapes.map{ referenceShape =>
+      val sortedRefShapes = referenceShapes.map{ referenceShape =>
         val textGrid = getTextGrid(Some(referenceShape.shape))
-        println(s"-- Reference ---")
-        println(textGrid.toText())
-        println
-
-        (referenceShape.shape, textGrid)
+        (referenceShape.shape, textGrid, refBlockRegion)
       }.sortBy(_._1.top)
+
+
+      sortedRefShapes
     }}
 
+    val checkedBlocks = autoLabeledBlocks.map{ block  =>
+      val isSane = sanityCheckReferences(block)
+      val marker = if (isSane) "#" else "*"
+
+      block.foreach{ case (referenceShape, textGrid, pageRegion) =>
+        println(
+          TB.borderLeft(s"##${marker}>> ")(
+            s"-- Reference ---".hangIndent(
+              textGrid.toText()
+            )
+          )
+        )
+      }
+      (block, isSane)
+    }
+
+    checkedBlocks.filter(_._2).map(_._1)
   }
+
+  def sanityCheckReferences(referenceTextGrids: Seq[(LTBounds, TextGrid, PageRegion)]): Boolean = {
+    referenceTextGrids.zipWithIndex.foreach{ case ((bbox, textGrid, pageRegion), refNum) =>
+      val isEmpty = textGrid.toText().replaceAll("\n", " ").trim.isEmpty()
+
+      if (isEmpty) {
+        println(s"Warning: no text found for reference ${refNum} on page ${pageRegion.page.pageNum}")
+      }
+    }
+
+    val refTexts = referenceTextGrids.flatMap{ case (bbox, textGrid, pageRegion) =>
+      textGrid.toText().split("\n").headOption
+    }
+
+
+    val numericRef1 = """^\[([\d ]+)\].*""".r
+    def isNumericMarker1(s: String) = numericRef1.findFirstIn(s).nonEmpty
+    def getNumericMarker1(s: String) = numericRef1.findFirstMatchIn(s).map { m => m.group(1) }
+
+    val numericRef2 = """^([\d ]+).*""".r
+    def isNumericMarker2(s: String) = numericRef2.findFirstIn(s).nonEmpty
+    def getNumericMarker2(s: String) = numericRef2.findFirstMatchIn(s).map { m => m.group(1) }
+
+    val alphaMarker = """^([a-zA-Z]+).*""".r
+    def isAlphabeticMarker(s: String) = alphaMarker.findFirstIn(s).nonEmpty
+    def getAlphabeticMarker(s: String) = alphaMarker.findFirstMatchIn(s).map { m => m.group(1) }
+
+    val allNumeric1 = refTexts.forall(isNumericMarker1(_))
+    val allNumeric2 = refTexts.forall(isNumericMarker2(_))
+    val allAlpha = refTexts.forall(isAlphabeticMarker(_))
+
+
+    if (allAlpha) {
+      println(s"allAlpha")
+
+      val markers = refTexts.map{ refText =>
+        getAlphabeticMarker(refText)
+      }
+      val refMarkerText = markers.flatten
+
+      val foundAllMarkers = refMarkerText.length == markers.length
+
+      val commonNameConnectors = "de du von van".split(" ").toList
+
+      val isIncreasingSeq = refMarkerText.sliding(2).forall { pairs =>
+        if (pairs.length==2) {
+
+          val line1 = pairs.head
+          val line2 = pairs.last
+          val minLen = math.min(line1.length(), line2.length())
+          val linesHaveConnectors = (
+            commonNameConnectors.exists(line1.toLowerCase.startsWith(_))
+              || commonNameConnectors.exists(line2.toLowerCase.startsWith(_)))
+
+          val maybeFineAnway = (
+            line1.head.isUpper && line2.head.isUpper &&
+              line1.contains(".,") &&
+              line2.contains(".,") &&
+              math.abs(line1.head - line2.head) <= 1
+          )
+
+          val fst = pairs.head.slice(0, minLen)
+          val lst = pairs.last.slice(0, minLen)
+          val isOrdered = fst.compareTo(lst) <= 0
+
+          if (!isOrdered) {
+            println(s"Warning: ordering between (haveConnectors: ${linesHaveConnectors}, maybeFineAnway: ${maybeFineAnway}) \n   ${line1} \n   ${line2}")
+          }
+
+          isOrdered || linesHaveConnectors || maybeFineAnway
+        } else true
+      }
+
+      if (foundAllMarkers && isIncreasingSeq) {
+        println("Sanity Check passed")
+        true
+      } else {
+        println("FAILED Sanity Check")
+        val refDbg = refTexts.mkString("{\n  ", "\n  ", "\n}")
+        val dbg = markers.mkString("{\n  ", "\n  ", "\n}")
+        println(s"refs = ${refDbg}")
+        println(s"markers = ${dbg}")
+        false
+      }
+
+    } else if (allNumeric1) {
+      val markers = refTexts.map{ refText =>
+        getNumericMarker1(refText)
+      }
+
+      val refMarkerText = markers.flatten.map{ marker =>
+        marker.replaceAll(" ", "")
+      }
+
+      val foundAllMarkers = refMarkerText.length == markers.length
+      val isIncreasingSeq = refMarkerText.map{_.toInt}.sliding(2).forall { pairs =>
+        if (pairs.length==2) {
+          pairs.head == pairs.last - 1
+        } else true
+      }
+
+
+      if (foundAllMarkers && isIncreasingSeq) {
+        println("Sanity Check passed (numeric 1)")
+        true
+      } else {
+        println("FAILED Sanity Check (numeric 1)")
+        val refDbg = refTexts.mkString("{\n  ", "\n  ", "\n}")
+        val dbg = markers.mkString("{\n  ", "\n  ", "\n}")
+        println(s"refs = ${refDbg}")
+        println(s"markers = ${dbg}")
+        false
+      }
+
+    } else if (allNumeric2) {
+      val markers = refTexts.map{ refText =>
+        getNumericMarker2(refText)
+      }
+
+      val refMarkerText = markers.flatten.map{ marker =>
+        marker.replaceAll(" ", "")
+      }
+
+      val foundAllMarkers = refMarkerText.length == markers.length
+      val isIncreasingSeq = refMarkerText.map{_.toInt}.sliding(2).forall { pairs =>
+        if (pairs.length==2) {
+          pairs.head == pairs.last - 1
+        } else true
+      }
+
+
+      if (foundAllMarkers && isIncreasingSeq) {
+        println("Sanity Check passed (numeric marker 2)")
+        true
+      } else {
+        println("FAILED Sanity Check (numeric marker 2)")
+        val refDbg = refTexts.mkString("{\n  ", "\n  ", "\n}")
+        val dbg = markers.mkString("{\n  ", "\n  ", "\n}")
+        println(s"refs = ${refDbg}")
+        println(s"markers = ${dbg}")
+        false
+      }
+
+    } else {
+      println(s"could not identify reference numbering")
+      false
+    }
+
+  }
+
 
 }

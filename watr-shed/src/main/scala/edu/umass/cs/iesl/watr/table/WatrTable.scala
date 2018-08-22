@@ -78,22 +78,19 @@ object WatrTable extends App with utils.AppMainBasics {
 
     implicit val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
 
+
     val doQuickRun = argMap.get("quick-run").nonEmpty
-    // Extra space:
-    // 10.1101-009449.d
-    // 10.1101-013177.d
-    // 10.1101-015883.d
     if (doQuickRun) {
-      // val doc = "101002zaac201200197.pdf.d"
-      val doc = "acsami.7b00496.pdf.d"
-      // val doc = "101021ja070464y.pdf.d"
-      // val doc = "1703.00175.pdf.d"
-      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, None, Some("ReferenceBlock"))
-      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, Some(doc), Some("ReferenceBlock"))
-      // AnnotationExporters.writeAllLabeledTexts("tmp.d", watrmarks.Label("Reference"))
-      // AnnotationExporters.writeAllAnnotations("tmp.d")
-      InitialSegmentationCommands.extractTextToFile(10, 0, Some(doc))
+      val doc = "10.1101-008607.d"
+      // InitialSegmentationCommands.extractTextToFile(1, 0, Some(doc))
       // InitialSegmentationCommands.extractTextToFile()
+
+      // RefBlockLabelConversion.convertAllRefLabels(1000, 0, None, None)
+      // RefBlockLabelConversion.convertAllRefLabels(1, 0, Some(doc), Some("ReferenceBlock"))
+      // AnnotationExporters.writeAllLabeledTexts("tmp.d", watrmarks.Label("Reference"))
+      AnnotationExporters.writeAllAnnotations("tmp.d")
+
+      // RefBlockLabelConversion.convertAllRefLabels(1, 0, Some(doc), None)
     } else {
 
       replMain()
@@ -104,7 +101,6 @@ object WatrTable extends App with utils.AppMainBasics {
     }
 
     corpusAccessApi.corpusAccessDB.shutdown()
-
 
 
   }

@@ -80,6 +80,8 @@ trait LineSegmentation extends PageScopeSegmenter
 
           val line1and3AreColinear = fontBaselineShape1.shape.p1.y == fontBaselineShape3.shape.p1.y
 
+          traceLog.trace { shape(fontBaselineShape1, fontBaselineShape2, fontBaselineShape3) tagged s"Trigram FontRunBaselines: isBracketed=${isBracketedFontWindow} isConsecutive=${winCharsAreConsecutive} 1and3 colinear=${line1and3AreColinear}" }
+
           if (isBracketedFontWindow && winCharsAreConsecutive && line1and3AreColinear) {
 
             val bracketFontOffsets = docScope.fontDefs.getScaledFontOffsets(scaledFontId)
@@ -93,24 +95,27 @@ trait LineSegmentation extends PageScopeSegmenter
                 slice
               )
 
-              val baselineBand = joinedBaselineBand.orDie("Why no baseline band here?")
-              val baselineMidriseShape = indexShape(baselineBand, LB.BaselineMidriseBand)
+              // traceLog.trace { shape(fontBaselineShape1, fontBaselineShape2, fontBaselineShape3) tagged s"Tri-Window FontRunBaselines: joined=${joinedBaselineBand.nonEmpty}" }
 
-              val allBaselineChars = (baselineChars1 ++ baselineChars2 ++ baselineChars3) // .flatMap(getCharsForShape(_))
-              allBaselineChars.foreach { charItem =>
-                val glyphShapes = searchForRects(charItem.minBBox, LB.Glyph)
-                glyphShapes.foreach { glyphShape =>
-                  unindexShape(glyphShape)
-                }
+              // val baselineBand = joinedBaselineBand.orDie("Why no baseline band here?")
+              joinedBaselineBand.foreach { baselineBand =>
+                val baselineMidriseShape = indexShape(baselineBand, LB.BaselineMidriseBand)
+
+                val allBaselineChars = (baselineChars1 ++ baselineChars2 ++ baselineChars3) // .flatMap(getCharsForShape(_))
+                  allBaselineChars.foreach { charItem =>
+                    val glyphShapes = searchForRects(charItem.minBBox, LB.Glyph)
+                    glyphShapes.foreach { glyphShape =>
+                      unindexShape(glyphShape)
+                    }
+                  }
+
+                setFontIndexForShape(baselineMidriseShape, fontIndex)
+
+
+                fontBaselineSets.union(fontBaselineShape1, fontBaselineShape2)
+                fontBaselineSets.union(fontBaselineShape1, fontBaselineShape3)
+                fontBaselineSets.union(fontBaselineShape1, baselineMidriseShape)
               }
-
-              setFontIndexForShape(baselineMidriseShape, fontIndex)
-
-              traceLog.trace { shape(fontBaselineShape1, fontBaselineShape2, fontBaselineShape3) tagged "Tri-Window FontRunBaselines" }
-
-              fontBaselineSets.union(fontBaselineShape1, fontBaselineShape2)
-              fontBaselineSets.union(fontBaselineShape1, fontBaselineShape3)
-              fontBaselineSets.union(fontBaselineShape1, baselineMidriseShape)
             }
           }
         }
@@ -122,7 +127,7 @@ trait LineSegmentation extends PageScopeSegmenter
         val baselineMidrisers = baselineCluster.filter{ shape => shape.hasLabel(LB.BaselineMidriseBand) }
         val fontBaselines = baselineCluster.filter{ shape => shape.hasLabel(LB.CharRunFontBaseline) }
 
-        baselineMidrisers.foreach(unindexShape(_))
+        unindexShapes(baselineMidrisers)
 
         val baselineMidriseSegments = baselineMidrisers.map{ baselineMidriseShape =>
           val fontIndex = getFontIndexForShape(baselineMidriseShape)
@@ -132,11 +137,10 @@ trait LineSegmentation extends PageScopeSegmenter
         val minFontBands = baselineMidriseSegments.filter(_._2 == minFontIndex)
 
         val charsForFontBaselines = fontBaselines.flatMap{ fontBaseline =>
-          val chars = getCharsForShape(fontBaseline)
-          unindexShape(fontBaseline)
-          chars
+          getCharsForShape(fontBaseline)
         }.uniqueBy(_.id).sortBy(_.id)
 
+        unindexShapes(fontBaselines)
 
         val combinedBaselineMidrise = minFontBands.map(_._1.shape.minBounds).reduce(_ union _)
         val baselineMidriseShape = indexShape(combinedBaselineMidrise, LB.BaselineMidriseBand)
@@ -147,6 +151,9 @@ trait LineSegmentation extends PageScopeSegmenter
   }
 
 
+  // def areMidriseBandsAlignedAtBaselines(offsets1: FontBaselineOffsets, offsets2: FontBaselineOffsets): Boolean = {
+  //   true
+  // }
 
   // private def segmentSuperSubScripts(): Unit = {
   //   val textlineReprShapes = getLabeledRects(LB.BaselineMidriseBand)
@@ -301,6 +308,21 @@ trait LineSegmentation extends PageScopeSegmenter
   // }
 
 
+  /**
+    * Number columns:
+    * - no punctuation (e.g., (1) [1] 1. )
+    * - strictly increasing
+    * - each page starts at 1 or last page max+1
+    * - alignment is centered on midrise-band
+    * - tend towards extreme left/right of page
+    * - font may be unique to numbering
+    * - relatively constant spacing to page edge
+    * - wide whitespace margins
+
+    * Marginalia removal
+    *
+    **/
+
 
 
 
@@ -375,6 +397,10 @@ trait LineSegmentation extends PageScopeSegmenter
       (g, getCharsForShape(g).head)
     }
 
+    glyphsInBand.flatMap { g =>
+      getLinkedShape(g, LB.CharRunFontBaseline)
+    }.uniqueBy(_.id)
+
 
     val orderedById = glyphsWithChar.sortBy{ case(glyphShape, charItem) =>
       charItem.id
@@ -398,13 +424,21 @@ trait LineSegmentation extends PageScopeSegmenter
         .zip(orderedLeftToRight)
         .forall{ case (char1, char2) => char1 == char2 }
 
-      if (sameOrderByIdAndByLeftToRight) {
+      val allItemsAreConsecutive = consecutiveById.length == 1
+
+
+      // println(s"ord.by.id  : ${orderedById.map(_._2.char).mkString}")
+      // println(s" (w/root)  : ${charSetWithRootChar.map(_.char).mkString}")
+      // println(s"ord.l->r   : ${orderedLeftToRight.map(_.char).mkString}")
+
+      if (sameOrderByIdAndByLeftToRight || allItemsAreConsecutive) {
         val rootFontOffsets = docScope.fontDefs.getScaledFontOffsets(rootChar.scaledFontId)
           .forFontBoxBottom(rootChar.fontBbox.bottom)
 
         val fontIds = charSetWithRootChar.map(_.scaledFontId).toSet
         val charBounds = charSetWithRootChar.map(_.minBBox).reduce(_ union _)
         val charSetText = charSetWithRootChar.map(_.char).mkString
+
         getBaselineMidrisePageSlice(rootFontOffsets).flatMap { baselineMidriseSlice =>
 
           val baselineMidriseRect = clipRectBetween(
@@ -626,7 +660,7 @@ trait LineSegmentation extends PageScopeSegmenter
       .filterNot(_.fontProps.isNatLangFont())
       .groupByPairs {
         case (item1, item2) =>
-          lazy val consecutive = item1.id.unwrap+1 == item2.id.unwrap
+          lazy val consecutive = itemsAreConsecutive(item1, item2)
           lazy val leftToRight = item1.minBBox.left < item2.minBBox.left
           lazy val colinear = item1.minBBox.isNeitherAboveNorBelow(item2.minBBox)
 
@@ -654,9 +688,8 @@ trait LineSegmentation extends PageScopeSegmenter
       findNatLangBaselineRuns(retainNatLang=true)
     )
 
-    // combineCombiningMarks()
 
-    val charRunBaselineShapes = getLabeledLines(LB.CharRunFontBaseline)
+     // combineCombiningMarks()
 
     indexPathRegions()
 
@@ -671,8 +704,8 @@ trait LineSegmentation extends PageScopeSegmenter
       }
     }
 
-    traceLog.trace { labeledShapes(LB.NatLangGlyph) tagged "All Natural Lang Glyphs" }
-    traceLog.trace { labeledShapes(LB.SymbolicGlyph) tagged "All Symbolic Glyphs" }
+    traceLog.trace { labeledShapes(LB.NatLangGlyph) tagged "All Natural Lang Glyph Rects" }
+    traceLog.trace { labeledShapes(LB.SymbolicGlyph) tagged "All Symbolic Glyph Rects" }
 
     initSymbolicCharSpans(symbolicLangCharRuns)
 
@@ -705,7 +738,7 @@ trait LineSegmentation extends PageScopeSegmenter
     natLangCharRuns.foreach { charRun =>
       val charItems = charRun.map(_.asInstanceOf[ExtractedItem.CharItem])
 
-      charItems.foreach { item =>
+      val glyphShapes = charItems.map { item =>
         indexShapeAndSetItems(item.minBBox, LB.NatLangGlyph, item)
         indexShapeAndSetItems(item.minBBox, LB.Glyph, item)
       }
@@ -713,6 +746,10 @@ trait LineSegmentation extends PageScopeSegmenter
       val baseLine = createCharRunFontBaseline(charItems)
 
       val baselineShape = indexShape(baseLine, spanLabel)
+
+      glyphShapes.foreach { headGlyphShape =>
+        setLinkedShape(headGlyphShape, LB.CharRunFontBaseline, baselineShape)
+      }
 
       val fontIds = charItems.map{ _.scaledFontId }.toSet
 

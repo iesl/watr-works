@@ -46,17 +46,10 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
   }
 
 
-  // protected def joinPageTextGrids(): TextGrid = {
-  //   val textGrids = pageSegmenters.map {
-  //     _.getPageTextGrid()
-  //   }
-  //   val allRows = textGrids.map(_.rows).flatten
-  //   TextGrid.fromRows(docScope.stableId,  allRows)
-  // }
-
   protected def outputTableData(): Unit = {
 
-    val scaledFontIDs = docScope.fontDefs.getFontIdentifiers.sorted
+    val allFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang=true) ++ docScope.fontDefs.getFontIdentifiers(isNatLang=false)
+    val scaledFontIDs = allFontIds.sorted
     val dbg = scaledFontIDs.mkString("{\n  ", "\n  ", "\n}")
     println(s" Font IDs: ${dbg}")
 
@@ -113,6 +106,10 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
     time("computeScaledFontHeightMetrics") {
       computeScaledFontHeightMetrics(LB.CharRunFontBaseline)
+    }
+
+    time("computeScaledSymbolicFontMetrics") {
+      computeScaledSymbolicFontMetrics()
     }
 
     // outputTableData();

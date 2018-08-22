@@ -91,7 +91,7 @@ object ProcessPipelineSteps {
 
     val processStream = createInputStream[IO](conf.ioConfig)
       .through(initMarkedInput())
-      .drop(skipN).take(takeN)
+      .through(dropSkipAndRun(conf.ioConfig))
       .through(cleanFileArtifacts(conf))
       .through(markUnextractedProcessables(conf))
       .through(runSegmentation(conf))
@@ -133,6 +133,22 @@ object ProcessPipelineSteps {
   type MarkedInput = Either[ProcessableInput, ProcessableInput]
   type MarkedOutput = Either[String, ProcessedInput]
 
+  def dropSkipAndRun(conf: IOConfig): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
+    var skipCount = conf.numToSkip
+    var runCount = conf.numToRun
+    _.map {
+      case r@ Right(p@ Processable.CorpusFile(corpusEntry)) =>
+        if (skipCount > 0) {
+          skipCount -= 1;
+          Left(p)
+        } else if (runCount > 0) {
+          runCount -= 1
+          r
+        } else Left(p)
+      case x => x
+    }
+  }
+
   def initMarkedInput(): fs2.Pipe[IO, ProcessableInput, MarkedInput] = {
     _.map { Right(_) }
   }
@@ -140,6 +156,7 @@ object ProcessPipelineSteps {
   def filterInputMatchRegex(regex: Option[String]): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
     _.map {
       case r@ Right(p@ Processable.CorpusFile(corpusEntry)) =>
+        // println(s"filterInputMatchRegex? ${regex} == ${corpusEntry.entryDescriptor}")
         val filterMatches = regex.map { re =>
           corpusEntry.entryDescriptor.matches(re)
         } getOrElse(true)
@@ -256,7 +273,6 @@ object ProcessPipelineSteps {
         val outputFile = Processable.getTextgridOutputFile(input, conf.ioConfig)
 
         val jsonOutput = time("build json output") {
-          // Output options
           TextGridOutputFormats.jsonOutputGridPerPage(segmentation)
         }
 

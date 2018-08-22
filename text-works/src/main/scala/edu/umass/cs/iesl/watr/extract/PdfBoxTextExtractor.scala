@@ -260,6 +260,8 @@ class PdfBoxTextExtractor(
 
   var dbgI = 0
 
+  // val dbgFonts = mutable.HashSet[String]()
+
   override protected def showGlyph(
     textRenderingMatrix: Matrix,
     pdFont: PDFont,
@@ -299,6 +301,12 @@ class PdfBoxTextExtractor(
 
       val fontProps = fontDefs.addFont(pdFont)
 
+      // if (fontProps.name == "ABCEEE+Calibri,Bold") {
+      //   val prior = priorCharWindow.map(_.char).reverse.mkString
+      //   println(s"> ${unicodeStr} ${code} ${pdFont.getName} : '$prior'")
+      // }
+      // dbgFonts += fontProps.name
+
       glyphProps.finalGlyphBounds.foreach { finalGlyphBounds =>
         val glyphBounds = finalGlyphBounds.getBounds2D.toLTBounds()
         val isContained = glyphBounds.isContainedBy(pageLTBounds) && glyphProps.fontBBox.isContainedBy(pageLTBounds)
@@ -321,7 +329,9 @@ class PdfBoxTextExtractor(
               val sameRotation = lastGlyph.glyphProps.rotation == glyphProps.rotation
               val baselinesMatch = glyphProps.rotation match {
                 case 0 =>
-                  lastGlyph.fontBbox.bottom == glyphProps.fontBBox.bottom
+                  val isLeftToRight = lastGlyph.fontBbox.left.unwrap < glyphProps.fontBBox.left.unwrap
+                  lastGlyph.fontBbox.bottom == glyphProps.fontBBox.bottom && isLeftToRight
+
                 case 90 =>
                   lastGlyph.fontBbox.right == glyphProps.fontBBox.right
                 case 180 =>
@@ -334,6 +344,7 @@ class PdfBoxTextExtractor(
 
 
             val isNotRotated = glyphProps.rotation == 0
+
 
             val similarGlyph = sameFont && sameScalingFactor && sameFontBaseline
 
@@ -587,7 +598,9 @@ object PdfBoxTextExtractor {
 
         val items = extractor.getPageItems()
 
-        (items, currPageGeometry)
+        // val dbgFonts = extractor.dbgFonts.toList.sorted.mkString("{\n  ", "\n  ", "\n}")
+        // println(s"Found Fonts = ${dbgFonts}")
+
         pages.append((items, currPageGeometry))
       }
 

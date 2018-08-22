@@ -125,8 +125,7 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
   def pageNum: Int@@PageNum
   def pageStats: PageLayoutStats
 
-  lazy val (pageAtoms, pageGeom) = docScope.pageAtomsAndGeometry(pageNum.unwrap)
-  lazy val pageItems: Seq[ExtractedItem] = pageAtoms
+  lazy val (pageItems, pageGeom) = docScope.pageAtomsAndGeometry(pageNum.unwrap)
 
   def docStore: DocumentZoningApi = docScope.docStore
 
@@ -215,13 +214,11 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
   protected def unindexShape[T <: GeometricFigure](shape: DocSegShape[T]): Unit = {
     shapeIndex.unindexShape(shape)
   }
+
   protected def unindexShapes[T <: GeometricFigure](shapes: Seq[DocSegShape[T]]): Unit = {
     shapes.foreach { sh => shapeIndex.unindexShape(sh) }
   }
 
-  // protected def addRelation(lhs: Int@@ShapeID, l: Label, rhs: Int@@ShapeID): Unit = {
-  //   shapeIndex.addRelation(lhs, l, rhs)
-  // }
 
   protected def getClusteredLines(l: Label): Seq[(Int@@ShapeID, Seq[LineShape])] = {
     shapeIndex.getClustersWithReprID(l)
@@ -296,6 +293,14 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     shapeIndex.getShapeAttribute[Set[String@@ScaledFontID]](shape.id, LB.Fonts).get
   }
 
+  protected def setLinkedShape(shape1: AnyShape, linkage: Label, shape2: AnyShape): Unit = {
+    shapeIndex.setShapeAttribute[AnyShape](shape1.id, linkage, shape2)
+  }
+
+  protected def getLinkedShape(shape1: AnyShape, linkage: Label): Option[AnyShape] = {
+    shapeIndex.getShapeAttribute[AnyShape](shape1.id, linkage)
+  }
+
   protected def setPrimaryFontForShape(shape: DocSegShape[GeometricFigure], fontId: String@@ScaledFontID): Unit = {
     shapeIndex.setShapeAttribute[String@@ScaledFontID](shape.id, LB.PrimaryFont, fontId)
   }
@@ -326,8 +331,10 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
   }
 
   protected def findDeltas(ns: Seq[Int@@FloatRep]): Seq[Int@@FloatRep] = {
-    ns.zip(ns.tail)
-      .map {case (n1, n2) => n2 - n1 }
+    if (ns.length < 2) Seq() else {
+      ns.zip(ns.tail)
+        .map {case (n1, n2) => n2 - n1 }
+    }
   }
 
   protected def findPairwiseVerticalJumps[G <: GeometricFigure](

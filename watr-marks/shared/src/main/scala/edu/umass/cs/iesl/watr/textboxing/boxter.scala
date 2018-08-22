@@ -118,7 +118,6 @@ object TextBoxing extends ToListOps with ToIdOps {
   }
 
   implicit class BoxingConstructors(val theString: String) extends AnyVal {
-    // def box: Box = tbox(theString)
     def box: Box = unrenderString(theString)
 
     def padCentered(width: Int, centerIndex: Int): String = {
@@ -483,9 +482,14 @@ object TextBoxing extends ToListOps with ToIdOps {
     Stream.continually(b)
   }
 
-  def borderLR(c:String)(b:Box): Box = {
+  private def borderLR(c:String)(b:Box): Box = {
     val b0 = vjoin( repeat(c).take(b.rows):_* )
     tbox("+") % b0 % tbox("+")
+  }
+
+  def borderLeft(c:String)(b:Box): Box = {
+    val leftPad = vjoin( repeat(c).take(b.rows):_* )
+    leftPad + b
   }
 
 
