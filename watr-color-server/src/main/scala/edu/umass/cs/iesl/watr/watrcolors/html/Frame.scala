@@ -14,7 +14,7 @@ object Frame {
       <.meta(^.charset:="utf-8"),
 
       <.script("text/javascript".typ, ^.src := "https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"),
-      <.script("text/javascript".typ, ^.src := "https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"),
+      // <.script("text/javascript".typ, ^.src := "https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"),
 
       <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/jquery-serialize-object/2.5.0/jquery.serialize-object.min.js"),
 
@@ -24,12 +24,13 @@ object Frame {
         "integrity".attr:="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN",
         "crossorigin".attr:="anonymous"),
 
-      <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"),
+      <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.10/lodash.min.js"),
 
       <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js"),
-      <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.22/fabric.min.js"),
+      <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/fabric.js/2.3.6/fabric.min.js"),
 
-      <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.5.6/Rx.min.js"),
+      <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/rxjs/6.2.2/rxjs.umd.min.js"),
+
       <.script("text/javascript".typ, ^.src := s"/assets/watrmarks-fastopt.js"),
       <.link(^.rel:="stylesheet", ^.href:="/dist/app.css"),
 

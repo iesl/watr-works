@@ -345,17 +345,19 @@ class PdfBoxTextExtractor(
 
             val isNotRotated = glyphProps.rotation == 0
 
+            val isLigature = CharClasses.Ligatures.All.contains(unicodeStr)
+
 
             val similarGlyph = sameFont && sameScalingFactor && sameFontBaseline
 
             val nextItem = if (similarGlyph) {
               val prevItem = priorCharWindow.head
               // val updatedItem = nextItem.copy(glyphProps=nextItem.glyphProps.copy(prevSimilar=prevItem.id))
-              val nextItem = CharItem(charIdGen.nextId, strRepr, fontProps, glyphProps.copy(prevSimilar=prevItem.id))
+              val nextItem = CharItem(charIdGen.nextId, strRepr, fontProps, glyphProps.copy(prevSimilar=prevItem.id), isLigature)
               priorCharWindow = nextItem :: priorCharWindow
               nextItem
             } else {
-              val nextItem = CharItem(charIdGen.nextId, strRepr, fontProps, glyphProps)
+              val nextItem = CharItem(charIdGen.nextId, strRepr, fontProps, glyphProps, isLigature)
               priorCharWindow = List(nextItem)
               nextItem
             }

@@ -58,10 +58,10 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
 
         val matchingNatLangFont = docScope.fontDefs.getScaledFontOffsets(natScaledFontId)
         val rescaledOffsets = matchingNatLangFont.rescaledAs(variantName, symScalingFactor)
-        println(s"Symbolic Font matches Nat Lang Font, rescaling Nat Lang: ")
-        println(s"    ${matchingNatLangFont}")
-        println(s"        To: ")
-        println(s"    ${rescaledOffsets}")
+        // println(s"Symbolic Font matches Nat Lang Font, rescaling Nat Lang: ")
+        // println(s"    ${matchingNatLangFont}")
+        // println(s"        To: ")
+        // println(s"    ${rescaledOffsets}")
         docScope.fontDefs.setScaledFontOffsets(scaledSymFontId, rescaledOffsets)
       }
     }

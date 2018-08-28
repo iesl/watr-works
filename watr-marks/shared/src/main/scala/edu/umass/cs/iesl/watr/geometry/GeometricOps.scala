@@ -137,6 +137,7 @@ trait GeometricOps {
         maybeUpper
       }
     }
+
     def getVerticalSlice(x: Int@@FloatRep, w: Int@@FloatRep): Option[LTBounds] = {
       val (_, maybeRight) = splitVertical(x)
       maybeRight.flatMap { rightRect =>

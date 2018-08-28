@@ -76,7 +76,8 @@ object ExtractedItem {
     id: Int@@CharID,
     char: String,
     fontProps: FontProperties,
-    glyphProps: GlyphProps
+    glyphProps: GlyphProps,
+    isLigature: Boolean
   ) extends ExtractedItem {
     def strRepr(): String = char
 
@@ -223,6 +224,30 @@ case class FontBaselineOffsets(
       _bottom   = _bottom   * scalingRatio
     )
   }
+
+  def distanceBetween(
+    f1: FontBaselineOffsets => Int@@FloatRep,
+    f2: FontBaselineOffsets => Int@@FloatRep
+  ): Int@@FloatRep = {
+    abs(f1(this) - f2(this))
+  }
+
+  def sliceBetween(
+    f1: FontBaselineOffsets => Int@@FloatRep,
+    f2: FontBaselineOffsets => Int@@FloatRep,
+    r: LTBounds
+  ): Option[LTBounds] = {
+    val y1 = f1(this)
+    val y2 = f2(this)
+    val ytop = min(y1, y2)
+    val ybot = max(y1, y2)
+    val height = ybot - ytop
+    val t = max(ytop, r.top)
+    val b = min(ybot, r.bottom)
+    r.getHorizontalSlice(t, b-t)
+
+  }
+
 
 }
 
