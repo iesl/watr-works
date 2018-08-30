@@ -7,34 +7,11 @@ title: Output Formats
 
 Segmentation produces a json file like this:
 
-
 ```json
- { "pages": [
-     {"page": 0,
-      "blocks": [
-        {"labels": ["header", "publisher"],
-         "lines": [
-           [["©","2014","Elsevier","B.V.","All","rights","reserved."],     [0,1,2,3,4,5,6]]
-         ]},
-        {"labels": ["body", "section-heading"],
-         "lines": [
-           [["1.","Introduction"],     [7,8]]
-        ]},
-        {"labels": ["body", "paragraph"],
-         "lines": [
-           [["{PhSiH_{3}}","into","the","corresponding","phosphines."],     [643,644,645,646,647]],
-       ]
-     },
-     {"page": 1,
-      "blocks": [
-          ...
-      ]
-     },
-  },
-  "ids": [
-     [0,[0, [426.41, 556.48, 5.90, 7.17]]],[1,[0, [434.17, 556.48, 17.26, 7.17]]],
-     [10,[0, [367.43, 687.76, 14.25, 7.97]]],[11,[0, [383.27, 687.76, 56.16, 7.97]]]
-  ]}
+
+
+
+
 ```
 
 Each page consists of a list of blocks, where each block is a labeled set of text lines. The labels identify the section
@@ -64,3 +41,45 @@ The following characters are always escaped:
    braces: '{', '}'
 
 Inside of a tex-formatted token, '_', '^' are also escaped.
+
+
+### Annotation Format
+
+```json
+    {
+      "stableId" : "10.1101-007096.d",
+      "annotations" : [
+        {
+          "id" : 1438,
+          "document" : 70,
+          "owner" : null,
+          "annotPath" : "Bioarxiv.UmaCzi2018.250PlusGold.ExternalTeam",
+          "created" : 1523461739018,
+          "label" : "Keywords",
+          "location" : {
+            "Zone" : {
+              "regions" : [
+                {
+                  "page" : {
+                    "stableId" : "10.1101-007096.d",
+                    "pageNum" : 0
+                  },
+                  "bbox" : {
+                    "left" : 9036,
+                    "top" : 46087,
+                    "width" : 35298,
+                    "height" : 3936
+                  }
+                }
+              ]
+            }
+          },
+          "body" : {
+            "stableId" : "10.1101-007096.d",
+            "rows" : [
+              {
+                "offset" : 0,
+                "text" : "Keywords: ",
+                "loci" : [
+                  {
+```

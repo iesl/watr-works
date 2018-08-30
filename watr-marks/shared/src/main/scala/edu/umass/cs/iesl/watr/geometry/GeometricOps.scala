@@ -45,30 +45,6 @@ trait GeometricOps {
       }
     }
 
-
-    def slidingHorizontalWindow(width: Double, stepSize: Double): Seq[LTBounds] = {
-      val (box0, _) = self.splitVertical(self.left+width.toFloatExact())
-      val steps = self.left.asDouble().until(self.right.asDouble(), stepSize)
-
-      box0.toSeq.flatMap{ box =>
-        steps.map { step => box.translate(x=step, y=0) }
-      }
-    }
-
-    // TODO these should return Option[LTBounds] and/or check for empty regions
-    def setLeft(left: Int@@FloatRep): LTBounds = {
-      self.copy(
-        left=left,
-        width=self.right-left
-      )
-    }
-
-    def setRight(right: Int@@FloatRep): LTBounds = {
-      self.copy(
-        width=right-self.left
-      )
-    }
-
     def translate(pvec: Point): LTBounds = {
       translate(pvec.x, pvec.y)
     }

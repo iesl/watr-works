@@ -76,10 +76,6 @@ trait ScopedTracing extends VisualTracer { self  =>
   implicit def Encode_BoxTextLog: Encoder[BoxTextLog] =  deriveEncoder
 
 
-  def getTraceLogs(): Seq[TraceLog] = {
-    traceLogs
-  }
-
 
   def boxText(bs: TB.Box): BoxTextLog = {
     BoxTextLog(
@@ -132,6 +128,12 @@ trait PageScopeTracing extends ScopedTracing { self  =>
   lazy val LTBounds.Ints(svgL, svgT, svgW, svgH) = pageGeometry
 
   def emitLogs(): Seq[Json] = {
+    for { logEntry <- traceLogs } yield Json.obj(
+      "page" := pageNum.unwrap,
+      "entry" := logEntry
+    )
+  }
+  def emitLogsIndexed(): Seq[Json] = {
     for { logEntry <- traceLogs } yield Json.obj(
       "page" := pageNum.unwrap,
       "entry" := logEntry

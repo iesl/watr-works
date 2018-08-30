@@ -1,8 +1,10 @@
+// import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType, _}
+import sbtcrossproject.{crossProject, CrossType}
 import sbt.Keys._
 import ReleaseTransformations._
 
 SensibleProject.settings
-enablePlugins(ScalaJSPlugin)
+// enablePlugins(ScalaJSPlugin)
 
 val Lib = CommonLibs
 
@@ -19,7 +21,11 @@ lazy val prelude = (project in file("watr-prelude"))
     "org.scala-lang" % "scala-reflect" % scalaVersion.value
   ))
 
-lazy val watrmarks = (crossProject in file("watr-marks"))
+// (crossProject in file("watr-marks"))
+lazy val watrmarks = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Full)
+  .withoutSuffixFor(JVMPlatform)
+  .in(file("watr-marks"))
   .settings(SensibleProject.settings: _*)
   .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
@@ -34,21 +40,20 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
       "org.scalaz"                 %%% "scalaz-core"            % Lib.scalazVersion
     )
   )
+  .jsSettings(scalacOptions += "-P:scalajs:sjsDefinedByDefault")
   .jvmSettings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++ Seq(
-      Lib.ammoniteOps,
-      Lib.guava % Optional,
-      "com.lodborg"                 % "interval-tree"          % "1.0.0",
-      "org.scala-js"               %% "scalajs-stubs"          % "0.6.24" % "provided",
-      "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
-      "com.github.davidmoten"       % "rtree"                  % "0.8.6",
-      "com.github.davidmoten"       % "flatbuffers-java"       % "1.9.0.1",
-      "ichi.bench" % "thyme"        % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
-    ))
+        Lib.ammoniteOps,
+        Lib.guava % Optional,
+        "com.lodborg"                 % "interval-tree"          % "1.0.0",
+        "org.scala-js"               %% "scalajs-stubs"          % "0.6.24" % "provided",
+        "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
+        "com.github.davidmoten"       % "rtree"                  % "0.8.6",
+        "com.github.davidmoten"       % "flatbuffers-java"       % "1.9.0.1",
+        "ichi.bench" % "thyme"        % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
+      ))
 
 lazy val watrmarksJS = watrmarks.js
-  .settings(scalacOptions += "-P:scalajs:sjsDefinedByDefault")
-
 lazy val watrmarksJVM = watrmarks.jvm
 
 lazy val textworks = (project in file("text-works"))
