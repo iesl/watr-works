@@ -22,8 +22,7 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
 
   def findContiguousBlocks(label: Label): Unit = {
 
-    val fontsByMostOccuring = docScope.getFontsWithDocwideOccuranceCounts()
-      .sortBy(_._2).reverse.map(_._1)
+    val fontsByMostOccuring = getFontsSortedByHighestOccuranceCount()
 
     val sortedLines = getLabeledShapes(label).sortBy { lineShape =>
       getCharsForShape(lineShape).head.id.unwrap
@@ -86,10 +85,9 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
       lazy val combinedWindowBounds = prevWindowBounds union currLine.shape.minBounds
 
       traceLog.trace {
-        figure(combinedWindowBounds) tagged s"Window Bounds ${currLineText} "
+        figure(combinedWindowBounds) tagged s"Window Bounds"
       }
 
-      // lazy val expansionBounds = lastLine.shape.minBounds.toLine(Dir.Bottom).minBounds union currLine.shape.minBounds
       lazy val expansionBounds = lastLine.shape.minBounds union currLine.shape.minBounds
 
       lazy val noLeftOverlaps = prevWindowBounds.withinRegion(combinedWindowBounds)
@@ -123,22 +121,11 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
 
           val queryRect = expansionRect.shave(Dir.Top, FloatExact.epsilon * 5)
 
-
           val foundGlyphs: Seq[RectShape] = searchForRects(queryRect, LB.Glyph)
-
 
           val glyphCountsMatch = currLineItems.length + lastLineItems.length == foundGlyphs.length
 
           val noNonTextOverlaps = hasNoNonTextOverlaps(queryRect)
-
-          traceLog.trace {
-            // figure(queryRect) tagged s"Expansion Rect noLeftOverlaps=${noLeftOverlaps} && noRightOverlaps=${noRightOverlaps} inOrder=${inOrderTopToBottom} && glyphCountsMatch=${glyphCountsMatch} && noNonTextOverlaps=${noNonTextOverlaps} && consecutive=${consecutive}  ${currLineText}"
-            figure(queryRect) tagged s"Expansion Rect ${currLineText}"
-          }
-
-          traceLog.trace {
-            shape(foundGlyphs:_*) tagged s"Expansion Glyphs ${currLineText}"
-          }
 
           noNonTextOverlaps && (glyphCountsMatch || {
 
@@ -164,17 +151,17 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
       consecutive && inOrderTopToBottom && glyphAndLineCountsMatch && noLateralOverlaps
     }
 
-    traceLog.trace {
-      // val groupBounds = lineGroups.filter(_.length > 1)
-      val groupBounds = lineGroups.map { group =>
-        if (group.length==1) {
-          group.head.shape
-        } else {
-          group.map(_.shape.minBounds).reduce(_ union _)
-        }
+    traceLog.traceAll {
+
+      lineGroups.flatMap { group =>
+        val groupBounds = group.map(_.shape.minBounds).reduce(_ union _)
+        val groupBoundsShape = initShape(groupBounds, LB.TextLineGroup)
+        List(
+          shape(groupBoundsShape) tagged "Grouped Text Blocks",
+          relation("TextLineGroups").field(groupBoundsShape).field(group)
+        )
       }
 
-      figure(groupBounds:_*) tagged "Grouped Text Blocks"
     }
 
     lineGroups

@@ -239,8 +239,24 @@ trait TextReconstruction extends PageScopeSegmenter
 
   }
 
+  val textLineReprShape = LB.BaselineMidriseBand
+
+  def setTextForReprShapes(): Unit = {
+    val lineReprShapes = getLabeledRects(textLineReprShape)
+    lineReprShapes.foreach { reprShape =>
+      val shapeChars = getCharsForShape(reprShape).map(_.id.unwrap)
+
+      if (shapeChars.nonEmpty) {
+        val minId  = shapeChars.min
+
+        val textRow = textRowFromReprShape(reprShape, None)
+        insertSpacesInRow(textRow)
+        setTextForShape(reprShape, textRow)
+      }
+    }
+  }
+
   def getTextGrid(maybeClipTo: Option[LTBounds]): TextGrid = {
-    val textLineReprShape = LB.BaselineMidriseBand
     val clipRegion = maybeClipTo.getOrElse{ pageGeometry }
     val lines = searchForRects(clipRegion, textLineReprShape)
 

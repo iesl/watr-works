@@ -46,7 +46,7 @@ lazy val watrmarks = crossProject(JSPlatform, JVMPlatform)
         Lib.ammoniteOps,
         Lib.guava % Optional,
         "com.lodborg"                 % "interval-tree"          % "1.0.0",
-        "org.scala-js"               %% "scalajs-stubs"          % "0.6.24" % "provided",
+        "org.scala-js"               %% "scalajs-stubs"          % "0.6.25" % "provided",
         "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
         "com.github.davidmoten"       % "rtree"                  % "0.8.6",
         "com.github.davidmoten"       % "flatbuffers-java"       % "1.9.0.1",
@@ -68,6 +68,7 @@ lazy val textworks = (project in file("text-works"))
     Lib.circeJson ++ Seq(
       "co.fs2" %% "fs2-io" % Lib.fs2Version,
       "org.apache.pdfbox" % "pdfbox" % "2.0.11",
+      "com.outr" %% "lucene4s" %  Lib.luceneV,
       Lib.guava,
       "com.vividsolutions" % "jts-core" % "1.14.0",
       Lib.scopt,
@@ -92,6 +93,7 @@ lazy val watrshed = (project in file("watr-shed"))
       Lib.scrimageCore,
       Lib.ammonite,
       Lib.shapeless,
+      "com.outr" %% "lucene4s" %  Lib.luceneV,
       "com.github.tototoshi" %% "scala-csv" % "1.3.5"
     ))
   .dependsOn(prelude, watrmarksJVM, textworks)

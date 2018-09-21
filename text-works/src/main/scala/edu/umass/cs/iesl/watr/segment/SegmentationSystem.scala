@@ -11,6 +11,11 @@ import extract._
 import utils._
 import TypeTags._
 import scala.collection.mutable
+import watrmarks._
+import utils.intervals.Interval
+import textgrid._
+
+import scala.reflect._
 
 case class DocSegShape[+T <: GeometricFigure](
   id: Int@@ShapeID,
@@ -78,6 +83,21 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
     }.toMap
   }
 
+  def getNumberedPages(): Seq[(Int@@PageID, Int@@PageNum)] =
+    docStore.getPages(docId).zipWithIndex.map {
+      case (a, b) => (a, PageNum(b))
+    }
+
+  lazy val pageSegmenters = {
+
+    def createPageSegmenters(): Seq[PageSegmenter] = for {
+      (pageId, pageNum) <- getNumberedPages()
+    } yield PageSegmenter(pageId, pageNum, self)
+
+    createPageSegmenters()
+  }
+
+
   def getLabeledShapeIndex(pageNum: Int@@PageNum) = shapeIndexes(pageNum)
 
   def getPageGeometry(p: Int@@PageNum) = pageAtomsAndGeometry(p.unwrap)._2
@@ -90,8 +110,6 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
 
   def stableId: String@@DocumentID
   def docId: Int@@DocumentID
-
-  def pageSegmenters(): Seq[PageScopeSegmenter]
 
 
   def getPagewiseLinewidthTable(): TabularData[Int@@PageNum, String@@ScaledFontID, List[Int@@FloatRep], Unit, Unit] = {
@@ -188,8 +206,12 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     shapes.foreach { sh => shapeIndex.deleteShape(sh) }
   }
 
+  protected def initShape[T <: GeometricFigure](shape: T, l: Label): DocSegShape[GeometricFigure] = {
+    shapeIndex.initShape{ id =>
+      DocSegShape.create(id, shape, l)
+    }
+  }
   protected def indexShape[T <: GeometricFigure](shape: T, l: Label): DocSegShape[GeometricFigure] = {
-    // shapeIndex.indexShape(shape, l)
     shapeIndex.indexShape{ id =>
       DocSegShape.create(id, shape, l)
     }
@@ -246,6 +268,14 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     shapeIndex.addCluster(l, shapes)
   }
 
+  protected def setAttrForShape[A: ClassTag](label: Label): (AnyShape, A) => Unit = {
+    (shape, a) => shapeIndex.setShapeAttribute[A](shape.id, label, a)
+  }
+
+  protected def getAttrForShape[A: ClassTag](label: Label): (AnyShape) => Option[A] = {
+    (shape) => shapeIndex.getShapeAttribute[A](shape.id, label)
+  }
+
   protected def setExtractedItemsForShape(shape: DocSegShape[GeometricFigure], items: Seq[ExtractedItem] ): Unit = {
     shapeIndex.setShapeAttribute[Seq[ExtractedItem]](shape.id, LB.ExtractedItems, items)
   }
@@ -265,7 +295,16 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
   }
 
 
-  import utils.intervals.Interval
+
+
+  protected def setTrapezoidForShape = setAttrForShape[Trapezoid](LB.LinePairTrapezoid)
+  protected def getTrapezoidForShape = getAttrForShape[Trapezoid](LB.LinePairTrapezoid)
+
+  protected def setWeightsForShape = setAttrForShape[WeightedLabeling](LB.WeightedLabels)
+  protected def getWeightsForShape = getAttrForShape[WeightedLabeling](LB.WeightedLabels)
+
+  protected def setTextForShape = setAttrForShape[TextGrid.Row](LB.TextGridRow)
+  protected def getTextForShape = getAttrForShape[TextGrid.Row](LB.TextGridRow)
 
   protected def setLabeledIntervalsForShape(shape: DocSegShape[GeometricFigure], intervals: Seq[Interval[Int, Label]]): Unit = {
     shapeIndex.setShapeAttribute[Seq[Interval[Int, Label]]](shape.id, LB.LabeledIntervals, intervals)
@@ -335,6 +374,11 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
       ns.zip(ns.tail)
         .map {case (n1, n2) => n2 - n1 }
     }
+  }
+
+  protected def getFontsSortedByHighestOccuranceCount(): Seq[String@@ScaledFontID] ={
+    docScope.getFontsWithDocwideOccuranceCounts()
+      .sortBy(_._2).reverse.map(_._1)
   }
 
   protected def findPairwiseVerticalJumps[G <: GeometricFigure](

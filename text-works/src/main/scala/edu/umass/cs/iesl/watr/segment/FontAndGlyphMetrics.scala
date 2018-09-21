@@ -66,17 +66,6 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
       }
     }
 
-    // val offsetEvidence = for {
-    //   pageSeg <- pageSegmenters
-    // }  {
-    //   val symbolicGlyphs = pageSeg.pageItems
-    //     .collect{ case c: CharItem => c }
-    //     .filterNot { _.fontProps.isNatLangFont() }
-
-    //   symbolicGlyphs.groupBy { item =>
-    //     item.scaledFontId
-    //   }
-    // }
   }
 
   def computeScaledFontHeightMetrics(lineLabel: Label): Unit = {

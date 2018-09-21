@@ -182,7 +182,7 @@ trait RectangularCuts extends GeometricOps {
       s"${lls}◻${lrs}:<${lldeg.pp}º,${lrdeg.pp}º>mbr:${minBoundingRect(self)}"
     }
 
-    private val defaultAngleTolerance = 0.03d
+    private val defaultAngleTolerance = 0.08d // ~ 4.6 deg.
     private val pi2 = math.Pi/2
 
     def leftBaseAngleType(tolerance: Double = defaultAngleTolerance): AngleType = {

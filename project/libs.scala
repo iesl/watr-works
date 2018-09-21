@@ -15,19 +15,19 @@ trait LibVersions {
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
-  val http4sVersion       = "0.18.16"
-  val fs2Version          = "0.10.5"
+  val http4sVersion       = "0.18.17"
+  val fs2Version          = "0.10.6"
   val circeJsonVersion    = "0.9.3"
 
-  val ammoniteVersion     = "1.1.2"
+  val ammoniteVersion     = "1.2.1"
 
   val catsV               = "1.2.0"
   val catsEffectV         = "0.10.1"
   val postgresqlV         = "42.2.5"
   val freestyleV          = "0.7.0"
   val guavaV              = "23.0"
+  val luceneV             = "1.8.1"
 }
-
 
 object LibVersions extends LibVersions
 

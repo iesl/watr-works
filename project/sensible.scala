@@ -1,7 +1,7 @@
 import scala.util.{ Properties, Try }
 import sbt._
 import Keys._
-import wartremover.{Wart, Warts, wartremoverErrors}
+// import wartremover.{Wart, Warts, wartremoverErrors}
 
 object SensibleProject extends CommonLibs {
   def colorPrompt = { s: State =>
@@ -69,18 +69,18 @@ object SensibleProject extends CommonLibs {
     // "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
   )
 
-  lazy val wartList = Warts.allBut(
-    Wart.Any,                 // false positives
-    Wart.ArrayEquals,         // false positives
-    Wart.Nothing,             // false positives
-    Wart.Null,                // Java API under the hood; we have to deal with null
-    Wart.Product,             // false positives
-    Wart.Serializable,        // false positives
-    Wart.ImplicitConversion,  // we know what we're doing
-    Wart.Throw,               // TODO: switch to ApplicativeError.fail in most places
-    Wart.PublicInference,     // fails https://github.com/wartremover/wartremover/issues/398
-    Wart.ImplicitParameter    // only used for Pos, but evidently can't be suppressed
-  )
+  // lazy val wartList = Warts.allBut(
+  //   Wart.Any,                 // false positives
+  //   Wart.ArrayEquals,         // false positives
+  //   Wart.Nothing,             // false positives
+  //   Wart.Null,                // Java API under the hood; we have to deal with null
+  //   Wart.Product,             // false positives
+  //   Wart.Serializable,        // false positives
+  //   Wart.ImplicitConversion,  // we know what we're doing
+  //   Wart.Throw,               // TODO: switch to ApplicativeError.fail in most places
+  //   Wart.PublicInference,     // fails https://github.com/wartremover/wartremover/issues/398
+  //   Wart.ImplicitParameter    // only used for Pos, but evidently can't be suppressed
+  // )
 
   // These settings are required to make Ammonite Repl work properly
   lazy val runForked = Seq(

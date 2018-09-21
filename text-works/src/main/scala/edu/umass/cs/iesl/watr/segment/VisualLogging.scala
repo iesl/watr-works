@@ -12,60 +12,106 @@ import tracing._
 import scala.collection.mutable
 import java.time.Instant
 import textboxing.{TextBoxing => TB}
+import GeometryCodecs._
+import TraceLog._
+import extract.FontExportRecords
 
 
 sealed trait TraceLog {
   def withCallSite(s: String): TraceLog
+  def tagged(s: String): TraceLog
+  def named(s: String): TraceLog
 }
 
 object TraceLog {
 
-  case class GeometryTraceLog(
+  case class Headers(
     name: String = "",
     callSite: String = "",
-    description: String = "",
-    typeHint: String = "",
     tags: String = "",
-    timestamp: Long,
-    body: Json
-  ) extends TraceLog {
+    timestamp: Long = Instant.now().toEpochMilli()
+  ) {
 
-    def withCallSite(s: String): TraceLog =
-      this.copy(callSite = s)
+    def withCallSite(s: String) = copy(
+      callSite = s
+    )
 
     def tagged(s: String) = copy(
-      tags = tags + " " + s
+      tags = (tags.trim + " " + s.trim).trim
     )
+
     def named(s: String) = copy(
-      name = s
+      name = s.trim
     )
   }
 
+  case class RelationTraceLog(
+    headers: Headers = Headers(),
+    fieldTypes: List[String] = List(),
+    body: List[Json]
+  ) extends TraceLog {
+    def withCallSite(s: String) = copy(headers = headers.withCallSite(s))
+    def tagged(s: String) = copy(headers = headers.tagged(s))
+    def named(s: String) = copy(headers = headers.named(s))
+
+
+    def col[A: Encoder](colname: String, a: A): RelationTraceLog = {
+      copy(
+        body = body :+ a.asJson,
+        fieldTypes = fieldTypes :+ colname
+      )
+    }
+
+    def field(shape: AnyShape): RelationTraceLog = {
+      val ts = shape.labels.map(_.fqn).mkString("|")
+      copy(
+        body = body :+ shape.id.asJson,
+        fieldTypes = fieldTypes :+ ts
+      )
+    }
+
+    def field(shapes: Seq[AnyShape]): RelationTraceLog = {
+      val ts = shapes.map(
+        _.labels.map(_.fqn).mkString("|")
+      ).toSet.toList.sorted.mkString(", ")
+
+      copy(
+        body = body :+ shapes.map(_.id).asJson,
+        fieldTypes = fieldTypes :+ ts
+      )
+    }
+  }
+
+  case class GeometryTraceLog(
+    headers: Headers = Headers(),
+    body: Json
+  ) extends TraceLog {
+    def withCallSite(s: String) = copy(headers = headers.withCallSite(s))
+    def tagged(s: String) = copy(headers = headers.tagged(s))
+    def named(s: String) = copy(headers = headers.named(s))
+  }
+
   case class BoxTextLog(
-    name: String = "",
-    callSite: String = "",
-    description: String = "",
-    typeHint: String = "",
-    tags: String = "",
-    timestamp: Long,
+    headers: Headers = Headers(),
     body: Seq[String]
   ) extends TraceLog {
-    def withCallSite(s: String): TraceLog =
-      this.copy(callSite = s)
+    def withCallSite(s: String) = copy(headers = headers.withCallSite(s))
+    def tagged(s: String) = copy(headers = headers.tagged(s))
+    def named(s: String) = copy(headers = headers.named(s))
+  }
 
-    def tagged(s: String) = copy(
-      tags = tags + " " + s
-    )
-    def named(s: String) = copy(
-      name = s
-    )
+  case class FontEntryLog(
+    headers: Headers = Headers(),
+    body: Json
+  ) extends TraceLog {
+    def withCallSite(s: String) = copy(headers = headers.withCallSite(s))
+    def tagged(s: String) = copy(headers = headers.tagged(s))
+    def named(s: String) = copy(headers = headers.named(s))
   }
 
 }
 
 
-import GeometryCodecs._
-import TraceLog._
 
 trait ScopedTracing extends VisualTracer { self  =>
 
@@ -73,17 +119,13 @@ trait ScopedTracing extends VisualTracer { self  =>
 
   implicit def Encode_TraceLog: Encoder[TraceLog] =  deriveEncoder
   implicit def Encode_GeometryTraceLog: Encoder[GeometryTraceLog] =  deriveEncoder
+  implicit def Encode_RelationTraceLog: Encoder[RelationTraceLog] =  deriveEncoder
   implicit def Encode_BoxTextLog: Encoder[BoxTextLog] =  deriveEncoder
+  implicit def Encode_FontEntryLog: Encoder[FontEntryLog] =  deriveEncoder
+  implicit def Encode_Headers: Encoder[Headers] =  deriveEncoder
 
 
 
-  def boxText(bs: TB.Box): BoxTextLog = {
-    BoxTextLog(
-      typeHint = "BoxText",
-      timestamp = Instant.now().toEpochMilli(),
-      body = TB.renderBox(bs)
-    )
-  }
 
   def traceAll(logs: => Seq[TraceLog])(
     implicit enclosing: sourcecode.Enclosing
@@ -92,6 +134,7 @@ trait ScopedTracing extends VisualTracer { self  =>
       trace(log)(enclosing)
     }
   }
+
   def trace(log: => TraceLog)(
     implicit enclosing: sourcecode.Enclosing
   ) = ifTrace(tracemacros.VisualTraceLevel.JsonLogs) {
@@ -104,15 +147,55 @@ trait ScopedTracing extends VisualTracer { self  =>
     traceLogs.append(l2)
   }
 
+  def boxText(bs: TB.Box): BoxTextLog = {
+    BoxTextLog(
+      body = TB.renderBox(bs)
+    )
+  }
+
+  import FontExportRecords._
+
+  def fontSummaries(f: List[FontSummary]): FontEntryLog = {
+    FontEntryLog(
+      body = f.asJson
+    )
+  }
+
+  def emitLogJsons(): Seq[JsonObject] = {
+    for { logEntry <- traceLogs } yield {
+      val entry = logEntry match {
+        case l: GeometryTraceLog =>
+          l.asJson.asObject.get
+            // .add("page", pageNum.unwrap.asJson)
+            .add("logType", "Geometry".asJson)
+
+        case l: RelationTraceLog =>
+          l.asJson.asObject.get
+            // .add("page", pageNum.unwrap.asJson)
+            .add("logType", "Relation".asJson)
+
+        case l: BoxTextLog =>
+          l.asJson.asObject.get
+            // .add("page", pageNum.unwrap.asJson)
+            .add("logType", "Text".asJson)
+
+        case l: FontEntryLog =>
+          l.asJson.asObject.get
+            // .add("page", pageNum.unwrap.asJson)
+            .add("logType", "Font".asJson)
+      }
+
+      entry
+    }
+  }
+
 }
 
 trait DocumentScopeTracing extends ScopedTracing { self  =>
   lazy val docTraceLogs = self
 
   def emitLogs(): Seq[Json] = {
-    for { logEntry <- traceLogs } yield Json.obj(
-      "entry" := logEntry
-    )
+    emitLogJsons().map(_.asJson)
   }
 }
 
@@ -128,18 +211,10 @@ trait PageScopeTracing extends ScopedTracing { self  =>
   lazy val LTBounds.Ints(svgL, svgT, svgW, svgH) = pageGeometry
 
   def emitLogs(): Seq[Json] = {
-    for { logEntry <- traceLogs } yield Json.obj(
-      "page" := pageNum.unwrap,
-      "entry" := logEntry
-    )
+    emitLogJsons().map{ jsonObj =>
+      jsonObj.add("page", pageNum.unwrap.asJson).asJson
+    }
   }
-  def emitLogsIndexed(): Seq[Json] = {
-    for { logEntry <- traceLogs } yield Json.obj(
-      "page" := pageNum.unwrap,
-      "entry" := logEntry
-    )
-  }
-
 
   def labeledShapes(labels: Label*): GeometryTraceLog = {
     def filterf(shape: AnyShape): Boolean = {
@@ -153,10 +228,18 @@ trait PageScopeTracing extends ScopedTracing { self  =>
     shape(filtered:_*)
   }
 
+
+
+  def relation(
+    name: String
+  ): RelationTraceLog = {
+    RelationTraceLog(
+      body = List()
+    ).named(name)
+  }
+
   def figure(figures: GeometricFigure*): GeometryTraceLog = {
     GeometryTraceLog(
-      typeHint = "Figures",
-      timestamp = Instant.now().toEpochMilli(),
       body = figures.toList.asJson
     )
   }
@@ -164,8 +247,8 @@ trait PageScopeTracing extends ScopedTracing { self  =>
   def shape[A <: GeometricFigure](lshapes: AnyShape*): GeometryTraceLog = {
 
     val shapes = lshapes.map{ lshape: AnyShape =>
-
       lshape.shape.asJsonObject
+        .add("id", lshape.id.asJson)
         .add("labels", lshape.labels.mkString(" ").asJson)
     }
 
@@ -174,27 +257,8 @@ trait PageScopeTracing extends ScopedTracing { self  =>
     }.toSet.toList.mkString(" ")
 
     GeometryTraceLog(
-      typeHint = "LabeledShapes",
-      tags = labels,
-      timestamp = Instant.now().toEpochMilli(),
       body = shapes.asJson
-    )
-  }
-
-
-
-
-  private def rescale(bboxScale1: LTBounds): LTBounds = {
-    val LTBounds.Doubles(l, t, w, h) = bboxScale1
-
-    val scaleX = pageW / svgW
-    val scaleY = pageH / svgH
-    val l2 = l * scaleX
-    val t2 = t * scaleY
-    val w2 = w * scaleX
-    val h2 = h * scaleY
-
-    LTBounds.Doubles(l2, t2, w2, h2)
+    ).tagged(labels)
   }
 
 }

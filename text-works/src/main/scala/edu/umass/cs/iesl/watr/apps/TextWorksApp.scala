@@ -108,7 +108,6 @@ object TextWorksConfig {
 
     note("\nOutput text layout options: \n")
 
-
     checkConfig{ c =>
       if (c.initCorpus.isDefined) {
         val corpusRoot = c.initCorpus.get
@@ -145,11 +144,15 @@ object TextWorksConfig {
 }
 
 
-object TextWorks extends App {
+// object TextWorks extends App {
+object TextWorks {
   import TextWorksConfig._
 
-  parser.parse(args, Config()).foreach{ config =>
-    config.exec.foreach { _.apply(config) }
+  def main(args: Array[String]) = {
+    parser.parse(args, Config()).foreach{ config =>
+      config.exec.foreach { _.apply(config) }
+    }
   }
+
 
 }

@@ -10,6 +10,7 @@ import utils.ExactFloats._
 import java.awt.{Shape}
 import java.awt.geom._
 import org.apache.pdfbox.pdmodel.common.PDRectangle
+import _root_.io.circe, circe._
 
 // import scalaz.std.string._
 import scalaz.std.anyVal._
@@ -28,7 +29,6 @@ protected object ExtractionImplicits {
       Point.Doubles(self.getX(), self.getY())
     }
   }
-
 
   implicit class RicherRectangle2D(val self: Rectangle2D) extends AnyVal {
     def toLTBounds(): LTBounds = {
@@ -157,7 +157,6 @@ case class PageSpaceTransforms(
   }
 }
 
-
 /**
   * Track the offset from font bounds bottom line to each of the following y-positions:
   *    cap      - The maximum distance above the baseline for the tallest glyph in the font at a given text size.
@@ -208,8 +207,6 @@ case class FontBaselineOffsets(
   def rescaledAs(newName: String, newScalingFactor: Int@@ScalingFactor): FontBaselineOffsets = {
     val (fontName, scalingFactor) = FontDefs.splitScaledFontId(scaledFontId)
 
-    // val scaleDist = math.abs(newScalingFactor.unwrap - scalingFactor.unwrap)
-    // val adj = scaleDist.toDouble * 0.25
     val scalingRatio = newScalingFactor.unwrap.toDouble / scalingFactor.unwrap
 
     FontBaselineOffsets(
@@ -264,19 +261,40 @@ case class FontBaselineOffsetsAccum(
 )
 
 
-///
-case class FontMetrics(
-  cap      : Int@@FloatRep,
-  ascent   : Int@@FloatRep,
-  midrise  : Int@@FloatRep,
-  descent  : Int@@FloatRep,
-  bottom   : Int@@FloatRep,
-)
+object FontExportRecords {
 
-case class ScaledMetrics(
-  scalingFactor: Int@@ScalingFactor,
-  fontMetrics: Option[FontMetrics]
-)
+  import circe.generic.semiauto._
+  import TypeTagCodecs._
+
+  implicit def Encode_FontMetrics: Encoder[FontMetrics] =  deriveEncoder
+  implicit def Encode_ScaledMetrics: Encoder[ScaledMetrics] =  deriveEncoder
+  implicit def Encode_ScaledFontSummaryRecord: Encoder[ScaledFontSummary] =  deriveEncoder
+  implicit def Encode_FontSummaryRecord: Encoder[FontSummary] =  deriveEncoder
+
+  case class FontMetrics(
+    cap      : Int@@FloatRep,
+    ascent   : Int@@FloatRep,
+    midrise  : Int@@FloatRep,
+    descent  : Int@@FloatRep,
+    bottom   : Int@@FloatRep,
+  )
+
+  case class ScaledMetrics(
+    scalingFactor: Int@@ScalingFactor,
+    fontMetrics: Option[FontMetrics]
+  )
+
+  case class ScaledFontSummary(
+    name: String@@ScaledFontID,
+    scaledMetrics: ScaledMetrics
+  )
+  case class FontSummary(
+    name: String,
+    scaledFontSummaries: List[ScaledFontSummary]
+  )
+}
+
+import FontExportRecords._
 
 case class FontProperties(
   name: String,
@@ -346,6 +364,7 @@ case class FontProperties(
     nonZeros > 4 || hasNgrams || hasLigatures
   }
 
+
   def getScaledMetrics(scalingFactor: Int@@ScalingFactor): Option[ScaledMetrics] = {
     scaledMetrics().filter(_.scalingFactor === scalingFactor).headOption
   }
@@ -394,6 +413,20 @@ case class FontProperties(
   }
 
   implicit val ShowString = Show.shows[String] { s => s }
+
+  def getFontSummary(): FontSummary = {
+    val metrics = scaledMetrics().map{ scaledMetrics =>
+      ScaledFontSummary(
+        makeScaledFontId(name, scaledMetrics.scalingFactor),
+        scaledMetrics
+      )
+    }
+    FontSummary(
+      name,
+      metrics.toList
+    )
+  }
+
 
   def report(): TB.Box = {
     val letterFreqs = TB.hjoins(TB.center1,
@@ -510,13 +543,14 @@ class FontDefs(pageCount: Int) {
   }
 
   def report(): TB.Box = {
-    // textboxing.TextBoxingLayouts.boxedMap(
-    //   scaledFontBaselineOffsets.toMap
-    // )
 
     s"Font Definitions. Page Count: ${pageCount}".hangIndent(
       vjoins(fontProperties.map(_.report()))
     )
+  }
+
+  def getFontSummaries(): List[FontSummary] = {
+    fontProperties.map(_.getFontSummary()).toList
   }
 
 }

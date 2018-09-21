@@ -120,6 +120,7 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
   type LineShape  = LabeledShape[Line, W]
   type PointShape = LabeledShape[Point, W]
   type RectShape  = LabeledShape[LTBounds, W]
+  type TrapezoidShape  = LabeledShape[Trapezoid, W]
   type AnyShape   = Shape
 
   def getAllShapes(): Seq[Shape] = {
@@ -130,11 +131,16 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
     shapeMap(id.unwrap.toLong)
   }
 
+  def initShape[S <: Shape](f: Int@@ShapeID => S): S = {
+    val lshape = f(shapeIDGen.nextId)
+    shapeMap.put(lshape.id.unwrap.toLong, lshape)
+    lshape.setIndexed(false)
+    lshape
+  }
 
   def indexShape[S <: Shape](f: Int@@ShapeID => S): S = {
-    val lshape = f(shapeIDGen.nextId)
+    val lshape = initShape(f)
     shapeRIndex.add(lshape)
-    shapeMap.put(lshape.id.unwrap.toLong, lshape)
     lshape.setIndexed(true)
     lshape
   }

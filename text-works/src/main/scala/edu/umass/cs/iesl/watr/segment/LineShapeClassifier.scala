@@ -5,14 +5,14 @@ import watrmarks._
 import geometry._
 import geometry.syntax._
 import textgrid._
+import TypeTags._
 
 trait LineShapeClassification extends PageScopeSegmenter { self =>
   lazy val lineShapes = self
 
 
   def classifyLines(): Unit = {
-    // groupLines()
-    // showGroupings()
+    addLineWeights()
   }
 
 
@@ -26,192 +26,173 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
     def ==>(action: => Unit) = implies(action)
   }
 
-  private def getTrapezoidAttr(cc: Int@@ShapeID): Option[Trapezoid] = {
-    shapeIndex.getShapeAttribute[Trapezoid](cc, watrmarks.Label("Trapezoid"))
+  def getTraps(reprShapes: AnyShape*): List[Option[Trapezoid]] = {
+    reprShapes.toList.map(
+      getTrapezoidForShape(_)
+    )
   }
 
-  private def getWeightsAttr(cc: Int@@ShapeID): Option[WeightedLabeling] = {
-    shapeIndex.getShapeAttribute[WeightedLabeling](cc, watrmarks.Label("LineGrouping"))
+  def getTextRows(reprShapes: AnyShape*): List[Option[TextGrid.Row]] = {
+    reprShapes.toList.map(
+      getTextForShape(_)
+    )
   }
 
-  private def getComponentText(cc: Int@@ShapeID, l: Label): Option[TextGrid.Row] = {
-    // val l1TextRowOpt = shapeIndex.getComponentText(line1CC, LB.VisualLine)
-    ???
+  def getWeights(reprShapes: AnyShape*): List[WeightedLabeling] = {
+    reprShapes.toList.map(
+      getWeightsForShape(_).get
+    )
   }
 
-  // private def groupLines(): Unit = {
-  //   for {
-  //     lineShape <- PageSegmenter.getVisualLinesInReadingOrder(shapeIndex).toList
-  //     _ = {
-  //       // Create weighted label set on each line
-  //       lineCCs.foreach { cc =>
-  //         shapeIndex.setShapeAttribute(cc.id, watrmarks.Label("LineGrouping"), WeightedLabeling())
-  //       }
-  //     }
-  //     linePair <- lineCCs.sliding(3)
-  //   }  {
-  //     import LB._
+  import LB._
 
-  //     linePair match {
+  private def addLineWeights(): Unit = {
+    val lineReprShapes = getLabeledRects(LB.BaselineMidriseBand)
+    val shapeAndCharsAndScaledFontId = lineReprShapes
+      .map(l => (l, getCharsForShape(l)))
+      .sortBy { case (_, baselineChars) =>
+        baselineChars.head.id
+      }
 
-  //       case Seq(line1CC, line2CC, line3CC) =>
-  //         val l1TextRowOpt = getComponentText(line1CC, LB.VisualLine)
-  //         val l2TextRowOpt = getComponentText(line2CC, LB.VisualLine)
-  //         val l3TextRowOpt = getComponentText(line3CC, LB.VisualLine)
+    shapeAndCharsAndScaledFontId.sliding(2).foreach { case linePair =>
+      linePair match {
 
+        case Seq(l1, l2, l3) =>
+          val (line1ReprShape, line1Chars) = l1
+          val (line2ReprShape, line2Chars) = l2
+          val (line3ReprShape, line3Chars) = l3
 
-  //         val l1Trapezoid = getTrapezoidAttr(line1CC.id)
-  //         val l2Trapezoid = getTrapezoidAttr(line2CC.id)
+          val List(line1Text, line2Text, line3Text) =
+            getTextRows(line1ReprShape, line2ReprShape, line3ReprShape)
 
-  //         val l1Labels = getWeightsAttr(line1CC.id).get
-  //         val l2Labels = getWeightsAttr(line2CC.id).get
-  //         val l3Labels = getWeightsAttr(line3CC.id).get
+          val List(l1Trapezoid, l2Trapezoid) =
+            getTraps(line1ReprShape, line2ReprShape)
 
+          val List(l1Labels, l2Labels, l3Labels) =
+            getWeights(line1ReprShape, line2ReprShape, line3ReprShape)
 
-  //         object line1 { def +=(p: BioPin): Unit = { l1Labels.addPin(p) } }
-
-  //         object line1_2_3 {
-  //           def +=(ps: (BioPin, BioPin, BioPin)): Unit = {
-  //             l1Labels.addPin(ps._1)
-  //             l2Labels.addPin(ps._2)
-  //             l3Labels.addPin(ps._3)
-  //           }
-  //         }
+          object line1 { def +=(p: BioPin): Unit = { l1Labels.addPin(p) } }
 
 
-  //         (l1Trapezoid, l2Trapezoid) match {
-  //           case (Some(t1), Some(t2)) =>
-  //             val shape1 = ShapeProps(t1, l1TextRowOpt, l2TextRowOpt)
-  //             val shape2 = ShapeProps(t2, l2TextRowOpt, l3TextRowOpt)
+          object line1_2_3 {
+            def +=(ps: (BioPin, BioPin, BioPin)): Unit = {
+              l1Labels.addPin(ps._1)
+              l2Labels.addPin(ps._2)
+              l3Labels.addPin(ps._3)
+            }
+          }
 
 
-  //             (shape1.like.anyParaBegin     && shape2.like.paraInside)       ==> { line1_2_3 += ((Para.B, Para.I, Para.I)) };
-  //             (shape1.like.paraInside       && shape2.like.paraInside)       ==> { line1_2_3 += ((Para.I, Para.I, Para.I)) };
-  //             (shape1.like.paraInside       && shape2.like.paraLast)         ==> { line1_2_3 += ((Para.I, Para.I, Para.L)) };
-  //             (shape1.like.paraLastAndBegin && shape2.like.anyParaBegin)     ==> { line1_2_3 += ((Para.L, Para.B, Para.I)) };
-  //             (shape1.like.paraLast         && shape2.like.paraLastAndBegin) ==> { line1_2_3 += ((Para.I, Para.L, Para.B)) };
-
-  //             shape1.textLike.captionBegin ==> {  line1 += Caption.B }
-
-  //             //
-  //             shape1.upperText
+          (l1Trapezoid, l2Trapezoid) match {
+            case (Some(t1), Some(t2)) =>
+              val shape1 = ShapeProps(t1, line1Text, line2Text)
+              val shape2 = ShapeProps(t2, line2Text, line3Text)
 
 
-  //           case _ =>
+              (shape1.like.anyParaBegin     && shape2.like.paraInside)       ==> { line1_2_3 += ((Para.B, Para.I, Para.I)) };
+              (shape1.like.paraInside       && shape2.like.paraInside)       ==> { line1_2_3 += ((Para.I, Para.I, Para.I)) };
+              (shape1.like.paraInside       && shape2.like.paraLast)         ==> { line1_2_3 += ((Para.I, Para.I, Para.L)) };
+              (shape1.like.paraLastAndBegin && shape2.like.anyParaBegin)     ==> { line1_2_3 += ((Para.L, Para.B, Para.I)) };
+              (shape1.like.paraLast         && shape2.like.paraLastAndBegin) ==> { line1_2_3 += ((Para.I, Para.L, Para.B)) };
 
-  //         }
+              shape1.textLike.captionBegin ==> {  line1 += Caption.B }
+
+              // shape1.upperText
+
+
+            case _ =>
+
+          }
 
 
 
-  //       case Seq(line1CC, line2CC) =>
-  //         val l1TextRowOpt = getComponentText(line1CC, LB.VisualLine)
-  //         val l2TextRowOpt = getComponentText(line2CC, LB.VisualLine)
+        case Seq(l1, l2) =>
+          val (line1ReprShape, line1Chars) = l1
+          val (line2ReprShape, line2Chars) = l2
 
-  //         // val l1Text = l1TextRowOpt.map(_.toText()).getOrElse("<no text>")
-  //         // val l2Text = l2TextRowOpt.map(_.toText()).getOrElse("<no text>")
-  //         val l1Trapezoid = getTrapezoidAttr(line1CC.id)
-  //         val l2Trapezoid = getTrapezoidAttr(line2CC.id)
-  //         val l1Labels = getWeightsAttr(line1CC.id).get
-  //         val l2Labels = getWeightsAttr(line2CC.id).get
+          val List(line1Text, line2Text) =
+            getTextRows(line1ReprShape, line2ReprShape)
 
+          val List(l1Trapezoid, l2Trapezoid) =
+            getTraps(line1ReprShape, line2ReprShape)
 
-  //         object line1 { def +=(p: BioPin): Unit = { l1Labels.addPin(p) } }
-  //         // object line2 { def +=(p: BioPin): Unit = { l2Labels.addPin(p) } }
+          val List(l1Labels, l2Labels) =
+            getWeights(line1ReprShape, line2ReprShape)
 
-  //         object line1_2 {
-  //           def +=(ps: (BioPin, BioPin)): Unit = {
-  //             l1Labels.addPin(ps._1)
-  //             l2Labels.addPin(ps._2)
-  //           }
-  //         }
+          object line1 { def +=(p: BioPin): Unit = { l1Labels.addPin(p) } }
 
+          object line1_2 {
+            def +=(ps: (BioPin, BioPin)): Unit = {
+              l1Labels.addPin(ps._1)
+              l2Labels.addPin(ps._2)
+            }
+          }
 
-  //         // println(s"> ${l1Text}")
-  //         // println(s"> ${l2Text}")
-  //         // println(s"     ${l1Trapezoid.map(_.prettyPrint)}")
-  //         // println(s"     ${l2Trapezoid.map(_.prettyPrint)}")
-
-
-  //         (l1Trapezoid, l2Trapezoid) match {
-  //           case (Some(t1), Some(t2)) =>
-  //             val shape1 = ShapeProps(t1, l1TextRowOpt, l2TextRowOpt)
-  //             val shape2 = ShapeProps(t2, l2TextRowOpt, None)
+          // println(s"Line Pairs")
+          // println(s"> ${line1Text.map(_.toText())}")
+          // println(s"> ${line2Text.map(_.toText())}")
+          // println(s"     ${l1Trapezoid.map(_.prettyPrint)}")
+          // println(s"     ${l2Trapezoid.map(_.prettyPrint)}")
+          // println()
 
 
-  //             shape1.like.paraInside        ==>  { line1 += Para.I }
-  //             shape1.like.paraLast          ==>  { line1_2 += (Para.I -> Para.L) }
-  //             shape1.like.dropCapParaBegin  ==>  { line1_2 += (Para.B -> Para.I) }
-  //             shape1.like.indentedParaBegin ==>  { line1_2 += (Para.B -> Para.I) }
-  //             shape1.like.blockParaBegin    ==>  { line1 += Para.B }
-  //             shape1.like.paraLastAndBegin  ==>  { line1_2 += (Para.L -> Para.B) }
-  //             shape1.textLike.captionBegin  ==>  { line1_2 += (Para.L -> Para.B) }
+          (l1Trapezoid, l2Trapezoid) match {
+            case (Some(t1), Some(t2)) =>
+              val shape1 = ShapeProps(t1, line1Text, line2Text)
+              val shape2 = ShapeProps(t2, line2Text, None)
 
 
-  //             (shape1.like.anyParaBegin     && shape2.like.paraInside)       ==> { line1_2 += (Para.B -> Para.I)  };
-  //             (shape1.like.paraInside       && shape2.like.paraInside)       ==> { line1_2 += (Para.I -> Para.I)  };
-  //             (shape1.like.paraInside       && shape2.like.paraLast)         ==> { line1_2 += (Para.I -> Para.I)  };
-  //             (shape1.like.paraLastAndBegin && shape2.like.anyParaBegin)     ==> { line1_2 += (Para.L -> Para.B)  };
-  //             (shape1.like.paraLast         && shape2.like.paraLastAndBegin) ==> { line1_2 += (Para.I -> Para.L)  };
-
-  //             // println(s"""l1 labels: ${l1Labels.countedPins().map({case (p, c) => s"$p(${c})" }).mkString}""")
-
-
-  //           case (Some(t1), None) =>
-  //             val shape1 = ShapeProps(t1, l1TextRowOpt, None)
-
-  //             shape1.like.paraInside        ==>  { line1 += Para.I }
-  //             shape1.like.paraLast          ==>  { line1_2 += (Para.I -> Para.L) }
-  //             shape1.like.dropCapParaBegin  ==>  { line1_2 += (Para.B -> Para.I) }
-  //             shape1.like.indentedParaBegin ==>  { line1_2 += (Para.B -> Para.I) }
-  //             shape1.like.blockParaBegin    ==>  { line1 += Para.B }
-  //             shape1.like.paraLastAndBegin  ==>  { line1_2 += (Para.L -> Para.B) }
-
-  //           case (None, Some(t2)) =>
-  //           case (None, None) =>
-  //         }
+              shape1.like.paraInside        ==>  { line1 += Para.I }
+              shape1.like.paraLast          ==>  { line1_2 += (Para.I -> Para.L) }
+              shape1.like.dropCapParaBegin  ==>  { line1_2 += (Para.B -> Para.I) }
+              shape1.like.indentedParaBegin ==>  { line1_2 += (Para.B -> Para.I) }
+              shape1.like.blockParaBegin    ==>  { line1 += Para.B }
+              shape1.like.paraLastAndBegin  ==>  { line1_2 += (Para.L -> Para.B) }
+              shape1.textLike.captionBegin  ==>  { line1_2 += (Para.L -> Para.B) }
 
 
-  //       case _ =>
+              (shape1.like.anyParaBegin     && shape2.like.paraInside)       ==> { line1_2 += (Para.B -> Para.I)  };
+              (shape1.like.paraInside       && shape2.like.paraInside)       ==> { line1_2 += (Para.I -> Para.I)  };
+              (shape1.like.paraInside       && shape2.like.paraLast)         ==> { line1_2 += (Para.I -> Para.I)  };
+              (shape1.like.paraLastAndBegin && shape2.like.anyParaBegin)     ==> { line1_2 += (Para.L -> Para.B)  };
+              (shape1.like.paraLast         && shape2.like.paraLastAndBegin) ==> { line1_2 += (Para.I -> Para.L)  };
 
-  //     }
-  //   }
-  // }
 
-  // def showGroupings(): Unit = {
-  //   import TB._
-  //   val textCol = for {
-  //     (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(shapeIndex).toList
-  //     lineCC <- lineCCs
-  //   } yield {
+            case (Some(t1), None) =>
+              val shape1 = ShapeProps(t1, line1Text, None)
 
-  //     val lineText = getComponentText(lineCC, LB.VisualLine).map(_.toText().take(40).mkString)
-  //     lineText.getOrElse("<no text>").box
-  //   }
+              shape1.like.paraInside        ==>  { line1 += Para.I }
+              shape1.like.paraLast          ==>  { line1_2 += (Para.I -> Para.L) }
+              shape1.like.dropCapParaBegin  ==>  { line1_2 += (Para.B -> Para.I) }
+              shape1.like.indentedParaBegin ==>  { line1_2 += (Para.B -> Para.I) }
+              shape1.like.blockParaBegin    ==>  { line1 += Para.B }
+              shape1.like.paraLastAndBegin  ==>  { line1_2 += (Para.L -> Para.B) }
 
-  //   val pinCol = for {
-  //     (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(shapeIndex).toList
-  //     lineCC <- lineCCs
-  //   } yield {
-  //     val lineWeights = shapeIndex.getShapeAttribute[WeightedLabeling](lineCC.id, watrmarks.Label("LineGrouping")).get
+            case (None, Some(t2)) =>
+            case (None, None) =>
+          }
 
-  //     val pinstr = lineWeights.countedPins().map({case (p, c) => s"$p(${c})" }).mkString("; ")
-  //     // val pins = lineWeights.uniquePins()
-  //     // val pinstr = pins.mkString(", ")
 
-  //     pinstr.box
-  //   }
+        case _ =>
 
-  //   val groupings = hjoin(
-  //     vjoins(TB.right, pinCol),
-  //     "  ",
-  //     vjoins(TB.left, textCol)
-  //   )
+      }
+    }
 
-  //   println()
-  //   println(groupings)
-  //   println()
 
-  // }
+    // println(s"Final Line Labels")
+    // shapeAndCharsAndScaledFontId.foreach { case l1 =>
+    //   val (line1ReprShape, line1Chars) = l1
+    //   val List(line1Text) = getTextRows(line1ReprShape)
+    //   val List(l1Trapezoid) = getTraps(line1ReprShape)
+    //   val List(l1Labels) = getWeights(line1ReprShape)
+    //   println(s"> ${line1Text.map(_.toText())}")
+    //   println(s"     ${l1Trapezoid.map(_.prettyPrint)}")
+    //   println(s"""   ${l1Labels.countedPins().map({case (p, c) => s"$p(${c})" }).mkString}""")
+    //   println()
+    // }
+
+  }
+
 
   // object trapPairProps {
   //   val areLeftAligned: Boolean = true
@@ -289,6 +270,9 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
      * + Labels
      *    - graph axis labels
      *
+     * + Identifying notes associated with author names (institutions, etc)
+     *   - for each identified superscript symbol, put a column-evidence dot on page, then try
+     *     to draw a column identifying the notes
      **/
 
     def apply(
@@ -333,7 +317,6 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
           }
         }
       }
-
     }
   }
 
@@ -369,4 +352,3 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
 
   }
 }
-

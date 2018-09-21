@@ -14,35 +14,22 @@ import utils.QuickNearestNeighbors._
 
 import TypeTags._
 
-trait DocumentLevelFunctions extends DocumentScopeSegmenter
+trait DocumentLevelFunctions
+    extends DocumentScopeSegmenter
     with FontAndGlyphMetricsDocWide
+    with MarginalMatterDetectionDocScope
 
 trait DocumentSegmentation extends DocumentLevelFunctions { self =>
-
 
   protected[segment] def init(): Unit = {
     initLabeledShapeIndexes()
   }
-
-  def getNumberedPages(): Seq[(Int@@PageID, Int@@PageNum)] =
-    docStore.getPages(docId).zipWithIndex.map {
-      case (a, b) => (a, PageNum(b))
-    }
 
   private def initLabeledShapeIndexes(): Unit = {
     pageAtomsAndGeometry.foreach { case (extractedItems, pageGeometry) =>
       val pageId = docStore.addPage(docId, pageGeometry.pageNum)
       docStore.setPageGeometry(pageId, pageGeometry.bounds)
     }
-  }
-
-  lazy val pageSegmenters = {
-
-    def createPageSegmenters(): Seq[PageSegmenter] = for {
-      (pageId, pageNum) <- getNumberedPages()
-    } yield PageSegmenter(pageId, pageNum, self)
-
-    createPageSegmenters()
   }
 
 
@@ -96,6 +83,12 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
     docScope.docTraceLogs.trace { boxText(docScope.fontDefs.report()) }
 
+    docScope.docTraceLogs.trace {
+      fontSummaries(
+        docScope.fontDefs.getFontSummaries()
+      )
+    }
+
     docScope.docStats.initTable[Int@@PageNum, String@@ScaledFontID, Int@@FloatRep]("PagewiseLineWidths")
 
     time("findContiguousGlyphSpans") {
@@ -120,17 +113,42 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       }
     }
 
-    // time("findContiguousBlocks") {
-    //   pageSegmenters.foreach { p =>
-    //     p.findContiguousBlocks(LB.CapDescenderBand)
-    //   }
-    // }
+    time("createColumnClusters") {
+      pageSegmenters.foreach { p =>
+        p.createColumnClusters()
+      }
+    }
 
+    time("findContiguousBlocks") {
+      pageSegmenters.foreach { p =>
+        p.findContiguousBlocks(LB.BaselineMidriseBand)
+      }
+    }
+
+    time("setTextForReprShapes") {
+      pageSegmenters.foreach { p =>
+        p.setTextForReprShapes()
+      }
+    }
+
+    time("buildLinePairTrapezoids") {
+      pageSegmenters.foreach { p =>
+        p.buildLinePairTrapezoids()
+      }
+    }
+
+    time("classifyLines") {
+      pageSegmenters.foreach { p =>
+        p.classifyLines()
+      }
+    }
+
+    time("findRepeatedMarginalLines") {
+      findRepeatedMarginalLines()
+    }
   }
 
 }
-
-
 
 object DocumentSegmenter {
   import rtrees._

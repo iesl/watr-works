@@ -6,6 +6,7 @@ import geometry._
 import geometry.syntax._
 import textgrid._
 import watrmarks._
+import TypeTags._
 
 trait ShapeFunctions extends TrapezoidFinding with LineShapeClassification { self =>
   lazy val shapeFunctions = self
@@ -14,105 +15,62 @@ trait ShapeFunctions extends TrapezoidFinding with LineShapeClassification { sel
 
 trait TrapezoidFinding extends PageScopeSegmenter { self =>
 
-  private def getComponentText(cc: Int@@ShapeID, l: Label): Option[TextGrid.Row] = {
-    // val l1TextRowOpt = shapeIndex.getComponentText(line1CC, LB.VisualLine)
-    ???
+  lazy val docStats = docScope.docStats
+
+  def buildLinePairTrapezoids(): Unit = {
+
+    val lineReprShapes = getLabeledRects(LB.BaselineMidriseBand)
+    val shapeAndCharsAndScaledFontId = lineReprShapes
+      .map(l => (l, getCharsForShape(l)))
+      .sortBy { case (_, baselineChars) =>
+        baselineChars.head.id
+      }
+
+    shapeAndCharsAndScaledFontId.foreach { case (lineReprShape, _) =>
+      setWeightsForShape(lineReprShape, WeightedLabeling())
+    }
+
+    shapeAndCharsAndScaledFontId.sliding(2).foreach { case linePair =>
+      linePair match {
+        case Seq(l1, l2) =>
+          val (line1ReprShape, line1Chars) = l1
+          val (line2ReprShape, line2Chars) = l2
+
+          val areVertical = line1ReprShape.shape.isStrictlyAbove(line2ReprShape.shape)
+          val areOverlappingHorizontal = line1ReprShape.shape.isNeitherLeftNorRightOf(line2ReprShape.shape)
+
+          if (areVertical && areOverlappingHorizontal) {
+
+            val l1Baseline = line1ReprShape.shape.toLine(Dir.Bottom)
+            val l2Baseline = line2ReprShape.shape.toLine(Dir.Bottom)
+
+            val trapezoid = Trapezoid.fromHorizontals(l1Baseline, l2Baseline)
+
+            pageStats.trapezoidHeights.fill(trapezoid)
+            pageStats.leftAcuteBaseAngles.fill(trapezoid)
+            pageStats.leftObtuseBaseAngles.fill(trapezoid)
+
+            docStats.trapezoidHeights.fill(trapezoid)
+            docStats.leftAcuteBaseAngles.fill(trapezoid)
+            docStats.leftObtuseBaseAngles.fill(trapezoid)
+
+            setTrapezoidForShape(line1ReprShape, trapezoid)
+
+            traceLog.traceAll {
+
+              val trap = initShape(trapezoid, LB.LinePairTrapezoid)
+              val rel = relation("TrapezoidLinePairs")
+                .field(trap)
+                .field(line1ReprShape)
+                .field(line2ReprShape)
+
+              List(shape(trap), rel)
+            }
+          }
+        case _ => None
+      }
+    }
+
   }
 
-  // def buildInitialLinePairTrapezoids(): Unit = {
-
-  //   val docStats = docScope.docStats
-
-
-  //   for {
-  //     linePair <- PageSegmenter.getVisualLinesInExtractionOrder(shapeIndex).sliding(2)
-  //   }  {
-
-  //     // construct trapezoids: isosceles, right, rectangular
-  //     linePair match {
-  //       case Seq(l1, l2) =>
-  //         val ml1Text = getComponentText(l1.id, LB.VisualLine)
-  //         val ml2Text = getComponentText(l2.id, LB.VisualLine)
-
-
-  //         (ml1Text, ml2Text) match {
-  //           case (Some(l1Text), Some(l2Text)) =>
-
-  //             // shapeIndex.getRelation(l1, LB.VisualLineModal)
-  //             val l1VisLineModal = shapeIndex.getRelation(l1, LB.VisualLineModal).head
-  //             val l2VisLineModal = shapeIndex.getRelation(l2, LB.VisualLineModal).head
-
-  //             val l1Baseline = l1VisLineModal.shape.bounds().toLine(Dir.Bottom)
-  //             val l2Baseline = l2VisLineModal.shape.bounds().toLine(Dir.Bottom)
-
-  //             val t = Trapezoid.fromHorizontals(l1Baseline, l2Baseline)
-
-  //             pageStats.trapezoidHeights.fill(t)
-  //             pageStats.leftAcuteBaseAngles.fill(t)
-  //             pageStats.leftObtuseBaseAngles.fill(t)
-  //             docStats.trapezoidHeights.fill(t)
-  //             docStats.leftAcuteBaseAngles.fill(t)
-  //             docStats.leftObtuseBaseAngles.fill(t)
-
-  //             shapeIndex.setShapeAttribute[Trapezoid](l1.id, watrmarks.Label("Trapezoid"), t)
-
-  //             Option(t)
-
-  //           case _ => None
-  //         }
-  //       case Seq(l1) => None
-  //       case Seq() => None
-  //     }
-  //   }
-
-  // }
-
-  // def buildLinePairTrapezoids(): Unit = {
-
-  //   val docStats = docScope.docStats
-
-  //   // shapeIndex.reportClusters()
-
-  //   for {
-  //     (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(shapeIndex).toList
-  //     linePair <- lineCCs.sliding(2)
-  //   }  {
-
-  //     // construct trapezoids: isosceles, right, rectangular
-  //     linePair match {
-  //       case Seq(l1, l2) =>
-  //         val ml1Text = getComponentText(l1.id, LB.VisualLine)
-  //         val ml2Text = getComponentText(l2.id, LB.VisualLine)
-
-
-  //         (ml1Text, ml2Text) match {
-  //           case (Some(l1Text), Some(l2Text)) =>
-
-  //             val l1VisLineModal = shapeIndex.getRelation(l1, LB.VisualLineModal).head
-  //             val l2VisLineModal = shapeIndex.getRelation(l2, LB.VisualLineModal).head
-
-  //             val l1Baseline = l1VisLineModal.bounds().toLine(Dir.Bottom)
-  //             val l2Baseline = l2VisLineModal.bounds().toLine(Dir.Bottom)
-
-  //             val t = Trapezoid.fromHorizontals(l1Baseline, l2Baseline)
-
-  //             pageStats.trapezoidHeights.fill(t)
-  //             pageStats.leftAcuteBaseAngles.fill(t)
-  //             pageStats.leftObtuseBaseAngles.fill(t)
-  //             docStats.trapezoidHeights.fill(t)
-  //             docStats.leftAcuteBaseAngles.fill(t)
-  //             docStats.leftObtuseBaseAngles.fill(t)
-
-  //             shapeIndex.setAttribute[Trapezoid](l1.id, watrmarks.Label("Trapezoid"), t)
-
-  //             Option(t)
-
-  //           case _ => None
-  //         }
-  //       case Seq(l1) => None
-  //       case Seq() => None
-  //     }
-  //   }
-
-  // }
 }

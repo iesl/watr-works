@@ -27,19 +27,22 @@ trait ColumnFinding extends PageScopeSegmenter
 
   import LB._
 
-  protected def createColumnClusters(): Unit = {
-    val charRunBaselineShapes = getLabeledLines(LB.CharRunFontBaseline)
-    val leftmostPoints = charRunBaselineShapes.map{ _.shape.p1 }
-    val rightmostPoints = charRunBaselineShapes.map{ _.shape.p2 }
+  val clusterableShapeLabel = LB.BaselineMidriseBand
+
+  def createColumnClusters(): Unit = {
+
+    val charRunBaselineShapes = getLabeledRects(clusterableShapeLabel).map(_.shape.toLine(Dir.Bottom))
+    val leftmostPoints = charRunBaselineShapes.map{ _.p1 }
+    val rightmostPoints = charRunBaselineShapes.map{ _.p2 }
     clusterColumnPoints(leftmostPoints, LB.LeftAlignedCharCol, leftAlignedPoints=true)
     clusterColumnPoints(rightmostPoints, LB.RightAlignedCharCol, leftAlignedPoints=false)
   }
 
-  protected def clusterColumnPoints(points: Seq[Point], label: Label, leftAlignedPoints: Boolean): Unit = {
+  protected def clusterColumnPoints(points: Seq[Point], asColumnLabel: Label, leftAlignedPoints: Boolean): Unit = {
     val pointHist = HST.SparselyBin.ing(1.4, {p: Point => p.x.asDouble()})
     val pageRight = pageGeometry.right
-    val clusterLabel = label::Cluster
-    val evidenceLabel = label::Evidence
+    val clusterLabel = asColumnLabel qualifiedAs Cluster
+    val evidenceLabel = asColumnLabel qualifiedAs Evidence
 
     points.foreach{ point =>
       indexShape(point, evidenceLabel)
@@ -63,7 +66,7 @@ trait ColumnFinding extends PageScopeSegmenter
 
           deleteShapes(hitPoints)
 
-          traceLog.trace { figure(pageColumn) tagged "PageColumn" }
+          traceLog.trace { figure(pageColumn) tagged "Candidate Page Slices" }
 
           val uniqYHits = hitPoints.uniqueBy(_.shape.y)
 
@@ -74,7 +77,7 @@ trait ColumnFinding extends PageScopeSegmenter
             val height = maxy - miny
 
             val colActual = pageColumn.getHorizontalSlice(miny, height).get
-            traceLog.trace { figure(colActual) tagged s"Column Nonempty ${evidenceLabel}" }
+            traceLog.trace { figure(colActual) tagged s"VSlices ClippedTo YPoints min/max ${evidenceLabel}" }
 
             val intersectingBaselines = searchForLines(colActual, LB.CharRunFontBaseline)
               .sortBy(_.shape.p1.y)
@@ -111,8 +114,7 @@ trait ColumnFinding extends PageScopeSegmenter
 
                 traceLog.trace {
                   val columnMbr = columnPoints.map(minBoundingRect(_))reduce(_ union _)
-                  // val evLine = Line(baselineShapes.head.shape.p1, baselineShapes.last.shape.p1)
-                  figure(columnMbr) tagged s"${label} Points MinBounds"
+                  figure(columnMbr) tagged s"${asColumnLabel} Final Shape"
                 }
 
               case _ =>

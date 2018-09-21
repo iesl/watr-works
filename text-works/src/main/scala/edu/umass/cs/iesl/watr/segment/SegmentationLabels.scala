@@ -28,19 +28,24 @@ object SegmentationLabels extends DocSegLabels {
   val ContiguousGlyphBaseline = Label.auto
   val CapDescenderBand        = Label.auto
   val BaselineMidriseBand     = Label.auto
+  val TextLineGroup           = Label.auto
 
-  val Fonts                   = Label.auto :: Attr
-  val PrimaryFont             = Label.auto :: Attr
-  val FontBaselineOffsets     = Label.auto :: Attr
-  val FontIndex               = Label.auto :: Attr
-  val LabeledIntervals        = Label.auto :: Attr
+  val Fonts                   = Label.auto qualifiedAs Attr
+  val PrimaryFont             = Label.auto qualifiedAs Attr
+  val FontBaselineOffsets     = Label.auto qualifiedAs Attr
+  val FontIndex               = Label.auto qualifiedAs Attr
+  val LabeledIntervals        = Label.auto qualifiedAs Attr
 
   val ExtractedItems          = Label.auto
 
   val PageAtom                = Label.auto
 
   val LeftAlignedCharCol     = Label.auto
-  val RightAlignedCharCol     = Label.auto
+  val RightAlignedCharCol    = Label.auto
   val PathBounds             = Label.auto
+
+  val LinePairTrapezoid       = Label.auto
+  val WeightedLabels          = Label.auto qualifiedAs Attr
+  val TextGridRow             = Label.auto qualifiedAs Attr
 
 }

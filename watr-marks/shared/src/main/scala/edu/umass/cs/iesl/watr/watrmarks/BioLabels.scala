@@ -117,13 +117,12 @@ case class Label(
   def qualifiedAs(t: String): Label = {
     Label(s"${fqn}::${t}")
   }
+  def qualifiedAs(t: Label): Label = {
+    Label(s"${fqn}::${t.fqn}")
+  }
 
   def withNamespace(t: String): Label = {
     Label(s"${t}:${fqn}")
-  }
-
-  def ::(l: Label): Label = {
-    this.qualifiedAs(l.fqn)
   }
 
   def /(l: Label): Label = {
