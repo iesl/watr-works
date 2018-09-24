@@ -1,0 +1,48 @@
+
+* Font Summary Description
+  
+** File Format overview
+   The format of the font-summary.json file
+
+
+#+BEGIN_SRC js
+{
+    "headers" : {
+      "name" : "",
+      "callSite" : "runDocumentSegmentation",
+      "tags" : "",
+      "timestamp" : 1537553328829
+    },
+    "body" : [
+      {
+        "name" : "MOOKAP+AdvPSTim",
+        "scaledFontSummaries" : [
+          {
+            "name" : "MOOKAP+AdvPSTimx24",
+            "scaledMetrics" : {
+              "scalingFactor" : 24,
+              "fontMetrics" : {
+                "cap" : 0,
+                "ascent" : 0,
+                "midrise" : 0,
+                "descent" : 0,
+                "bottom" : 0
+              }
+            }
+          },
+          {
+            "name" : "MOOKAP+AdvPSTimx26",
+            "scaledMetrics" : {
+              "scalingFactor" : 26,
+              "fontMetrics" : {
+                "cap" : 0,
+                "ascent" : 0,
+                "midrise" : 0,
+                "descent" : 0,
+                "bottom" : 0
+              }
+            }
+          },
+        ]
+
+#+END_SRC
