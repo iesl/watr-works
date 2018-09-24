@@ -1,0 +1,46 @@
+#!/bin/bash
+
+## http://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
+SOURCE="BASH_SOURCE[0]"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+SCRIPTDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+SCRIPT=`basename $0`
+
+
+showhelp() {
+    echo "Usage: $SCRIPT: "
+    echo "  todo  "
+    exit 2
+}
+
+# default arg vals
+corpus=
+tarfile=
+
+while getopts ":f:t:h" name; do
+    case $name in
+        f)    corpus=$OPTARG;;
+        t)    tarfile=$OPTARG;;
+        h)    showhelp $0;;
+        [?])  showhelp $0;;
+    esac
+done
+
+if [ -z "$corpus" ]; then
+    echo "specify corpus $corpus"
+    showhelp
+fi
+
+if [ -z "$tarfile" ]; then
+    echo "specify tarfile $tarfile"
+    showhelp
+fi
+
+echo "tarring $corpus to $tarfile ..."
+
+find "$corpus" -type f -name 'textgrid.json' | tar -cf "$tarfile" --gzip --files-from -
+find "$corpus" -type f -path '**/tracelogs/*' | tar -f "$tarfile" --gzip --append --files-from -

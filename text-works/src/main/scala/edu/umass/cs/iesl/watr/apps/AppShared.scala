@@ -86,10 +86,17 @@ object ProcessPipelineSteps {
 
   def runTextExtractionPipeline(conf: TextWorksConfig.Config): Unit = {
 
-    val maybeClean = createInputStream[IO](conf.ioConfig)
-      .through(initMarkedInput())
-      .through(dropSkipAndRun(conf.ioConfig))
-      .through(cleanFileArtifacts(conf))
+    if (conf.ioConfig.overwrite) {
+      println("Cleaning extracted text artifacts")
+      val maybeClean = createInputStream[IO](conf.ioConfig)
+        .through(initMarkedInput())
+        .through(dropSkipAndRun(conf.ioConfig))
+        .through(cleanFileArtifacts(conf))
+
+      maybeClean.compile.drain.unsafeRunSync()
+    }
+
+    println("Running text extraction")
 
     val processStream = createInputStream[IO](conf.ioConfig)
       .through(initMarkedInput())
@@ -290,15 +297,6 @@ object ProcessPipelineSteps {
           TextGridOutputFormats.jsonOutputGridPerPage(segmentation)
         }
 
-        // val buildInfoMap = buildinfo.BuildInfo.toJson.jsonOrDie("BuildInfo produced invalid Json")
-        // val now = System.currentTimeMillis()
-        // val dtf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
-        // dtf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
-        // val nowStr = dtf.format(new java.util.Date(now))
-        // val runInfo = Map(
-        //   ("runAt", now),
-        //   ("runAtStr", nowStr)
-        // )
         val writeable = jsonOutput
           .add("buildInfo", getExecutableInfo())
 
