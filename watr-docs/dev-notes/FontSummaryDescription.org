@@ -16,11 +16,11 @@
    containing the dimensions (heights only) of the font at a particular scale.
 
    Font Metrics consist of several vertical offsets, each corresponding to a typographic position, as follows: 
-      Cap      - The height for capital letters.
-      Ascent   - The height for the tops of ascenders (e.g., "hlb").
-      Midrise  - (non-standard) the computed height of chars without ascenders, (e.g., "eaomn").
-      Descent  - The height for the bottom line of chars with descenders (e.g., "jyg").
-      Bottom   - The height for the bottom of the lowest descending glyph. Often includes parens "()" and other symbols.
+      + Cap      - The height for capital letters.
+      + Ascent   - The height for the tops of ascenders (e.g., "hlb").
+      + Midrise  - (non-standard) the computed height of chars without ascenders, (e.g., "eaomn").
+      + Descent  - The height for the bottom line of chars with descenders (e.g., "jyg").
+      + Bottom   - The height for the bottom of the lowest descending glyph. Often includes parens "()" and other symbols.
   
    
 ** Font Entry Descriptions
