@@ -101,9 +101,12 @@ object SensibleProject extends CommonLibs {
 
   val buildInfoSettings = Seq(
     buildInfoKeys := Seq[BuildInfoKey](
-      name, version, scalaVersion,
+      BuildInfoKey.map(name) { case (k, v) => "appName" -> v },
+      BuildInfoKey.map(version) { case (k, v) => "appVersion" -> v },
+      scalaVersion,
       git.gitHeadCommit,
       git.gitCurrentBranch,
+      BuildInfoKey.constant("timezone" -> "UTC")
     ),
     buildInfoOptions ++= Seq(
       BuildInfoOption.ToMap,
@@ -111,8 +114,6 @@ object SensibleProject extends CommonLibs {
       BuildInfoOption.BuildTime
     )
   )
-
-
 
   lazy val settings = Seq(
     autoCompilerPlugins  := true,

@@ -118,7 +118,7 @@ object TextGridOutputFormats  {
     jsonStr.decodeOrDie[DocumentTextGrids]()
   }
 
-  def jsonOutputGridPerPage(docSeg: DocumentSegmentation): Json = {
+  def jsonOutputGridPerPage(docSeg: DocumentSegmentation): JsonObject = {
     val stableId = docSeg.stableId
 
     val allPageTextGrids = docSeg.pageSegmenters
@@ -139,14 +139,11 @@ object TextGridOutputFormats  {
 
     val fontDescriptions = fontDescription(docSeg)
 
-    val outputDoc = Json.obj(
+    Json.obj(
       "description" := s"Extracted Pages for ${stableId}",
       "documentId" := stableId.unwrap,
-      "pages" := allPageTextGrids,
-      // "fonts" := fontDescriptions
-    )
-
-    outputDoc
+      "pages" := allPageTextGrids
+    ).asObject.get
   }
 
 

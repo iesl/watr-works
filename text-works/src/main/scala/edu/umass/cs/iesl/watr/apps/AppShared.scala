@@ -266,7 +266,19 @@ object ProcessPipelineSteps {
         utils.Debugging.printAndSwallow(t)
         Left[String, ProcessedInput](t.toString())
     }
+  }
 
+  def getExecutableInfo(): Json = {
+    val buildInfoMap = buildinfo.BuildInfo.toJson.jsonOrDie("BuildInfo produced invalid Json")
+    val now = System.currentTimeMillis()
+    val dtf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+    dtf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
+    val nowStr = dtf.format(new java.util.Date(now))
+
+    buildInfoMap.asObject.get
+      .add("runAtMillis", now.asJson)
+      .add("runAtStr", nowStr.asJson)
+      .asJson
   }
 
   def writeExtractedTextFile(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
@@ -278,7 +290,19 @@ object ProcessPipelineSteps {
           TextGridOutputFormats.jsonOutputGridPerPage(segmentation)
         }
 
-        val gridJsStr = jsonOutput.pretty(JsonPrettyPrinter)
+        // val buildInfoMap = buildinfo.BuildInfo.toJson.jsonOrDie("BuildInfo produced invalid Json")
+        // val now = System.currentTimeMillis()
+        // val dtf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+        // dtf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
+        // val nowStr = dtf.format(new java.util.Date(now))
+        // val runInfo = Map(
+        //   ("runAt", now),
+        //   ("runAtStr", nowStr)
+        // )
+        val writeable = jsonOutput
+          .add("buildInfo", getExecutableInfo())
+
+        val gridJsStr = writeable.asJson.pretty(JsonPrettyPrinter)
 
         time("write textgrid.json") {
           fs.write(outputFile.toFsPath(), gridJsStr)

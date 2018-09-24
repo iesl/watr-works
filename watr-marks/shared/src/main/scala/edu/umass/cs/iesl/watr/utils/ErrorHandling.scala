@@ -55,6 +55,16 @@ object DoOrDieHandlers {
 
 
   implicit class DoOrDieHandlers_RicherString(val self: String) extends AnyVal {
+    def jsonOrDie(msg: String = "")(implicit
+      srcName: sourcecode.Name,
+      srcFile: sourcecode.File,
+      srcLine: sourcecode.Line
+    ): Json = {
+      CirceParser.parse(self) match {
+        case Left(failure) => die(s"Invalid JSON String: (${msg}) ${failure}, string was ${self}")
+        case Right(json) =>  json
+      }
+    }
 
     def decodeOrDie[T: Decoder](msg: String = "")(implicit
       srcName: sourcecode.Name,
