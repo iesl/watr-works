@@ -272,9 +272,11 @@ object FontExportRecords {
   implicit def Encode_FontSummaryRecord: Encoder[FontSummary] =  deriveEncoder
 
   case class FontMetrics(
+    // top      : Int@@FloatRep,
     cap      : Int@@FloatRep,
     ascent   : Int@@FloatRep,
     midrise  : Int@@FloatRep,
+    // baseline : Int@@FloatRep,
     descent  : Int@@FloatRep,
     bottom   : Int@@FloatRep,
   )

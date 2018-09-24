@@ -1,48 +1,91 @@
 
 * Font Summary Description
-  
+
 ** File Format overview
-   The format of the font-summary.json file
+   The font-summary.json file contains list of log entries, one of which has the field "logType" = "Font".
+   This entry contains a body field with a list of all fonts that appear in a given document. The other
+   entries in the list (with logType != "Font") are various font-related stats, formatted for human readability, 
+   and will likely disappear in future versions.
+   
+
+   A Font will often appear within a PDF at several scaled sizes, depending on
+   the role of the text being displayed. So, for example, TimesRoman might be
+   used in the abstract at a normal size, within figure captions at 80% scale,
+   and as a superscript font scaled to 50%. To represent this, the font entry
+   will include both the base name for the font, and a list of scaled entries
+   containing the dimensions (heights only) of the font at a particular scale.
+
+   Font Metrics consist of several vertical offsets, each corresponding to a typographic position, as follows: 
+      Cap      - The height for capital letters.
+      Ascent   - The height for the tops of ascenders (e.g., "hlb").
+      Midrise  - (non-standard) the computed height of chars without ascenders, (e.g., "eaomn").
+      Descent  - The height for the bottom line of chars with descenders (e.g., "jyg").
+      Bottom   - The height for the bottom of the lowest descending glyph. Often includes parens "()" and other symbols.
+  
+   
+** Font Entry Descriptions
 
 
 #+BEGIN_SRC js
-{
-    "headers" : {
-      "name" : "",
-      "callSite" : "runDocumentSegmentation",
-      "tags" : "",
-      "timestamp" : 1537553328829
-    },
-    "body" : [
-      {
-        "name" : "MOOKAP+AdvPSTim",
-        "scaledFontSummaries" : [
-          {
-            "name" : "MOOKAP+AdvPSTimx24",
-            "scaledMetrics" : {
-              "scalingFactor" : 24,
-              "fontMetrics" : {
-                "cap" : 0,
-                "ascent" : 0,
-                "midrise" : 0,
-                "descent" : 0,
-                "bottom" : 0
-              }
-            }
-          },
-          {
-            "name" : "MOOKAP+AdvPSTimx26",
-            "scaledMetrics" : {
-              "scalingFactor" : 26,
-              "fontMetrics" : {
-                "cap" : 0,
-                "ascent" : 0,
-                "midrise" : 0,
-                "descent" : 0,
-                "bottom" : 0
-              }
-            }
-          },
-        ]
+{                                               //
+  "headers" : {                                 //
+    "name" : "",                                //
+    "callSite" : "runDocumentSegmentation",     //
+    "tags" : "",                                //
+    "timestamp" : 1537808277134                 //
+  },                                            //
+  "logType" : "Font"                            //
+  "body" : [                                    //
+    {                                           //
+      "name" : "MPJGGA+Times-Roman",            // Base name for the font
+      "scaledFontSummaries" : [                 // h
+        {                                       //
+          "name" : "MPJGGA+Times-Romanx63",     // Name for font at scale = 63
+          "scaledMetrics" : {                   //
+            "scalingFactor" : 63,               // Scaling factor
+            "fontMetrics" : {                   //
+              "cap" : 525,                      //
+              "ascent" : 542,                   //
+              "midrise" : 373,                  //
+              "descent" : 538,                  //
+              "bottom" : 538                    //
+            }                                   //
+          }                                     //
+        },                                      //
+        {                                       //
+          "name" : "MPJGGA+Times-Romanx65",     // Name for font at scale = 65
+          "scaledMetrics" : {                   //
+            "scalingFactor" : 65,               //
+            "fontMetrics" : {                   //
+              "cap" : 544,                      //
+              "ascent" : 560,                   //
+              "midrise" : 327,                  //
+              "descent" : 357,                  //
+              "bottom" : 357                    //
+            }                                   //
+          }                                     //
+        }                                       //
+      ]                                         //
+    },                                          //
+    {                                           //
+      "name" : "Helvetica",                     // Base name for font
+      "scaledFontSummaries" : [                 //
+        {                                       //
+          "name" : "Helveticax64",              // Name for font at scale = 64
+          "scaledMetrics" : {                   //
+            "scalingFactor" : 64,               //
+            "fontMetrics" : {                   //
+              "cap" : 583,                      //
+              "ascent" : 601,                   //
+              "midrise" : 449,                  //
+              "descent" : 605,                  //
+              "bottom" : 605                    //
+            }                                   //
+          }                                     //
+        }                                       //
+      ]                                         //
+    }                                           //
+  ]                                             //
+}                                               //
 
 #+END_SRC
