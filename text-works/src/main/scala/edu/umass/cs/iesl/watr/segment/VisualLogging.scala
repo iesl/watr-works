@@ -166,22 +166,18 @@ trait ScopedTracing extends VisualTracer { self  =>
       val entry = logEntry match {
         case l: GeometryTraceLog =>
           l.asJson.asObject.get
-            // .add("page", pageNum.unwrap.asJson)
             .add("logType", "Geometry".asJson)
 
         case l: RelationTraceLog =>
           l.asJson.asObject.get
-            // .add("page", pageNum.unwrap.asJson)
             .add("logType", "Relation".asJson)
 
         case l: BoxTextLog =>
           l.asJson.asObject.get
-            // .add("page", pageNum.unwrap.asJson)
             .add("logType", "Text".asJson)
 
         case l: FontEntryLog =>
           l.asJson.asObject.get
-            // .add("page", pageNum.unwrap.asJson)
             .add("logType", "Font".asJson)
       }
 

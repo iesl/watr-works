@@ -1733,9 +1733,6 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   }
 
 
-  // protected void showFontGlyph(Matrix textRenderingMatrix, PDFont font, int code, String unicode,
-  //   Vector displacement) throws IOException
-  // {
   override protected def showFontGlyph(
     textRenderingMatrix: Matrix,
     font: PDFont,

@@ -528,8 +528,16 @@ class FontDefs(pageCount: Int) {
       .flatMap(_.getFontIdentifiers)
   }
 
+  sealed trait DummyID
+  val fontNameIdGen = utils.IdGenerator[DummyID]()
+
   def addFont(pdFont: PDFont): FontProperties = {
-    val fname = pdFont.getName()
+    val fname = if (pdFont.getName() == null) {
+      val nextIndex = fontProperties.length
+      s"AnonFont#${nextIndex}"
+    } else {
+      pdFont.getName()
+    }
 
     if (!fontProperties.exists(_.name == fname)) {
       val props = FontProperties(

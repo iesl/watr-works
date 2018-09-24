@@ -4,7 +4,7 @@ import sbt.Keys._
 import ReleaseTransformations._
 
 SensibleProject.settings
-// enablePlugins(ScalaJSPlugin)
+
 
 val Lib = CommonLibs
 
@@ -56,11 +56,14 @@ lazy val watrmarks = crossProject(JSPlatform, JVMPlatform)
 lazy val watrmarksJS = watrmarks.js
 lazy val watrmarksJVM = watrmarks.jvm
 
+
 lazy val textworks = (project in file("text-works"))
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(BuildInfoPlugin)
   .settings(mappings in (Compile, packageDoc) := Seq())
   .settings(SensibleProject.settings: _*)
   .settings(SensibleProject.runForked: _*)
+  .settings(SensibleProject.buildInfoSettings:_*)
   .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++

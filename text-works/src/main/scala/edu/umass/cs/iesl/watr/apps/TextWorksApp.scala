@@ -21,7 +21,6 @@ object TextWorksConfig {
   //   or call System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider")
   System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider")
 
-
   implicit val NioPath: Read[nio.Path] =
     Read.reads { v =>
       nio.Paths.get(v).toAbsolutePath().normalize()
@@ -32,7 +31,6 @@ object TextWorksConfig {
     ioConfig          : IOConfig = IOConfig(),
     initCorpus        : Option[nio.Path] = None,
     runTraceLogging   : Boolean = VisualTracer.tracingEnabled(),
-    // outputFontSummary : Boolean = false,
     exec              : Option[(Config) => Unit] = Some((c) => runTextExtractionPipeline(c))
   )
 
@@ -102,10 +100,6 @@ object TextWorksConfig {
       }
     } text ("force overwrite of existing output artifacts")
 
-    // opt[Unit]("write-font-summary") action { (v, conf) =>
-    //   lens[Config].outputFontSummary.set(conf)(true)
-    // } text ("write a text file summarizing the document fonts and glyph occurrence statistics")
-
     note("\nOutput text layout options: \n")
 
     checkConfig{ c =>
@@ -144,7 +138,6 @@ object TextWorksConfig {
 }
 
 
-// object TextWorks extends App {
 object TextWorks {
   import TextWorksConfig._
 

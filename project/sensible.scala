@@ -95,6 +95,24 @@ object SensibleProject extends CommonLibs {
     Compile / run / baseDirectory := baseDirectory.value / "..",
   )
 
+  import com.typesafe.sbt.SbtGit.git
+  import sbtbuildinfo.BuildInfoPlugin.autoImport.{buildInfoKeys, buildInfoOptions}
+  import sbtbuildinfo.{BuildInfoKey, BuildInfoOption, BuildInfoPlugin}
+
+  val buildInfoSettings = Seq(
+    buildInfoKeys := Seq[BuildInfoKey](
+      name, version, scalaVersion,
+      git.gitHeadCommit,
+      git.gitCurrentBranch,
+    ),
+    buildInfoOptions ++= Seq(
+      BuildInfoOption.ToMap,
+      BuildInfoOption.ToJson,
+      BuildInfoOption.BuildTime
+    )
+  )
+
+
 
   lazy val settings = Seq(
     autoCompilerPlugins  := true,

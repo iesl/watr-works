@@ -78,7 +78,6 @@ object WatrTable extends App with utils.AppMainBasics {
 
     implicit val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
 
-
     val doQuickRun = argMap.get("quick-run").nonEmpty
     if (doQuickRun) {
       val doc = "101021ja070464y.pdf.d"

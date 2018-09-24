@@ -86,8 +86,10 @@ object ProcessPipelineSteps {
 
   def runTextExtractionPipeline(conf: TextWorksConfig.Config): Unit = {
 
-    val takeN = conf.ioConfig.numToRun.toLong
-    val skipN = conf.ioConfig.numToSkip.toLong
+    val maybeClean = createInputStream[IO](conf.ioConfig)
+      .through(initMarkedInput())
+      .through(dropSkipAndRun(conf.ioConfig))
+      .through(cleanFileArtifacts(conf))
 
     val processStream = createInputStream[IO](conf.ioConfig)
       .through(initMarkedInput())
@@ -278,8 +280,6 @@ object ProcessPipelineSteps {
 
         val gridJsStr = jsonOutput.pretty(JsonPrettyPrinter)
 
-        log.trace(s"writing textgrid.json")
-
         time("write textgrid.json") {
           fs.write(outputFile.toFsPath(), gridJsStr)
         }
@@ -316,7 +316,6 @@ object ProcessPipelineSteps {
                 accum ++ pageSegmenter.emitLogs()
             }
 
-          // pageLogs.asJson.pretty(PrettyPrint2Spaces)
           fs.write(rootPath / "tracelog.json",
             pageLogs.asJson.noSpaces
           )

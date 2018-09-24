@@ -15,9 +15,9 @@ trait LibVersions {
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
-  val http4sVersion       = "0.18.17"
+  val http4sVersion       = "0.18.18"
   val fs2Version          = "0.10.6"
-  val circeJsonVersion    = "0.9.3"
+  val circeJsonVersion    = "0.10.0"
 
   val ammoniteVersion     = "1.2.1"
 
@@ -26,7 +26,7 @@ trait LibVersions {
   val postgresqlV         = "42.2.5"
   val freestyleV          = "0.7.0"
   val guavaV              = "23.0"
-  val luceneV             = "1.8.1"
+  val luceneV             = "1.8.4"
 }
 
 object LibVersions extends LibVersions
@@ -107,10 +107,10 @@ trait CommonLibs extends LibVersions {
     "org.typelevel"   %% "cats-core"            % catsV
   )
 
-  val jwtCirce = Seq(
-    "com.pauldijou" %% "jwt-core" % "0.14.1",
-    "com.pauldijou" %% "jwt-circe" % "0.14.1"
-  )
+  // val jwtCirce = Seq(
+  //   "com.pauldijou" %% "jwt-core" % "0.14.1",
+  //   "com.pauldijou" %% "jwt-circe" % "0.14.1"
+  // )
 
   val tsecV = "0.0.1-M9"
   val tsec = Seq(
