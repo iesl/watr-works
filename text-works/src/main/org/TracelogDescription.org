@@ -16,8 +16,10 @@
 
 ** Tracelog Entry Examples 
 
+
 *** Geometry Example 1
-    This is a Geometry entry for the rectange describing the position of a line of text (baseline-midrise bounds):
+    This is a Geometry entry for the rectangle describing the position of a line of text (baseline-midrise bounds):
+    
 
     #+BEGIN_SRC js
         {                                                  //
