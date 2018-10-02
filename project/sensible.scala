@@ -118,7 +118,7 @@ object SensibleProject extends CommonLibs {
   lazy val settings = Seq(
     autoCompilerPlugins  := true,
 
-    addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.7"),
+    addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.8"),
 
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),
 
@@ -127,7 +127,7 @@ object SensibleProject extends CommonLibs {
     // wartremoverErrors in (Compile, compile) := wartList,
     // wartremoverErrors in (Test, compile) := wartList,
 
-    scalaVersion := "2.12.6",
+    scalaVersion := "2.12.7",
     organization := "edu.umass.cs.iesl",
     scalacOptions ++=  scala_2_12_RecommendedOptionList,
 

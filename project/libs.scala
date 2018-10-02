@@ -11,15 +11,16 @@ trait LibVersions {
   val acyclicVersion      = "0.1.7"
   val doobieVersion       = "0.5.3"
   val matryoshkaCoreV     = "0.21.3"
-  val sourcecodeV         = "0.1.4"
+  val sourcecodeV         = "0.1.5"
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
-  val http4sVersion       = "0.18.18"
+  val http4sVersion       = "0.18.19"
   val fs2Version          = "0.10.6"
   val circeJsonVersion    = "0.10.0"
 
-  val ammoniteVersion     = "1.2.1"
+  // val ammoniteVersion     = "1.2.1"
+  val ammoniteVersion     = "1.2.1-12-bc459e3"
 
   val catsV               = "1.2.0"
   val catsEffectV         = "0.10.1"
@@ -70,7 +71,6 @@ object DatabaseLibs extends LibVersions {
 }
 
 trait CommonLibs extends LibVersions {
-
   val ammonite         = "com.lihaoyi"             % "ammonite"          % ammoniteVersion cross CrossVersion.full
   val ammoniteOps      = "com.lihaoyi"             %% "ammonite-ops"     % ammoniteVersion
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.7.0"
