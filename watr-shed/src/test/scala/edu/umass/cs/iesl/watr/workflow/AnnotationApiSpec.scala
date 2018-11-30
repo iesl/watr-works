@@ -15,13 +15,13 @@ class AnnotationApiSpec extends DatabaseTest with UserbaseTestHelpers {
 
   it should "serialize/unserialize schemas" in {
     {
-      val schema = ExampleLabelSchemas.authorNamesSchema
+      val schema = HeaderLabelSchemas.authorNamesSchema
       val strRep = schema.asJson.noSpaces
       val rtrip  = strRep.decodeOrDie[LabelSchema]()
       schema shouldEqual rtrip
     }
     {
-      val schema = ExampleLabelSchemas.headerLabelSchema
+      val schema = HeaderLabelSchemas.headerLabelSchema
       val strRep = schema.asJson.spaces2
       val rtrip = strRep.decodeOrDie[LabelSchemas]()
 
@@ -31,7 +31,7 @@ class AnnotationApiSpec extends DatabaseTest with UserbaseTestHelpers {
   }
 
   it should "create label schemas" in new EmptyDatabase {
-    val schema = ExampleLabelSchemas.headerLabelSchema
+    val schema = HeaderLabelSchemas.headerLabelSchema
     val schemaId = annotApi.createLabelSchema(schema)
     val rtSchema = annotApi.getLabelSchema(schemaId)
 

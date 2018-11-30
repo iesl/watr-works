@@ -41,12 +41,13 @@ lazy val watrmarks = crossProject(JSPlatform, JVMPlatform)
     )
   )
   .jsSettings(scalacOptions += "-P:scalajs:sjsDefinedByDefault")
+  .jsSettings(scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) })
   .jvmSettings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++ Seq(
         Lib.ammoniteOps,
         Lib.guava % Optional,
         "com.lodborg"                 % "interval-tree"          % "1.0.0",
-        "org.scala-js"               %% "scalajs-stubs"          % "0.6.25" % "provided",
+        "org.scala-js"               %% "scalajs-stubs"          % "0.6.26" % "provided",
         "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
         "com.github.davidmoten"       % "rtree"                  % "0.8.6",
         "com.github.davidmoten"       % "flatbuffers-java"       % "1.9.0.1",
@@ -70,7 +71,7 @@ lazy val textworks = (project in file("text-works"))
     Lib.fs2 ++
     Lib.circeJson ++ Seq(
       "co.fs2" %% "fs2-io" % Lib.fs2Version,
-      "org.apache.pdfbox" % "pdfbox" % "2.0.11",
+      "org.apache.pdfbox" % "pdfbox" % "2.0.12",
       "com.outr" %% "lucene4s" %  Lib.luceneV,
       Lib.guava,
       "com.vividsolutions" % "jts-core" % "1.14.0",

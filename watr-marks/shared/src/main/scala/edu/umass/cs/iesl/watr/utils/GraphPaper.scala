@@ -6,8 +6,6 @@ import utils.{RelativeDirection => Dir}
 import scala.scalajs.js.annotation._
 
 abstract class GraphPaper {
-  // def width: Int
-  // def height: Int
 
   import GraphPaper._
 

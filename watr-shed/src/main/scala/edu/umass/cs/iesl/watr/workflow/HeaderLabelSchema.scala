@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package workflow
 
-object ExampleLabelSchemas {
+object HeaderLabelSchemas {
   import watrmarks._
   import TypeTags._
 

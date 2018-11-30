@@ -59,11 +59,11 @@ object CurationCommands {
     def defineTestrunWorkflow()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
       val workflowApi = corpusAccessApi.workflowApi
       val annotApi = corpusAccessApi.annotApi
-      annotApi.createLabelSchema(ExampleLabelSchemas.headerLabelSchema)
+      annotApi.createLabelSchema(HeaderLabelSchemas.headerLabelSchema)
 
       workflowApi.defineWorkflow(
         "headers-dryrun-1",
-        ExampleLabelSchemas.headerLabelSchema.name,
+        HeaderLabelSchemas.headerLabelSchema.name,
         dryRunPath
       )
     }

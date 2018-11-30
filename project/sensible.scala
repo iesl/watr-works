@@ -118,7 +118,7 @@ object SensibleProject extends CommonLibs {
   lazy val settings = Seq(
     autoCompilerPlugins  := true,
 
-    addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.8"),
+    addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.9"),
 
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),
 
