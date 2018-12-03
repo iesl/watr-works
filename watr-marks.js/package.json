@@ -1,0 +1,28 @@
+{
+  "name": "watrmarks.js",
+  "version": "0.0.1",
+  "private": true,
+  "bundleDependencies": false,
+  "dependencies": {},
+  "deprecated": false,
+  "main": "./lib/watrmarks-fastopt.js",
+  "description": "NPM package for WatrMarks",
+  "scripts": {
+    "clean": "rimraf lib/*",
+    "fetchlib": "mkdir lib && cp ../watr-marks/js/target/scala-2.12/watrmarks-fastopt.js* lib/",
+    "prepare": "npm run clean && npm run fetchlib"
+  },
+  "typings": "index.d.ts",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "keywords": [
+    "scala",
+    "WatrWorks",
+    "WatrMarks"
+  ],
+  "devDependencies": {
+    "rimraf": "^2.6.2"
+  }
+}

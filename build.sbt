@@ -21,6 +21,7 @@ lazy val prelude = (project in file("watr-prelude"))
     "org.scala-lang" % "scala-reflect" % scalaVersion.value
   ))
 
+// .enablePlugins(ScalaJSBundlerPlugin)
 // (crossProject in file("watr-marks"))
 lazy val watrmarks = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
