@@ -1,15 +1,14 @@
 {
-    "compilerOptions": {
-        "module": "es6",
-        "target": "es6",
-        "noImplicitAny": true,
-        "strictNullChecks": false,
-        "strictFunctionTypes": true,
-        "baseUrl": "../",
-        "typeRoots": "../",
-        "noEmit": true
-    },
-    "files": [
-        "index.d.ts"
-    ]
+  "compilerOptions": {
+    "module": "es6",
+    "target": "es6",
+    "strict": true,
+    "baseUrl": ".",
+    "declaration": true,
+    "noEmit": false,
+    "outDir": "lib"
+  },
+  "files": [
+    "src/watrmarksjs/index.d.ts"
+  ]
 }
