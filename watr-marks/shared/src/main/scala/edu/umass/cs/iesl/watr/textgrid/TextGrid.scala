@@ -157,7 +157,7 @@ trait TextGrid { self =>
 
 }
 
-@JSExportTopLevel("watr.textgrid.TextGrid.Companion")
+@JSExportTopLevel("TextGridCompanion")
 @JSExportAll
 object TextGrid {
 

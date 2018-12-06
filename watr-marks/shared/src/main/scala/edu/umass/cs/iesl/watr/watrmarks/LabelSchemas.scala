@@ -9,7 +9,7 @@ import circe.generic.semiauto._
 import TypeTags._
 
 
-@JSExportTopLevel("watr.watrmarks.LabelSchema")
+@JSExportTopLevel("LabelSchema")
 case class LabelSchema(
   label: Label,
   abbrev: Option[(Char, Char)] = None,
@@ -62,7 +62,7 @@ object LabelSchema {
 }
 
 
-@JSExportTopLevel("watr.watrmarks.LabelSchemas")
+@JSExportTopLevel("LabelSchemas")
 case class LabelSchemas(
   name: String@@LabelSchemaName,
   schemas: List[LabelSchema]
@@ -86,7 +86,7 @@ case class LabelSchemas(
   }
 }
 
-@JSExportTopLevel("watr.watrmarks.LabelSchemasCompanion")
+@JSExportTopLevel("LabelSchemasCompanion")
 @JSExportAll
 object LabelSchemas {
   def labelSchemaToBox(schema: LabelSchemas): TB.Box = {

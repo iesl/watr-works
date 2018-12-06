@@ -16,7 +16,7 @@ sealed trait GeometricFigure { self =>
   lazy val minBounds = minBoundingRect(self)
 }
 
-@JSExportTopLevel("watr.geometry.LTBounds")
+@JSExportTopLevel("LTBounds")
 case class LTBounds(
   left   : Int@@FloatRep,
   top    : Int@@FloatRep,
@@ -35,7 +35,7 @@ case class LTBounds(
   @JSExport("bottom") val getBottom: Double = bottom.asDouble
 }
 
-@JSExportTopLevel("watr.geometry.LTBounds_Companion")
+@JSExportTopLevel("LTBoundsCompanion")
 object LTBounds {
 
   @JSExport("FromInts")

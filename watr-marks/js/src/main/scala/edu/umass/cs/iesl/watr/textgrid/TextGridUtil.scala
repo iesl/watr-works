@@ -13,12 +13,12 @@ import utils.ExactFloats._
 import scala.collection.mutable
 import annots._
 
-@JSExportTopLevel("watr.textgrid.TextGridInterop")
+@JSExportTopLevel("TextGridInterop")
 object TextGridInterop {
   import _root_.io.circe //, circe._, circe.syntax._
   import circe.parser.decode
 
-  @JSExportTopLevel("watr.textgrid.TextGridInterop.labelSchemas")
+  @JSExportTopLevel("TextGridInterop_labelSchemas")
   object labelSchemas {
 
     @JSExport
@@ -55,7 +55,7 @@ object TextGridInterop {
 
   }
 
-  @JSExportTopLevel("watr.textgrid.TextGridInterop.gridRegions")
+  @JSExportTopLevel("TextGridInterop_gridRegions")
   object gridRegions {
 
     @JSExport
@@ -64,7 +64,7 @@ object TextGridInterop {
     }
   }
 
-  @JSExportTopLevel("watr.textgrid.TextGridInterop.widgetDisplayGridProps")
+  @JSExportTopLevel("TextGridInterop_widgetDisplayGridProps")
   object widgetDisplayGridProps {
 
     @JSExport
@@ -74,13 +74,12 @@ object TextGridInterop {
 
   }
 
-  @JSExportTopLevel("watr.scalazed")
   object scalazed {
     import scalaz.{Tree => Tr, Show}
     import utils.ScalazTreeImplicits._
     import textboxing.{TextBoxing => TB}
 
-    @JSExportTopLevel("watr.scalazed.Tree") @JSExportAll
+    @JSExportTopLevel("scalazed_Tree") @JSExportAll
     object Tree {
       implicit def ShowA[A]  = Show.showA[A]
 
@@ -94,7 +93,7 @@ object TextGridInterop {
     }
   }
 
-  @JSExportTopLevel("watr.textgrid.TextGridInterop.textGrids")
+  @JSExportTopLevel("TextGridInterop_textGrids")
   object textGrids {
     // import LabeledSequenceTreeTransforms._
 
@@ -165,7 +164,7 @@ object TextGridInterop {
   }
 }
 
-@JSExportTopLevel("watr.textgrid.TextGridConstructor_Companion")
+@JSExportTopLevel("TextGridConstructor_Companion")
 object TextGridConstructor {
   @JSExport
   def create(): TextGridConstructor =
@@ -173,7 +172,7 @@ object TextGridConstructor {
 }
 
 
-@JSExportTopLevel("watr.textgrid.TextGridConstructor")
+@JSExportTopLevel("TextGridConstructor")
 class TextGridConstructor() extends TextGridConstruction {
 
   def makeTextGrid(stableId: String, pageNum: Int, pageStr: String): TextGrid = {
@@ -311,7 +310,7 @@ class TextGridConstructor() extends TextGridConstruction {
 
 }
 
-@JSExportTopLevel("watr.textgrid.WidgetDisplayGridProps")
+@JSExportTopLevel("WidgetDisplayGridProps")
 class WidgetDisplayGridProps(
   val labelTree: scalaz.Tree[LabelTreeNode[TextGrid.GridCell]],
   val gridRegions: Seq[GridRegion]
@@ -332,7 +331,7 @@ class WidgetDisplayGridProps(
 
 }
 
-@JSExportTopLevel("watr.textgrid.RTreeRect")
+@JSExportTopLevel("RTreeRect")
 @JSExportAll
 class RTreeRect(
   val region: GridRegion,

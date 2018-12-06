@@ -5,7 +5,7 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation._
 import js.JSConverters._
 
-@JSExportTopLevel("watr.utils.Options")
+@JSExportTopLevel("scOptions")
 object Options {
   @JSExport
   def orOriginal[A](f: A => Option[A]): A => A =
@@ -27,7 +27,7 @@ object Options {
 
 }
 
-@JSExportTopLevel("watr.watrmarks.Labels")
+@JSExportTopLevel("Labels")
 object Labels {
   import watrmarks._
 
@@ -36,7 +36,7 @@ object Labels {
 
 }
 
-@JSExportTopLevel("watr.utils.JsArray")
+@JSExportTopLevel("JsArray")
 object JsArray {
 
   @JSExport

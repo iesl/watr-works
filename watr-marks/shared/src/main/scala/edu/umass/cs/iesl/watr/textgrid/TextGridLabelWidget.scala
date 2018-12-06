@@ -46,7 +46,7 @@ sealed trait GridRegion  {
 }
 
 
-@JSExportAll @JSExportTopLevel("watr.textgrid.GridRegion")
+@JSExportAll @JSExportTopLevel("GridRegion")
 object GridRegion {
 
   case class Cells[A <: LabelTarget](
@@ -85,7 +85,7 @@ object GridRegion {
 
 }
 
-@JSExportTopLevel("watr.textgrid.TextGridLabelWidget")
+@JSExportTopLevel("TextGridLabelWidget")
 @JSExportAll
 object TextGridLabelWidget {
 

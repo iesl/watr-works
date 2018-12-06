@@ -63,7 +63,7 @@ abstract class GraphPaper {
 }
 
 
-@JSExportTopLevel("watr.utils.GraphPaper")
+@JSExportTopLevel("GraphPaper")
 @JSExportAll
 object GraphPaper {
 
