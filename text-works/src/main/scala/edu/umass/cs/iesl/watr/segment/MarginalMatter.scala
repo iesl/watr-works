@@ -16,6 +16,7 @@ import com.outr.lucene4s.query._
 trait MarginalMatterDetectionPageScope extends PageScopeSegmenter {
 
 
+
   /**
     * Number columns:
     * - no punctuation (e.g., (1) [1] 1. )
@@ -59,7 +60,11 @@ trait MarginalMatterDetectionPageScope extends PageScopeSegmenter {
   )
   val lucene = new DirectLucene(uniqueFields = List("name"), defaultFullTextSearchable = false, autoCommit = false)
 
+
   val trigram: Field[String] = lucene.create.field[String]("trigram", CustomFieldType)
+
+
+
 
   def indexLines(): Unit = {
     val lineShapeTuples = getLabeledLines(LB.BaselineMidriseBand)

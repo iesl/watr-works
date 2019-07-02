@@ -11,36 +11,46 @@ import corpora._
 import TypeTags._
 import scala.reflect.runtime.universe._
 
+
 trait DoobieImplicits extends DoobiePredef {
   val R = RelationModel
 
   type Int4 = Int :: Int :: Int :: Int :: HNil
 
-  implicit val LTBoundsMeta: Composite[LTBounds] =
-    Composite[Int4].imap({
+  implicit val readLTBounds: Read[LTBounds] =
+    Read[Int4].map({
       case l :: t :: w :: h :: HNil =>
         LTBounds.IntReps(l, t, w, h)
-    })({ltb =>
+    })
+
+  implicit val writeLTBounds: Write[LTBounds] =
+    Write[Int4].contramap({ ltb => 
       val LTBounds.IntReps(l, t, w, h) = ltb
       l :: t :: w :: h :: HNil
     })
 
+  // implicit val LTBoundsMeta: Composite[LTBounds] =
+  //   Composite[Int4].imap({
+  //     case l :: t :: w :: h :: HNil =>
+  //       LTBounds.IntReps(l, t, w, h)
+  //   })({ltb =>
+  //     val LTBounds.IntReps(l, t, w, h) = ltb
+  //     l :: t :: w :: h :: HNil
+  //   })
+
 
   implicit val StrDocumentIDMeta: Meta[String @@ DocumentID] =
-    Meta[String].xmap(
-      str => DocumentID(str),
-      docId => docId.unwrap
-    )
+    Meta[String].imap(str => DocumentID(str))(docId => docId.unwrap)
 
   private implicit def TypeTagMeta[T: TypeTag](
     f: Int => Int@@T)(
     implicit T: TypeTag[Int@@T]
-  ): Meta[Int@@T] = Meta[Int].xmap(n => f(n), _.unwrap)
+  ): Meta[Int@@T] = Meta[Int].timap(n => f(n))(_.unwrap)
 
   private implicit def StrTypeTagMeta[T: TypeTag](
     f: String => String@@T)(
     implicit T: TypeTag[String@@T]
-  ): Meta[String@@T] = Meta[String].xmap(n => f(n), _.unwrap)
+  ): Meta[String@@T] = Meta[String].timap(n => f(n))(_.unwrap)
 
   implicit val DocumentIDMeta    : Meta[Int@@DocumentID   ] = TypeTagMeta[DocumentID   ](DocumentID   (_))
   implicit val TextReflowIDMeta  : Meta[Int@@TextReflowID ] = TypeTagMeta[TextReflowID ](TextReflowID (_))

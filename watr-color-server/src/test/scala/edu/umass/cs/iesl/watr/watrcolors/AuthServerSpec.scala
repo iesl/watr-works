@@ -4,7 +4,7 @@ package services
 
 import org.http4s
 import org.http4s._
-// import org.http4s.syntax._
+import org.http4s.syntax._
 import org.http4s.syntax.string._
 import persistence._
 
@@ -29,12 +29,12 @@ import scala.concurrent.duration._
 
 class MockCookieJar {
 
-  var responseCookies: List[Cookie] = Nil
+  var responseCookies: List[ResponseCookie] = Nil
 
-  def httpCookiesToHttp4s(cs: List[HttpCookie]): List[Cookie] = {
+  def httpCookiesToHttp4s(cs: List[HttpCookie]): List[ResponseCookie] = {
     cs.map{httpCookie =>
 
-      Cookie(
+      ResponseCookie(
         httpCookie.getName,
         httpCookie.getValue,
         expires=Some(HttpDate.now),
@@ -59,7 +59,9 @@ class MockCookieJar {
 
   def addCookies(req: Request[IO]): Request[IO] = {
     responseCookies.foldLeft(req)({case (racc, celem) =>
-      req.addCookie(celem.name, celem.content, celem.expires)
+      // req.addCookie(celem.name, celem.content, celem.expires)
+      racc.addCookie(celem)
+      racc
     })
   }
 

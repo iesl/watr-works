@@ -13,6 +13,11 @@ class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUt
 
   def createEmptyDocumentZoningApi(): DocumentZoningApi = memZoneApi
 
+  import cats.effect._
+  import scala.concurrent._
+  val MainCPUBound = ExecutionContext.global
+  implicit val cs: ContextShift[IO] = IO.contextShift(MainCPUBound)
+
   def initDB(): CorpusAccessDB = {
     new CorpusAccessDB(
       dbname="watrdev",
@@ -31,7 +36,7 @@ class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUt
     }
 
     corpusAccessDB.dropAndRecreate
-    corpusAccessDB.reinit()
+    // corpusAccessDB.reinit()
   }
 
   override def afterEach(): Unit = {}

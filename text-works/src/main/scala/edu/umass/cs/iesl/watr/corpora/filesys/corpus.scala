@@ -39,6 +39,7 @@ object Corpus {
     corpus.normalizeCorpusEntries()
   }
 
+
   def apply(appRoot: nio.Path): Corpus = {
     new Corpus(Path(appRoot))
   }
@@ -48,19 +49,20 @@ object Corpus {
   }
 }
 
+
 class Corpus(
   val corpusRoot: Path
 ) {
   private[this] val log = org.log4s.getLogger
 
   def normalizeCorpusEntry(pdf: Path): Unit = {
-    val artifactPath = corpusRoot / s"${pdf.name}.d"
+    val artifactPath = corpusRoot / s"${pdf.last}.d"
     if (pdf.isFile && !(exists! artifactPath)) {
       log.info(s" creating artifact dir ${pdf}")
       mkdir! artifactPath
     }
     if (pdf.isFile) {
-      val dest = artifactPath / pdf.name
+      val dest = artifactPath / pdf.last
 
       if (exists(dest)) {
         log.info(s"corpus already contains file ${dest}, skipping...")
@@ -139,7 +141,7 @@ class Corpus(
   def entries(): Seq[CorpusEntry] = {
     val artifacts = (ls! corpusRoot)
       .filter(f => f.ext == "d" && f.isDir)
-      .map { _.name }
+      .map { _.last }
       .sorted
       .map{ new CorpusEntry(_, this) }
 
@@ -178,7 +180,7 @@ class CorpusEntry(
     val allFiles = ls(artifactsRoot)
       .filter(fs.stat(_).isFile)
 
-    allFiles.map(_.name)
+    allFiles.map(_.last)
   }
 
   def resolveArtifact(artifactDescriptor: String, groupDescriptor: Option[String]): CorpusArtifact = {
@@ -304,8 +306,8 @@ class CorpusArtifactGroup(
   }
 
   def getArtifacts(): Seq[CorpusArtifact] = {
-    ls(rootPath).sortBy(_.name)
-      .map(path => new CorpusArtifact(path.name, Left(this)))
+    ls(rootPath).sortBy(_.last)
+      .map(path => new CorpusArtifact(path.last, Left(this)))
   }
 
 }

@@ -21,6 +21,7 @@ object TextGraphIO {
     val allPageTextGrids = docSeg.pageSegmenters
       .map { pageSegmenter =>
         val textGraph = pageSegmenter.getTextGraph()
+
         // val rows = textGraph.rows.length
         val gridJs = textGraph.asJson
 

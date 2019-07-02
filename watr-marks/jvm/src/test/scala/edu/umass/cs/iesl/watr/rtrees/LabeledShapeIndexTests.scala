@@ -44,7 +44,7 @@ object LabeledShapeIndexProps extends Properties("LabeledShapeIndex") {
 
     val asJson = shapeIndex.asJson
 
-    println(s"asJson: ${asJson}")
+    // println(s"asJson: ${asJson}")
 
     val shapeIndexRT = asJson.decodeOrDie[LabeledShapeIndex[GeometricFigure, Unit, TestShape]]("error decoding json")
 

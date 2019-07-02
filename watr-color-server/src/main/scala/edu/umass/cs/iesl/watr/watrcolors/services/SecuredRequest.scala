@@ -22,6 +22,18 @@ import tsec.authentication.{
 
 final case class UserAwareRequest[F[_], Identity, Auth](request: Request[F], identity: Option[Identity], authenticator: Auth)
 
+// object FakeAuthHandler {
+//   def apply(pf: PartialFunction[SecuredRequest[User], F[Response[F]]]): HttpService[IO] =
+//   defaultMiddleware(TSecAuthService(pf, authenticator.afterBlock))
+//     .handleError(_ => Response[F](Status.Unauthorized))
+//   def authorized(
+//     authorization: Authorization[F, User, Auth]
+//   )(pf: PartialFunction[SecuredRequest[F, User, Auth], F[Response[F]]]): HttpService[F] =
+//     authorizedMiddleware(authorization)(TSecAuthService(pf, authenticator.afterBlock))
+//       .handleError(_ => Response[F](Status.Unauthorized))
+
+// }
+
 object SecurityMiddleware {
   // From http4s:
   //   type Middleware[F[_], A, B, C, D] = Kleisli[F, A, B] => Kleisli[F, C, D]
@@ -56,23 +68,23 @@ sealed abstract class WSecureRequestHandler[F[_], Identity, User, Auth](
   }
 
   /** Compose Requests **/
-  def apply(pf: PartialFunction[SecuredRequest[F, User, Auth], F[Response[F]]]): HttpService[F]
+  def apply(pf: PartialFunction[SecuredRequest[F, User, Auth], F[Response[F]]]): HttpRoutes[F]
 
   /** Lift an Authenticated Service into an HttpService **/
-  def liftService(service: TSecAuthService[User, Auth, F]): HttpService[F] =
+  def liftService(service: TSecAuthService[User, Auth, F]): HttpRoutes[F] =
     defaultMiddleware(service)
       .handleError(_ => Response[F](Status.Unauthorized))
 
   /** Create an Authorized Service **/
   def authorized(authorization: Authorization[F, User, Auth])(
       pf: PartialFunction[SecuredRequest[F, User, Auth], F[Response[F]]]
-  ): HttpService[F]
+  ): HttpRoutes[F]
 
   /** Create an Authorized service from a TSecAuthService **/
   def liftService(
       authorization: Authorization[F, User, Auth],
       service: TSecAuthService[User, Auth, F]
-  ): HttpService[F] =
+  ): HttpRoutes[F] =
     authorizedMiddleware(authorization)(service)
       .handleError(_ => Response[F](Status.Unauthorized))
 
@@ -96,14 +108,14 @@ object WSecureRequestHandler {
       authenticator: AuthenticatorService[F, Identity, User, Auth]
   )(implicit F: MonadError[F, Throwable]): WSecureRequestHandler[F, Identity, User, Auth] =
     new WSecureRequestHandler[F, Identity, User, Auth](authenticator) {
-      def apply(pf: PartialFunction[SecuredRequest[F, User, Auth], F[Response[F]]]): HttpService[F] =
+      def apply(pf: PartialFunction[SecuredRequest[F, User, Auth], F[Response[F]]]): HttpRoutes[F] =
 
         defaultMiddleware(TSecAuthService(pf, authenticator.afterBlock))
           .handleError(_ => Response[F](Status.Unauthorized))
 
       def authorized(
           authorization: Authorization[F, User, Auth]
-      )(pf: PartialFunction[SecuredRequest[F, User, Auth], F[Response[F]]]): HttpService[F] =
+      )(pf: PartialFunction[SecuredRequest[F, User, Auth], F[Response[F]]]): HttpRoutes[F] =
         authorizedMiddleware(authorization)(TSecAuthService(pf, authenticator.afterBlock))
           .handleError(_ => Response[F](Status.Unauthorized))
     }
@@ -113,14 +125,14 @@ object WSecureRequestHandler {
       authenticator: AuthenticatorService[F, Identity, User, Auth]
   )(implicit F: MonadError[F, Throwable]): WSecureRequestHandler[F, Identity, User, Auth] =
     new WSecureRequestHandler[F, Identity, User, Auth](authenticator) {
-      def apply(pf: PartialFunction[SecuredRequest[F, User, Auth], F[Response[F]]]): HttpService[F] =
+      def apply(pf: PartialFunction[SecuredRequest[F, User, Auth], F[Response[F]]]): HttpRoutes[F] =
 
         defaultMiddleware(TSecAuthService(pf))
           .handleError(_ => Response[F](Status.Unauthorized))
 
       def authorized(authorization: Authorization[F, User, Auth])(
           pf: PartialFunction[SecuredRequest[F, User, Auth], F[Response[F]]]
-      ): HttpService[F] =
+      ): HttpRoutes[F] =
         authorizedMiddleware(authorization)(TSecAuthService(pf))
           .handleError(_ => Response[F](Status.Unauthorized))
     }

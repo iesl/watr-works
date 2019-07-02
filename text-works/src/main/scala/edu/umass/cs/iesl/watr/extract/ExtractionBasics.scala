@@ -24,6 +24,7 @@ import utils.GuavaHelpers
 
 protected object ExtractionImplicits {
 
+
   implicit class RicherPoint2D(val self: Point2D) extends AnyVal {
     def toPoint(): Point = {
       Point.Doubles(self.getX(), self.getY())

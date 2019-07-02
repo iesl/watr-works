@@ -35,64 +35,69 @@ trait UserAuthenticationServices extends AuthenticatedService with TypeTagCodecs
   }
 
 
-  val signupRoute: HttpService[IO] = HttpService[IO] {
+  // val signupRoute: HttpService[IO] = HttpService[IO] {
+  val signupRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case request @ POST -> Root / "signup" =>
       val hdrs = request.headers.toList.map(h => s"${h.name}: ${h.value}").mkString("\n")
       println(s"signup: ${hdrs}")
 
 
-      val resp = request.decode[UrlForm]{ data =>
-        println(s"signup data ${data}")
-        val signup = SignupForm(
-          data.values("email").head,
-          data.values("username").head,
-          data.values("password").head
-        )
-        for {
-          // signup    <- decodeOrErr[SignupForm](request)
-          exists    <- userStore.exists(EmailAddr(signup.email)).fold(true)(_ => throw SignupError)
-          _         <- IO(println(s"exists; $exists"))
-          // password  <- IO(signup.password.hashPassword[SCrypt])
-          password  <- SCrypt.hashpw[IO](signup.password)
-          _         <- IO(println(s"password; $password"))
-          newUser   <- userStore.put(User(UserID(0), EmailAddr(signup.email)))
-          authInfo  <- authStore.put(AuthInfo(newUser.id, Username(signup.username), password))
-          _         <- IO( println(s"newUser; $newUser") )
-          cookie    <- authenticator.create(newUser.id.unwrap) // .getOrRaise(LoginError)
-          _         <- IO( println(s"cookie; $cookie") )
-          // response  <- Ok(userInfoResponse(newUser, authInfo))
-          response  <- TemporaryRedirect(Location(uri("/")))
-        } yield authenticator.embed(response, cookie)
-      }
+      // val resp = request.decode[UrlForm]{ data =>
+      //   println(s"signup data ${data}")
 
+
+      //   val signup = SignupForm(
+      //     data.values("email").head,
+      //     data.values("username").head,
+      //     data.values("password").head
+      //   )
+      //   for {
+      //     // signup    <- decodeOrErr[SignupForm](request)
+      //     exists    <- userStore.exists(EmailAddr(signup.email)).fold(true)(_ => throw SignupError)
+      //     _         <- IO(println(s"exists; $exists"))
+      //     // password  <- IO(signup.password.hashPassword[SCrypt])
+      //     password  <- SCrypt.hashpw[IO](signup.password)
+      //     _         <- IO(println(s"password; $password"))
+      //     newUser   <- userStore.put(User(UserID(0), EmailAddr(signup.email)))
+      //     authInfo  <- authStore.put(AuthInfo(newUser.id, Username(signup.username), password))
+      //     _         <- IO( println(s"newUser; $newUser") )
+      //     cookie    <- authenticator.create(newUser.id.unwrap) // .getOrRaise(LoginError)
+      //     _         <- IO( println(s"cookie; $cookie") )
+      //     // response  <- Ok(userInfoResponse(newUser, authInfo))
+      //     response  <- TemporaryRedirect(Location(uri("/")))
+      //   } yield authenticator.embed(response, cookie)
+      // }
       // resp.handleError { _ => Response(Status.BadRequest) }
+
+      val resp = Ok(json""" {} """)
       orErrorJson(resp)
   }
 
-  val loginRoute: HttpService[IO] = HttpService[IO] {
+  val loginRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case request @ POST -> Root / "login" =>
       println(s"login")
-      val resp = request.decode[UrlForm]{ data =>
-        println(s"login: data=${data.values}")
-        val login = LoginForm(
-          data.values("email").head,
-          data.values("password").head
-        )
-        for {
-          // login       <- decodeOrErr[LoginForm](request)
-          _           <- IO( println(s"login; $login"))
-          user        <- userStore.getByEmail(EmailAddr(login.email)).getOrRaise(LoginError)
-          _           <- IO(   println(s"user; $user"))
-          authInfo    <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
-          _           <- IO(    println(s"authInfo; $authInfo"))
-          _           <- checkOrRaise(login.password, authInfo.password)
-          cookie      <- authenticator.create(user.id.unwrap) 
-          _           <- IO(    println(s"cookie; $cookie"))
-          response    <- TemporaryRedirect(Location(uri("/")))
-        } yield authenticator.embed(response, cookie)
-      }
+      // val resp = request.decode[UrlForm]{ data =>
+      //   println(s"login: data=${data.values}")
+      //   val login = LoginForm(
+      //     data.values("email").head,
+      //     data.values("password").head
+      //   )
+      //   for {
+      //     // login       <- decodeOrErr[LoginForm](request)
+      //     _           <- IO( println(s"login; $login"))
+      //     user        <- userStore.getByEmail(EmailAddr(login.email)).getOrRaise(LoginError)
+      //     _           <- IO(   println(s"user; $user"))
+      //     authInfo    <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
+      //     _           <- IO(    println(s"authInfo; $authInfo"))
+      //     _           <- checkOrRaise(login.password, authInfo.password)
+      //     cookie      <- authenticator.create(user.id.unwrap)
+      //     _           <- IO(    println(s"cookie; $cookie"))
+      //     response    <- TemporaryRedirect(Location(uri("/")))
+      //   } yield authenticator.embed(response, cookie)
+      // }
 
       // resp.handleError { _ => Response(Status.BadRequest) }
+      val resp = Ok(json""" {} """)
       orErrorJson(resp)
   }
 
@@ -120,14 +125,15 @@ trait UserAuthenticationServices extends AuthenticatedService with TypeTagCodecs
       orErrorJson(resp)
 
     case r @ GET -> Root / "logout" asAuthed user =>
-      // val request: SecuredRequest[IO, User, AuthEncryptedCookie[AES128, Int]] = r
 
-      val resp = for {
-        deadCookie   <- authenticator.discard(r.authenticator) // .getOrRaise(LoginError)
-        response     <- Ok(json""" {} """)
-      } yield {
-        response.removeCookie(deadCookie.toCookie)
-      }
+      // val resp = for {
+      //   deadCookie   <- authenticator.discard(r.authenticator) // .getOrRaise(LoginError)
+      //   response     <- Ok(json""" {} """)
+      // } yield {
+      //   ()
+      //   response.removeCookie(deadCookie)
+      // }
+      val resp = Ok(json""" {} """)
 
       orErrorJson(resp)
 

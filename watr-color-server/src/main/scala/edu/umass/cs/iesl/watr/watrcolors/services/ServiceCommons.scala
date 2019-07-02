@@ -31,7 +31,6 @@ import corpora.database.CorpusAccessDB
 
 trait AuthenticationHandlers extends Http4sDsl[IO] {
 
-
   def corpusAccessDB: CorpusAccessDB
   def userStore: UserStore
   def authStore: PasswordStore
@@ -61,10 +60,14 @@ trait AuthenticationHandlers extends Http4sDsl[IO] {
     )
 
   lazy val Auth = WSecureRequestHandler(authenticator)
-  lazy val UserAwareService = WSecureRequestHandler(authenticator)
+  // lazy val Auth = FakeAuthHandler
+
+
+  // lazy val UserAwareService = WSecureRequestHandler(authenticator)
 }
 
-trait ServiceCommons extends Http4sDsl[IO] with  HttpPayloads { self =>
+
+trait ServiceCommons extends Http4sDsl[IO] with HttpPayloads { self =>
 
   def corpusAccessApi: CorpusAccessApi
 
@@ -100,7 +103,11 @@ trait ServiceCommons extends Http4sDsl[IO] with  HttpPayloads { self =>
     response.attempt.flatMap { _ match {
       case Left(t: Throwable) => t match {
         case LoginError =>
-          TemporaryRedirect(Location(uri("/")))
+          TemporaryRedirect(Location(Uri.uri("/")))
+          // Uri.fromString("/").fold(
+          //   err => throw new Throwable(s"error redirecgin ${err}"),
+          //   v => TemporaryRedirect(Location(v)),
+          // )
 
         case other =>
           println(s"server error: ${t}: ${t.getMessage}: ${t.getCause}")

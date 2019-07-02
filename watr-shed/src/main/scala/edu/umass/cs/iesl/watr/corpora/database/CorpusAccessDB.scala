@@ -8,6 +8,8 @@ import cats.data._
 import cats.effect._
 
 import doobie._
+import doobie.hikari._
+
 import doobie.implicits._
 
 import doobie.free.{ connection => C }
@@ -30,11 +32,44 @@ import shapeless._
 import _root_.io.circe, circe.syntax._
 import utils.DoOrDieHandlers._
 
+object HikariApp extends IOApp {
+
+  // Resource yielding a transactor configured with a bounded connect EC and an unbounded
+  // transaction EC. Everything will be closed and shut down cleanly after use.
+  val transactor: Resource[IO, HikariTransactor[IO]] =
+    for {
+      ce <- ExecutionContexts.fixedThreadPool[IO](32) // our connect EC
+      te <- ExecutionContexts.cachedThreadPool[IO]    // our transaction EC
+      xa <- HikariTransactor.newHikariTransactor[IO](
+        "org.h2.Driver",                        // driver classname
+        "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",   // connect URL
+        "sa",                                   // username
+        "",                                     // password
+        ce,                                     // await connection here
+        te                                      // execute JDBC operations here
+      )
+    } yield xa
+
+
+  def run(args: List[String]): IO[ExitCode] =
+    transactor.use { xa =>
+
+      // Construct and run your server here!
+      for {
+        n <- sql"select 42".query[Int].unique.transact(xa)
+        _ <- IO(println(n))
+      } yield ExitCode.Success
+
+    }
+
+}
+
+
 class CorpusAccessDB(
   dbname: String, dbuser: String, dbpass: String
-) extends DoobieImplicits  { self =>
+)(implicit cs: ContextShift[IO]) extends DoobieImplicits  { self =>
 
-
+  // implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContexts.synchronous)
   val tables: CorpusAccessDBTables = new CorpusAccessDBTables()
 
   val Rel = RelationModel
@@ -63,47 +98,38 @@ class CorpusAccessDB(
 
 
   val props = new Properties()
-  // props.setProperty("housekeeper","true")
   props.setProperty("logUnclosedConnections","true")
-	props.setProperty("maximumPoolSize", "20");
-	props.setProperty("minimumIdle", "20");
-	props.setProperty("maxLifetime", "30000");
-	props.put("dataSource.logWriter", new PrintWriter(System.out));
-  // def initTransactor(): HikariTransactor[IO] = (for {
-  //   xa <- HikariTransactor.newHikariTransactor[IO]("com.impossibl.postgres.jdbc.PGDriver", s"jdbc:pgsql:${dbname}", dbuser, dbpass)
-  //   _  <- xa.configure(hx => IO {
-  //     hx.setDataSourceProperties(props)
-  //     hx.setAutoCommit(false)
-  //     // ()
-  //   })
-  // } yield {
-  //   xa
-  // }).unsafeRunSync
+  props.setProperty("maximumPoolSize", "20");
+  props.setProperty("minimumIdle", "20");
+  props.setProperty("maxLifetime", "30000");
+  props.put("dataSource.logWriter", new PrintWriter(System.out));
 
   val JdbcDriverName = "org.postgresql.ds.PGSimpleDataSource"
-  // "org.postgresql.Driver"
+  import doobie.util.ExecutionContexts
 
-  def initPostgresDriverTransactor2(): HikariTransactor[IO] = (for {
+  // TODO: this is not the correct context shift, should by async
+
+  def initPostgresDriverTransactor(): Resource[IO, HikariTransactor[IO]] = for {
+    ce <- ExecutionContexts.fixedThreadPool[IO](32)
+    te <- ExecutionContexts.cachedThreadPool[IO]
+
     transactor <- HikariTransactor.newHikariTransactor[IO](
       JdbcDriverName,
       s"jdbc:postgresql:${dbname}",
       dbuser,
-      dbpass
+      dbpass,
+      ce, te
     )
-    // logTransactor = addLogging("Postgres")(transactor)
-    _ <- transactor.configure { h => IO {
-      // h.setDataSourceProperties(props)
-      // h.setAutoCommit(false)
-      // h.setMaximumPoolSize(20)
-    }}
-  } yield {
-    // logTransactor.asInstanceOf[HikariTransactor[IO]]
-    transactor
-  }).unsafeRunSync
+    // _ <- transactor.configure { h => IO {
+    //   // h.setDataSourceProperties(props)
+    //   // h.setAutoCommit(false)
+    //   // h.setMaximumPoolSize(20)
+    // }}
+  } yield transactor
 
   // var _hikariTransactor: HikariTransactor[IO] = initTransactor()
 
-  var _hikariTransactor2: HikariTransactor[IO] = initPostgresDriverTransactor2()
+  var _hikariTransactor2: Resource[IO, HikariTransactor[IO]] = initPostgresDriverTransactor()
 
   // def getTransactor(): HikariTransactor[IO] = {
   //   if (_hikariTransactor == null) {
@@ -112,45 +138,36 @@ class CorpusAccessDB(
   //   _hikariTransactor
   // }
 
-  def getTransactor2(): HikariTransactor[IO] = {
+
+  def getTransactor2(): Resource[IO, HikariTransactor[IO]] = {
     if (_hikariTransactor2 == null) {
-      _hikariTransactor2 = initPostgresDriverTransactor2()
+      _hikariTransactor2 = initPostgresDriverTransactor()
     }
     _hikariTransactor2
   }
 
-  def reinit() = {
-    shutdown()
-  }
-
-  def shutdown(): Unit = {
-    println(s"Running Shutdown.")
-    if (_hikariTransactor2 != null) {
-      // _hikariTransactor2.shutdown.unsafeRunSync()
-      (for {
-         _ <-  _hikariTransactor2.asInstanceOf[HikariTransactor[IO]].shutdown
-      } yield {
-        _hikariTransactor2 = null
-      }).unsafeRunSync()
-    }
-  }
-
   def runq[A](query: C.ConnectionIO[A]): A = {
-    runWithTransactor(getTransactor2())(query)
-  }
+    // val exec = for {
+    //   tx <- getTransactor2()
+    //   v <- query.transact(tx)
+    // } yield v
 
-  // def runqOnceOld[A](query: C.ConnectionIO[A]): A = {
-  //   runWithTransactor(getTransactor2())(query)
-  // }
+
+    val asdf = getTransactor2().use[A]{ tx =>
+      runWithTransactor(tx)(query)
+    }
+    asdf.unsafeRunSync()
+    // runWithTransactor(getTransactor2())(query)
+  }
 
   def runqOnce[A](query: C.ConnectionIO[A]): A = runq(query)
 
-  def runWithTransactor[A](t: HikariTransactor[IO])(query: C.ConnectionIO[A]): A = {
+  def runWithTransactor[A](t: HikariTransactor[IO])(query: C.ConnectionIO[A]): IO[A] = {
     val run = for {
       r <- query.transact(t)
     } yield r
 
-    run.unsafeRunSync()
+    run // .unsafeRunSync()
   }
 
   def decodeSQLExceptions(err: Throwable): Throwable = {
@@ -172,8 +189,8 @@ class CorpusAccessDB(
     }
   }
 
-
-  def updateGetKey[A: Composite](key: String, up: Update0): C.ConnectionIO[A] = {
+  // def updateGetKey[A: Composite](key: String, up: Update0): C.ConnectionIO[A] = {
+  def updateGetKey[A: Read](key: String, up: Update0): C.ConnectionIO[A] = {
     up.withUniqueGeneratedKeys(key)
   }
 

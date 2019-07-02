@@ -7,6 +7,8 @@ import org.http4s
 import org.http4s._
 import org.http4s
 import org.http4s._
+// import org.http4s.server.staticcontent._
+
 import cats.effect._
 
 import models._
@@ -24,12 +26,16 @@ import models._
 //   case req @ GET -> Root / "workflows" asAuthed user =>
 //     ???
 // }
+import scala.concurrent.ExecutionContext
 
 trait CorpusArtifactServices extends AuthenticatedService with WorkflowCodecs { self =>
+  implicit def blockingEc: ExecutionContext
+  implicit def cs: ContextShift[IO]
 
 
   // Mounted at /api/v1/corpus/artifacts
-  val corpusArtifactEndpoints = HttpService[IO] {
+
+  val corpusArtifactEndpoints = HttpRoutes.of[IO] {
     case req @ GET -> Root / "entry" / entryId / "image" / "page" / IntVar(pageNum) =>
       val artifactName = s"page-${pageNum}.opt.png"
       val maybeImage = for {
@@ -39,7 +45,8 @@ trait CorpusArtifactServices extends AuthenticatedService with WorkflowCodecs { 
         imagePath <- pageImage.asPath.toOption
       } yield {
         println(s"pageImageService: serving page image ${entryId} from ${imagePath}")
-        StaticFile.fromFile(imagePath.toIO, Some(req))
+
+        StaticFile.fromFile(imagePath.toIO, blockingEc, Some(req))
           .getOrElse {
             Response(http4s.Status(404, s"could not serve image ${entryId} page ${pageNum}"))
           }
@@ -62,7 +69,7 @@ trait CorpusArtifactServices extends AuthenticatedService with WorkflowCodecs { 
         pageImage <- pageImages.getArtifact(artifactName)
         imagePath <- pageImage.asPath.toOption
       } yield {
-        StaticFile.fromFile(imagePath.toIO, Some(req))
+        StaticFile.fromFile(imagePath.toIO, blockingEc, Some(req))
           .getOrElse {
             Response(http4s.Status(404, s"could not serve image ${entryId} page ${pageNum}"))
           }
@@ -82,7 +89,7 @@ trait CorpusArtifactServices extends AuthenticatedService with WorkflowCodecs { 
         artifactPath <- artifact.asPath.toOption
       } yield {
         StaticFile
-          .fromFile(artifactPath.toIO, Some(req))
+          .fromFile(artifactPath.toIO, blockingEc, Some(req))
           .getOrElse { Response(http4s.Status(404, s"could not serve ${entryId} text ")) }
       }
       maybeResp.getOrElse {
@@ -101,7 +108,7 @@ trait CorpusArtifactServices extends AuthenticatedService with WorkflowCodecs { 
         artifactPath <- artifact.asPath.toOption
       } yield {
         StaticFile
-          .fromFile(artifactPath.toIO, Some(req))
+          .fromFile(artifactPath.toIO, blockingEc, Some(req))
           .getOrElse { Response(http4s.Status(404, s"could not serve ${entryId} artifact ${logname}")) }
       }
       maybeResp.getOrElse {

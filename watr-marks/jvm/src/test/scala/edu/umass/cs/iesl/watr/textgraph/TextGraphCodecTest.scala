@@ -68,7 +68,7 @@ class TextGraphCodecTests extends TextGraphSpec {
     val textGraph = makeBishopClarkSample()
     val asJson = textGraph.asJson
 
-    println(asJson.toString())
+    // println(asJson.toString())
 
     // val roundTripGraph = asJson.decodeOrDie[TextGraphJvm]()
     // val rtJson = roundTripGraph.asJson

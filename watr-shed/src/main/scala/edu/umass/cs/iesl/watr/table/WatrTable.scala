@@ -9,7 +9,30 @@ import corpora._
 import corpora.filesys.Corpus
 import utils.{PathUtils => P}
 
-object SharedInit extends utils.AppMainBasics {
+import cats.effect._
+
+class SharedInit()(implicit cs: ContextShift[IO]) extends utils.AppMainBasics {
+  def initCorpusAccessApi(args: Array[String]): CorpusAccessApi = {
+    val argMap = argsToMap(args)
+    val dbname = argMap.get("db").flatMap(_.headOption)
+      .getOrElse(sys.error("no db supplied (--db ...)"))
+
+    val passwd = argMap.get("passwd").flatMap(_.headOption)
+      .getOrElse(sys.error("no password supplied (--passwd ...)"))
+
+    val corpusRoot = argMap.get("corpus").flatMap(_.headOption)
+      .getOrElse(sys.error("no corpus path supplied (--corpus ...)"))
+
+    val corpus = Corpus(P.strToAmmPath(corpusRoot))
+
+    val corpusAccessDB = InitialSegmentationCommands.initReflowDB(dbname, passwd)
+
+    CorpusAccessApi(corpusAccessDB, corpus)
+  }
+
+}
+
+object SharedConsts extends utils.AppMainBasics {
 
   val predef =
     s"""|import edu.umass.cs.iesl.watr
@@ -26,7 +49,7 @@ object SharedInit extends utils.AppMainBasics {
         |implicit val corpusAccessApi0: CorpusAccessApi = corpusAccessApi
         |implicit val docStore: DocumentZoningApi = corpusAccessApi.docStore
         |implicit val corpusDb: CorpusAccessDB = corpusAccessApi.corpusAccessDB
-        |ammonite.repl.ReplBridge.value0.pprinter.update(SharedInit.pprinter)
+        |ammonite.repl.ReplBridge.value0.pprinter.update(SharedConsts.pprinter)
         |""".stripMargin
 
 
@@ -51,32 +74,17 @@ object SharedInit extends utils.AppMainBasics {
     additionalHandlers = ShellPrettyPrinters.additionalHandlers
   )
 
-  def initCorpusAccessApi(args: Array[String]): CorpusAccessApi = {
-    val argMap = argsToMap(args)
-    val dbname = argMap.get("db").flatMap(_.headOption)
-      .getOrElse(sys.error("no db supplied (--db ...)"))
-
-    val passwd = argMap.get("passwd").flatMap(_.headOption)
-      .getOrElse(sys.error("no password supplied (--passwd ...)"))
-
-    val corpusRoot = argMap.get("corpus").flatMap(_.headOption)
-      .getOrElse(sys.error("no corpus path supplied (--corpus ...)"))
-
-    val corpus = Corpus(P.strToAmmPath(corpusRoot))
-
-    val corpusAccessDB = InitialSegmentationCommands.initReflowDB(dbname, passwd)
-
-    CorpusAccessApi(corpusAccessDB, corpus)
-  }
 }
 
-object WatrTable extends App with utils.AppMainBasics {
-  import SharedInit._
+object WatrTable extends IOApp with utils.AppMainBasics {
+  import SharedConsts._
 
-  def run(args: Array[String]): Unit = {
+  def run(args: List[String]): IO[ExitCode] = {
+
     val argMap = argsToMap(args)
 
-    implicit val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
+    val sharedInit = new SharedInit()
+    implicit val corpusAccessApi = sharedInit.initCorpusAccessApi(args.toArray)
 
     val doQuickRun = argMap.get("quick-run").nonEmpty
     if (doQuickRun) {
@@ -96,7 +104,9 @@ object WatrTable extends App with utils.AppMainBasics {
       )
     }
 
-    corpusAccessApi.corpusAccessDB.shutdown()
+    IO.pure(ExitCode.Success)
+
+    // corpusAccessApi.corpusAccessDB.shutdown()
 
 
   }
@@ -107,7 +117,7 @@ object WatrTable extends App with utils.AppMainBasics {
     predefCode = predef ,
     defaultPredef = true,
     wd = pwd,
-    welcomeBanner = Some(SharedInit.welcomeBanner),
+    welcomeBanner = Some(SharedConsts.welcomeBanner),
     inputStream = System.in,
     outputStream  = System.out,
     errorStream = System.out,
@@ -115,9 +125,8 @@ object WatrTable extends App with utils.AppMainBasics {
     colors = replColors
   )
 
-  run(args)
-
+  // run(args)
   // Kill any daemon threads
-  System.exit(0)
+  // System.exit(0)
 
 }

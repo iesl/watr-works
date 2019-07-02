@@ -78,11 +78,11 @@ class RTreeIndexTest extends FlatSpec with Matchers {
     val rtreeIndex = RTreeIndex.empty[GeometricFigure, Unit, TestShape]()
 
     val jsval = rtreeIndex.asJson
-    println(s"as js: \n${rtreeIndex.asJson}")
+    // println(s"as js: \n${rtreeIndex.asJson}")
 
     val shape = TestShape(LTBounds.Ints(0, 0, 1, 1), ShapeID(0))
     rtreeIndex.add(shape)
-    println(s"as js: \n${rtreeIndex.asJson}")
+    // println(s"as js: \n${rtreeIndex.asJson}")
   }
 }
 

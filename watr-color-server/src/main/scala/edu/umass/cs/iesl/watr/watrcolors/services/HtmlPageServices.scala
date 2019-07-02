@@ -15,18 +15,20 @@ import html._
 import tsec.authentication._
 import cats.syntax.all._
 
-
+// class HtmlPageService[F[_]: Effect: ContextShift] extends AuthenticatedService {
+// class HtmlPageService[F[_]](implicit F: Effect[F], cs: ContextShift[F]) extends AuthenticatedService {
 trait HtmlPageService extends AuthenticatedService {
 
-  implicit def scalatagsEncoder[F[_]: EntityEncoder[?[_], String]: Applicative]: EntityEncoder[F, TextTag] = {
-    EntityEncoder.stringEncoder[F]
+  implicit def scalatagsEncoder[SE[_]: EntityEncoder[?[_], String]: Applicative]: EntityEncoder[SE, TextTag] = {
+    EntityEncoder.stringEncoder[SE]
       .contramap[TextTag] { _.toString() }
-      .withContentType(H.`Content-Type`(MediaType.`text/html`, DefaultCharset))
+      .withContentType(H.`Content-Type`(MediaType.text.html, DefaultCharset))
   }
 
-  private val unauthedPages = HttpService[IO] {
+  private val unauthedPages: HttpRoutes[IO] = HttpRoutes.of {
     case req @ GET -> Root / "login" =>
-      Ok(Authentication.loginForm())
+      // Ok(Authentication.loginForm())
+      Ok()
   }
 
   private val authedPages = Auth {
@@ -41,14 +43,16 @@ trait HtmlPageService extends AuthenticatedService {
   }
 
   val authedOrLogin = authedPages.andThen( resp => {
-    if (resp.status == Status.Unauthorized) {
-      OptionT.liftF{ TemporaryRedirect(Location(uri("/login"))) }
-    } else {
-      OptionT.liftF{ IO(resp) }
-    }
+    // TODO overriding login pages
+    OptionT.liftF{ IO(resp) }
+    // if (resp.status == Status.Unauthorized) {
+    //   OptionT.liftF{ TemporaryRedirect(Location(uri("/login"))) }
+    // } else {
+    //   OptionT.liftF{ IO(resp) }
+    // }
   })
 
-  def htmlPageServices = unauthedPages <+> authedOrLogin
+  def htmlPageServices: HttpRoutes[IO] = unauthedPages <+> authedOrLogin
 
 
 }

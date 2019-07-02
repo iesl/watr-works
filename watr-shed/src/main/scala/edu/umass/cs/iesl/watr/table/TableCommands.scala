@@ -7,11 +7,7 @@ import cats.effect._
 import corpora._
 import corpora.database._
 import utils.Timer.time
-// import ammonite.{ops => fs}
-// import utils.DoOrDieHandlers._
-// import geometry._
 import formats.TextGridOutputFormats._
-// import doobie._
 import doobie.implicits._
 
 object InitialSegmentationCommands {
@@ -20,7 +16,7 @@ object InitialSegmentationCommands {
 
   import apps.ProcessPipelineSteps._
 
-  def initReflowDB(dbname: String, dbpass: String): CorpusAccessDB = {
+  def initReflowDB(dbname: String, dbpass: String)(implicit cs: ContextShift[IO]): CorpusAccessDB = {
     new CorpusAccessDB(
       dbname=dbname,
       dbuser="watrworker",

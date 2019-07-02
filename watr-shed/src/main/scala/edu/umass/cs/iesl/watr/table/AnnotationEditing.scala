@@ -166,6 +166,7 @@ object AnnotationDiffs {
       val isGold = annotRec.annotPath.exists { corpusPath =>
         corpusPath.unwrap.endsWith("UmaCziTeam")
       }
+
       annotRec.body.toList.flatMap { body =>
         body match {
           case AnnotationBody.TextGrid(textGridDef) =>

@@ -19,9 +19,9 @@ trait CorpusListingServices extends Http4sDsl[IO] with ServiceCommons with Workf
   // Mounted at /api/v1xx/corpus/entries/..
 
 
-  val corpusListingEndpoints = HttpService[IO] {
+  val corpusListingEndpoints = HttpRoutes.of[IO] {
 
-    case req @ GET -> Root :? StartQP(start) +& LengthQP(len) => 
+    case req @ GET -> Root :? StartQP(start) +& LengthQP(len) =>
         // +& LabelFilterQP(labelFilter)
         // +& ArtifactnameFilterQP(nameFilter) =>
 

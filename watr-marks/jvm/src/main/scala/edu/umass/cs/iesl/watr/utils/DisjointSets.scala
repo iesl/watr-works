@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package utils
 
 import scala.collection.mutable
+import textboxing.{TextBoxing => TB}
 
 /**
   * Copied from   https://github.com/pathikrit/scalgos
@@ -59,9 +60,24 @@ class DisjointSet[A] {
   /**
     * @return Iterator over groups of items in same set
     */
-  def sets = parent.keys
+  def sets() = parent.keys
     .groupBy {_.root.entry}
     .values
+
+
+  override def toString(): String = {
+    import TB._
+
+    val setStrs = sets().map{ set =>
+      val canon = getCanonical(set.head)
+      val members = set.map(_.toString().box)
+
+      val memBoxed = hjoinWith(top, hspace(1), members.toList)
+      s"[root=${canon}] (size=${set.size})" +| memBoxed
+    }
+
+    vjoinWith(left, vspace(0), setStrs.toList).toString()
+  }
 }
 
 object DisjointSet {
@@ -82,22 +98,26 @@ object DisjointSet {
       }
       parent
     }
-  }
 
-  private[DisjointSet] class OrderedNode[A](val entry: A) {
-    /**
-      * parent - the pointer to root node (by default itself)
-      * rank - depth if we did not do path compression in find - else its upper bound on the distance from node to parent
-      */
-    var (parent, rank, head, next) = (this, 0, this, this)
-
-    def root: OrderedNode[A] = {
-      if (parent != this) {
-        parent = parent.root     // path compression
-      }
-      parent
+    override def toString(): String = {
+      s"<r=${rank}>"
     }
   }
+
+  // private[DisjointSet] class OrderedNode[A](val entry: A) {
+  //   /**
+  //     * parent - the pointer to root node (by default itself)
+  //     * rank - depth if we did not do path compression in find - else its upper bound on the distance from node to parent
+  //     */
+  //   var (parent, rank, head, next) = (this, 0, this, this)
+
+  //   def root: OrderedNode[A] = {
+  //     if (parent != this) {
+  //       parent = parent.root     // path compression
+  //     }
+  //     parent
+  //   }
+  // }
 
   /**
     * @return empty disjoint set
@@ -243,40 +263,3 @@ object OrderedDisjointSet {
     d
   }
 }
-
-
-
-
-
-
-// import scalaz.Equal
-// import scala.reflect.ClassTag
-
-// trait AttributeSets[IDType: Equal] {
-//   // val attrCT: implicitly[ClassTag[AttrT]]
-
-//   val componentAttributes: mutable.HashMap[IDType,
-//     mutable.HashMap[Label, Any]
-//   ] = mutable.HashMap()
-
-//   def setAttribute[A](cc: IDType, l: Label, attr: A)
-//     (implicit act: ClassTag[A]): Unit = {
-//     val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
-
-//     val ccAttrs = componentAttributes.getOrElseUpdate(cc,
-//       mutable.HashMap[Label, Any]()
-//     )
-//     ccAttrs.put(typedLabel, attr)
-//   }
-
-//   def getAttribute[A](cc: IDType, l: Label)
-//     (implicit act: ClassTag[A]): Option[A] = {
-
-//     val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
-
-//     componentAttributes.get(cc)
-//       .flatMap{ ccAttrs =>
-//         ccAttrs.get(typedLabel).map(_.asInstanceOf[A])
-//       }
-//   }
-// }

@@ -10,13 +10,15 @@ class DisjointSetsTest extends FlatSpec with Matchers {
 
   it should "add/union" in {
     val ds = DisjointSet(1 to 6: _*)
-    an [AssertionError] shouldBe thrownBy (ds add 1)
 
     ds union (2,3)
     ds union (4,5)
     ds union (5,6)
 
-    an [AssertionError] should be thrownBy (ds union (0, 6))
+    // println(s" (5,6) \n${ds.toString()} ")
+
+    // No longer throws assertion when duplicate member is added, just skips insertion
+    // an [AssertionError] should be thrownBy (ds union (0, 6))
 
     ds(1) shouldBe 1
     ds(2) shouldBe 2
@@ -24,7 +26,6 @@ class DisjointSetsTest extends FlatSpec with Matchers {
     ds(4) shouldBe 4
     ds(5) shouldBe 4
     ds(6) shouldBe 4
-    an [AssertionError] should be thrownBy (ds(7))
     ds.sets should contain allOf (Set(1), Set(2,3), Set(4,5,6))
   }
 

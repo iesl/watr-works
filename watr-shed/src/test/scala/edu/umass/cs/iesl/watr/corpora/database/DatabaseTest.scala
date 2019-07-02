@@ -9,6 +9,12 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil
     with BeforeAndAfterEach
     with BeforeAndAfterAll {
 
+  import cats.effect._
+
+  // import java.util.concurrent._
+  import scala.concurrent._
+  val MainCPUBound = ExecutionContext.global
+  implicit val cs: ContextShift[IO] = IO.contextShift(MainCPUBound)
 
   lazy val corpusAccessDB = new CorpusAccessDB(
     dbname="watrdev",
@@ -39,7 +45,7 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil
 
   override def afterAll(): Unit = {
     println("afterAll: shutting down db connections")
-    corpusAccessDB.shutdown()
+    // corpusAccessDB.shutdown()
   }
 
 }
