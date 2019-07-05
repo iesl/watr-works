@@ -4,7 +4,7 @@ import Keys._
 
 trait LibVersions {
   val scalazVersion       = "7.2.28"
-  val scalaTagsVersion    = "0.6.8"
+  val scalaTagsVersion    = "0.7.0"
   val scalatestVersion    = "3.0.8"
   val logbackVersion      = "1.7.26"
   val scrimageVersion     = "2.1.8"
@@ -20,12 +20,12 @@ trait LibVersions {
   val circeJsonVersion    = "0.11.1"
   val ammoniteVersion     = "1.6.9"
   val catsV               = "1.6.1"
-  // val catsEffectV         = "0.10.1"
   val catsEffectV         = "1.3.1"
   val postgresqlV         = "42.2.6"
   val freestyleV          = "0.7.0"
   val guavaV              = "23.0"
   val luceneV             = "1.8.5"
+  val tsecV               = "0.0.1-M9"
 }
 
 object LibVersions extends LibVersions
@@ -76,6 +76,7 @@ trait CommonLibs extends LibVersions {
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
   val guava            = "com.google.guava"         % "guava"            % guavaV
+  val lucene4s         = "com.outr"                %% "lucene4s"         % luceneV
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,
@@ -106,12 +107,6 @@ trait CommonLibs extends LibVersions {
     "org.typelevel"   %% "cats-core"            % catsV
   )
 
-  // val jwtCirce = Seq(
-  //   "com.pauldijou" %% "jwt-core" % "0.14.1",
-  //   "com.pauldijou" %% "jwt-circe" % "0.14.1"
-  // )
-
-  val tsecV = "0.0.1-M9"
   val tsec = Seq(
     "io.github.jmcardon" %% "tsec-common" % tsecV,
     "io.github.jmcardon" %% "tsec-password" % tsecV,

@@ -1,10 +1,8 @@
-// import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType, _}
 import sbtcrossproject.{crossProject, CrossType}
 import sbt.Keys._
 import ReleaseTransformations._
 
 SensibleProject.settings
-
 
 val Lib = CommonLibs
 
@@ -21,8 +19,6 @@ lazy val prelude = (project in file("watr-prelude"))
     "org.scala-lang" % "scala-reflect" % scalaVersion.value
   ))
 
-// .enablePlugins(ScalaJSBundlerPlugin)
-// (crossProject in file("watr-marks"))
 lazy val watrmarks = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
   .withoutSuffixFor(JVMPlatform)
@@ -47,12 +43,10 @@ lazy val watrmarks = crossProject(JSPlatform, JVMPlatform)
     LogLibs.logback ++ TestLibs.testAndCheck ++ Seq(
         Lib.ammoniteOps,
         Lib.guava % Optional,
-        "com.lodborg"                 % "interval-tree"          % "1.0.0",
-        "org.scala-js"               %% "scalajs-stubs"          % "0.6.28" % "provided",
+        "org.scala-js"               %% "scalajs-stubs"          % "1.0.0" % "provided",
         "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
         "com.github.davidmoten"       % "rtree"                  % "0.8.7",
-        "com.github.davidmoten"       % "flatbuffers-java"       % "1.10.0.2",
-        "ichi.bench" % "thyme"        % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
+        "com.github.davidmoten"       % "flatbuffers-java"       % "1.10.0.2"
       ))
 
 lazy val watrmarksJS = watrmarks.js
@@ -72,12 +66,11 @@ lazy val textworks = (project in file("text-works"))
     Lib.fs2 ++
     Lib.circeJson ++ Seq(
       "co.fs2" %% "fs2-io" % Lib.fs2Version,
-      "org.apache.pdfbox" % "pdfbox" % "2.0.13",
+      "org.apache.pdfbox" % "pdfbox" % "2.0.16",
       "com.outr" %% "lucene4s" %  Lib.luceneV,
+      Lib.lucene4s,
       Lib.guava,
-      "com.vividsolutions" % "jts-core" % "1.14.0",
       Lib.scopt,
-      Lib.scrimageCore,
       Lib.ammoniteOps,
       Lib.shapeless
     ))
@@ -95,10 +88,9 @@ lazy val watrshed = (project in file("watr-shed"))
     Lib.circeJson ++
     Seq(
       Lib.scopt,
-      Lib.scrimageCore,
       Lib.ammonite,
       Lib.shapeless,
-      "com.outr" %% "lucene4s" %  Lib.luceneV,
+      Lib.lucene4s,
       "com.github.tototoshi" %% "scala-csv" % "1.3.6"
     ))
   .dependsOn(prelude, watrmarksJVM, textworks)

@@ -19,6 +19,8 @@ object SensibleProject extends CommonLibs {
     libraryDependencies ++= Seq(acyclic)
   )
 
+  lazy val scalaV = "2.12.8"
+
   val scala_2_12_RecommendedOptionList = Seq(
     "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
     "-encoding", "utf-8",                // Specify character encoding used by source files.
@@ -127,7 +129,7 @@ object SensibleProject extends CommonLibs {
     // wartremoverErrors in (Compile, compile) := wartList,
     // wartremoverErrors in (Test, compile) := wartList,
 
-    scalaVersion := "2.12.8",
+    scalaVersion := scalaV,
     organization := "edu.umass.cs.iesl",
     scalacOptions ++=  scala_2_12_RecommendedOptionList,
 
