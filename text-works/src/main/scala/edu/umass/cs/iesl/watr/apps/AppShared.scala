@@ -142,6 +142,7 @@ object ProcessPipelineSteps {
   type MarkedInput = Either[ProcessableInput, ProcessableInput]
   type MarkedOutput = Either[String, ProcessedInput]
 
+
   def dropSkipAndRun(conf: IOConfig): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
     var skipCount = conf.numToSkip
     var runCount = conf.numToRun
