@@ -3,6 +3,7 @@ import sbt.Keys._
 import ReleaseTransformations._
 
 SensibleProject.settings
+Release.settings
 
 val Lib = CommonLibs
 
@@ -24,7 +25,7 @@ lazy val watrmarks = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .in(file("watr-marks"))
   .settings(SensibleProject.settings: _*)
-  .settings(Release.settings :_*)
+  // .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
     Seq(
       "io.circe"                   %%% "circe-generic"          % Lib.circeJsonVersion,
@@ -60,7 +61,7 @@ lazy val textworks = (project in file("text-works"))
   .settings(SensibleProject.settings: _*)
   .settings(SensibleProject.runForked: _*)
   .settings(SensibleProject.buildInfoSettings:_*)
-  .settings(Release.settings :_*)
+  // .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++
     Lib.fs2 ++
