@@ -1,53 +1,121 @@
 # WATR-works
 A set of related projects to extract text from PDFs
 
-[WatrWorks Full Documentation (WIP)](http://iesl.github.io/watr-works/index.html)
 
-## Running the command-line app, bin/works
+## TextWorks PDF text extractor
 
-From the project root,
-> bin/works [cmd] [args]
+### Obtaining
 
-For help,
-> bin/works --help
+A prebuilt version of the most recent version of TextWorks can be fetched like so:
+
+> curl -L https://github.com/iesl/watr-works/releases/download/v0.11/textworks-app.tar.gz -o textworks-app.tar.gz
+
+Extract the application, e.g.,
+
+> tar xvfz textworks-app.tar.gz
+
+
+### Running the command-line app
+
+The extracted app will have the following structure:
+
+    textworks-app
+    ├── bin
+    │   └── textworks
+    └── lib
+        └── *.jar
+
+Place the bin/ directory on your path, or run it as
+
+> /path/to/textworks-app/bin/textworks --help
+
+to see options.
 
 ## Corpus structure and initialization
 
-bin/works expects the PDFs to be organized such that there is one subdirectory per PDF,
-and all generated artifacts (as well as the original PDF) are placed together in the appropriate
-artifacts directory, like so:
+Textworks expects the PDFs to be organized such that there is one subdirectory
+per PDF, and all generated artifacts (as well as the original PDF) are grouped
+together in the same directory. The textworks app can perform the initializions step
+by creating appropriately named subdirectories (hereafter called artifact directories), and
+stashing each pdf in its artifact directory.
 
-    .
+To initialize a corpus, place the PDFs in some directory:
+
+    ./corpus/root
+    ├── alpha.pdf
+    ├── beta.pdf
+    └── gamma.pdf
+
+
+Then run:
+> textworks init --corpus ./path/to/corpus/root
+
+This will result in the following structure:
+
+    ./corpus/root
     ├── .corpus-root
-    ├── 0575.pdf.d
-    │   ├── 0575.pdf
-    │   ├── bbox.svg
-    │   ├── docseg.json
-    │   ├── lineseg.txt
-    │   └── paragraphs.txt
-    ├── 1483.pdf.d
-    │   ├── 1483.pdf
-    │   ├── bbox.svg
-    │   ├── docseg.json
-    │   ├── lineseg.txt
-    │   └── paragraphs.txt
-    └── 2839.pdf.d
-        ├── 2839.pdf
-        ├── lineseg.txt
-        └── paragraphs.txt
+    ├── alpha.pdf.d
+    │   └── alpha.pdf
+    ├── beta.pdf.d
+    │   └── beta.pdf
+    └── gamma.pdf.d
+        └── gamma.pdf
+
+
+There is a marker file named '.corpus-root' placed in the root directory. It is created by textworks,
+when initializing a corpus, and later checked when processing corpus entries.
+
+New PDFs may be added to the root of the corpus directory and the init step may be re-run at any time, 
+without disturbing existing entries.
+
+
+## Extracting text
+
+By default, textworks will process everything in the specified corpus directory. 
+
+> textworks --corpus ./path/to/corpus/root [--overwrite]
+
+This will write a file named textgrid.json to the root of each pdf artifact directory. It will check for 
+the existence of this file first, skipping PDFs that have already been processed, unless --overwrite is specified.
+
+
+After processing, the directory will look like so:
+
+    ./corpus/root
+    ├── alpha.pdf.d
+    │   ├── textgrid.json
+    │   └── alpha.pdf
+    ├── beta.pdf.d
+    │   ├── textgrid.json
+    │   └── beta.pdf
+    └── gamma.pdf.d
+        ├── textgrid.json
+        └── gamma.pdf
+
+
+    ./corpus/root
+    ├── alpha.pdf.d
+    │   ├── textgrid.json
+    │   ├── alpha.pdf
+    │   └── tracelogs
+    │       ├── font-summary.json
+    │       └── tracelog.json
+    ├── beta.pdf.d
+    │   ├── textgrid.json
+    │   ├── beta.pdf
+    │   └── tracelogs
+    │       ├── font-summary.json
+    │       └── tracelog.json
+    └── gamma.pdf.d
+        ├── textgrid.json
+        ├── gamma.pdf
+        └── tracelogs
+           ├── font-summary.json
+           └── tracelog.json
 
 
 
-bin/works can initialize directory filled with PDFs (all in the root of the directory), by creating the
-subdirectories (hereafter called artifact directories), and stashing each pdf in its artifact directory.
 
-There is a marker file named '.corpus-root' placed in the root directory. It is created by bin/works
-when initializing a corpus, and later checked for when processing corpus entries. To initialize:
-
-> bin/works init --corpus ./path/to/dir/with/pdfs
-
-You can add new pdfs to the root of the corpus directory and re-run init without disturbing
-existing entries.
 
 
 
@@ -68,21 +136,33 @@ would docseg those entries.
 
 
 
+
 ## Ways to process a corpus
 
 There are a number of processes that may be run on a corpus. The primary process is document segmentation,
 which is run like so:
 
-> bin/works docseg --corpus ./path/to/initd/corpus
+> bin/works docseg --corpus ./path/to/corpus/root
 
-Run bin/works --help to see the list of runnable processes. The primary processes are documented below.
-
+Run bin/works --help to see the list of option. The primary processes are documented below.
 
 ## Document Segmentation
 
 ### Output Format for Document Segmentation
 
 Segmentation produces a json file like this:
+
+
+    {"description" : "Extracted Pages for 10.1101-056275.d",
+      "documentId" : "10.1101-056275.d",
+      "pages" : [{"pageGeometry" : [0, 0, 61200, 79200],
+          "textgrid" : {"stableId" : "10.1101-056275.d",
+            "rows" : [{"offset" : 0,
+                "text" : "Prediction of allosteric sites and mediating interactions through bond-to-bond",
+                "loci" : [{"g" : [["P", 0, [7792, 5383, 798, 820]]]
+
+
+
 
 
     { "pages": [
@@ -92,25 +172,7 @@ Segmentation produces a json file like this:
             "lines": [
               [["©","2014","Elsevier","B.V.","All","rights","reserved."],     [0,1,2,3,4,5,6]]
             ]},
-           {"labels": ["body", "section-heading"],
-            "lines": [
-              [["1.","Introduction"],     [7,8]]
-           ]},
-           {"labels": ["body", "paragraph"],
-            "lines": [
-              [["{PhSiH_{3}}","into","the","corresponding","phosphines."],     [643,644,645,646,647]],
-          ]
-        },
-        {"page": 1,
-         "blocks": [
-             ...
-         ]
-        },
-     },
-     "ids": [
-        [0,[0, [426.41, 556.48, 5.90, 7.17]]],[1,[0, [434.17, 556.48, 17.26, 7.17]]],
-        [10,[0, [367.43, 687.76, 14.25, 7.97]]],[11,[0, [383.27, 687.76, 56.16, 7.97]]]
-     ]}
+
 
 
 Each page consists of a list of blocks, where each block is a labeled set of text lines. The labels identify the section
@@ -140,4 +202,3 @@ The following characters are always escaped:
    braces: '{', '}'
 
 Inside of a tex-formatted token, '_', '^' are also escaped.
-
