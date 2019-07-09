@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-
 import geometry._
 import geometry.syntax._
 import textgrid._

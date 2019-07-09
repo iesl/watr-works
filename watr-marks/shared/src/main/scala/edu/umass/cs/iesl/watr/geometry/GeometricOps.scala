@@ -293,6 +293,7 @@ trait GeometricOps {
     def isStrictlyRightOf(other: LTBounds): Boolean = {
       other.isStrictlyLeftOf(self)
     }
+
     def isNeitherLeftNorRightOf(other: LTBounds): Boolean = {
       !isStrictlyLeftOf(other) && !isStrictlyRightOf(other)
     }

@@ -53,7 +53,6 @@ object DoOrDieHandlers {
     }
   }
 
-
   implicit class DoOrDieHandlers_RicherString(val self: String) extends AnyVal {
     def jsonOrDie(msg: String = "")(implicit
       srcName: sourcecode.Name,

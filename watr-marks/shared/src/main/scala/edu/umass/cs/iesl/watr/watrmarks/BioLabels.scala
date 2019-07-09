@@ -117,6 +117,7 @@ case class Label(
   def qualifiedAs(t: String): Label = {
     Label(s"${fqn}::${t}")
   }
+
   def qualifiedAs(t: Label): Label = {
     Label(s"${fqn}::${t.fqn}")
   }

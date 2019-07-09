@@ -620,10 +620,4 @@ object PdfBoxTextExtractor {
 
   }
 
-  def main(args: Array[String]): Unit = {
-
-    extractPages(DocumentID("dummy"), fs.pwd / RelPath(args(0)))
-
-  }
-
 }

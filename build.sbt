@@ -56,12 +56,11 @@ lazy val watrmarksJVM = watrmarks.jvm
 
 lazy val textworks = (project in file("text-works"))
   .enablePlugins(JavaAppPackaging)
+  .settings(mappings in Universal in (Compile, packageDoc) := Seq())
   .enablePlugins(BuildInfoPlugin)
-  .settings(mappings in (Compile, packageDoc) := Seq())
   .settings(SensibleProject.settings: _*)
   .settings(SensibleProject.runForked: _*)
   .settings(SensibleProject.buildInfoSettings:_*)
-  // .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++
     Lib.fs2 ++
@@ -79,7 +78,7 @@ lazy val textworks = (project in file("text-works"))
 
 lazy val watrshed = (project in file("watr-shed"))
   .enablePlugins(JavaAppPackaging)
-  .settings(mappings in (Compile, packageDoc) := Seq())
+  .settings(mappings in Universal in (Compile, packageDoc) := Seq())
   .settings(SensibleProject.settings: _*)
   .settings(SensibleProject.runForked: _*)
   .settings(libraryDependencies ++=
@@ -98,7 +97,7 @@ lazy val watrshed = (project in file("watr-shed"))
 
 lazy val watrcolorServer = (project in file("watr-color-server"))
   .enablePlugins(JavaAppPackaging)
-  .settings(mappings in (Compile, packageDoc) := Seq())
+  .settings(mappings in Universal in (Compile, packageDoc) := Seq())
   .settings(SensibleProject.settings: _*)
   .settings(
     fork in run := true,
@@ -123,5 +122,3 @@ lazy val watrcolorServer = (project in file("watr-color-server"))
     }).value
   ))
   .dependsOn(watrmarksJVM, watrshed)
-
-

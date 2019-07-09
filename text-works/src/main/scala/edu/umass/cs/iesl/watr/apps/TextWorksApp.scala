@@ -26,7 +26,6 @@ object TextWorksConfig {
       nio.Paths.get(v).toAbsolutePath().normalize()
     }
 
-
   case class Config(
     ioConfig          : IOConfig = IOConfig(),
 
@@ -58,17 +57,17 @@ object TextWorksConfig {
       }
     } text ("root path of PDF corpus; output will be written to same dir as input")
 
-    opt[nio.Path]('i', "input") action { (v, conf) =>
-      lens[Config].ioConfig.inputMode.modify(conf){ m =>
-        Option(InputMode.SingleFile(v))
-      }
-    } text("choose single input PDF")
+    // opt[nio.Path]('i', "input") action { (v, conf) =>
+    //   lens[Config].ioConfig.inputMode.modify(conf){ m =>
+    //     Option(InputMode.SingleFile(v))
+    //   }
+    // } text("choose single input PDF")
 
-    opt[nio.Path]('l', "input-list") action { (v, conf) =>
-      lens[Config].ioConfig.inputMode.modify(conf){ m =>
-        Option(InputMode.ListOfFiles(v))
-      }
-    } text("process list of input PDFs in specified file.")
+    // opt[nio.Path]('l', "input-list") action { (v, conf) =>
+    //   lens[Config].ioConfig.inputMode.modify(conf){ m =>
+    //     Option(InputMode.ListOfFiles(v))
+    //   }
+    // } text("process list of input PDFs in specified file.")
 
     opt[String]("filter") action { (v, conf) =>
       lens[Config].ioConfig.pathFilter.modify(conf){ m =>
@@ -80,13 +79,12 @@ object TextWorksConfig {
 
     note("\nOutput file options\n")
 
-    opt[nio.Path]('o', "output-file") action { (v, conf) =>
-      lens[Config].ioConfig.outputPath.modify(conf){ m =>
-        Some(v)
-      }
-    } text("""|specify output file. In --corpus mode, ouput will be written to same directory as
-              |           input file, otherwise relative to cwd. Use --overwrite to overwrite existing files.""".stripMargin)
-
+    // opt[nio.Path]('o', "output-file") action { (v, conf) =>
+    //   lens[Config].ioConfig.outputPath.modify(conf){ m =>
+    //     Some(v)
+    //   }
+    // } text("""|specify output file. In --corpus mode, ouput will be written to same directory as
+    //           |           input file, otherwise relative to cwd. Use --overwrite to overwrite existing files.""".stripMargin)
 
     opt[nio.Path]("init-corpus") action { (v, conf) =>
       val conf1 = lens[Config].initCorpus.modify(conf){ m =>

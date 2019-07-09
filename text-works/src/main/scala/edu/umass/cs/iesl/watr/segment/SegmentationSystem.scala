@@ -44,7 +44,6 @@ object SegmentationSystem {
 
   type ShapeIndex = LabeledShapeIndex[GeometricFigure, Unit, DocSegShape[GeometricFigure]]
 
-
   implicit class SS_LabeledShapeCoercion[+A <: GeometricFigure](val theShape: DocSegShape[A]) {
     def asLineShape: LineShape = theShape.asInstanceOf[LineShape]
     def asPointShape: PointShape = theShape.asInstanceOf[PointShape]

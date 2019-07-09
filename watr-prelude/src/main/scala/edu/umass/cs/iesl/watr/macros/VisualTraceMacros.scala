@@ -11,9 +11,7 @@ object VisualTraceLevel {
   case object PrintLogs extends VisualTraceLevel
   case object JsonLogs extends VisualTraceLevel
   // case object Callback extends VisualTraceLevel
-
   // val all = List(Off, EnterExit, Checkpoint, Debug, Callback)
-
   // def cmp(a: VisualTraceLevel, b:VisualTraceLevel) = all.indexOf(b) - all.indexOf(a)
 }
 
