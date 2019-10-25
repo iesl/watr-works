@@ -46,7 +46,6 @@ class AllServices(
   override val blockingEc: ExecutionContext
 ) extends AllTheServices {
 
-  // 34: scalac: not enough arguments for method apply: (basePath: String, blockingExecutionContext: scala.concurrent.ExecutionContext, pathPrefix: String, bufferSize: Int, cacheStrategy: org.http4s.server.staticcontent.CacheStrategy[cats.effect.IO], preferGzipped: Boolean)org.http4s.server.staticcontent.ResourceService.Config[cats.effect.IO] in object Config.
   val assetService = resourceService(new ResourceService.Config[IO](
     basePath = "",
     BlockingFileIO,
@@ -62,7 +61,6 @@ class AllServices(
 
   lazy val userStore = UserStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
   lazy val authStore = PasswordStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
-  // lazy val tokenStore = MemTokenStore.apply().unsafeRunSync()
   lazy val tokenStore = new TokenStore(corpusAccessDB)
 
 
@@ -95,7 +93,6 @@ object WiredServerMain extends IOApp with Http4sDsl[IO] with utils.AppMainBasics
   import scala.concurrent._
   implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
 
-  // def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, ExitCode] = {
   def run(args: List[String]): IO[ExitCode] = {
     val argMap = argsToMap(args)
 

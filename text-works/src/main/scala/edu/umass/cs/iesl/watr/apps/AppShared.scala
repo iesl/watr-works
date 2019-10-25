@@ -80,7 +80,6 @@ case class IOConfig(
 )
 
 
-
 object ProcessPipelineSteps {
   private[this] val log = org.log4s.getLogger
 

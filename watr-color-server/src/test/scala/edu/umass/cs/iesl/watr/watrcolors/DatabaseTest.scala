@@ -5,8 +5,14 @@ import org.scalatest._
 import corpora._
 import corpora.database._
 import workflow._
+import cats.effect._
+import scala.concurrent.ExecutionContext
 
 trait DatabaseBaseTest extends Matchers with CorpusTestingUtil {
+
+  implicit def contextShift: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
+
   lazy val corpusAccessDB = new CorpusAccessDB(
     dbname="watrdev",
     dbuser="watrworker",
@@ -32,7 +38,7 @@ trait DatabaseBaseTest extends Matchers with CorpusTestingUtil {
 
 trait DatabaseFreeSpec extends FreeSpec with DatabaseBaseTest with BeforeAndAfterEach {
   override def beforeEach(): Unit = {
-    corpusAccessDB.reinit()
+    // corpusAccessDB.reinit()
   }
 
   override def afterEach(): Unit = {}
@@ -42,7 +48,7 @@ trait DatabaseTest extends FlatSpec with DatabaseBaseTest with BeforeAndAfterEac
 
   override def beforeEach(): Unit = {
     println("re-initing db connections")
-    corpusAccessDB.reinit()
+    // corpusAccessDB.reinit()
   }
 
   override def afterEach(): Unit = {

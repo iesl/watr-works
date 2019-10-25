@@ -146,7 +146,7 @@ object GuavaHelpers {
 
 
   implicit object StringShow extends Show[String] {
-    override def show(f: String): Cord = new Cord(FingerTree.three("\"", f, "\"")(Cord.sizer).toTree)
+    override def show(f: String): Cord = Cord(FingerTree.three("\"", f, "\"")(Cord.sizer).toTree)
     override def shows(f: String): String = f
   }
 
