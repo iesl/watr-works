@@ -9,7 +9,7 @@ object Release {
   val settings = Seq(
 
     releaseProcess  := Seq[ReleaseStep](
-      checkSnapshotDependencies,            // : ReleaseStep
+      checkSnapshotDependencies,              // : ReleaseStep
       inquireVersions,                        // : ReleaseStep
                                               // runTest,                             // : ReleaseStep
       setReleaseVersion,                      // : ReleaseStep

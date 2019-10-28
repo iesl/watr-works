@@ -8,7 +8,12 @@ A set of related projects to extract text from PDFs.
 
 A prebuilt version of the most recent version of TextWorks can be fetched like so:
 
-> curl -L https://github.com/iesl/watr-works/releases/download/v0.11/textworks-app.tar.gz -o textworks-app.tar.gz
+
+From the github release page
+  https://github.com/iesl/watr-works/releases/
+  
+Download the latest binary release (under 'Assets'):
+    textworks-app.tar.gz
 
 Extract the application, e.g.,
 
@@ -36,7 +41,9 @@ to see options.
 
 Specify --overwrite if the output file already exists
 
-## Corpus structure and initialization
+## Running on a large corpus
+
+### Corpus structure and initialization
 
 Textworks expects the PDFs to be organized such that there is one subdirectory
 per PDF, and all generated artifacts (as well as the original PDF) are grouped
