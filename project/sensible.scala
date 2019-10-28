@@ -19,7 +19,7 @@ object SensibleProject extends CommonLibs {
     libraryDependencies ++= Seq(acyclic)
   )
 
-  lazy val scalaV = "2.12.8"
+  lazy val scalaV = "2.12.10"
 
   val scala_2_12_RecommendedOptionList = Seq(
     "-deprecation",                      // Emit warning and location for usages of deprecated APIs.

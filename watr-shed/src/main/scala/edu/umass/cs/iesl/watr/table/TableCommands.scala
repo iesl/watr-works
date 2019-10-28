@@ -132,7 +132,6 @@ object InitialSegmentationCommands {
     }
   }
 
-
   def extractTextToFile(n: Int=Int.MaxValue, skip: Int=0, regexFilter: Option[String]=None)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     val conf = TextWorksConfig.Config(IOConfig(
       inputMode = Some(InputMode.CorpusFile(corpusAccessApi.corpus.corpusRoot.toNIO)),

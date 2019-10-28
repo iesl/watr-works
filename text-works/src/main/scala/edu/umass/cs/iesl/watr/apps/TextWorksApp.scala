@@ -28,7 +28,6 @@ object TextWorksConfig {
 
   case class Config(
     ioConfig          : IOConfig = IOConfig(),
-
     initCorpus        : Option[nio.Path] = None,
     runTraceLogging   : Boolean = VisualTracer.tracingEnabled(),
     exec              : Option[(Config) => Unit] = Some((c) => runTextExtractionPipeline(c))
@@ -46,28 +45,25 @@ object TextWorksConfig {
     help("help")
 
     // IO Config options
-    note("Specify exactly one input mode: corpus|file|file-list \n")
-
+    note("Specify input mode: corpus|file \n")
 
     opt[nio.Path]('c', "corpus") action { (v, conf) =>
       lens[Config].ioConfig.modify(conf) { ioConfig =>
         ioConfig.copy(
-          inputMode = Option(InputMode.CorpusFile(v))
+          inputMode = Option(Processable.CorpusRoot(v))
         )
       }
     } text ("root path of PDF corpus; output will be written to same dir as input")
 
-    // opt[nio.Path]('i', "input") action { (v, conf) =>
-    //   lens[Config].ioConfig.inputMode.modify(conf){ m =>
-    //     Option(InputMode.SingleFile(v))
-    //   }
-    // } text("choose single input PDF")
+    opt[nio.Path]('f', "file") action { (v, conf) =>
+      val c1 = lens[Config].ioConfig.inputMode.modify(conf){ m =>
+        Option(Processable.SingleFile(v))
+      }
 
-    // opt[nio.Path]('l', "input-list") action { (v, conf) =>
-    //   lens[Config].ioConfig.inputMode.modify(conf){ m =>
-    //     Option(InputMode.ListOfFiles(v))
-    //   }
-    // } text("process list of input PDFs in specified file.")
+      lens[Config].exec.modify(c1){ m =>
+        Option((c) => runTextExtractionOnFile(c))
+      }
+    } text("extract a single input PDF")
 
     opt[String]("filter") action { (v, conf) =>
       lens[Config].ioConfig.pathFilter.modify(conf){ m =>
@@ -79,12 +75,12 @@ object TextWorksConfig {
 
     note("\nOutput file options\n")
 
-    // opt[nio.Path]('o', "output-file") action { (v, conf) =>
-    //   lens[Config].ioConfig.outputPath.modify(conf){ m =>
-    //     Some(v)
-    //   }
-    // } text("""|specify output file. In --corpus mode, ouput will be written to same directory as
-    //           |           input file, otherwise relative to cwd. Use --overwrite to overwrite existing files.""".stripMargin)
+    opt[nio.Path]('o', "output") action { (v, conf) =>
+      lens[Config].ioConfig.outputPath.modify(conf){ m =>
+        Some(v)
+      }
+    } text("""|specify output file. In --corpus mode, ouput will be written to same directory as
+              |           input file, otherwise relative to cwd. Use --overwrite to overwrite existing files.""".stripMargin)
 
     opt[nio.Path]("init-corpus") action { (v, conf) =>
       val conf1 = lens[Config].initCorpus.modify(conf){ m =>
@@ -111,12 +107,18 @@ object TextWorksConfig {
         }
       } else {
         c.ioConfig.inputMode.map { _  match {
-          case InputMode.SingleFile(f) =>
+          case Processable.SingleFile(f) =>
             if (fs.exists(f.toFsPath())) success else failure(s"file ${f} not found")
-          case InputMode.ListOfFiles(f) =>
+
+          case Processable.ListOfFiles(f) =>
             if (fs.exists(f.toFsPath())) success else failure(s"file ${f} not found")
-          case InputMode.CorpusFile(f) =>
-            if (fs.exists(f.toFsPath())) success else failure(s"corpus root ${f} not found")
+
+          case Processable.CorpusFile(entry) =>
+            ???
+
+          case Processable.CorpusRoot(rootPath) =>
+            if (fs.exists(rootPath.toFsPath())) success else failure(s"corpus root ${rootPath} not found")
+
         }} getOrElse{
           failure("No input specified")
         }

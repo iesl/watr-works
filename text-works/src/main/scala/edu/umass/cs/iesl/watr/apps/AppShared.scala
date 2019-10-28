@@ -17,71 +17,28 @@ import _root_.io.circe, circe._, circe.syntax._
 
 import textgrid._
 
-sealed trait InputMode
-
-object InputMode {
-  case class SingleFile(f: nio.Path) extends InputMode
-  case class ListOfFiles(f: nio.Path) extends InputMode
-  case class CorpusFile(corpusRoot: nio.Path) extends InputMode
-}
-
-sealed trait Processable
-sealed trait ProcessableInput extends Processable
-sealed trait ProcessedInput extends Processable
-
-object Processable {
-  case class SingleFile(f: nio.Path) extends ProcessableInput
-  case class CorpusFile(corpusEntry: CorpusEntry) extends ProcessableInput
-
-  case class ExtractedFile(
-    segmentation: DocumentSegmentation,
-    input: ProcessableInput
-  ) extends ProcessedInput
-
-  case class ExtractedTextGridFile(
-    textGridFile: nio.Path,
-    input: ProcessableInput
-  ) extends ProcessedInput
-
-  def getTextgridOutputFile(input: Processable, conf: IOConfig): nio.Path = {
-    conf.outputPath.getOrElse {
-      input match {
-        case SingleFile(f) =>
-          conf.outputPath.getOrElse {
-            nio.Paths.get(f.getFileName() + ".textgrid.json")
-          }
-
-        case CorpusFile(corpusEntry) =>
-          (corpusEntry.getRootPath() / "textgrid.json").toNIO
-
-        case ExtractedFile(_, in) =>
-          getTextgridOutputFile(in, conf)
-
-        case ExtractedTextGridFile(_, in) => ???
-      }
-    }
-  }
-
-  def withCorpusEntry(input: Processable)(f: CorpusEntry => Unit): Unit = {
-    input match {
-      case CorpusFile(corpusEntry) => f(corpusEntry)
-      case _ =>
-    }
-  }
-}
-
-case class IOConfig(
-  inputMode: Option[InputMode] = None,
-  outputPath: Option[nio.Path] = None,
-  overwrite: Boolean = false,
-  pathFilter: Option[String] = None,
-  numToRun: Int = Int.MaxValue,
-  numToSkip: Int = 0
-)
-
 
 object ProcessPipelineSteps {
   private[this] val log = org.log4s.getLogger
+
+  def runTextExtractionOnFile(conf: TextWorksConfig.Config): Unit = {
+
+    if (conf.runTraceLogging) {
+      log.info(s"Visual tracing is enabled")
+    } else {
+      log.info(s"Visual tracing is disabled")
+    }
+
+    val processStream = createInputStream[IO](conf.ioConfig)
+      .through(initMarkedInput())
+      .through(cleanFileArtifacts(conf))
+      .through(runSegmentation(conf))
+      .through(writeExtractedTextFile(conf))
+
+    val prog = processStream.compile.drain
+
+    prog.unsafeRunSync()
+  }
 
   def runTextExtractionPipeline(conf: TextWorksConfig.Config): Unit = {
 
@@ -116,10 +73,10 @@ object ProcessPipelineSteps {
     conf.inputMode.map{ mode =>
 
       mode match {
-        case in@ InputMode.SingleFile(f) =>
-          fs2.Stream.emit(Processable.SingleFile(f)).covary[F]
+        case in@ Processable.SingleFile(f) =>
+          fs2.Stream.emit(in).covary[F]
 
-        case InputMode.CorpusFile(corpusRoot) =>
+        case Processable.CorpusRoot(corpusRoot) =>
           Corpus(corpusRoot).entryStream[F]()
             .filter { entry =>
               conf.pathFilter.map { filter =>
@@ -128,7 +85,10 @@ object ProcessPipelineSteps {
             }
             .map{ entry => Processable.CorpusFile(entry) }
 
-        case InputMode.ListOfFiles(p) =>
+        case Processable.ListOfFiles(p) =>
+          die("TODO")
+
+        case Processable.CorpusFile(entry) =>
           die("TODO")
       }
     }.orDie("inputStream(): Invalid input options")
@@ -205,7 +165,8 @@ object ProcessPipelineSteps {
             fs.rm(nioToAmm(output))
             Right(inputMode)
           } else {
-            log.info(s"Skipping ${output}")
+            log.info(s"Skipping ${inputMode}, output path ${output} already exists")
+            log.info(s"use --overwrite to force overwrite")
             Left(inputMode)
           }
         } else {
@@ -302,7 +263,9 @@ object ProcessPipelineSteps {
 
         val gridJsStr = writeable.asJson.pretty(JsonPrettyPrinter)
 
-        time("write textgrid.json") {
+        println(s"writing ${outputFile}")
+
+        time(s"write textgrid.json") {
           fs.write(outputFile.toFsPath(), gridJsStr)
         }
         m
@@ -392,6 +355,8 @@ object ProcessPipelineSteps {
               Right(input)
             }
 
+          case m@ Processable.SingleFile(filePath) =>
+            ???
           case _ => ???
         }
       case m => m

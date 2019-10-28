@@ -30,6 +30,12 @@ Place the bin/ directory on your path, or run it as
 
 to see options.
 
+## Running on a single file
+
+> textworks --file document.pdf --output document.json
+
+Specify --overwrite if the output file already exists
+
 ## Corpus structure and initialization
 
 Textworks expects the PDFs to be organized such that there is one subdirectory

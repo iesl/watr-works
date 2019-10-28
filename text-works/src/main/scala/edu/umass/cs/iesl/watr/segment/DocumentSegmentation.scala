@@ -143,9 +143,10 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       }
     }
 
-    time("findRepeatedMarginalLines") {
-      findRepeatedMarginalLines()
-    }
+    // time("findRepeatedMarginalLines") {
+    //   findRepeatedMarginalLines()
+    // }
+
   }
 
 }

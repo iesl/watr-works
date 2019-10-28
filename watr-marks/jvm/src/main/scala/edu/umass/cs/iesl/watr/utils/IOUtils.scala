@@ -18,6 +18,7 @@ object PathUtils {
     fs.FilePath(nioPath) match {
       case p: fs.Path =>  p
       case p: fs.RelPath => fs.pwd / p
+      case _ => ???
     }
   }
 
@@ -25,6 +26,7 @@ object PathUtils {
     fs.FilePath(str) match {
       case p: fs.Path =>  p
       case p: fs.RelPath => fs.pwd / p
+      case _ => ???
     }
   }
 

@@ -6,25 +6,25 @@ trait LibVersions {
   val scalazVersion       = "7.2.28"
   val scalaTagsVersion    = "0.7.0"
   val scalatestVersion    = "3.0.8"
-  val logbackVersion      = "1.7.26"
+  val logbackVersion      = "1.7.28"
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
   val doobieVersion       = "0.7.0"
   val matryoshkaCoreV     = "0.21.3"
-  val sourcecodeV         = "0.1.7"
+  val sourcecodeV         = "0.1.8"
   val fansiV              = "0.2.7"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
   val http4sVersion       = "0.20.6"
   val fs2Version          = "1.0.5"
   val circeJsonVersion    = "0.11.1"
-  val ammoniteVersion     = "1.6.9"
+  val ammoniteVersion     = "1.8.0"
   val catsV               = "1.6.1"
   val catsEffectV         = "1.3.1"
   val postgresqlV         = "42.2.6"
   val freestyleV          = "0.7.0"
   val guavaV              = "23.0"
-  val luceneV             = "1.8.5"
+  val luceneV             = "1.9.1"
   val tsecV               = "0.0.1-M9"
 }
 
@@ -37,7 +37,7 @@ object TestLibs extends LibVersions {
 
   val scalacheck = Seq(
     "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.2.28-scalacheck-1.14" % Test,
-    "org.scalacheck" %% "scalacheck"                % "1.14.0"       % "test" //  force()
+    "org.scalacheck" %% "scalacheck"                % "1.14.2"       % "test" //  force()
   )
 
   val testAndCheck = scalatest ++ scalacheck

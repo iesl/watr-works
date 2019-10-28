@@ -12,8 +12,6 @@ project/project
 *.iml
 
 *.sw?
-.ensime*
-ensime*
 
 
 # Common directory names
@@ -22,14 +20,13 @@ ensime*
 
 *~
 /corpus-*
-/*.pdf.json
-.zz-attic
 
 *.log
 *.tmp
 
 .sbtopts
 .bloop
+metals.sbt
 
 ### npm module ignores
 

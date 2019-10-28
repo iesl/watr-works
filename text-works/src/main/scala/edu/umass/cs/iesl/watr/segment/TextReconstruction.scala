@@ -14,6 +14,7 @@ import utils.intervals._
 import watrmarks._
 
 
+
 trait TextReconstruction extends PageScopeSegmenter
     with LineSegmentation { self =>
 
