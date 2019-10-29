@@ -9,18 +9,46 @@ import com.typesafe.sbt.packager.Keys._
 object Release {
 
 
-  // val checkOrganization = ReleaseStep(action = st => {
-  //   // extract the build state
-  //   val extracted = Project.extract(st)
-  //   // retrieve the value of the organization SettingKey
-  //   val org = extracted.get(Keys.organization)
+  val copyVersionToFile = ReleaseStep(action = st => {
+    val extracted = Project.extract(st)
+    val version = extracted.get(Keys.version)
+    val baseDir = extracted.get(Keys.baseDirectory)
+    val versionFile: File = baseDir / "last-release-version.txt"
 
-  //   if (org.startsWith("com.acme"))
-  //     sys.error("Hey, no need to release a toy project!")
+    val ver = s"v$version"
+    IO.write(versionFile, version)
 
-  //   st
-  // })
+    st
+  })
 
+
+
+  val settings = Seq(
+
+    releaseProcess  := Seq[ReleaseStep](
+      checkSnapshotDependencies,
+      inquireVersions,
+      runTest,
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
+      copyVersionToFile,
+
+      // stage binary artifacts
+      releaseStepTask(stage in Universal),
+      releaseStepTask(packageZipTarball in Universal),
+
+      setNextVersion,
+      pushChanges,
+      // publishArtifacts,
+      commitNextVersion,
+      pushChanges
+    )
+  )
+
+
+
+}
 
   // Define task to  copy html files
   // val copyHtml = taskKey[Unit]("Copy html files from src/main/html to cross-version target directory")
@@ -60,32 +88,15 @@ object Release {
   //   st
   // })
 
-  val settings = Seq(
+  // val checkOrganization = ReleaseStep(action = st => {
+  //   // extract the build state
+  //   val extracted = Project.extract(st)
+  //   // retrieve the value of the organization SettingKey
+  //   val org = extracted.get(Keys.organization)
 
-    releaseProcess  := Seq[ReleaseStep](
-      checkSnapshotDependencies,
-      inquireVersions,
-      runTest,
-      setReleaseVersion,
-      commitReleaseVersion,
-      tagRelease,
-      // stage binary artifacts
-      releaseStepTask(stage in Universal),
-      releaseStepTask(packageZipTarball in Universal),
-      // copyReleaseAssets,
-      // pushChanges
-      // add binary asset textworks-app.tar.gz via ghr
-      //
+  //   if (org.startsWith("com.acme"))
+  //     sys.error("Hey, no need to release a toy project!")
 
+  //   st
+  // })
 
-
-      // publishArtifacts,
-      // setNextVersion,
-      // commitNextVersion,
-      // pushChanges
-    )
-  )
-
-
-
-}
