@@ -2,13 +2,14 @@ import sbtcrossproject.{crossProject, CrossType}
 import sbt.Keys._
 import ReleaseTransformations._
 
-SensibleProject.settings
-Release.settings
+// SensibleProject.settings
+// Release.settings
 
 val Lib = CommonLibs
 
 lazy val root = (project in file("."))
   .settings(SensibleProject.settings: _*)
+  .settings(Release.settings: _*)
   .aggregate(
     prelude, watrmarksJVM, textworks
   )
