@@ -32,12 +32,12 @@ object Release {
       commitReleaseVersion,
       tagRelease,
       copyVersionToFile,
-      releaseStepTask(Universal / PKeys.packageZipTarball),
       setNextVersion,
       commitNextVersion,
       // pushChanges,
       // pushChanges
   )
+      // releaseStepTask(Universal / PKeys.packageZipTarball),
 
   val releaseStep: ReleaseStep = releaseStepTask(Universal / PKeys.packageZipTarball)
 
