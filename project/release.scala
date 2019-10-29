@@ -14,9 +14,11 @@ object Release {
     val extracted = Project.extract(st)
     val version = extracted.get(Keys.version)
     val baseDir = extracted.get(Keys.baseDirectory)
-    val versionFile: File = baseDir / "last-release-version.txt"
+    val versionFile: File = baseDir / "set-release-versions"
 
-    val ver = s"v$version"
+    val ver = s"""|VERSION_STR=v$version
+                  |VERSION_NUM=$version
+                  |"""
     IO.write(versionFile, version)
 
     st
@@ -35,8 +37,8 @@ object Release {
       copyVersionToFile,
       setNextVersion,
       commitNextVersion,
+      pushChanges,
   ))
 
-  // pushChanges,
 
 }
