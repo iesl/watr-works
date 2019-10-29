@@ -3,13 +3,13 @@ import sbt.Keys._
 import ReleaseTransformations._
 
 // SensibleProject.settings
-// Release.settings
+Release.settings
 
 val Lib = CommonLibs
 
 lazy val root = (project in file("."))
   .settings(SensibleProject.settings: _*)
-  .settings(Release.settings: _*)
+  // .settings(Release.settings: _*)
   .aggregate(
     prelude, watrmarksJVM, textworks
   )
@@ -55,7 +55,7 @@ lazy val watrmarksJVM = watrmarks.jvm
 
 lazy val textworks = (project in file("text-works"))
   // .enablePlugins(JavaAppPackaging)
-  .settings(Release.pkgZipSettings: _*)
+  // .settings(Release.pkgZipSettings: _*)
   .enablePlugins(BuildInfoPlugin)
   .settings(SensibleProject.settings: _*)
   .settings(SensibleProject.runForked: _*)

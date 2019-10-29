@@ -22,25 +22,7 @@ object Release {
     st
   })
 
-
-  // .settings(mappings in Universal in (Compile, packageDoc) := Seq())
-  val steps = Seq[ReleaseStep](
-      checkSnapshotDependencies,
-      inquireVersions,
-      runTest,
-      setReleaseVersion,
-      commitReleaseVersion,
-      tagRelease,
-      copyVersionToFile,
-      setNextVersion,
-      commitNextVersion,
-      // pushChanges,
-      // pushChanges
-  )
-      // releaseStepTask(Universal / PKeys.packageZipTarball),
-
-  val releaseStep: ReleaseStep = releaseStepTask(Universal / PKeys.packageZipTarball)
-
+  val pkgTgzStep: ReleaseStep = releaseStepTask(Universal / PKeys.packageZipTarball)
 
   val settings = Seq(
     releaseProcess := Seq[ReleaseStep](
@@ -55,21 +37,6 @@ object Release {
       commitNextVersion,
   ))
 
-  val pkgZipSettings = Seq(
-    releaseProcess := Seq[ReleaseStep](
-      checkSnapshotDependencies,
-      inquireVersions,
-      runTest,
-      setReleaseVersion,
-      commitReleaseVersion,
-      tagRelease,
-      releaseStepTask(Universal / PKeys.packageZipTarball),
-      copyVersionToFile,
-      setNextVersion,
-      commitNextVersion,
-      // pushChanges,
-      // pushChanges
-    ))
-
+  // pushChanges,
 
 }
