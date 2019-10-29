@@ -1,10 +1,11 @@
 import sbt._
-import sbt.Keys._
+// import sbt.Keys._
 
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
 import com.typesafe.sbt.SbtNativePackager._
-import com.typesafe.sbt.packager.Keys._
+import com.typesafe.sbt.packager.{Keys => PKeys}
+import PKeys._
 
 object Release {
 
@@ -15,13 +16,30 @@ object Release {
     val baseDir = extracted.get(Keys.baseDirectory)
     val versionFile: File = baseDir / "last-release-version.txt"
 
+    // val asdf = extracted.get(PKeys.packageZipTarball)
+    // val asdf = extracted.get(Universal)
+    // println(s"packageZipTarball = ${extracted}")
     val ver = s"v$version"
     IO.write(versionFile, version)
+
+    val releaseAsset = (packageZipTarball in Universal)
+
+    if (releaseAsset != null) {
+
+    } else {
+
+    }
 
     st
   })
 
 
+
+  val noopSettings = Seq(
+    releaseProcess  := Seq[ReleaseStep]()
+  )
+
+  val noop = taskKey[Unit]("do nothing")
 
   val settings = Seq(
 
@@ -33,16 +51,11 @@ object Release {
       commitReleaseVersion,
       tagRelease,
       copyVersionToFile,
-
-      // stage binary artifacts
-      releaseStepTask(stage in Universal),
-      releaseStepTask(packageZipTarball in Universal),
-
+      releaseStepTask(Universal / PKeys.packageZipTarball),
       setNextVersion,
-      pushChanges,
-      // publishArtifacts,
       commitNextVersion,
-      pushChanges
+      // pushChanges,
+      // pushChanges
     )
   )
 
