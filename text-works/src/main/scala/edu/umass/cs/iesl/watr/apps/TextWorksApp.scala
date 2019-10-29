@@ -33,12 +33,29 @@ object TextWorksConfig {
     exec              : Option[(Config) => Unit] = Some((c) => runTextExtractionPipeline(c))
   )
 
+  val appName = buildinfo.BuildInfo.appName
+  val appVersion = buildinfo.BuildInfo.appVersion
+  val commit = buildinfo.BuildInfo.gitHeadCommit.getOrElse("?")
+  val buildTime = buildinfo.BuildInfo.builtAtMillis
+  val timezone = buildinfo.BuildInfo.timezone
+
+  val dtFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+  dtFormat.setTimeZone(java.util.TimeZone.getTimeZone(timezone))
+  val timeStr = dtFormat.format(buildTime)
+
+
+  val buildStr = s"""|
+                     | version    : ${appVersion}
+                     | git commit : ${commit}
+                     | build time : ${timeStr}
+                     |""".stripMargin
+
   val parser = new scopt.OptionParser[Config]("text-works") {
     import scopt._
 
     override def renderingMode: RenderingMode = RenderingMode.OneColumn
 
-    head("TextWorks PDF text extraction, part of WatrWorks", "0.1")
+    head("TextWorks PDF text extraction, part of WatrWorks", buildStr)
 
     note("Run text extraction and analysis on PDFs")
 
