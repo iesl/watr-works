@@ -43,13 +43,33 @@ object Release {
 
 
   val settings = Seq(
-    releaseProcess := steps
-  )
+    releaseProcess := Seq[ReleaseStep](
+      checkSnapshotDependencies,
+      inquireVersions,
+      runTest,
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
+      copyVersionToFile,
+      setNextVersion,
+      commitNextVersion,
+  ))
 
   val pkgZipSettings = Seq(
-    releaseProcess :=  steps :+ releaseStep
-  )
+    releaseProcess := Seq[ReleaseStep](
+      checkSnapshotDependencies,
+      inquireVersions,
+      runTest,
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
+      releaseStepTask(Universal / PKeys.packageZipTarball),
+      copyVersionToFile,
+      setNextVersion,
+      commitNextVersion,
+      // pushChanges,
+      // pushChanges
+    ))
 
 
 }
-

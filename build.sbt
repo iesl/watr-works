@@ -54,7 +54,7 @@ lazy val watrmarks = crossProject(JSPlatform, JVMPlatform)
 lazy val watrmarksJVM = watrmarks.jvm
 
 lazy val textworks = (project in file("text-works"))
-  .enablePlugins(JavaAppPackaging)
+  // .enablePlugins(JavaAppPackaging)
   .settings(Release.pkgZipSettings: _*)
   .enablePlugins(BuildInfoPlugin)
   .settings(SensibleProject.settings: _*)
