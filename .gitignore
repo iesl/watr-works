@@ -62,4 +62,4 @@ package-lock.json
 
 *.tar.gz
 
-/gh-access-token.txt
+
