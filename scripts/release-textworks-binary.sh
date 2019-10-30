@@ -1,8 +1,10 @@
 #!/bin/bash
 
-
-sbt compile release
+sbt clean compile "textworks/universal:packageXzTarball" release
 
 source ./set-release-versions
 
-echo ghr $VER text-works/target/universal/textworks-$VERSION_STR.tgz
+echo ghr $VERSION_STR text-works/target/universal/textworks-$VERSION_STR.tgz
+
+
+
