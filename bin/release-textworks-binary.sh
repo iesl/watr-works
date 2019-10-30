@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sbt clean compile "textworks/universal:packageXzTarball" release
+sbt clean compile "textworks/universal:packageZipTarball" release
 
 source ./set-release-versions
 
