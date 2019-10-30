@@ -63,4 +63,4 @@ package-lock.json
 *.tar.gz
 
 
-./set-release-versions
+set-release-versions
