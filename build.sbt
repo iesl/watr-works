@@ -4,6 +4,9 @@ import ReleaseTransformations._
 
 // SensibleProject.settings
 Release.settings
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
+// Global / onChangedBuildSource := IgnoreSourceChanges
 
 val Lib = CommonLibs
 

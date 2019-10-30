@@ -18,7 +18,7 @@ object Release {
     val version = extracted.get(Keys.version)
     val baseDir = extracted.get(Keys.baseDirectory)
     val shell: Seq[String] = if (sys.props("os.name").contains("Windows")) Seq("cmd", "/c") else Seq("bash", "-c")
-    val uploadAssets: Seq[String] = shell :+ s"echo ghr v${version} text-works/target/universal/textworks-${version}.tgz"
+    val uploadAssets: Seq[String] = shell :+ s"ghr v${version} text-works/target/universal/textworks-${version}.tgz"
     println(s"uploading assets to release version v${version}")
     if((uploadAssets !) == 0) {
       println("upload successful!")
@@ -51,6 +51,9 @@ object Release {
       // copyVersionToFile,
 
 }
+
+
+
 
   // lazy val uploadAssetsTask = taskKey[Unit]("Upload binary assets to github")
 
