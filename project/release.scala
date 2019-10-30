@@ -19,7 +19,7 @@ object Release {
     val ver = s"""|VERSION_STR=v$version
                   |VERSION_NUM=$version
                   |"""
-    IO.write(versionFile, version)
+    IO.write(versionFile, ver)
 
     st
   })
