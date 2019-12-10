@@ -1,0 +1,57 @@
+* TextWorks Project Tasks, Roadmap
+
+** Near future Roadmap
+
+   - [ ] TextWorks CLI
+     - [ ] 
+
+       
+** Project structure
+
+** Options for extraction (either rich-text formatting or json)
+*** Visual Flow
+    try to match the text to the format in the PDF
+
+*** Dehyphenated Visual Flow
+    close to Visual, but hyphenated words joined
+
+*** Reading Flow
+    Paragraphs, one per line
+
+*** Paginated Reading Flow
+
+*** Structured Text with left-col line BIO labels (para/section/authors/etc)
+
+
+** TextWorks Documentation
+*** README file
+**** Basic usage for single-file extraction
+**** Options
+**** Output format description
+
+
+** Layout Analysis Desired Features and improvements
+*** Paragraph detection
+*** dehyphenation support
+*** Column detection is flaky
+*** Combining marks are not being combined
+*** Charts, Figures, Graphs + captions/legends/axes
+*** Inset images
+*** Table data
+*** Footnotes, note marker x-ref
+*** Formulas, non-inline math
+*** Inset formulas w/numbering at right edge are not detected, and have specious sup/sub
+*** Section detection
+*** Elsevier footnote/copyright has incorrect spacing
+*** Reference section is sometimes broken up into columns, one for markers, one for refs
+*** no heading/bold/font change information
+*** line w/ page number and journal header not distinct (represented as one visual line)
+*** Table of Contents (esp. w/ .... separators) not detected/parsed properly
+*** Columnar data not marked as such (e.g., author info blocks, vertically formatted keyword section)
+*** No visual cues in text output wrt structure (e.g., indent paras, whitespace sep between paras)
+*** No drop-cap detection, sometimes resulting in incorrect super/subscripts
+*** Path-glyphs are not detected
+*** Stacked super/subscripts are in indeterminate order
+*** Whitespace sep. columns have no distinguishing extra space between tokens, e.g.
+    "Adam Smith Rupert Murdoch" rather than "Adam Smith            Rupert Murdoch"
+*** ISBN / DOI links to indicated books, articles, etc.
