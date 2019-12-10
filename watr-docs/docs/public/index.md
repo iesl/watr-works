@@ -1,13 +1,14 @@
----
-layout: home
-technologies:
----
-
-```tut:invisible
-//
-```
-
 # A collection of tools and libraries to extract, annotate and analyze text and with layout information
+
+### Modules
+
+* **[TextWorks](/watr-works/docs/textworks/index.html)**  Command line text extractor
+
+* **[WatrMarks](/watr-works/docs/watrmarks/index.html)** Core utility library
+
+* **WatrColors** Web-based annotation tool
+
+
 
 ### Command Line Tools
   * [`TextWorks`](/watr-works/docs/textworks/): PDF -> Text 

@@ -1,0 +1,7 @@
+{
+  "name": "watr-docs",
+  "version": "1.0.0",
+  "description": "Documentation for WatrWorks project(s)",
+  "main": "index.js",
+  "license": "MIT"
+}
