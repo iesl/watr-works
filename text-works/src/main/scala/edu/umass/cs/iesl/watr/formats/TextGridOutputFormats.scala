@@ -2,6 +2,8 @@ package edu.umass.cs.iesl.watr
 package formats
 
 import edu.umass.cs.iesl.watr.watrmarks.WeightedLabeling
+import scala.{ collection => sc }
+import sc.Seq
 
 import rtrees._
 import textboxing.{TextBoxing => TB}, TB._

@@ -1,6 +1,9 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+import scala.{ collection => sc }
+import sc.Seq
+
 import geometry._
 import geometry.syntax._
 import TypeTags._

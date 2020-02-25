@@ -13,13 +13,6 @@ object Release {
 
   lazy val textworks = (project in file("text-works"))
 
-  // val checkForGhrExecutableStep = ReleaseStep(action = st => {
-  //   val extracted = Project.extract(st)
-  //   val shell: Seq[String] = if (sys.props("os.name").contains("Windows")) Seq("cmd", "/c") else Seq("bash", "-c")
-  //   val cmd: Seq[String] = shell :+ s"which ghr"
-  //   st
-  // })
-
   val uploadAssetsStep = ReleaseStep(action = st => {
     val extracted = Project.extract(st)
     val version = extracted.get(Keys.version)

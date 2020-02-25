@@ -1,6 +1,8 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+import scala.{ collection => sc }
+import sc.Seq
 import textgrid._
 import textgraph._
 import geometry._

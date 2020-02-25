@@ -1,6 +1,8 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+import scala.{ collection => sc }
+import sc.Seq
 import extract._
 import utils.ExactFloats._
 import utils.SlicingAndDicing._
@@ -14,6 +16,7 @@ import geometry._
 import geometry.syntax._
 import utils.QuickNearestNeighbors._
 import scala.collection.mutable
+
 
 import TypeTags._
 
@@ -232,11 +235,11 @@ trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { se
       if (warning) {
         traceLog.trace {
           val charBounds = vs.map{v => v._2.minBBox }
-          figure(charBounds:_*) tagged "Wonky Glyph Bounds Baseline Offsets"
+          figure(charBounds) tagged "Wonky Glyph Bounds Baseline Offsets"
         }
         traceLog.trace {
           val charBounds = vs.map{v => v._2.fontBbox }
-          figure(charBounds:_*) tagged "Wonky Font Bounds Baseline Offsets"
+          figure(charBounds) tagged "Wonky Font Bounds Baseline Offsets"
         }
       }
 
@@ -318,7 +321,7 @@ trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { se
           groupBounds.toLine(Dir.Bottom)
         }
 
-      figure(bottomLines:_*) tagged "Joined Nat Lang CharRun Baselines"
+      figure(bottomLines) tagged "Joined Nat Lang CharRun Baselines"
     }
   }
 

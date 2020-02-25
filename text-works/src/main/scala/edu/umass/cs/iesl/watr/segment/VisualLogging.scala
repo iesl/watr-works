@@ -1,6 +1,8 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+import scala.{ collection => sc }
+import sc.Seq
 import geometry._
 import rtrees._
 import watrmarks._
@@ -233,8 +235,11 @@ trait PageScopeTracing extends ScopedTracing { self  =>
       body = List()
     ).named(name)
   }
+  def figure(figures: GeometricFigure): GeometryTraceLog = {
+    figure(Seq(figures))
+  }
 
-  def figure(figures: GeometricFigure*): GeometryTraceLog = {
+  def figure(figures: Seq[GeometricFigure]): GeometryTraceLog = {
     GeometryTraceLog(
       body = figures.toList.asJson
     )

@@ -1,6 +1,9 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+import scala.{ collection => sc }
+import sc.Seq
+
 import geometry._
 import geometry.syntax._
 import extract._
@@ -168,14 +171,14 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
 
         val referenceCandidates = (finalBounds :: finalSlices).reverse
 
-        traceLog.trace { figure(finalSlices:_*).tagged(s"Hanging Indent Slices: ${finalSlices.length}") }
+        traceLog.trace { figure(finalSlices).tagged(s"Hanging Indent Slices: ${finalSlices.length}") }
         traceLog.trace { figure(finalBounds).tagged(s"Hanging Indent Final Bounds") }
 
 
         val nonIntersectingCandidates = filterPrelabeledRegions(refBlockRegion.bbox, referenceCandidates)
 
         traceLog.trace {
-          figure(nonIntersectingCandidates:_*).tagged(s"Non intersecting Reference Candidates (${nonIntersectingCandidates.length})")
+          figure(nonIntersectingCandidates).tagged(s"Non intersecting Reference Candidates (${nonIntersectingCandidates.length})")
         }
 
         val referenceMinBounds = nonIntersectingCandidates.map{ candidateBounds =>
@@ -187,7 +190,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
         }
 
         traceLog.trace {
-          figure(referenceMinBounds:_*).tagged(s"Final Hanging Reference Min Bounds (${referenceMinBounds.length})" )
+          figure(referenceMinBounds).tagged(s"Final Hanging Reference Min Bounds (${referenceMinBounds.length})" )
         }
 
       } else if (leftJustifiedColumnShapes.nonEmpty) {
@@ -256,7 +259,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
 
             val nonIntersectingCandidates = filterPrelabeledRegions(refBlockRegion.bbox, candidateBounds)
 
-            traceLog.trace { figure(nonIntersectingCandidates:_*).tagged(s"Left-Justified Reference Candidate Bounds") }
+            traceLog.trace { figure(nonIntersectingCandidates).tagged(s"Left-Justified Reference Candidate Bounds") }
 
             val referenceMinBounds = nonIntersectingCandidates.map{ bounds =>
               findCandidateMinBounds(bounds)
@@ -267,7 +270,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
             }
 
             traceLog.trace {
-              figure(referenceMinBounds:_*).tagged(s"Final Justified Reference Min Bounds (${referenceMinBounds.length})" )
+              figure(referenceMinBounds).tagged(s"Final Justified Reference Min Bounds (${referenceMinBounds.length})" )
             }
           }
         }

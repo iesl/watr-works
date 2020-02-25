@@ -366,7 +366,6 @@ object ProcessPipelineSteps {
 
 
   val JsonPrettyPrinter = circe.Printer(
-    preserveOrder = true,
     dropNullValues = false,
     indent = "  ",
     lbraceRight = "",

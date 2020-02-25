@@ -1,6 +1,9 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+import scala.{ collection => sc }
+import sc.Seq
+
 import geometry._
 import geometry.syntax._
 import watrmarks.Label
@@ -339,12 +342,15 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     shapeIndex.getShapeAttribute[AnyShape](shape1.id, linkage)
   }
 
+
   protected def setPrimaryFontForShape(shape: DocSegShape[GeometricFigure], fontId: String@@ScaledFontID): Unit = {
-    shapeIndex.setShapeAttribute[String@@ScaledFontID](shape.id, LB.PrimaryFont, fontId)
+    val someId = Some(fontId)
+    shapeIndex.setShapeAttribute[Option[String@@ScaledFontID]](shape.id, LB.PrimaryFont, someId)
   }
 
   protected def getPrimaryFontForShape(shape: DocSegShape[GeometricFigure]): Option[String@@ScaledFontID] = {
-    shapeIndex.getShapeAttribute[String@@ScaledFontID](shape.id, LB.PrimaryFont)
+    val someId = shapeIndex.getShapeAttribute[Option[String@@ScaledFontID]](shape.id, LB.PrimaryFont)
+    someId.flatten
   }
 
   protected def setFontOffsetsForShape(shape: DocSegShape[GeometricFigure], offsets: FontBaselineOffsets): Unit = {

@@ -1,6 +1,9 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+import scala.{ collection => sc }
+import sc.Seq
+
 import watrmarks._
 import geometry.syntax._
 import utils.ExactFloats._
@@ -140,7 +143,7 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
             traceLog.trace {
               val commonItems = lastLineItems.filter(item => commonIds.contains(item.id.unwrap))
               val commonItemBounds = commonItems.map(_.minBBox)
-              figure(commonItemBounds:_*) tagged s"Common Glyphs ${currLineText}"
+              figure(commonItemBounds) tagged s"Common Glyphs ${currLineText}"
             }
 
             currLineItems.length == adjustedFoundGlyphCount
