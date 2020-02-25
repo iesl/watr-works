@@ -14,6 +14,7 @@ import circe.parser._
 
 import ammonite.{ops => fs}, fs._
 import cats.effect._
+import os.SubPath
 
 
 object Corpus {
@@ -23,6 +24,7 @@ object Corpus {
     val fullPath = fs.FilePath(corpusRoot) match {
       case p: fs.Path =>  p
       case p: fs.RelPath => fs.pwd / p
+      case p: SubPath => ???
     }
 
     val validPath = exists(fullPath)

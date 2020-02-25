@@ -10,7 +10,7 @@ import VisualTraceLevel._
 object VisualTracer {
 
   { // Set trace levels here to force recompile and macro re-eval
-    // VisualTraceGlobals.addTraceLevel(VisualTraceLevel.JsonLogs)
+    VisualTraceGlobals.addTraceLevel(VisualTraceLevel.JsonLogs)
   }
 
   def tracingEnabled(): Boolean = {

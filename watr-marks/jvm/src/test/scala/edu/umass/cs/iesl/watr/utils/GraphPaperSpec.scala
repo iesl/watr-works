@@ -2,9 +2,11 @@ package edu.umass.cs.iesl.watr
 package utils
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import textboxing.{TextBoxing => TB}, TB._
 
-class GraphPaperSpec extends FlatSpec with Matchers {
+class GraphPaperSpec extends AnyFlatSpec with Matchers {
 
   it should "maintain height/width dimensions when rendered as string" in {
     val graphPaper = new AsciiGraphPaper(2, 2)

@@ -138,7 +138,11 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
       }
     }
 
-    val zonesByLabel = pageZonesAndLabels.groupBy(_._2).mapValues(_.map(_._1))
+    // val zonesByLabel = pageZonesAndLabels.groupBy(_._2).mapValues(_.map(_._1))
+    val zonesByLabel = pageZonesAndLabels
+      .groupBy(_._2).view
+      .mapValues(_.map(_._1))
+      .toMap
 
     val referenceBlockZones = zonesByLabel.get(ReferenceBlock)
 

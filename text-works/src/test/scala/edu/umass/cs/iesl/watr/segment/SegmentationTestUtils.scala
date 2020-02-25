@@ -2,13 +2,15 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import geometry._
 
 import java.net.URL
 import TypeTags._
 
-trait SegmentationTestUtils extends  FlatSpec with Matchers {
+trait SegmentationTestUtils extends AnyFlatSpec with Matchers {
 
   import ammonite.{ops => fs}
 
@@ -16,7 +18,9 @@ trait SegmentationTestUtils extends  FlatSpec with Matchers {
   def resourcePaperUrl(filename: String) = getClass().getResource(s"/papers/$filename")
 
   def parsePdfsSinglePages(pdfPerLineStr: String): Seq[(String@@DocumentID, Int, fs.Path)] = {
-    pdfPerLineStr.split("\n")
+
+
+    pdfPerLineStr.split("\n").to(Seq)
       .map(_.trim())
       .filter(_.length()>0)
       .flatMap{ pathAndPageCount =>
@@ -58,6 +62,7 @@ trait SegmentationTestUtils extends  FlatSpec with Matchers {
   def parsePdfs(pdfPerLineStr: String): Seq[(String@@DocumentID, fs.Path)] = {
 
     pdfPerLineStr.split("\n")
+      .to(Seq)
       .map(_.trim())
       .filter(_.length()>0)
       .map{ pdfName =>
@@ -153,7 +158,9 @@ trait SegmentationTestUtils extends  FlatSpec with Matchers {
     ParsedExample(
       sourcePdfName,
       parsedFrags,
-      cAndp.expectedOutput.trim.split("\n").map(_.trim)
+      cAndp.expectedOutput.trim.split("\n")
+        .to(Seq)
+        .map(_.trim)
     )
   }
 

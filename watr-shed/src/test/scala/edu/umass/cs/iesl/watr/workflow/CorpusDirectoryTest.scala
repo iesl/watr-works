@@ -35,11 +35,11 @@ class CorpusDirectoryTest extends DatabaseTest with UserbaseTestHelpers {
     println("Paths")
     println(corpusDirectory.listDirectories())
 
-    entries.right.foreach(es => es.foreach{entry =>
+    entries.foreach(es => es.foreach{entry =>
       println( corpusDirectory.moveEntry(entry, CorpusPath("A.B.C")) )
     })
 
-    entries.right.foreach(es => es.drop(1).foreach{entry =>
+    entries.foreach(es => es.drop(1).foreach{entry =>
       println(
         corpusDirectory.moveEntry(entry, CorpusPath("A.B"))
       )

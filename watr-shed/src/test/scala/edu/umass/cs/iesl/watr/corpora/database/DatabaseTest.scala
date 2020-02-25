@@ -5,7 +5,7 @@ package database
 import org.scalatest._
 import workflow._
 
-trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil
+trait DatabaseTest extends AnyFlatSpec with Matchers with CorpusTestingUtil
     with BeforeAndAfterEach
     with BeforeAndAfterAll {
 

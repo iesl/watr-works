@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import org.scalatest._
+import org.scalatest.diagrams.Diagrams
 
 // import rtrees._
 // import ComponentOperations._
@@ -10,7 +11,7 @@ import org.scalatest._
 // import TypeTags._
 // import textreflow.data._
 
-class LineTokenizationTest extends SegmentationTestUtils  with DiagrammedAssertions {
+class LineTokenizationTest extends SegmentationTestUtils  with Diagrams {
   // N.B. this paper removed from test cases b/c the visible text is actually image overlays, w/ some hand-entered text
   //   """Page:0 file:///Schauer-1987.pdf""",
   behavior of "text line identification"

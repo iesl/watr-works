@@ -2,8 +2,10 @@ package edu.umass.cs.iesl.watr
 package utils.intervals
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class IntervalsTest extends FlatSpec with Matchers {
+class IntervalsTest extends AnyFlatSpec with Matchers {
 
 
   it should "test_isNotPoint" in {

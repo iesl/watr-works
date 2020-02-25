@@ -2,11 +2,13 @@ package edu.umass.cs.iesl.watr
 package rtrees
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalacheck._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Prop._
 
-class LabeledShapeIndexTest extends FlatSpec {
+class LabeledShapeIndexTest extends AnyFlatSpec {
 
   behavior of "LabeledShapeIndex"
 

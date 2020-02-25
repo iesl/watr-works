@@ -2,9 +2,11 @@ package edu.umass.cs.iesl.watr
 package utils
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 
-class StringCaseUtilsTest extends FlatSpec with Matchers {
+class StringCaseUtilsTest extends AnyFlatSpec with Matchers {
   behavior of "string casing"
 
   import StringUtils._

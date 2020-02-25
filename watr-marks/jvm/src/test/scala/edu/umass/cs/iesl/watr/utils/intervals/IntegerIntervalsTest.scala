@@ -2,8 +2,10 @@ package edu.umass.cs.iesl.watr
 package utils.intervals
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class IntegerIntervalsTest extends FlatSpec with Matchers {
+class IntegerIntervalsTest extends AnyFlatSpec with Matchers {
 
   it should "order intervals by start point, increasing" in {
     val (st, end) = (1, 1)

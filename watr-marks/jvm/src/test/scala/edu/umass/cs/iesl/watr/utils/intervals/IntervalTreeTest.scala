@@ -2,8 +2,10 @@ package edu.umass.cs.iesl.watr
 package utils.intervals
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class IntervalTreeTest extends FlatSpec with Matchers {
+class IntervalTreeTest extends AnyFlatSpec with Matchers {
 
   it should "deleteNodeAfterAssimilation" in {
 
@@ -46,8 +48,8 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 		assert(!tree.root.decreasing.contains(a));
 		assert(tree.root.decreasing.contains(b));
 		assert(tree.root.increasing.contains(b));
-		assert(tree.root.right.decreasing.contains(c));
-		assert(tree.root.right.increasing.contains(c));
+		assert(tree.root.decreasing.contains(c));
+		assert(tree.root.increasing.contains(c));
 		assert(1 == tree.root.decreasing.size);
 		assert(1 == tree.root.increasing.size);
 		assert(0 == tree.query(22).size);
@@ -91,8 +93,8 @@ class IntervalTreeTest extends FlatSpec with Matchers {
     assert(tree.root.increasing.contains(d));
     assert(tree.root.decreasing.contains(b));
     assert(tree.root.decreasing.contains(d));
-    assert(tree.root.right.decreasing.contains(c));
-    assert(tree.root.right.increasing.contains(c));
+    assert(tree.root.decreasing.contains(c));
+    assert(tree.root.increasing.contains(c));
   }
 
 
@@ -142,7 +144,7 @@ class IntervalTreeTest extends FlatSpec with Matchers {
   	tree.add(g);
 
   	val nodeF = tree.root.left.right;
-  	val nodeG = tree.root.left.right.right;
+  	val nodeG = tree.root.left.right;
   	val nodeE = tree.root.left.left;
   	val nodeC = tree.root.right;
 
@@ -200,9 +202,9 @@ class IntervalTreeTest extends FlatSpec with Matchers {
 		assert(tree.root.left.increasing.contains(b));
 		assert(tree.root.left.decreasing.contains(b));
 		assert(1 == tree.root.left.decreasing.size);
-		assert(tree.root.right.increasing.contains(c));
-		assert(tree.root.right.decreasing.contains(c));
-		assert(1 == tree.root.right.decreasing.size);
+		assert(tree.root.increasing.contains(c));
+		assert(tree.root.decreasing.contains(c));
+		assert(1 == tree.root.decreasing.size);
 
 		tree = new IntervalTree[Int, Unit]();
 		tree.add(a);

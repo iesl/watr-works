@@ -2,6 +2,8 @@ package edu.umass.cs.iesl.watr
 package corpora
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 // import TypeTags._
 
 
@@ -25,7 +27,7 @@ class Tables {
 
 }
 
-class MemTablesTest extends FlatSpec with Matchers {
+class MemTablesTest extends AnyFlatSpec with Matchers {
 
   behavior of "In-memory Tables"
 

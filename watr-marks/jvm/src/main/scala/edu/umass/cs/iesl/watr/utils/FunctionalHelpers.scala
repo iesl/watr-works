@@ -7,7 +7,6 @@ import sc.Seq
 object FunctionalHelpers {
   import scalaz._
 
-
   object IO {
 
     def putStrLn[F[_]](s: String)(implicit F: Applicative[F]): F[Unit] =  {
@@ -45,9 +44,9 @@ object FunctionalHelpers {
     }
     groups.map{ group =>
       if (group.head.isRight) {
-        Right(group.map(_.right.get))
+        Right(group.map(_.getOrElse(???)))
       } else {
-        Left(group.map(_.left.get))
+        Left(group.map(_.swap.getOrElse(???)))
       }
     }
   }

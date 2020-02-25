@@ -7,12 +7,14 @@ import circe.syntax._
 import LabeledSequenceCodecs._
 import LabeledSequencePrinting._
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import LabeledSequence.Things
 import LabelTarget.Thing
 
 
 trait LabeledSequenceTestBasics
-    extends FreeSpec
+    extends AnyFlatSpec
     with Matchers
     with LabeledSequenceThings
     with TextGridTestExamples
@@ -22,7 +24,7 @@ class LabeledSequenceTest extends TextGridSpec {
 
   info("behavior of label sequence labeling/unlabeling")
 
-  "application of labels" in {
+  it should "application of labels" in {
     val thingCount = 10
 
     val things = unlabeledThings(thingCount)
@@ -51,7 +53,7 @@ class LabeledSequenceTest extends TextGridSpec {
   }
 
 
-  "it should find the span of cells that have a particular label" in {
+  it should "find the span of cells that have a particular label" in {
     val thingCount = 10
 
     val things = unlabeledThings(thingCount)
@@ -72,7 +74,7 @@ class LabeledSequenceTest extends TextGridSpec {
 
 
 
-  "it should find the span of cells that have identical labeling (including unlabeled spans)" in {
+  it should "find the span of cells that have identical labeling (including unlabeled spans)" in {
     val thingCount = 10
     val things = unlabeledThings(thingCount)
 

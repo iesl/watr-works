@@ -1,6 +1,8 @@
 package edu.umass.cs.iesl.watr
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalacheck._
 
 import scalaz.{@@ => _, _}, Scalaz._
@@ -91,7 +93,7 @@ trait TextGridTestExamples extends TextGridConstruction {
   }
 }
 
-trait TextGridSpec extends FreeSpec with Matchers with TextGridTestExamples with LabeledSequenceThings {
+trait TextGridSpec extends AnyFlatSpec with Matchers with TextGridTestExamples with LabeledSequenceThings {
 
 
   def infobox(heading: String, b: TB.Box): Unit = {

@@ -5,7 +5,7 @@ package database
 import org.scalatest._
 import TypeTags._
 
-class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUtil with BeforeAndAfterEach {
+class DatabaseBulkImportTest extends AnyFlatSpec with Matchers with CorpusTestingUtil with BeforeAndAfterEach {
   behavior of "bulk document import"
 
   var memZoneApi = new MemDocZoningApi

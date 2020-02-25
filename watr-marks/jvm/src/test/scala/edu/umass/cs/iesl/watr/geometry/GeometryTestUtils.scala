@@ -2,12 +2,14 @@ package edu.umass.cs.iesl.watr
 package geometry
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import scalaz._, Scalaz._
 import utils.ExactFloats._
 
 
-object GeometryTestUtils extends FlatSpec {
+object GeometryTestUtils extends AnyFlatSpec {
   import utils.AsciiGraphPaper
   import utils.GraphPaper
   import GraphPaper._

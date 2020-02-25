@@ -3,6 +3,8 @@ package rtrees
 
 import scalaz.{@@ => _, _}, Scalaz._
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary
@@ -54,7 +56,7 @@ object TestShape {
 
 }
 
-class RTreeIndexTest extends FlatSpec with Matchers {
+class RTreeIndexTest extends AnyFlatSpec with Matchers {
 
   behavior of "RTreeIndex"
 

@@ -602,7 +602,7 @@ object AnnotationDiffs {
         // Final decision as to whether this is correctly labeled...
 
         val allComparisons: Either[(Int, TB.Box), (Int, LabelSpanComparison, TB.Box)] = if (sameLabeled == 1) {
-          val spanComparison = matchingLabelComparisons.filter(_.isRight).head.right.get
+          val spanComparison = matchingLabelComparisons.filter(_.isRight).head.get
           val span2Index = spanComparison.cellComparisons.head.i2
           // val span2 = diffRec.labelSpans(span2Index)
           // Compare these wrt. label
@@ -630,7 +630,7 @@ object AnnotationDiffs {
           }
 
         } else if (sameLabeled > 1) {
-          val validComparisons = matchingLabelComparisons.filter(_.isRight).map(_.right.get)
+          val validComparisons = matchingLabelComparisons.filter(_.isRight).map(_.get)
 
           val boxes = validComparisons.map{ spanComparison =>
             val span1Index = spanComparison.cellComparisons.head.i1

@@ -77,7 +77,7 @@ class PageTextTest extends SegmentationTestUtils  {
 
   def writeLogs(logJson: Json, outputRoot: fs.Path, logfile: String): Unit = {
 
-    val jsonStr = logJson.asJson.pretty(circe.Printer.spaces2)
+    val jsonStr = logJson.printWith(circe.Printer.spaces2)
 
     if (!fs.exists(outputRoot)) {
       fs.mkdir(outputRoot)

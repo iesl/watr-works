@@ -3,7 +3,7 @@ package corpora
 
 import org.scalatest._
 
-trait CorpusManagementTest extends FlatSpec with Matchers with CorpusTestingUtil {
+trait CorpusManagementTest extends AnyFlatSpec with Matchers with CorpusTestingUtil {
 
   // given the root of a corpus (filesys), scan for artifacts (pdfs, extracted text, images, etc).
   // Ensure that particular artifacts exist (e.g., run image extraction where needed)

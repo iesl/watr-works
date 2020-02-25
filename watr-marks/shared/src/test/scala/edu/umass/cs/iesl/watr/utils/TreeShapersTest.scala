@@ -2,8 +2,10 @@ package edu.umass.cs.iesl.watr
 package utils
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class TreeShaperTests extends FlatSpec with Matchers {
+class TreeShaperTests extends AnyFlatSpec with Matchers {
   import scalaz._
   import Scalaz._
 

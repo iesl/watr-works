@@ -325,7 +325,9 @@ case class FontProperties(
     val height = bbox.height.asDouble()
     val scalingFactor = glyphProps.scalingFactor
 
-    val recentSimilarTextWindow = char.toLower + priorSimilarChars.map(_.char).mkString.toLowerCase()
+    // val recentSimilarTextWindow = char.toLower + priorSimilarChars.map(_.char).mkString.toLowerCase()
+    val priorStr = priorSimilarChars.map(_.char).mkString.toLowerCase()
+    val recentSimilarTextWindow = s"${char.toLower}${priorStr}"
 
     val hasBigram = CharClasses.hasCommonBigram(recentSimilarTextWindow.take(2))
     val hasTrigram = CharClasses.hasCommonTrigram(recentSimilarTextWindow.take(3))
@@ -350,7 +352,7 @@ case class FontProperties(
         bbox.height,
         { letters =>
           if (letters.contains(char)) letters
-          else (letters + char).sorted
+          else (letters + char).toSeq.sorted.unwrap
         },
         char.toString()
       )

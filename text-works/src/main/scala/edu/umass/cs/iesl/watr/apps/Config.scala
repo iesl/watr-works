@@ -38,7 +38,7 @@ object Processable {
       input match {
         case SingleFile(f) =>
           conf.outputPath.getOrElse {
-            nio.Paths.get(f.getFileName() + ".textgrid.json")
+            nio.Paths.get(f.getFileName().toString() + ".textgrid.json")
           }
 
         case CorpusFile(corpusEntry) =>

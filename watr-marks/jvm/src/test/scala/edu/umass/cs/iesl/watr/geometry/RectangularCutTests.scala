@@ -2,9 +2,11 @@ package edu.umass.cs.iesl.watr
 package geometry
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 
-class RectangularCutTests  extends FlatSpec with Matchers {
+class RectangularCutTests  extends AnyFlatSpec with Matchers {
   behavior of "Geometric Figures"
 
   import GeometryImplicits._

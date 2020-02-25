@@ -44,7 +44,7 @@ trait DatabaseFreeSpec extends FreeSpec with DatabaseBaseTest with BeforeAndAfte
   override def afterEach(): Unit = {}
 }
 
-trait DatabaseTest extends FlatSpec with DatabaseBaseTest with BeforeAndAfterEach {
+trait DatabaseTest extends AnyFlatSpec with DatabaseBaseTest with BeforeAndAfterEach {
 
   override def beforeEach(): Unit = {
     println("re-initing db connections")

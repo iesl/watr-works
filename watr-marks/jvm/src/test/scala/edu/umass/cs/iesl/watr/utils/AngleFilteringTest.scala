@@ -2,11 +2,13 @@ package edu.umass.cs.iesl.watr
 package utils
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 // import geometry._
 // import utils.ExactFloats._
 
-class AngleFilteringTest extends FlatSpec with Matchers {
+class AngleFilteringTest extends AnyFlatSpec with Matchers {
 
   behavior of "angle filtering"
 

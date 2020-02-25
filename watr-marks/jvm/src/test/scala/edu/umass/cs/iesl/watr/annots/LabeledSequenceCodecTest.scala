@@ -24,7 +24,7 @@ object LabeledSequenceCodecChecks extends Properties("LabeledSequenceCodecChecks
 class LabeledSequenceCodecTest extends LabeledSequenceTestBasics {
 
 
-  "Behavior of labeled sequence serialization to/from Json" in {
+  it should "Behavior of labeled sequence serialization to/from Json" in {
 
     val thingCount = 10
     val things = unlabeledThings(thingCount)

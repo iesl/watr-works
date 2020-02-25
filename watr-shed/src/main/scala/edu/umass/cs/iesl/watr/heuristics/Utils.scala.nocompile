@@ -287,7 +287,7 @@ object Utils {
 
         bBoxAsString.+=(bBox.left.asInt().toString)
         bBoxAsString.+=(bBox.top.asInt().toString)
-        bBoxAsString.+=(bBox.right.asInt().toString)
+        bBoxAsString.+=(bBox.asInt().toString)
         bBoxAsString.+=(bBox.bottom.asInt().toString)
 
         bBoxAsString.mkString(BOUNDING_BOX_SEPARATOR)

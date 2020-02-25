@@ -2,9 +2,11 @@ package edu.umass.cs.iesl.watr
 package utils
 
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 
-class SlicingAndDicingTest extends FlatSpec with Matchers {
+class SlicingAndDicingTest extends AnyFlatSpec with Matchers {
   behavior of "list clustering/partitioning utils"
 
   import SlicingAndDicing._

@@ -135,7 +135,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param doc The document to get the data from.
     * @param outputStream The location to put the text.
     *
-    * @throws IOException If the doc is in an invalid state.
+    * _throws IOException If the doc is in an invalid state.
     */
   def writeText(doc: PDDocument,  outputStream: Writer): Unit = {
     resetEngine();
@@ -156,7 +156,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param pages The pages object in the document.
     *
-    * @throws IOException If there is an error parsing the text.
+    * _throws IOException If there is an error parsing the text.
     */
   def  processPages(pages: PDPageTree): Unit = {
     val startBookmarkPage: PDPage = if (startBookmark == null)  null
@@ -201,7 +201,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * This method is available for subclasses of this class. It will be called before processing of the document start.
     *
     * @param document The PDF document that is being processed.
-    * @throws IOException If an IO error occurs.
+    * _throws IOException If an IO error occurs.
     */
   def  startDocument( document: PDDocument) : Unit = {
     println(s"startDocument")
@@ -212,7 +212,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * finishes.
     *
     * @param document The PDF document that is being processed.
-    * @throws IOException If an IO error occurs.
+    * _throws IOException If an IO error occurs.
     */
   def  endDocument(document: PDDocument) : Unit = {
     println(s"endDocument")
@@ -223,7 +223,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param page The page to process.
     *
-    * @throws IOException If there is an error processing the page.
+    * _throws IOException If there is an error processing the page.
     */
   override def  processPage( page: PDPage) : Unit = {
     if (currentPageNo >= startPageNum && currentPageNo <= endPage
@@ -300,7 +300,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * assumes that the primary direction of text is left to right. Default implementation is to do nothing. Subclasses
     * may provide additional information.
     *
-    * @throws IOException If there is any error writing to the stream.
+    * _throws IOException If there is any error writing to the stream.
     */
   def  startArticle() : Unit = {
     startArticle(true);
@@ -311,7 +311,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * Default implementation is to do nothing. Subclasses may provide additional information.
     *
     * @param isLTR true if primary direction of text is left to right.
-    * @throws IOException If there is any error writing to the stream.
+    * _throws IOException If there is any error writing to the stream.
     */
   def  startArticle( isLTR: Boolean) : Unit = {
     output.write(articleStart);
@@ -320,7 +320,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   /**
     * End an article. Default implementation is to do nothing. Subclasses may provide additional information.
     *
-    * @throws IOException If there is any error writing to the stream.
+    * _throws IOException If there is any error writing to the stream.
     */
   def  endArticle() : Unit = {
     output.write(articleEnd);
@@ -331,7 +331,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param page The page we are about to process.
     *
-    * @throws IOException If there is any error writing to the stream.
+    * _throws IOException If there is any error writing to the stream.
     */
   def startPage( page: PDPage) : Unit = {
     println(s"   Start page ${page}")
@@ -342,7 +342,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param page The page we are about to process.
     *
-    * @throws IOException If there is any error writing to the stream.
+    * _throws IOException If there is any error writing to the stream.
     */
   def  endPage( page: PDPage) : Unit = {
     // default is to do nothing
@@ -360,7 +360,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * text, where newlines and word spacings should be placed. The text will be sorted only if that feature was
     * enabled.
     *
-    * @throws IOException If there is an error writing the text.
+    * _throws IOException If there is an error writing the text.
     */
   def  writePage() : Unit = {
     var  maxYForLine: Float = MAX_Y_FOR_LINE_RESET_VALUE;
@@ -587,7 +587,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   /**
     * Write the line separator value to the output stream.
     *
-    * @throws IOException If there is a problem writing out the lineseparator to the document.
+    * _throws IOException If there is a problem writing out the lineseparator to the document.
     */
   def  writeLineSeparator() : Unit = {
     output.write(getLineSeparator());
@@ -596,7 +596,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   /**
     * Write the word separator value to the output stream.
     *
-    * @throws IOException If there is a problem writing out the wordseparator to the document.
+    * _throws IOException If there is a problem writing out the wordseparator to the document.
     */
   def  writeWordSeparator() : Unit = {
     output.write(getWordSeparator());
@@ -606,7 +606,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * Write the string in TextPosition to the output stream.
     *
     * @param text The text to write to the stream.
-    * @throws IOException If there is an error when writing the text.
+    * _throws IOException If there is an error when writing the text.
     */
   def  writeCharacters( text: TextPosition) : Unit = {
     output.write(text.getUnicode());
@@ -614,11 +614,11 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
 
   /**
     * Write a Java string to the output stream. The default implementation will ignore the <code>textPositions</code>
-    * and just calls {@link #writeString(String)}.
+    * and just calls { #writeString(String)}.
     *
     * @param text The text to write to the stream.
     * @param textPositions The TextPositions belonging to the text.
-    * @throws IOException If there is an error when writing the text.
+    * _throws IOException If there is an error when writing the text.
     */
   def writeString(text: String, textPositions: ju.List[TextPosition]) : Unit = {
     println(s"writeString: ${text}")
@@ -629,7 +629,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * Write a Java string to the output stream.
     *
     * @param text The text to write to the stream.
-    * @throws IOException If there is an error when writing the text.
+    * _throws IOException If there is an error when writing the text.
     */
   def  writeString(text: String) : Unit = {
     output.write(text);
@@ -1231,7 +1231,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param lastLineStartPosition the last text position that followed a line separator.
     * @param maxHeightForLine max height for positions since lastLineStartPosition
     * @return start position of the last line
-    * @throws IOException if something went wrong
+    * _throws IOException if something went wrong
     */
   private def handleLineSeparation(
     current: PositionWrapper,
@@ -1344,7 +1344,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   /**
     * writes the paragraph separator string to the output.
     *
-    * @throws IOException if something went wrong
+    * _throws IOException if something went wrong
     */
   def  writeParagraphSeparator() : Unit =
   {
@@ -1355,7 +1355,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   /**
     * Write something (if defined) at the start of a paragraph.
     *
-    * @throws IOException if something went wrong
+    * _throws IOException if something went wrong
     */
   def  writeParagraphStart() : Unit =
   {
@@ -1371,7 +1371,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   /**
     * Write something (if defined) at the end of a paragraph.
     *
-    * @throws IOException if something went wrong
+    * _throws IOException if something went wrong
     */
   def  writeParagraphEnd() : Unit =
   {
@@ -1386,7 +1386,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   /**
     * Write something (if defined) at the start of a page.
     *
-    * @throws IOException if something went wrong
+    * _throws IOException if something went wrong
     */
   def  writePageStart() : Unit =
   {
@@ -1396,7 +1396,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   /**
     * Write something (if defined) at the end of a page.
     *
-    * @throws IOException if something went wrong
+    * _throws IOException if something went wrong
     */
   def  writePageEnd() : Unit =
   {
@@ -1405,9 +1405,9 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
 
   /**
     * returns the list item Pattern object that matches the text at the specified PositionWrapper or null if the text
-    * does not match such a pattern. The list of Patterns tested against is given by the {@link #getListItemPatterns()}
+    * does not match such a pattern. The list of Patterns tested against is given by the { #getListItemPatterns()}
     * method. To add to the list, simply override that method (if sub-classing) or explicitly supply your own list
-    * using {@link #setListItemPatterns(List)}.
+    * using { #setListItemPatterns(List)}.
     *
     * @param pw position
     * @return the matching pattern
@@ -1494,7 +1494,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * Write a list of string containing a whole line of a document.
     *
     * @param line a list with the words of the given line
-    * @throws IOException if something went wrong
+    * _throws IOException if something went wrong
     */
   def  writeLine(line : ju.List[WordWithTextPositions]): Unit = {
     val numberOfStrings : Int = line.size();
@@ -1621,7 +1621,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * This method parses the bidi file provided as inputstream.
     *
     * @param inputStream - The bidi file as inputstream
-    * @throws IOException if any line could not be read by the LineNumberReader
+    * _throws IOException if any line could not be read by the LineNumberReader
     */
   def parseBidiFile(inputStream: InputStream) : Unit = {
     val source = scala.io.Source.fromInputStream(inputStream)
@@ -1648,7 +1648,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   }
 
   /**
-    * Used within {@link #normalize(List)} to create a single {@link WordWithTextPositions} entry.
+    * Used within { #normalize(List)} to create a single { WordWithTextPositions} entry.
     */
   def createWord(word: String, wordPositions: ju.List[TextPosition]): WordWithTextPositions = {
     return new WordWithTextPositions(normalizeWord(word), wordPositions);
@@ -1707,7 +1707,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   }
 
   /**
-    * Used within {@link #normalize(List)} to handle a {@link TextPosition}.
+    * Used within { #normalize(List)} to handle a { TextPosition}.
     *
     * @return The StringBuilder that must be used when calling this method.
     */
@@ -1783,7 +1783,7 @@ class LineItem(
 }
 
 /**
-  * Internal class that maps strings to lists of {@link TextPosition} arrays. Note that the number of entries in that
+  * Internal class that maps strings to lists of { TextPosition} arrays. Note that the number of entries in that
   * list may differ from the number of characters in the string due to normalization.
   *
   * @author Axel Dörfler

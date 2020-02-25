@@ -67,11 +67,11 @@ object CharClasses {
 
 
   def hasCommonBigram(s: String): Boolean = {
-    s.sliding(2).exists { Bigrams.contains(_) }
+    s.toSeq.sliding(2).map(_.unwrap).exists { Bigrams.contains(_) }
   }
 
   def hasCommonTrigram(s: String): Boolean = {
-    s.sliding(3).exists { Trigrams.contains(_) }
+    s.toSeq.sliding(3).map(_.unwrap).exists { Trigrams.contains(_) }
   }
 
 }

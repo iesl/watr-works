@@ -17,7 +17,6 @@ import _root_.io.circe, circe._, circe.syntax._
 
 import textgrid._
 
-
 object ProcessPipelineSteps {
   private[this] val log = org.log4s.getLogger
 
@@ -185,7 +184,7 @@ object ProcessPipelineSteps {
           val input = nioToAmm(f)
 
           val output = conf.ioConfig.outputPath.getOrElse {
-            nio.Paths.get(f.getFileName() + ".textgrid.json")
+            nio.Paths.get(f.getFileName().toString() + ".textgrid.json")
           }
 
           if (!output.toFile().exists()) {
@@ -220,7 +219,7 @@ object ProcessPipelineSteps {
           maybeSegmenter.left.map { s =>
             println(s"Error: ${s}")
             s
-          }.right.map {s =>
+          }.map {s =>
             Processable.ExtractedFile(
               s, m
             )
@@ -261,7 +260,7 @@ object ProcessPipelineSteps {
         val writeable = jsonOutput
           .add("buildInfo", getExecutableInfo())
 
-        val gridJsStr = writeable.asJson.pretty(JsonPrettyPrinter)
+        val gridJsStr = writeable.asJson.printWith(JsonPrettyPrinter)
 
         println(s"writing ${outputFile}")
 
@@ -291,7 +290,7 @@ object ProcessPipelineSteps {
 
           fs.write(
             rootPath / "font-summary.json",
-            docScopeLogs.pretty(PrettyPrint2Spaces)
+            docScopeLogs.printWith(PrettyPrint2Spaces)
           )
 
           log.trace(s"writing tracelogs")
