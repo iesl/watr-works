@@ -10,6 +10,7 @@ import scala.language.implicitConversions
 import scala.scalajs.js.annotation._
 import scala.annotation.tailrec
 import scala.{ collection => sc }
+import sc.Seq
 
 sealed trait Alignment
 

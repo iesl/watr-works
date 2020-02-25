@@ -27,7 +27,7 @@ trait TextGridTestExamples extends TextGridConstruction {
   import watrmarks._
 
   val JsonPrettyPrinter = circe.Printer(
-    preserveOrder = true,
+    // preserveOrder = true,
     dropNullValues = false,
     indent = " "*4,
     lbraceRight = "",

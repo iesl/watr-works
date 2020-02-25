@@ -3,7 +3,9 @@ package utils
 
 import scalaz.{@@ => _, _} , Scalaz._
 
-// import scala.{ collection => sc }
+import scala.{ collection => sc }
+import sc.Seq
+
 // import scala.collection.{ immutable => sci }
 // import scala.collection.{ mutable => scm }
 

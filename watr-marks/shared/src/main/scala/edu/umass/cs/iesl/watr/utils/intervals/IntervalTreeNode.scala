@@ -549,14 +549,14 @@ class TreeNode[T: Ordering: MidpointHelper, W](
     var currentNode: TreeNode[T, W] = null
     var currentInterval: Interval[T, W] = null
     // Iterator<Interval[T, W]] iterator = Collections.emptyIterator();
-    var iterator = Iterator[Interval[T, W]]();
+    var it = Iterator[Interval[T, W]]();
 
     override def hasNext: Boolean = {
-      return subtreeRoot != null || stack.nonEmpty || iterator.hasNext
+      return subtreeRoot != null || stack.nonEmpty || it.hasNext
     }
 
     override def next(): Interval[T, W] = {
-      if (!iterator.hasNext) {
+      if (!it.hasNext) {
         while (subtreeRoot != null) {
           stack.push(subtreeRoot);
           subtreeRoot = subtreeRoot.left;
@@ -564,10 +564,10 @@ class TreeNode[T: Ordering: MidpointHelper, W](
         if (stack.isEmpty)
           throw new NoSuchElementException();
         currentNode = stack.pop;
-        iterator = currentNode.increasing.iterator;
+        it = currentNode.increasing.iterator;
         subtreeRoot = currentNode.right;
       }
-      currentInterval = iterator.next();
+      currentInterval = it.next();
       return currentInterval;
     }
 

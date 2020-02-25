@@ -5,6 +5,9 @@ import geometry._
 import utils.{RelativeDirection => Dir}
 import scala.scalajs.js.annotation._
 
+import scala.{ collection => sc }
+import sc.Seq
+
 abstract class GraphPaper {
 
   import GraphPaper._
@@ -359,7 +362,7 @@ class CharBasedGraphPaper(
   }
 
   def applyBgColor(box: Box, color: Color): Unit = {
-    val rgb = color.toRGB
+    val rgb = color
     val fansiColor = fansi.Back.True(rgb.red, rgb.green, rgb.blue)
     box.getCells().foreach { cell =>
       modColor(cell, fansiColor)
@@ -368,7 +371,7 @@ class CharBasedGraphPaper(
 
 
   def applyFgColor(box: Box, color: Color): Unit = {
-    val rgb = color.toRGB
+    val rgb = color
     val fansiColor = fansi.Color.True(rgb.red, rgb.green, rgb.blue)
     box.getCells().foreach { cell =>
       modColor(cell, fansiColor)

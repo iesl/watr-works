@@ -19,6 +19,7 @@ import scala.scalajs.js.annotation._
 import _root_.io.circe
 import circe._
 import circe.literal._
+import scala.collection.{Seq}
 
 @JSExportAll
 trait TextGrid { self =>

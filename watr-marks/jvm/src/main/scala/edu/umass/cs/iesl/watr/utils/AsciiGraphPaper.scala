@@ -4,6 +4,10 @@ package utils
 import scala.collection.mutable
 import utils.{RelativeDirection => Dir}
 
+case class Color(
+  red: Int, green: Int, blue: Int
+)
+
 class AsciiGraphPaper(
   val width: Int,
   val height: Int,
@@ -98,7 +102,8 @@ class AsciiGraphPaper(
   }
 
   def applyBgColor(box: Box, color: Color): Unit = {
-    val rgb = color.toRGB
+    // val rgb = color.toRGB
+    val rgb = color;
     val fansiColor = fansi.Back.True(rgb.red, rgb.green, rgb.blue)
     box.getCells().foreach { cell =>
       modColor(cell, fansiColor)
@@ -107,7 +112,7 @@ class AsciiGraphPaper(
 
 
   def applyFgColor(box: Box, color: Color): Unit = {
-    val rgb = color.toRGB
+    val rgb = color // color.toRGB
     val fansiColor = fansi.Color.True(rgb.red, rgb.green, rgb.blue)
     box.getCells().foreach { cell =>
       modColor(cell, fansiColor)

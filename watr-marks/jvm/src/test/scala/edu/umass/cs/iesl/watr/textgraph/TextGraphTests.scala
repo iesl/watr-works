@@ -4,11 +4,13 @@ package textgraph
 import TypeTags._
 import textboxing.{TextBoxing => TB}, TB._
 import org.scalatest._
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AnyFreeSpec
 import watrmarks.Label
 import utils.GraphPaper
 import utils.ScalazTreeImplicits._
 
-trait TextGraphSpec extends FreeSpec with Matchers with TextGraphConstruction {
+trait TextGraphSpec extends AnyFreeSpec with Matchers with TextGraphConstruction {
 
   import geometry.GeometryTestUtils
 
@@ -90,7 +92,6 @@ trait TextGraphSpec extends FreeSpec with Matchers with TextGraphConstruction {
   import _root_.io.circe
   import circe._
   val JsonPrettyPrinter = circe.Printer(
-    preserveOrder = true,
     dropNullValues = false,
     indent = " "*4,
     lbraceRight = "",

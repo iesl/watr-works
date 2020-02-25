@@ -1,6 +1,8 @@
 package edu.umass.cs.iesl.watr
 package textgraph
 
+import scala.{ collection => sc }
+import sc.Seq
 import scala.collection.mutable
 import rtrees._
 import geometry._

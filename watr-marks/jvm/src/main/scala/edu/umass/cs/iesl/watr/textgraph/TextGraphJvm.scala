@@ -23,6 +23,9 @@ import utils.Interval
 import Interval._
 import utils.EnrichNumerics._
 
+import scala.{ collection => sc }
+import sc.Seq
+
 /**
   *
   *  Coordinate Systems:

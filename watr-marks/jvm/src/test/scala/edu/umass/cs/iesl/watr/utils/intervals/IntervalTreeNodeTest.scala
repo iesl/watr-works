@@ -21,8 +21,10 @@ class IntervalTreeNodeTest extends FlatSpec with Matchers {
       Interval.bounded.create.open(-14, -10),
       Interval.bounded.create.open(0, 4)
     )
-    for (interval <- arr)
-      tree.add(interval);
+
+    for (interval <- arr) {
+      tree.add(interval)
+    }
 
     assert(tree.iterator().toSet == arr.toSet)
 

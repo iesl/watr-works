@@ -1,6 +1,9 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
+import scala.{ collection => sc }
+import sc.Seq
+
 import annots._
 import geometry._
 import geometry.syntax._

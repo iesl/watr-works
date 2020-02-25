@@ -3,6 +3,9 @@ package utils
 
 import textboxing.{TextBoxing => TB}
 
+import scala.{ collection => sc }
+import sc.Seq
+
 object TreeShaper {
   def apply[N:Numeric:Ordering] = new TreeShaper {
     override type NodeType = N
@@ -26,7 +29,7 @@ abstract class TreeShaper[N:Numeric:Ordering] {
 
   def empty[T: Ordering]: SortedSet[T] = SortedSet[T]()
 
-  def makeTreeFromPairs(paths: Edges): Stream[Tree[NodeType]] = {
+  def makeTreeFromPairs(paths: Edges): LazyList[Tree[NodeType]] = {
 
     val parentChildMap: Map[NodeType, SortedSet[NodeType]] = {
       val base = paths.map { case (parent, child)  =>
@@ -54,7 +57,8 @@ abstract class TreeShaper[N:Numeric:Ordering] {
     val parents = parentChildMap.keys.toSet
     val roots = parents diff inner
 
-    val str = roots.map(mkTree(_)).toStream
+    val str = roots.map(mkTree(_)).to(LazyList)
+
 
     str
 
@@ -84,26 +88,29 @@ object ScalazTreeImplicits {
       TB.linesToBox(thisTree.draw0)
     }
 
-    def draw0(implicit sh: Show[A]): Stream[String] = {
-      def drawSubTrees(s: List[Tree[A]]): Stream[String] = s match {
-        case Nil      => Stream.Empty
+
+
+
+    def draw0(implicit sh: Show[A]): LazyList[String] = {
+      def drawSubTrees(s: List[Tree[A]]): LazyList[String] = s match {
+        case Nil      => LazyList.empty
         case t :: Nil => shift("╰─ ", "   ", t.draw0)
-        case t :: ts  => shift("├─ ", "│  ", t.draw0) append drawSubTrees(ts)
+        case t :: ts  => shift("├─ ", "│  ", t.draw0) concat drawSubTrees(ts)
       }
-      def shift(first: String, other: String, s: Stream[String]): Stream[String] =
-        (first #:: Stream.continually(other)).zip(s).map {
+      def shift(first: String, other: String, s: LazyList[String]): LazyList[String] =
+        (first #:: LazyList.continually(other)).zip(s).map {
           case (a, b) => a + b
         }
-      def mapParts[X, Y](as: Stream[X])(f: (X, Boolean, Boolean) => Y): Stream[Y] = {
-        def loop(as: Stream[X], first: Boolean): Stream[Y] =
-          if (as.isEmpty)           Stream.empty
-          else if (as.tail.isEmpty) f(as.head, first, true) #:: Stream.empty
+      def mapParts[X, Y](as: LazyList[X])(f: (X, Boolean, Boolean) => Y): LazyList[Y] = {
+        def loop(as: LazyList[X], first: Boolean): LazyList[Y] =
+          if (as.isEmpty)           LazyList.empty
+          else if (as.tail.isEmpty) f(as.head, first, true) #:: LazyList.empty
           else                      f(as.head, first, false) #:: loop(as.tail, false)
         loop(as, true)
       }
 
       val body = sh.shows(thisTree.rootLabel)
-      val lines = body.split("\n").toStream
+      val lines = body.split("\n").to(LazyList)
       mapParts(lines) { (a, first, last) =>
         a
       } ++ drawSubTrees(thisTree.subForest.toList)

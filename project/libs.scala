@@ -4,24 +4,24 @@ import Keys._
 
 trait LibVersions {
   val scalazVersion       = "7.2.30"
-  val scalaTagsVersion    = "0.8.4"
-  val scalatestVersion    = "3.0.8"
+  val scalaTagsVersion    = "0.8.6"
+  val scalatestVersion    = "3.1.1"
   val logbackVersion      = "1.7.30"
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
   val doobieVersion       = "0.7.0"
   val matryoshkaCoreV     = "0.21.3"
-  val sourcecodeV         = "0.2.0"
-  val fansiV              = "0.2.8"
+  val sourcecodeV         = "0.2.1"
+  val fansiV              = "0.2.9"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
   val http4sVersion       = "0.20.6"
     // val fs2Version          = "1.0.5"
-  val fs2Version          = "2.1.0"
-  val circeJsonVersion    = "0.12.3"
-  val ammoniteVersion     = "1.9.9"
+  val fs2Version          = "2.2.2"
+  val circeJsonVersion    = "0.13.0"
+  val ammoniteVersion     = "2.0.4"
   val catsV               = "2.0.0"
-  val catsEffectV         = "2.0.0"
+  val catsEffectV         = "2.1.1"
   val postgresqlV         = "42.2.6"
   val freestyleV          = "0.7.0"
   val guavaV              = "23.0"
@@ -37,8 +37,8 @@ object TestLibs extends LibVersions {
   )
 
   val scalacheck = Seq(
-    "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.2.28-scalacheck-1.14" % Test,
-    "org.scalacheck" %% "scalacheck"                % "1.14.2"       % "test" //  force()
+    "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.2.30-scalacheck-1.14" % Test,
+    "org.scalacheck" %% "scalacheck"                % "1.14.3"       % "test" //  force()
   )
 
   val testAndCheck = scalatest ++ scalacheck

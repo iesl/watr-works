@@ -68,7 +68,7 @@ lazy val textworks = (project in file("text-works"))
     Lib.fs2 ++
     Lib.circeJson ++ Seq(
       "co.fs2" %% "fs2-io" % Lib.fs2Version,
-      "org.apache.pdfbox" % "pdfbox" % "2.0.18",
+      "org.apache.pdfbox" % "pdfbox" % "2.0.19",
       "com.outr" %% "lucene4s" %  Lib.luceneV,
       Lib.lucene4s,
       Lib.guava,
