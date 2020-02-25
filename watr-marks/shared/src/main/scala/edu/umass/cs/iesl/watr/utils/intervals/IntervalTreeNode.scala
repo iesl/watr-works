@@ -544,7 +544,7 @@ class TreeNode[T: Ordering: MidpointHelper, W](
     */
 
   class TreeNodeIterator extends Iterator[Interval[T, W]] {
-    val stack = mutable.ArrayStack[TreeNode[T, W]]();
+    val stack = mutable.Stack[TreeNode[T, W]]();
     var subtreeRoot = self
     var currentNode: TreeNode[T, W] = null
     var currentInterval: Interval[T, W] = null

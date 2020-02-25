@@ -2,6 +2,9 @@ package edu.umass.cs.iesl.watr
 package utils
 
 import scala.collection.mutable
+// import scala.{ collection => sc }
+// import scala.collection.{ immutable => sci }
+// import scala.collection.{ mutable => scm }
 
 object SlicingAndDicing { outer =>
 
@@ -23,7 +26,8 @@ object SlicingAndDicing { outer =>
       groups.append(group)
       _cs = post
     }
-    groups
+
+    groups.toSeq
   }
 
   def uniqueCountBy[A, O: scala.Ordering](ss: Seq[A], f: (A) => O): Seq[(Int, A)] = {
@@ -70,7 +74,7 @@ object SlicingAndDicing { outer =>
             case (Seq(), i) => // noop
           })
 
-        groupByStartIndexes(groupSpans.map(_._2).reverse, thisSeq)
+        groupByStartIndexes(groupSpans.toSeq.map(_._2).reverse, thisSeq)
       }
     }
 

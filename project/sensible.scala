@@ -50,7 +50,9 @@ object SensibleProject extends CommonLibs {
     "-Ywarn-dead-code",                  // Warn when dead code is identified.
     "-Ywarn-extra-implicit",             // Warn when more than one implicit parameter section is defined.
     "-Ywarn-numeric-widen",              // Warn when numerics are widened.
-    "-Ywarn-unused:implicits"            // Warn if an implicit parameter is unused.
+    "-Ywarn-unused:implicits",           // Warn if an implicit parameter is unused.
+    "-Ymacro-annotations"                 //
+
 
     // The following are a pain during active dev, but should be on before releasing code:
     // "-Xfatal-warnings",                  // Fail the compilation if there are any warnings.

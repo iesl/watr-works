@@ -87,7 +87,7 @@ object LabeledSequencePrinting {
 
   def labeledSequenceBoxFormat[A <: LabelTarget](labeledSequence: LabeledSequence[A]): TB.Box = {
     val bioPinBoxes = labeledSequence.labelTargets().map{ labelTarget =>
-      bioPinsBoxFormat(labelTarget.pins)
+      bioPinsBoxFormat(labelTarget.pins.toSeq)
     }
 
     hjoins(bottom, bioPinBoxes)

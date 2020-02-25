@@ -18,7 +18,7 @@ import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlin
 import org.apache.pdfbox.util.QuickSort;
 import scala.collection.immutable.{List => _}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import java.util.TreeMap
 import java.util.TreeSet

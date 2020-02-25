@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textgraph 
+package textgraph
 
 import TextGraph._
 import utils.GraphPaper
@@ -7,7 +7,7 @@ import rtrees._
 import utils.ExactFloats._
 import TypeTags._
 import geometry._
-import geometry.syntax._
+// import geometry.syntax._
 import watrmarks.Label
 import utils.TreeShaper
 import scalaz.{@@ => _, _} //, Scalaz._
@@ -321,21 +321,23 @@ object TextGraphJvm {
   import LabeledShapeIndex._
   import rtrees.RTreeIndex._
   import GeometryCodecs._
+  import TextGraphShape._
 
 
   implicit def EncodeTextGraphJvm: Encoder[TextGraphJvm] = Encoder.instance { textGraphJvm =>
     val textRows = textGraphJvm.getRows().map{ rows =>
 
-      val glyphs = rows.rows.map { row => row.glyphs.asJson }
+      // TODO val glyphs = rows.rows.map { row => row.glyphs.asJson }
       // val glyphs = row.map { _.asJson }
       val lines = rows.lines().mkString.asJson
-      (lines, glyphs)
+      // (lines, glyphs)
+      (lines, List())
     }
 
     Json.obj(
       "stableId" := textGraphJvm.stableId,
       "lines" := textRows.map(_._1),
-      "glyphs" := textRows.map(_._2),
+      // "glyphs" := textRows.map(_._2),
       // "shapeIndex" := textGraphJvm.shapeIndex,
     )
   }

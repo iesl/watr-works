@@ -9,7 +9,7 @@ import scala.language.implicitConversions
 
 import scala.scalajs.js.annotation._
 import scala.annotation.tailrec
-
+import scala.{ collection => sc }
 
 sealed trait Alignment
 
@@ -140,14 +140,13 @@ object TextBoxing extends ToListOps with ToIdOps {
     }
   }
 
-
   // Given a string, split it back into a box
   def unrenderString(s: String): Box =
-    linesToBox(s.split("\n"))
+    linesToBox(s.split("\n").toIndexedSeq)
 
   // Given a list of strings, create a box
   def linesToBox(lines: Seq[String]): Box =
-    vjoins( lines.map(tbox(_)) )
+    vjoins(lines.map(tbox(_)))
 
 
   case class RowSpec(
@@ -475,11 +474,11 @@ object TextBoxing extends ToListOps with ToIdOps {
   // take n copies from list, padding end with A if necessary
   def takePad[A](a:A, n:Int): Seq[A] => Seq[A] = { aas =>
     val pad = if (n <= aas.length) 0 else n - aas.length
-    aas.take(n) ++ Stream.continually(a).take(pad)
+    aas.take(n) ++ LazyList.continually(a).take(pad)
   }
 
-  def repeat(b:Box): Stream[Box] = {
-    Stream.continually(b)
+  def repeat(b:Box): LazyList[Box] = {
+    LazyList.continually(b)
   }
 
   private def borderLR(c:String)(b:Box): Box = {

@@ -16,9 +16,6 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle
 import org.apache.pdfbox.pdmodel.graphics.image.PDImage
 import org.apache.pdfbox.pdmodel.font._
 import org.apache.pdfbox.util.{Matrix, Vector}
-// import scala.collection.JavaConverters._
-// import utils.Debugging._
-
 
 
 import TypeTags._

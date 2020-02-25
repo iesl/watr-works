@@ -12,10 +12,10 @@ import geometry._
 
 // import TypeTags._
 
+
 import java.time.Instant
 
 object RelationModel extends GeometricFigureCodecs {
-
 
   implicit val Enc_Int_Instant: Encoder[Instant] = Encoder.encodeLong.contramap(_.toEpochMilli())
   implicit val Dec_Int_Instant: Decoder[Instant] = Decoder.decodeLong.map(l => Instant.ofEpochMilli(l))

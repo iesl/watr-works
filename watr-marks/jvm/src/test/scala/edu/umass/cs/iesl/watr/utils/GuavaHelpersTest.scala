@@ -3,10 +3,7 @@ package utils
 
 import org.scalatest._
 import scala.util.Random._
-// import textboxing.{TextBoxing => TB}, TB._
 import GuavaHelpers._
-// import com.google.{common => guava}, guava.{collect => gcol}
-// import scala.collection.JavaConverters._
 import scalaz._, Scalaz._
 
 class GuavaHelpersTest extends FlatSpec with Matchers {

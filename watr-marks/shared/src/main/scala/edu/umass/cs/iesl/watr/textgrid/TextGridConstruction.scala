@@ -2,8 +2,10 @@ package edu.umass.cs.iesl.watr
 package textgrid
 
 import annots._
+import geometry._
+import geometry.syntax._
 
-trait TextGridConstruction {
+trait TextGridConstruction extends GeometricOps {
   import geometry._
 
   import utils.EnrichNumerics._

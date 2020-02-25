@@ -3,6 +3,10 @@ package utils
 
 import scalaz.{@@ => _, _} , Scalaz._
 
+// import scala.{ collection => sc }
+// import scala.collection.{ immutable => sci }
+// import scala.collection.{ mutable => scm }
+
 import scala.annotation.tailrec
 
 object Cursors {
@@ -28,7 +32,6 @@ object Cursors {
     }
     loop(Cursor.init(as), List()).reverse
   }
-
 }
 
 object Cursor {
@@ -120,7 +123,7 @@ trait Cursor[A] { self =>
 
 
 object Window {
-  def apply[A](window: Seq[A], lefts: Stream[A], focus: A, rights:Stream[A]): Window[A] = {
+  def apply[A](window: Seq[A], lefts: Stream[A], focus: A, rights: Stream[A]): Window[A] = {
     new Window[A] {
       def cells: Seq[A] = window
 

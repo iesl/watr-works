@@ -2,9 +2,9 @@ package edu.umass.cs.iesl.watr
 package textgrid
 
 import scala.collection.mutable
-// import watrmarks._
+import watrmarks._
 import geometry._
-import geometry.syntax._
+// import geometry.syntax._
 import geometry.PageComponentImplicits._
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
@@ -200,11 +200,11 @@ object TextGrid {
     def prepend(ch: Char): Unit = prepended.prepend(ch)
     def append(ch: Char): Unit = appended.append(ch)
 
-    def expand(): Seq[GridCell]= {
+    def expand(): Seq[GridCell] = {
       val pre = prepended.map(createInsert(_))
-      val post =appended.map(createInsert(_))
+      val post = appended.map(createInsert(_))
 
-      pre ++ (this +: post)
+      (pre ++ (this +: post)).toSeq
     }
   }
 
@@ -214,7 +214,7 @@ object TextGrid {
 
   case class PageItemCell(
     headItem: PageItem,
-    tailItems: Seq[PageItem] = Seq(),
+    tailItems: Seq[PageItem] = List(),
     override val char: Char,
     regionFunc: (PageItem, Seq[PageItem]) => PageRegion = mbrRegionFunc(_, _)
   ) extends GridCell {
@@ -336,7 +336,7 @@ object TextGrid {
   abstract class MutableTextGrid extends TextGrid {
     override val rows: mutable.ArrayBuffer[Row] = mutable.ArrayBuffer()
 
-    def cells(): Seq[Row] = rows
+    def cells(): Seq[Row] = rows.toSeq
   }
 
   def fromRows(id: String@@DocumentID, init: Seq[Row]): TextGrid = new MutableTextGrid {

@@ -171,12 +171,7 @@ object PageItem {
 }
 
 
-
-
-
-
-
-object PageComponentImplicits {
+object PageComponentImplicits extends GeometricOps {
   def createPageRegionUri(stableId: String@@DocumentID, pageNum:Int@@PageNum, bbox: LTBounds): String = {
     s"${stableId}+${pageNum}+${bbox.uriString}"
   }
@@ -186,6 +181,7 @@ object PageComponentImplicits {
       if (thePageRegion.page != r.page) {
         sys.error(s"""cannot union thePageRegions from different pages: ${thePageRegion} + ${r}""")
       }
+
       thePageRegion.copy(bbox = thePageRegion.bbox union r.bbox)
     }
 

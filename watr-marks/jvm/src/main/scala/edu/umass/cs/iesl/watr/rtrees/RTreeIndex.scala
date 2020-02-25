@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package rtrees
 
-import scala.collection.JavaConverters
+import scala.jdk.CollectionConverters._
 import utils.DoOrDieHandlers._
 
 import com.github.davidmoten.rtree.{geometry => RG, _}

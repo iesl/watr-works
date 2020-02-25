@@ -7,7 +7,7 @@ import rx.functions.{
   Func1
 }
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import com.github.davidmoten.rtree.{geometry => RG, _}
 import edu.umass.cs.iesl.watr.{geometry => G}

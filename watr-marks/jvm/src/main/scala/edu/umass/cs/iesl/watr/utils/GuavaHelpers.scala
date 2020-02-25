@@ -5,8 +5,8 @@ import com.google.{common => guava}
 import guava.{collect => gcol}
 import textboxing.{TextBoxing => TB}, TB._
 import scalaz.{@@ => _, Ordering => _, _}, Scalaz._
-import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
 case class AxisLabels(
   rowLabel: String,

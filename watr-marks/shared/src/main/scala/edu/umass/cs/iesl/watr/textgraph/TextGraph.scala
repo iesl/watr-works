@@ -148,7 +148,7 @@ trait TextGraph { self =>
 
 }
 
-object TextGraph {
+object TextGraph extends GeometricOps {
 
   val cellWidth = 10d
   val cellHeight = 10d

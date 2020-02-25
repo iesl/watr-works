@@ -12,9 +12,9 @@ import utils.DoOrDieHandlers._
 import scalaz._
 
 object LabelTarget {
-  type SetType[A] = mutable.ArrayStack[A]
+  type SetType[A] = mutable.Stack[A]
   type PinSet = SetType[BioPin]
-  def PinSet() = mutable.ArrayStack[BioPin]()
+  def PinSet() = mutable.Stack[BioPin]()
 
   def apply[A](a: A): LabelTarget = new LabelTarget {
     val value = a;
