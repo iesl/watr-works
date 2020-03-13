@@ -4,7 +4,7 @@ title: TextWorks
 ---
 
 ```tut:invisible
-import edu.umass.cs.iesl.watr
+import org.watrworks
 import watr.apps._
 ```
 

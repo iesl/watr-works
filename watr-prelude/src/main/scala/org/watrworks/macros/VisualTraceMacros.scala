@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package tracemacros
 
 import scala.reflect.macros.blackbox.Context

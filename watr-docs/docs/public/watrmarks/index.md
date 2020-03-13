@@ -4,7 +4,7 @@ title: WatrMarks
 ---
 
 ```tut:invisible
-import edu.umass.cs.iesl.watr
+import org.watrworks
 import watr.examples._
 ```
 

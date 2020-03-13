@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package watrmarks
 
 import scala.scalajs.js.annotation._

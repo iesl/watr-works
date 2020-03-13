@@ -1,5 +1,5 @@
 
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package utils
 
 import org.scalatest._

@@ -1,10 +1,10 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package heuristics
 
 import geometry.LTBounds
 import Constants._
-import edu.umass.cs.iesl.watr.corpora.DocumentZoningApi
-import edu.umass.cs.iesl.watr.watrmarks.Label
+import org.watrworks.corpora.DocumentZoningApi
+import org.watrworks.watrmarks.Label
 import textreflow.TextReflowF.TextReflow
 import textreflow.data._
 // import simstring._

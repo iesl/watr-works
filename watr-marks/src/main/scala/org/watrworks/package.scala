@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 
 
 object `package` extends PackageDefs {

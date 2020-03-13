@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package heuristics
 
 import java.io.{BufferedWriter, FileOutputStream, OutputStreamWriter}
@@ -6,7 +6,7 @@ import java.io.{BufferedWriter, FileOutputStream, OutputStreamWriter}
 import corpora._
 import corpora.database.CorpusAccessDB
 import corpora.database.CorpusAccessDBTables
-import edu.umass.cs.iesl.watr.geometry.LTBounds
+import org.watrworks.geometry.LTBounds
 import watrmarks.{Label, StandardLabels => LB}
 import GenericHeuristics._
 import AuthorNameHeuristics._

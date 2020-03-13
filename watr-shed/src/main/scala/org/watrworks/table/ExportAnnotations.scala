@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package table
 
 import scalaz.{@@ => _, _} // , Scalaz._

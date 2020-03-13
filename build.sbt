@@ -2,19 +2,15 @@ import sbtcrossproject.{crossProject, CrossType}
 import sbt.Keys._
 import ReleaseTransformations._
 
-// SensibleProject.settings
 Release.settings
-Global / onChangedBuildSource := ReloadOnSourceChanges
-
-// Global / onChangedBuildSource := IgnoreSourceChanges
+Global / onChangedBuildSource := ReloadOnSourceChanges // | IgnoreSourceChanges
 
 val Lib = CommonLibs
 
 lazy val root = (project in file("."))
   .settings(SensibleProject.settings: _*)
-  // .settings(Release.settings: _*)
   .aggregate(
-    prelude, watrmarksJVM, textworks
+    prelude, watrmarks, textworks
   )
 
 
@@ -24,41 +20,29 @@ lazy val prelude = (project in file("watr-prelude"))
     "org.scala-lang" % "scala-reflect" % scalaVersion.value
   ))
 
-lazy val watrmarks = crossProject(JSPlatform, JVMPlatform)
-  .crossType(CrossType.Full)
-  .withoutSuffixFor(JVMPlatform)
+lazy val watrmarks = project
   .in(file("watr-marks"))
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++=
     Seq(
-      "io.circe"                   %%% "circe-generic"          % Lib.circeJsonVersion,
-      "io.circe"                   %%% "circe-parser"           % Lib.circeJsonVersion,
-      "io.circe"                   %%% "circe-literal"          % Lib.circeJsonVersion,
-      "com.chuusai"                %%% "shapeless"              % Lib.shapelessV,
-      "org.scalatest"              %%% "scalatest"              % Lib.scalatestVersion % "test",
-      "com.lihaoyi"                %%% "fansi"                  % Lib.fansiV,
-      "com.lihaoyi"                %%% "sourcecode"             % Lib.sourcecodeV,
-      "org.scalaz"                 %%% "scalaz-core"            % Lib.scalazVersion
-    )
+      "io.circe"                   %% "circe-generic"          % Lib.circeJsonVersion,
+      "io.circe"                   %% "circe-parser"           % Lib.circeJsonVersion,
+      "io.circe"                   %% "circe-literal"          % Lib.circeJsonVersion,
+      "com.chuusai"                %% "shapeless"              % Lib.shapelessV,
+      "org.scalatest"              %% "scalatest"              % Lib.scalatestVersion % "test",
+      "com.lihaoyi"                %% "fansi"                  % Lib.fansiV,
+      "com.lihaoyi"                %% "sourcecode"             % Lib.sourcecodeV,
+      "org.scalaz"                 %% "scalaz-core"            % Lib.scalazVersion,
+      Lib.ammoniteOps,
+      Lib.guava % Optional,
+      "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
+      "com.github.davidmoten"       % "rtree"                  % "0.8.7",
+      "com.github.davidmoten"       % "flatbuffers-java"       % "1.10.0.2"
+    ) ++ LogLibs.logback ++ TestLibs.testAndCheck
   )
-  .jsSettings(scalacOptions += "-P:scalajs:sjsDefinedByDefault")
-  .jsSettings(scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) })
-  .jvmSettings(libraryDependencies ++=
-    LogLibs.logback ++ TestLibs.testAndCheck ++ Seq(
-        Lib.ammoniteOps,
-        Lib.guava % Optional,
-        "org.scala-js"               %% "scalajs-stubs"          % "1.0.0" % "provided",
-        "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
-        "com.github.davidmoten"       % "rtree"                  % "0.8.7",
-        "com.github.davidmoten"       % "flatbuffers-java"       % "1.10.0.2"
-      ))
-
-// lazy val watrmarksJS = watrmarks.js
-lazy val watrmarksJVM = watrmarks.jvm
 
 lazy val textworks = (project in file("text-works"))
   .enablePlugins(JavaAppPackaging)
-  // .settings(Release.pkgZipSettings: _*)
   .enablePlugins(BuildInfoPlugin)
   .settings(SensibleProject.settings: _*)
   .settings(SensibleProject.runForked: _*)
@@ -76,7 +60,7 @@ lazy val textworks = (project in file("text-works"))
       Lib.ammoniteOps,
       Lib.shapeless
     ))
-  .dependsOn(prelude, watrmarksJVM)
+  .dependsOn(prelude, watrmarks)
 
 // lazy val watrshed = (project in file("watr-shed"))
 //   .enablePlugins(JavaAppPackaging)
@@ -95,32 +79,5 @@ lazy val textworks = (project in file("text-works"))
 //       Lib.lucene4s,
 //       "com.github.tototoshi" %% "scala-csv" % "1.3.6"
 //     ))
-//   .dependsOn(prelude, watrmarksJVM, textworks)
+//   .dependsOn(prelude, watrmarks, textworks)
 
-// lazy val watrcolorServer = (project in file("watr-color-server"))
-//   .enablePlugins(JavaAppPackaging)
-//   .settings(mappings in Universal in (Compile, packageDoc) := Seq())
-//   .settings(SensibleProject.settings: _*)
-//   .settings(
-//     fork in run := true,
-//     connectInput := true,
-//     outputStrategy := Some(StdoutOutput)
-//   )
-//   .settings(libraryDependencies ++=
-//     Lib.fs2 ++
-//     LogLibs.logback ++
-//     TestLibs.testAndCheck ++
-//     DatabaseLibs.doobieDb ++
-//     Lib.http4s ++
-//     Lib.circeJson ++
-//     Lib.tsec
-//   )
-//   .settings((resources in Compile) ++= Seq(
-//     (fastOptJS in (watrmarksJS, Compile)).value.data,
-//     ((artifactPath in (watrmarksJS, Compile, fastOptJS)) map { (fastop) =>
-//       val path = fastop.getPath
-//       val map = path + ".map"
-//       file(map)
-//     }).value
-//   ))
-//   .dependsOn(watrmarksJVM, watrshed)

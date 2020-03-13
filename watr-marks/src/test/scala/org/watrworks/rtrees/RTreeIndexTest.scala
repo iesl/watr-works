@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package rtrees
 
 import scalaz.{@@ => _, _}, Scalaz._

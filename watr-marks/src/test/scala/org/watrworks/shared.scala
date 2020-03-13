@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec

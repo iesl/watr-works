@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 
 import scalaz.syntax
 import scalaz.syntax.std

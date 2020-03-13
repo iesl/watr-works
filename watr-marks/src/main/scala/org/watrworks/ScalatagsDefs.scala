@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 
 trait ScalatagsDefs {
   import scalatags.Text

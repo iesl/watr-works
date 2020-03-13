@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package rtrees
 
 import RGeometryConversions._
@@ -10,7 +10,7 @@ import rx.functions.{
 import scala.jdk.CollectionConverters._
 
 import com.github.davidmoten.rtree.{geometry => RG, _}
-import edu.umass.cs.iesl.watr.{geometry => G}
+import org.watrworks.{geometry => G}
 import java.lang.{Boolean => JBool}
 
 import geometry._

@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package table
 
 // import ammonite.util._
@@ -35,7 +35,7 @@ class SharedInit()(implicit cs: ContextShift[IO]) extends utils.AppMainBasics {
 object SharedConsts extends utils.AppMainBasics {
 
   val predef =
-    s"""|import edu.umass.cs.iesl.watr
+    s"""|import org.watrworks
         |import watr._
         |import corpora._
         |import workflow._

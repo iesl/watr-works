@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package segment
 
 import ammonite.{ops => fs}, fs._

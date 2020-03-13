@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package extract
 
 import org.apache.pdfbox.pdmodel.font.PDFont

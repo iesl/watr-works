@@ -1,7 +1,7 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package formats
 
-import edu.umass.cs.iesl.watr.watrmarks.WeightedLabeling
+import org.watrworks.watrmarks.WeightedLabeling
 
 import rtrees._
 import textboxing.{TextBoxing => TB}, TB._

@@ -1,7 +1,7 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package corpora
 
-import edu.umass.cs.iesl.watr.{geometry => G}
+import org.watrworks.{geometry => G}
 import watrmarks._
 
 // import io.circe.generic.JsonCodec

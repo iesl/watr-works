@@ -1,7 +1,6 @@
 import scala.util.{ Properties, Try }
 import sbt._
 import Keys._
-// import wartremover.{Wart, Warts, wartremoverErrors}
 
 object SensibleProject extends CommonLibs {
   def colorPrompt = { s: State =>
@@ -21,61 +20,59 @@ object SensibleProject extends CommonLibs {
 
   lazy val scalaV = "2.13.1"
 
-  val scala_2_12_RecommendedOptionList = Seq(
-    "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
-    "-encoding", "utf-8",                // Specify character encoding used by source files.
-    "-explaintypes",                     // Explain type errors in more detail.
-    "-feature",                          // Emit warning and location for usages of features that should be imported explicitly.
-    "-language:existentials",            // Existential types (besides wildcard types) can be written and inferred
-    "-language:experimental.macros",     // Allow macro definition (besides implementation and application)
-    "-language:higherKinds",             // Allow higher-kinded types
-    "-language:implicitConversions",     // Allow definition of implicit functions called views
-    "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
-    "-Xcheckinit",                       // Wrap field accessors to throw an exception on uninitialized access.
-    "-Xlint:adapted-args",               // Warn if an argument list is modified to match the receiver.
-    "-Xlint:constant",                   // Evaluation of a constant arithmetic expression results in an error.
-    "-Xlint:delayedinit-select",         // Selecting member of DelayedInit.
-    "-Xlint:doc-detached",               // A Scaladoc comment appears to be detached from its element.
-    "-Xlint:inaccessible",               // Warn about inaccessible types in method signatures.
-    "-Xlint:infer-any",                  // Warn when a type argument is inferred to be `Any`.
-    "-Xlint:missing-interpolator",       // A string literal appears to be missing an interpolator id.
-    "-Xlint:nullary-override",           // Warn when non-nullary `def f()' overrides nullary `def f'.
-    "-Xlint:nullary-unit",               // Warn when nullary methods return Unit.
-    "-Xlint:option-implicit",            // Option.apply used implicit view.
-    "-Xlint:package-object-classes",     // Class or object defined in package object.
-    "-Xlint:poly-implicit-overload",     // Parameterized overloaded implicit methods are not visible as view bounds.
-    "-Xlint:private-shadow",             // A private field (or class parameter) shadows a superclass field.
-    "-Xlint:stars-align",                // Pattern sequence wildcard must align with sequence component.
-    "-Xlint:type-parameter-shadow",      // A local type parameter shadows a type already in scope.
-    "-Ywarn-dead-code",                  // Warn when dead code is identified.
-    "-Ywarn-extra-implicit",             // Warn when more than one implicit parameter section is defined.
-    "-Ywarn-numeric-widen",              // Warn when numerics are widened.
-    "-Ywarn-unused:implicits",           // Warn if an implicit parameter is unused.
-    "-Ymacro-annotations"                 //
+  val scala_2_13_RecommendedOptionList = Seq(
+    "-Xcheckinit",                      // +n+ Wrap field accessors to throw an exception on uninitialized access.
+    "-Xlint:adapted-args",              // +n+ An argument list is modified to match the receiver.
+    "-Xlint:by-name-right-associative", // +n+ By-name parameter of right associative operator.
+    "-Xlint:constant",                  // +n+ Constant arithmetic expression results in an error.
+    "-Xlint:delayedinit-select",        // +n+ Selecting member of DelayedInit.
+    "-Xlint:doc-detached",              // +n+ A detached Scaladoc comment.
+    "-Xlint:inaccessible",              // +n+ Inaccessible types in method signatures.
+    "-Xlint:infer-any",                 // +n+ A type argument is inferred to be `Any`.
+    "-Xlint:missing-interpolator",      // +n+ A string literal appears to be missing an interpolator id.
+    "-Xlint:nullary-override",          // +n+ Warn when non-nullary `def f()' overrides nullary `def f'.
+    "-Xlint:nullary-unit",              // +n+ Warn when nullary methods return Unit.
+    "-Xlint:option-implicit",           // +n+ Option.apply used implicit view.
+    "-Xlint:package-object-classes",    // +n+ Class or object defined in package object.
+    "-Xlint:poly-implicit-overload",    // +n+ Parameterized overloaded implicit methods are not visible as view bounds.
+    "-Xlint:private-shadow",            // +n+ A private field (or class parameter) shadows a superclass field.
+    "-Xlint:stars-align",               // +n+ Pattern sequence wildcard must align with sequence component.
+    "-Xlint:type-parameter-shadow",     // +n+ A local type parameter shadows a type already in scope.
+    "-Xlint:unsound-match",             // +n+ Pattern match may not be typesafe.
+    "-Yno-adapted-args",                // +n+ Do not autotuple.
+    "-Ywarn-extra-implicit",            // +n+ More than one implicit parameter section is defined.
+    "-Ywarn-inaccessible",              // +n+ Inaccessible types in method signatures.
+    "-Ywarn-infer-any",                 // +n+ A type argument is inferred to be `Any`.
+    "-Ywarn-nullary-override",          // +n+ non-nullary `def f()' overrides nullary `def f'.
+    "-Ywarn-nullary-unit",              // +n+ nullary method returns Unit.
+    "-deprecation",                     // +n+ Warning and location for usages of deprecated APIs.
+    "-encoding", "utf-8",               // +n+ Specify character encoding used by source files.
+    "-explaintypes",                    // +n+ Explain type errors in more detail.
+    "-feature",                         // +n+ For features that should be imported explicitly.
+    "-unchecked",                       // +n+ Generated code depends on assumptions.
 
-
-    // The following are a pain during active dev, but should be on before releasing code:
-    // "-Xfatal-warnings",                  // Fail the compilation if there are any warnings.
-    // "-Ywarn-unused:imports",             // Warn if an import selector is not referenced.
-    // "-Ywarn-unused:locals",              // Warn if a local definition is unused.
-    // "-Ywarn-unused:params",              // Warn if a value parameter is unused.
-    // "-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused.
-    // "-Ywarn-unused:privates",            // Warn if a private member is unused.
-    // "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
   )
 
-  // lazy val wartList = Warts.allBut(
-  //   Wart.Any,                 // false positives
-  //   Wart.ArrayEquals,         // false positives
-  //   Wart.Nothing,             // false positives
-  //   Wart.Null,                // Java API under the hood; we have to deal with null
-  //   Wart.Product,             // false positives
-  //   Wart.Serializable,        // false positives
-  //   Wart.ImplicitConversion,  // we know what we're doing
-  //   Wart.Throw,               // TODO: switch to ApplicativeError.fail in most places
-  //   Wart.PublicInference,     // fails https://github.com/wartremover/wartremover/issues/398
-  //   Wart.ImplicitParameter    // only used for Pos, but evidently can't be suppressed
-  // )
+
+  // (possibly) legacy
+  // "-language:existentials",            // Existential types (besides wildcard types) can be written and inferred
+  // "-language:experimental.macros",     // Allow macro definition (besides implementation and application)
+  // "-language:higherKinds",             // Allow higher-kinded types
+  // "-language:implicitConversions",     // Allow definition of implicit functions called views
+  // "-Ymacro-annotations"                 // 
+
+  // Bothersome:The following are a pain during active dev, but should be on before releasing code:
+  // +n+  "-Ywarn-dead-code",  // +n+ Warn when dead code is identified.
+  // +n+  "-Ywarn-numeric-widen",  // +n+ Numerics are implicitly widened.
+
+  // "-Xfatal-warnings",                  // Fail the compilation if there are any warnings.
+  // "-Ywarn-unused:imports",             // Warn if an import selector is not referenced.
+  // "-Ywarn-unused:locals",              // Warn if a local definition is unused.
+  // "-Ywarn-unused:params",              // Warn if a value parameter is unused.
+  // "-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused.
+  // "-Ywarn-unused:privates",            // Warn if a private member is unused.
+  // "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
+
 
   // These settings are required to make Ammonite Repl work properly
   lazy val runForked = Seq(
@@ -113,20 +110,12 @@ object SensibleProject extends CommonLibs {
   lazy val settings = Seq(
     autoCompilerPlugins  := true,
 
-    // addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.11.0"),
-
     addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full),
-
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
 
-    // addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
-
-    // wartremoverErrors in (Compile, compile) := wartList,
-    // wartremoverErrors in (Test, compile) := wartList,
-
     scalaVersion := scalaV,
-    organization := "edu.umass.cs.iesl",
-    scalacOptions ++=  scala_2_12_RecommendedOptionList,
+    organization := "org.watrworks",
+    scalacOptions ++=  scala_2_13_RecommendedOptionList,
 
     scalacOptions in (Compile, console) --= Seq(
       "-Ywarn-unused:imports",

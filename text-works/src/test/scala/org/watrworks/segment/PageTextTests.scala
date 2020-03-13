@@ -1,8 +1,8 @@
-package edu.umass.cs.iesl.watr
+package org.watrworks
 package segment
 
 import corpora._
-// import edu.umass.cs.iesl.watr.tracing._
+// import org.watrworks.tracing._
 import ammonite.{ops => fs}
 
 class PageTextTest extends SegmentationTestUtils  {

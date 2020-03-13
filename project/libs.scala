@@ -1,7 +1,6 @@
 import sbt._
 import Keys._
 
-
 trait LibVersions {
   val scalazVersion       = "7.2.30"
   val scalaTagsVersion    = "0.8.6"
@@ -16,7 +15,6 @@ trait LibVersions {
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
   val http4sVersion       = "0.20.6"
-    // val fs2Version          = "1.0.5"
   val fs2Version          = "2.2.2"
   val circeJsonVersion    = "0.13.0"
   val ammoniteVersion     = "2.0.4"
@@ -26,7 +24,6 @@ trait LibVersions {
   val freestyleV          = "0.7.0"
   val guavaV              = "23.0"
   val luceneV             = "1.9.1"
-  val tsecV               = "0.0.1-M9"
 }
 
 object LibVersions extends LibVersions
@@ -82,7 +79,6 @@ trait CommonLibs extends LibVersions {
     "org.typelevel" %% "cats-effect" % catsEffectV
   )
 
-
   val scrimageCore = "com.sksamuel.scrimage"   %% "scrimage-core"    % scrimageVersion
 
   val scrimageAll = Seq(
@@ -104,18 +100,6 @@ trait CommonLibs extends LibVersions {
     "org.http4s"      %% "http4s-blaze-client"  % http4sVersion,
     "org.http4s"      %% "http4s-circe"         % http4sVersion,
     "org.typelevel"   %% "cats-core"            % catsV
-  )
-
-  val tsec = Seq(
-    "io.github.jmcardon" %% "tsec-common" % tsecV,
-    "io.github.jmcardon" %% "tsec-password" % tsecV,
-    "io.github.jmcardon" %% "tsec-symmetric-cipher" % tsecV,
-    "io.github.jmcardon" %% "tsec-mac" % tsecV,
-    "io.github.jmcardon" %% "tsec-signatures" % tsecV,
-    "io.github.jmcardon" %% "tsec-md" % tsecV,
-    "io.github.jmcardon" %% "tsec-jwt-mac" % tsecV,
-    "io.github.jmcardon" %% "tsec-jwt-sig" % tsecV,
-    "io.github.jmcardon" %% "tsec-http4s" % tsecV
   )
 }
 
