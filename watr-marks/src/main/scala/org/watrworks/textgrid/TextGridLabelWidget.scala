@@ -4,7 +4,7 @@ package textgrid
 import textboxing.{TextBoxing => TB}, TB._
 import scalaz.{@@ => _, _} // , Scalaz._
 
-import scala.scalajs.js.annotation._
+// import scala.scalajs.js.annotation._
 import scala.annotation.meta.field
 
 import watrmarks._
@@ -35,49 +35,49 @@ sealed trait GridRegion  {
   def bounds(): LTBounds
   def classes(): List[String]
 
-  @JSExport val gridBox: GraphPaper.Box =
+  val gridBox: GraphPaper.Box =
     GraphPaper.boundsToBox(bounds)
 
-  @JSExport def isCells(): Boolean = false
-  @JSExport def isHeading(): Boolean = false
-  @JSExport def isLabelCover(): Boolean = false
-  @JSExport def isLabelKey(): Boolean = false
+  def isCells(): Boolean = false
+  def isHeading(): Boolean = false
+  def isLabelCover(): Boolean = false
+  def isLabelKey(): Boolean = false
 
 }
 
 
-@JSExportAll @JSExportTopLevel("GridRegion")
+
 object GridRegion {
 
   case class Cells[A <: LabelTarget](
-    // @(JSExport @field) cells: Seq[TextGrid.GridCell],
-    @(JSExport @field) cells: Seq[A],
-    @(JSExport @field) row: Int,
-    @(JSExport @field) override val bounds: LTBounds,
+    // cells: Seq[TextGrid.GridCell],
+    cells: Seq[A],
+    row: Int,
+    override val bounds: LTBounds,
     override val classes: List[String]
   ) extends GridRegion {
     override def isCells(): Boolean = true
   }
 
   case class Heading(
-    @(JSExport @field) heading: String,
-    @(JSExport @field) override val bounds: LTBounds,
+    heading: String,
+    override val bounds: LTBounds,
     override val classes: List[String]
   ) extends GridRegion {
     override def isHeading(): Boolean = true
   }
 
   case class LabelCover(
-    @(JSExport @field) label: Label,
-    @(JSExport @field) override val bounds: LTBounds,
+    label: Label,
+    override val bounds: LTBounds,
     override val classes: List[String]
   ) extends GridRegion {
     override def isLabelCover(): Boolean = true
   }
 
   case class LabelKey(
-    @(JSExport @field) labelIdent: String,
-    @(JSExport @field) override val bounds: LTBounds,
+    labelIdent: String,
+    override val bounds: LTBounds,
     override val classes: List[String]
   ) extends GridRegion {
     override def isLabelKey(): Boolean = true
@@ -85,8 +85,8 @@ object GridRegion {
 
 }
 
-@JSExportTopLevel("TextGridLabelWidget")
-@JSExportAll
+
+
 object TextGridLabelWidget {
 
   import LabeledSequenceTreeTransforms._

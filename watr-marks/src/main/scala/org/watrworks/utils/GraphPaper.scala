@@ -3,7 +3,7 @@ package utils
 
 import geometry._
 import utils.{RelativeDirection => Dir}
-import scala.scalajs.js.annotation._
+// import scala.scalajs.js.annotation._
 
 import scala.{ collection => sc }
 import sc.Seq
@@ -66,8 +66,8 @@ abstract class GraphPaper {
 }
 
 
-@JSExportTopLevel("GraphPaper")
-@JSExportAll
+
+
 object GraphPaper {
 
   def ltb2box(bbox: LTBounds): Box = {
@@ -77,13 +77,13 @@ object GraphPaper {
 
   def boundsToBox(bbox: LTBounds): Box = ltb2box(bbox)
 
-  @JSExportAll
+  
   case class CellDimensions(
     width: Int,
     height: Int
   )
 
-  @JSExportAll
+ 
   case class GridCell(
     x: Int, y: Int
   ) {
@@ -93,7 +93,7 @@ object GraphPaper {
   def cellAt(x: Int, y: Int) = GridCell(x, y)
   def boxAt(x: Int, y: Int) = Box(cellAt(x, y), 0, 0)
 
-  @JSExportAll
+
   case class Box(
     origin: GridCell, spanRight: Int, spanDown: Int
   ) {
@@ -222,7 +222,7 @@ object GraphPaper {
     }
   }
 
-  @JSExportAll
+ 
   object BorderLineStyle {
     //                             0123456789
     val DoubleWidth = BorderChars("══║║╔╗╚╝◻╦╩╠╣")

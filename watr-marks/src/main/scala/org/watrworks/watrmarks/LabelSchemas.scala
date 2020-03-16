@@ -1,15 +1,12 @@
 package org.watrworks
 package watrmarks
 
-import scala.scalajs.js.annotation._
 import textboxing.{TextBoxing => TB}, TB._
 import _root_.io.circe, circe._
-// import circe.generic._
 import circe.generic.semiauto._
 import TypeTags._
 
 
-@JSExportTopLevel("LabelSchema")
 case class LabelSchema(
   label: Label,
   abbrev: Option[(Char, Char)] = None,
@@ -62,7 +59,6 @@ object LabelSchema {
 }
 
 
-@JSExportTopLevel("LabelSchemas")
 case class LabelSchemas(
   name: String@@LabelSchemaName,
   schemas: List[LabelSchema]
@@ -86,8 +82,8 @@ case class LabelSchemas(
   }
 }
 
-@JSExportTopLevel("LabelSchemasCompanion")
-@JSExportAll
+
+
 object LabelSchemas {
   def labelSchemaToBox(schema: LabelSchemas): TB.Box = {
 

@@ -17,6 +17,7 @@ import _root_.io.circe, circe._, circe.syntax._
 
 import textgrid._
 
+
 object ProcessPipelineSteps {
   private[this] val log = org.log4s.getLogger
 

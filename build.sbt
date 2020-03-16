@@ -1,4 +1,3 @@
-import sbtcrossproject.{crossProject, CrossType}
 import sbt.Keys._
 import ReleaseTransformations._
 

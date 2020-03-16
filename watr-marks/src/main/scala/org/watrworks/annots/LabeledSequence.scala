@@ -7,7 +7,7 @@ import scala.collection.mutable
 import watrmarks._
 import textboxing.{TextBoxing => TB}, TB._
 
-import scala.scalajs.js.annotation._
+// import scala.scalajs.js.annotation._
 import utils.Cursor
 import utils.DoOrDieHandlers._
 
@@ -26,7 +26,7 @@ object LabelTarget {
   case class Thing[A](a: A) extends LabelTarget
 }
 
-@JSExportAll
+
 trait LabelTarget {
 
   val pins: LabelTarget.PinSet = LabelTarget.PinSet()

@@ -14,14 +14,14 @@ import utils.{Cursor, Cursors, Window}
 import utils.SlicingAndDicing._
 import utils.DoOrDieHandlers._
 
-import scala.scalajs.js.annotation._
+// import scala.scalajs.js.annotation._
 
 import _root_.io.circe
 import circe._
 import circe.literal._
 import scala.collection.{Seq}
 
-@JSExportAll
+
 trait TextGrid { self =>
 
   import TextGrid._
@@ -158,8 +158,8 @@ trait TextGrid { self =>
 
 }
 
-@JSExportTopLevel("TextGridCompanion")
-@JSExportAll
+
+
 object TextGrid {
 
 
@@ -182,7 +182,7 @@ object TextGrid {
 
   }
 
-  @JSExportAll
+  
   sealed trait GridCell extends LabelTarget {
     def pageRegion: PageRegion
 
@@ -233,7 +233,7 @@ object TextGrid {
   }
 
 
-  @JSExportAll
+  
   trait Row extends LabelTarget with LabeledSequence[GridCell] {
 
     def expand(): Row = Row.fromCells(cells().flatMap(_.expand()))

@@ -7,14 +7,14 @@ import scalaz.std.anyVal._
 import TypeTags._
 
 import utils.ExactFloats._
-import scala.scalajs.js.annotation._
+// import scala.scalajs.js.annotation._
 import GeometryImplicits._
 
 sealed trait GeometricFigure { self =>
   lazy val minBounds = GeometryImplicits.minBoundingRect(self)
 }
 
-@JSExportTopLevel("LTBounds")
+
 case class LTBounds(
   left   : Int@@FloatRep,
   top    : Int@@FloatRep,
@@ -25,19 +25,19 @@ case class LTBounds(
   def right = left+width
   def bottom = top+height
 
-  @JSExport("left")   val getLeft: Double = left.asDouble
-  @JSExport("top")    val getTop: Double = top.asDouble
-  @JSExport("width")  val getWidth: Double = width.asDouble
-  @JSExport("height") val getHeight: Double = height.asDouble
-  @JSExport("right")  val getRight: Double = right.asDouble
-  @JSExport("bottom") val getBottom: Double = bottom.asDouble
+  val getLeft: Double = left.asDouble
+  val getTop: Double = top.asDouble
+  val getWidth: Double = width.asDouble
+  val getHeight: Double = height.asDouble
+  val getRight: Double = right.asDouble
+  val getBottom: Double = bottom.asDouble
 }
 
 
-@JSExportTopLevel("LTBoundsCompanion")
+
 object LTBounds {
 
-  @JSExport("FromInts")
+ 
   def FromInts(l: Int, t: Int, w: Int, h: Int) = Ints(l, t, w, h)
 
   object IntReps {

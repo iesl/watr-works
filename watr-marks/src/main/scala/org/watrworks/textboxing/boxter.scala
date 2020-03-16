@@ -7,7 +7,7 @@ import scalaz.syntax.std.ToListOps
 import scala.language.postfixOps
 import scala.language.implicitConversions
 
-import scala.scalajs.js.annotation._
+// import scala.scalajs.js.annotation._
 import scala.annotation.tailrec
 import scala.{ collection => sc }
 import sc.Seq
@@ -35,7 +35,7 @@ object Content {
 
 
 
-@JSExportTopLevel("TextBoxing") @JSExportAll
+
 object TextBoxing extends ToListOps with ToIdOps {
   // Data type for specifying the alignment of boxes.
   import Alignment._
@@ -69,7 +69,7 @@ object TextBoxing extends ToListOps with ToIdOps {
   }
 
   // The basic data type.  A box has a specified size and some sort of contents.
-  @JSExportTopLevel("Box") @JSExportAll
+  
   case class Box(rows:Int, cols:Int, content: Content) {
     // Paste two boxes together horizontally, using a default (top) alignment.
     def +(r: Box) : Box = beside(r)
