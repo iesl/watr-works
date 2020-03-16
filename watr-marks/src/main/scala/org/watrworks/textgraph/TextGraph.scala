@@ -30,8 +30,6 @@ import circe.generic._
 import circe.generic.auto._
 import circe.generic.semiauto._
 
-
-// @JsonCodec
 sealed trait TextGraphShape extends LabeledShape[GeometricFigure, Option[TextGraph.GridCell]] {
 
   import TextGraph._
@@ -100,9 +98,7 @@ object MatrixArea {
     def lines(): Seq[String] = {
       rows.map(_.text())
     }
-
   }
-
 }
 
 

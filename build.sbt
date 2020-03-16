@@ -34,7 +34,6 @@ lazy val watrmarks = project
       "org.scalaz"                 %% "scalaz-core"            % Lib.scalazVersion,
       Lib.ammoniteOps,
       Lib.guava % Optional,
-      "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
       "com.github.davidmoten"       % "rtree"                  % "0.8.7",
       "com.github.davidmoten"       % "flatbuffers-java"       % "1.10.0.2"
     ) ++ LogLibs.logback ++ TestLibs.testAndCheck

@@ -4,7 +4,6 @@ package textgrid
 import scala.collection.mutable
 import watrmarks._
 import geometry._
-// import geometry.syntax._
 import geometry.PageComponentImplicits._
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
@@ -14,13 +13,14 @@ import utils.{Cursor, Cursors, Window}
 import utils.SlicingAndDicing._
 import utils.DoOrDieHandlers._
 
-// import scala.scalajs.js.annotation._
-
 import _root_.io.circe
 import circe._
 import circe.literal._
 import scala.collection.{Seq}
 
+/**
+
+  */
 
 trait TextGrid { self =>
 
@@ -37,7 +37,6 @@ trait TextGrid { self =>
   def toText(): String = {
     rows.map(_.toText).mkString("\n")
   }
-
 
   def splitOneLeafLabelPerLine(): TextGrid = {
     val splitRows = rows.flatMap { row =>
@@ -152,16 +151,11 @@ trait TextGrid { self =>
       maybeNewGrid.flatten
     } else None
   }
-
-
-
-
 }
 
 
 
 object TextGrid {
-
 
   def fromJsonStr(jsStr: String): TextGrid = {
     circe.parser.parse(jsStr).fold(
@@ -170,6 +164,7 @@ object TextGrid {
     )
 
   }
+
   def fromJson(js: Json): TextGrid = {
     val cursor = js.hcursor
 
@@ -182,7 +177,6 @@ object TextGrid {
 
   }
 
-  
   sealed trait GridCell extends LabelTarget {
     def pageRegion: PageRegion
 
@@ -233,7 +227,7 @@ object TextGrid {
   }
 
 
-  
+
   trait Row extends LabelTarget with LabeledSequence[GridCell] {
 
     def expand(): Row = Row.fromCells(cells().flatMap(_.expand()))

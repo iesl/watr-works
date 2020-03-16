@@ -3,7 +3,6 @@ import Keys._
 
 trait LibVersions {
   val scalazVersion       = "7.2.30"
-  val scalaTagsVersion    = "0.8.6"
   val scalatestVersion    = "3.1.1"
   val logbackVersion      = "1.7.30"
   val scrimageVersion     = "2.1.8"
