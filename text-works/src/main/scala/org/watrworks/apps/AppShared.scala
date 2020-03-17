@@ -153,6 +153,7 @@ object ProcessPipelineSteps {
         }
     }
   }
+
   def cleanFileArtifacts(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
     _.map {
       case Left(inputMode) => Left(inputMode)
