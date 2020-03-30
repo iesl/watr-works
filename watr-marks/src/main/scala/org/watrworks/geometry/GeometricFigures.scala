@@ -7,13 +7,11 @@ import scalaz.std.anyVal._
 import TypeTags._
 
 import utils.ExactFloats._
-// import scala.scalajs.js.annotation._
 import GeometryImplicits._
 
 sealed trait GeometricFigure { self =>
   lazy val minBounds = GeometryImplicits.minBoundingRect(self)
 }
-
 
 case class LTBounds(
   left   : Int@@FloatRep,
@@ -36,8 +34,6 @@ case class LTBounds(
 
 
 object LTBounds {
-
- 
   def FromInts(l: Int, t: Int, w: Int, h: Int) = Ints(l, t, w, h)
 
   object IntReps {
@@ -172,9 +168,9 @@ object LBBounds {
 }
 
 case class Point(
-  x: Int@@FloatRep, y: Int@@FloatRep
+  x: Int@@FloatRep,
+  y: Int@@FloatRep
 ) extends GeometricFigure {
-
   override def toString: String = this.prettyPrint
 }
 
@@ -187,7 +183,6 @@ object Point {
     def unapply(p: Point): Option[(Int, Int)] =
       Some((p.x.unwrap, p.y.unwrap))
   }
-
 
   object Ints {
     def apply(x: Int, y: Int): Point =
@@ -208,11 +203,11 @@ object Point {
 
   val origin = Ints(0, 0)
   val zero = origin
-
 }
 
 case class Line(
-  p1: Point, p2: Point
+  p1: Point,
+  p2: Point
 ) extends GeometricFigure {
   override def toString: String = this.prettyPrint
 }
@@ -222,10 +217,8 @@ case class Trapezoid(
   topWidth: Int@@FloatRep,
   bottomLeft: Point,
   bottomWidth: Int@@FloatRep
-) extends GeometricFigure  { self =>
-
+) extends GeometricFigure  {
   def height(): Int@@FloatRep = bottomLeft.y - topLeft.y
-
 }
 
 object Trapezoid {
@@ -248,13 +241,13 @@ object Trapezoid {
   }
 }
 
+// TODO this is a formatting/layout data type, move it from geometry types
 case class Padding(
   left: Int@@FloatRep,
   top: Int@@FloatRep,
   right: Int@@FloatRep,
   bottom: Int@@FloatRep
 ) {
-
   override def toString: String = {
     s"""pad[l:${left.pp}, t:${top.pp}, r:${right.pp}, b:${bottom.pp}]"""
   }
@@ -313,6 +306,7 @@ object Padding {
 
 
 trait GeometricFigureCodecs extends TypeTagCodecs {
+  // TODO get rid of all of these codecs and use Transcript codecs
   import io.circe
   import circe.generic.semiauto._
   import io.circe._, io.circe.generic.auto._

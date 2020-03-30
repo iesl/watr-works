@@ -6,3 +6,79 @@
 
    [[file:FontSummaryDescription.org::*Font%20Summary%20Description][Font Summary Description]]
    [[file:TracelogDescription.org::*Tracelog%20File%20Description][Tracelog File Description]]
+
+   
+** Old output format notes saved 
+*** Json Output Structure
+    |     Page Dimensions for each mentioned page  (required)
+    |     Document-wide font summary (optional)
+    |        font names per scaling factor
+    |        occurrence counts per page or across document
+    |     Per-line:
+    |        Text as String (optional)
+    |        Glyphs (glyph-type, char, page, bbox), where glyph-type==(insert|glyph)  (required)
+    |     Preamble major/minor/git version info
+    |     BIO Label key
+
+
+    | Font format
+    |     List[(font-id, begin-index, length)]
+
+    | BIO Examples: paragraph, section, title, abstract, image, caption, table, inset-math,...
+
+    | Label BIO format
+    |     Named Tree Structure:
+    |        Authors = [(Author, beg, len), [children]]
+    |        e.g.,
+    |        Authors = [(Author, beg, len), [
+    |                      [(FN, beg, len)]
+    |                      [(MN, beg, len)]
+    |                      [(LN, beg, len)]
+    |                  ]]
+    |        LineLayout = [
+    |                       [(Sup, beg, len)],
+    |                       [(Sup/Sub, b, l), [
+    |                          [(Sup, b, l)],
+    |                          [(Sub, b, l)]
+    |                       ]],  ...]
+
+
+    |        "fontDescriptions": {
+    |            "namedFonts": [
+    |                {
+    |                    "name": "ACOONO+AdvOptima-b",
+    |                    "naturalBigrams" : 15
+    |                    "scaled": [
+    |                        [104, {"heights" : {"lcSmall" : 0.0, "lcLarge" : 0.0, "uc" : 0.0 } }],
+    |                        [208, {"heights" : {"lcSmall" : 0.0, "lcLarge" : 0.0, "uc" : 0.0 } }]
+    |                    ]
+    |                },
+    |            ],
+    |            "scaledFonts": [
+    |                [0, "ACOONO+AdvOptima-b", 104],
+    |                [1, "ACOONO+AdvOptima-b", 208],
+    |                [2, "ACOONO+AdvOptima-b", 104]
+    |            ]
+    |       }
+
+
+
+    |       "fonts" : [
+    |        {
+    |            "name" : "ACOONO+AdvOptima-b",
+    |            "bigrams" : 15,
+    |            "metrics" : [
+    |                 {
+    |                    "scale" : 104,
+    |                    "heights" : {
+    |                        "lowerCaseSmall" : 0.0,
+    |                        "lowerCaseLarge" : 0.0,
+    |                        "upperCase" : 0.0
+    |                    }
+    |                }, {
+    |                    "scale" : 208,
+    |                    "heights" : {"lowerCaseSmall" : 7.266,
+    |                        "lowerCaseLarge" : 10.979999999999999,
+    |                        "upperCase" : 10.055714285714286
+    |                    }
+    |                }]

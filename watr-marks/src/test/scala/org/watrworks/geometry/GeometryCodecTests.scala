@@ -30,6 +30,7 @@ object ArbitraryGeometry {
     d4 <- arbitrary[Double]
   } yield LTBounds.Doubles.apply(d1, d2, d3, d4)
 
+  // TODO get rid of LBBounds
   def Gen_LBBounds: Gen[LBBounds] = for {
     d1 <- arbitrary[Double]
     d2 <- arbitrary[Double]
@@ -168,7 +169,6 @@ object ArbitaryPageComponents {
     Gen_PageItem_CharAtom
   )
 
-  // implicit def Arb_XX: Arbitrary[XX] = Arbitrary(Gen_XX)
   implicit def Arb_PageItem_Path: Arbitrary[PageItem.Path] = Arbitrary(Gen_PageItem_Path)
   implicit def Arb_PageItem_CharAtom: Arbitrary[PageItem.CharAtom] = Arbitrary(Gen_PageItem_CharAtom)
   implicit def Arb_PageItem_ImageAtom: Arbitrary[PageItem.ImageAtom] = Arbitrary(Gen_PageItem_ImageAtom)
@@ -191,10 +191,6 @@ object PageComponentProps extends Properties("PageComponents") {
 
   property("json <--> PageRegion") = forAll{ (example: PageRegion) =>
     example.asJson.decodeOrDie[PageRegion]() == example
-  }
-
-  property("json <--> PageGeometry") = forAll{ (example: PageGeometry) =>
-    example.asJson.decodeOrDie[PageGeometry]() == example
   }
 
   property("json <--> PageGeometry") = forAll{ (example: PageGeometry) =>

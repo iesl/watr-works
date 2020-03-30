@@ -5,13 +5,6 @@ import java.nio.{file => nio}
 import corpora.filesys._
 import segment._
 
-// sealed trait InputMode
-
-// object InputMode {
-//   case class SingleFile(f: nio.Path) extends InputMode
-//   case class ListOfFiles(f: nio.Path) extends InputMode
-//   case class CorpusFile(corpusRoot: nio.Path) extends InputMode
-// }
 
 sealed trait Processable
 sealed trait ProcessableInput extends Processable

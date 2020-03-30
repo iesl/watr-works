@@ -16,7 +16,6 @@ import io.circe.generic._
   - Page number: 0-indexed
   - page geometry: bounding box as taken from PDF (MediaBox, CropBox, or whatever was specified in PDF)
   - bounding box: left/top/width/height bounds of region
-
   - DocumentID (as Int): corpus-specific identifier for document (document table primary key)
   - PageID: documentId + page number + page geometry
   - RegionID: PageID + bounding box
@@ -25,7 +24,6 @@ import io.circe.generic._
 
 
 import GeometryCodecs._
-
 
 @JsonCodec
 sealed trait StableIdentifier {
@@ -164,9 +162,6 @@ object PageItem {
       Equal.equal((a, b)  => a.id==b.id )
 
     import circe.generic.semiauto._
-
-    // implicit def Encode_CharAtom: Encoder[PageItem.CharAtom] = deriveEncoder
-    // implicit def Decode_CharAtom: Decoder[PageItem.CharAtom] =  deriveDecoder
   }
 }
 

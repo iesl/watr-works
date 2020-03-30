@@ -30,11 +30,10 @@ class TextOutputBuilder(textGrid: TextGrid) {
     val codec = getSerialization()
     val lineNums = codec.lineMap.keys.toList.sorted
 
-
     var totalOffset = 0
-    val textAndLoci = lineNums.map { lineNum =>
+    val textAndGlyphs = lineNums.map { lineNum =>
       val text = codec.lineMap(lineNum)._2
-      val loci = codec.lineMap(lineNum)._1
+      val glyphs = codec.lineMap(lineNum)._1
 
       val currOffset = totalOffset
       totalOffset += text.length()
@@ -42,22 +41,12 @@ class TextOutputBuilder(textGrid: TextGrid) {
       Json.obj(
         "offset" := currOffset,
         "text" := text,
-        "loci" := loci,
+        "glyphs" := glyphs,
       )
     }
 
-    // val bioLabelJson = LabeledSequenceCodecs.encodeBioLabels(
-    //   textGrid.indexedCells().map(_._1)
-    // )
-
-
-    val labelDefs = Json.obj(
-      "cellLabels" := Json.obj() // bioLabelJson
-    )
     Json.obj(
-      "stableId" := textGrid.stableId.unwrap,
-      "rows" := textAndLoci,
-      "labels" := labelDefs
+      "lines" := textAndGlyphs,
     )
   }
 
