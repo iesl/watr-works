@@ -14,6 +14,7 @@ import circe.syntax._
 import geometry._
 
 class TranscriptionFormatTest extends AnyFlatSpec with Matchers {
+
   val JsonPrettyPrinter = circe.Printer(
     dropNullValues = false,
     indent = "  ",
@@ -28,23 +29,30 @@ class TranscriptionFormatTest extends AnyFlatSpec with Matchers {
     colonRight = " "
   )
 
-  def isIsomorphic[A: Encoder: Decoder](strrep: String): Boolean = {
-    val jsRep = parse(strrep).getOrElse(Json.Null)
-    val jsPretty = jsRep.printWith(JsonPrettyPrinter)
-    val decoded = jsRep.as[A]
-    decoded match {
-      case Right(value) =>
-        val encoded = value.asJson
-        val encodedPretty = encoded.printWith(JsonPrettyPrinter)
+  def isIsomorphic[A: Encoder: Decoder](strrep: String, verbose: Boolean=false): Boolean = {
+    parse(strrep) match {
+      case Right(jsRep) =>
+        val jsPretty = jsRep.printWith(JsonPrettyPrinter)
+        val decoded = jsRep.as[A]
+        decoded match {
+          case Right(value) =>
+            val encoded = value.asJson
+            val encodedPretty = encoded.printWith(JsonPrettyPrinter)
 
-        // println(s"js:input ${jsPretty}")
-        // println(s"decoded ${value}")
-        // println(s"re-encoded ${encodedPretty}")
+            if (verbose) {
+              println(s"js:input ${jsPretty}")
+              pprint.pprintln(value)
+              println(s"re-encoded ${encodedPretty}")
+            }
 
-        jsPretty === encodedPretty
+            jsRep === encoded
 
-      case Left(value) =>
-        println(s"Failed: ${value} from: ${jsPretty}")
+          case Left(value) =>
+            println(s"Failed: ${value} from: ${jsPretty}")
+            false
+        }
+      case Left(err) =>
+        println(s"parsing error ${err}")
         false
     }
   }
@@ -99,6 +107,7 @@ class TranscriptionFormatTest extends AnyFlatSpec with Matchers {
               { "unit": "page", "at": [0, 3] }
            ],
            "props": { "key": "value" } }""",
+      """{ "name": "NoProps", "id": "0", "range": [ { "unit": "document" } ] }""",
     )
     examples.foreach(example => {
       assert(isIsomorphic[Transcript.Label](example))
@@ -134,13 +143,14 @@ class TranscriptionFormatTest extends AnyFlatSpec with Matchers {
          |         [[54, 2, 3, 4], { "o": 1 }]
          |       ]
          |     }]
-         |   }]
+         |   }],
+         |   "labels": [
+         |     { "name": "HasRefs", "id": "L#2", "range": [{ "unit": "page", "at": [7, 2] }] },
+         |     { "name": "IsGoldLabled", "id": "L#3", "range": [{ "unit": "document" }] }
+         |   ]
          | }
          |""".stripMargin)
 
-    // |   "labels": [
-    // |     { "name": "HasRefs", "id": "L#2", "range": [{ "unit": "page", "at": [7, 2] }] }
-    // |   ]
-    // |     { name: "IsGoldLabled", id: "L#3", range: [{ unit: "document" }] },
+      assert(isIsomorphic[Transcript](sampleTranscript))
   }
 }

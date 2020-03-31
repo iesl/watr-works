@@ -46,7 +46,7 @@ import scalaz.Tag.TagOf
   *       }]
   *     }],
   *     labels: [
-  *       { name: "HasRefs", id: "L#2", range: [{ unit: "page", at: [7, 2] }] },
+  *       { name: "HasRefs", id: "L#2", range: [{ ""unit: "page", at: [7, 2] }] },
   *       { name: "IsGoldLabled", id: "L#3", range: [{ unit: "document" }] },
   *     ]
   *   }
@@ -60,7 +60,8 @@ import scalaz.Tag.TagOf
 case class Transcript(
   description: String,
   documentId: String@@DocumentID,
-  pages: List[Transcript.Page]
+  pages: List[Transcript.Page],
+  labels: List[Transcript.Label]
 )
 
 object Transcript {
@@ -70,7 +71,6 @@ object Transcript {
   case class Page(
     pdfPageBounds: LTBounds,
     lines: List[Line],
-    // labels: List[Label]
   )
 
   @JsonCodec
@@ -121,14 +121,29 @@ object Transcript {
 
   implicit val labelIdCodec = TypeTagCodecs.strCodec[LabelID]
 
-  @JsonCodec
   case class Label(
     name: String,
-    id: String @@ LabelID,
+    id: String@@LabelID,
     range: List[Range],
-    props: JsonObject
+    props: Option[JsonObject]
   )
 
+  implicit val LabelDecoder: Decoder[Label] = deriveDecoder
+  val LabelEncoder: Encoder[Label] = deriveEncoder
+  implicit val LabelEncoderNonNull = LabelEncoder.mapJson(json => {
+    val hc = HCursor.fromJson(json)
+
+    // TODO abstract out this null-dropping json code
+    val nonNullKVs = for {
+      keys <- hc.keys.toList
+      key  <- keys
+      v    <- hc.downField(key).focus
+      if !v.isNull
+    } yield Json.obj(key :=  v)
+
+    nonNullKVs.foldLeft(Json.obj())(_ deepMerge  _)
+
+  })
 
   sealed case class Span(
     begin: Int,
@@ -207,8 +222,7 @@ object Transcript {
   @JsonCodec
   case class DocumentRange(
     unit: String = "document"
-  ) extends Range {
-  }
+  ) extends Range
 
   @JsonCodec
   case class PageRange(
