@@ -30,14 +30,6 @@ object ArbitraryGeometry {
     d4 <- arbitrary[Double]
   } yield LTBounds.Doubles.apply(d1, d2, d3, d4)
 
-  // TODO get rid of LBBounds
-  def Gen_LBBounds: Gen[LBBounds] = for {
-    d1 <- arbitrary[Double]
-    d2 <- arbitrary[Double]
-    d3 <- arbitrary[Double]
-    d4 <- arbitrary[Double]
-  } yield LBBounds.Doubles.apply(d1, d2, d3, d4)
-
   def Gen_Point: Gen[Point] = for {
     d1 <- arbitrary[Double]
     d2 <- arbitrary[Double]
@@ -58,7 +50,6 @@ object ArbitraryGeometry {
   } yield Trapezoid(topLeft, topW.toFloatExact(), bottomLeft, bottomW.toFloatExact)
 
   implicit def Arb_LTBounds: Arbitrary[LTBounds] =  Arbitrary(Gen_LTBounds)
-  implicit def Arb_LBBounds: Arbitrary[LBBounds] =  Arbitrary(Gen_LBBounds)
   implicit def Arb_Point: Arbitrary[Point] = Arbitrary(Gen_Point)
   implicit def Arb_Line: Arbitrary[Line] = Arbitrary(Gen_Line)
   implicit def Arb_Trapezoid: Arbitrary[Trapezoid] = Arbitrary(Gen_Trapezoid)
@@ -69,7 +60,6 @@ object ArbitraryGeometry {
         Gen_Line,
         Gen_Point,
         Gen_LTBounds,
-        Gen_LBBounds,
         Gen_Trapezoid
       )
     }
@@ -83,10 +73,6 @@ object GeometryChecks extends Properties("GeometricFigures") {
 
   property("json <--> LTBounds") = forAll{ (example: LTBounds) =>
     example.asJson.decodeOrDie[LTBounds]() === example
-  }
-
-  property("json <--> LBBounds") = forAll{ (example: LBBounds) =>
-    example.asJson.decodeOrDie[LBBounds]() === example
   }
 
   property("json <--> Point") = forAll{ (example: Point) =>
@@ -103,7 +89,7 @@ object GeometryChecks extends Properties("GeometricFigures") {
 
   property("json <--> GeometricFigure") = forAll{ (example: GeometricFigure) =>
     // val js = example.asJson
-    // println(s"${example}: ${js}")
+    // println(s"example: ${example} as Json: ${js}")
     example.asJson.decodeOrDie[GeometricFigure]() === example
   }
 }

@@ -156,6 +156,9 @@ trait TypeTags extends TypeTagUtils {
   val AnnotationID = Tag.of[AnnotationID]
   val LabelSchemaID = Tag.of[LabelSchemaID]
   val LabelSchemaName = Tag.of[LabelSchemaName]
+
+
+
 }
 
 
@@ -163,6 +166,37 @@ trait TypeTagCodecs {
   import TypeTags._
   import _root_.io.circe
   import circe._
+
+  def intEncoder[A]: Encoder[Int@@A] = {
+    val e: Encoder[Int@@A] = Encoder.encodeInt.contramap(_.unwrap)
+    e
+  }
+  def intDecoder[A]: Decoder[Int@@A] = {
+    val T = Tag.of[A]
+    val e: Decoder[Int@@A] = Decoder.decodeInt.map(T(_))
+    e
+  }
+  def strEncoder[A]: Encoder[String@@A] = {
+    val e: Encoder[String@@A] = Encoder.encodeString.contramap(_.unwrap)
+    e
+  }
+  def strDecoder[A]: Decoder[String@@A] = {
+    val T = Tag.of[A]
+    val e: Decoder[String@@A] = Decoder.decodeString.map(T(_))
+    e
+  }
+  def strCodec[A]: Codec[String@@A] = {
+    Codec.from(
+      strDecoder[A],
+      strEncoder[A]
+    )
+  }
+  def intCodec[A]: Codec[Int@@A] = {
+    Codec.from(
+      intDecoder[A],
+      intEncoder[A]
+    )
+  }
 
 
   implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)

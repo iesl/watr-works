@@ -35,7 +35,6 @@ trait RTreeSearch[T <: GeometricFigure, W, Shape <: LabeledShape.Aux[T, W]] {
       case f: G.LTBounds => rtreeIndex.search(toRGRectangle(f))
       case f: G.Line     => rtreeIndex.search(toRGLine(f))
       case f: G.Point    => rtreeIndex.search(toRGPoint(f))
-      case f: G.LBBounds => rtreeIndex.search(toRGRectangle(f.toLTBounds))
       case _             => sys.error("unsupported query shape")
     }
 

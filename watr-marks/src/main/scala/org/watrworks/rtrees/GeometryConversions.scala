@@ -52,7 +52,6 @@ object RGeometryConversions {
       case f: LTBounds => toRGRectangle(f)
       case f: Point    => toRGPoint(f)
       case f: Line     => toRGLine(f)
-      case f: LBBounds => toRGRectangle(f.toLTBounds)
       case _ => ???
     }
   }

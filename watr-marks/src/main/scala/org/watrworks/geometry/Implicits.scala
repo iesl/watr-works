@@ -17,9 +17,6 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
         g1.left === g2.left && g1.top === g2.top &&
           g1.width === g2.width && g1.height === g2.height)
 
-      case (g1: LBBounds, g2: LBBounds) => g1.toLTBounds === g2.toLTBounds
-      case (g1: LBBounds, g2: LTBounds) => g1.toLTBounds === g2
-      case (g1: LTBounds, g2: LBBounds) => g1 === g2.toLTBounds
       case (g1: Point, g2: Point)       => g1.x===g2.x && g1.y===g2.y
       case (g1: Line, g2: Line)         => g1.p1===g2.p1 && g1.p2===g2.p2
       case (g1: Trapezoid, g2: Trapezoid) =>
@@ -33,7 +30,6 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
     })
 
   implicit val EqualLTBounds: Equal[LTBounds] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
-  implicit val EqualLBBounds: Equal[LBBounds] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
   implicit val EqualPoint: Equal[Point] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
   implicit val EqualLine: Equal[Line] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
   implicit val EqualTrapezoid: Equal[Trapezoid] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
@@ -41,7 +37,6 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
 
   def minBoundingRect(fig: GeometricFigure): LTBounds = fig match {
     case f: LTBounds       => f
-    case f: LBBounds       => f.toLTBounds
     case f: Point          => LTBounds(f.x, f.y, FloatRep(0), FloatRep(0))
     case f: Line           => f.bounds()
     case f: Trapezoid      =>

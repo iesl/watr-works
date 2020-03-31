@@ -45,14 +45,14 @@ protected object ExtractionImplicits {
   }
 
   implicit class RicherPDRectangle(val self: PDRectangle) extends AnyVal {
-    def toLBBounds(): LBBounds = {
-      val left = self.getLowerLeftX
-      val top = self.getUpperRightY
-      // val bottom = self.getLowerLeftY
-      val w = self.getWidth
-      val h = self.getHeight
-      LTBounds.Floats(left, top, w, h).toLBBounds
-    }
+    // def toLBBounds(): LBBounds = {
+    //   val left = self.getLowerLeftX
+    //   val top = self.getUpperRightY
+    //   // val bottom = self.getLowerLeftY
+    //   val w = self.getWidth
+    //   val h = self.getHeight
+    //   LTBounds.Floats(left, top, w, h).toLBBounds
+    // }
   }
 
   def makeScaledFontId(name: String, scalingFactor: Int@@ScalingFactor): String@@ScaledFontID = {

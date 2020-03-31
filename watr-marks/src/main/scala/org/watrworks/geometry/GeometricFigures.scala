@@ -89,14 +89,6 @@ object LTBounds {
   val zero = empty
 
   implicit class RicherLTBounds(val theBbox: LTBounds) extends AnyVal {
-    def toLBBounds: LBBounds = {
-      LBBounds(
-        left = theBbox.left,
-        bottom =  theBbox.top+theBbox.height,
-        width = theBbox.width,
-        height = theBbox.height
-      )
-    }
 
     def prettyPrint: String = {
       val left = theBbox.left
@@ -127,42 +119,6 @@ object LTBounds {
       val height = theBbox.height
       s"""${left.pp}+${top.pp}+${width.pp}+${height.pp}"""
     }
-  }
-
-}
-
-case class LBBounds(
-  left: Int@@FloatRep,
-  bottom: Int@@FloatRep,
-  width: Int@@FloatRep,
-  height: Int@@FloatRep
-) extends GeometricFigure {
-  override def toString: String = this.prettyPrint
-
-  def toLTBounds: LTBounds = {
-    LTBounds(
-      left = left,
-      top = bottom-height,
-      width = width, height = height
-    )
-  }
-  def prettyPrint: String = {
-    s"""(l:${left.pp}, b:${bottom.pp}, w:${width.pp}, h:${height.pp})"""
-  }
-}
-
-object LBBounds {
-
-  object Doubles {
-    def apply(left: Double, bottom: Double, width: Double, height: Double): LBBounds =
-      LBBounds(left.toFloatExact(), bottom.toFloatExact, width.toFloatExact, height.toFloatExact)
-
-    def unapply(bbox: LBBounds): Option[(Double, Double, Double, Double)] = Some((
-      bbox.left.asDouble,
-      bbox.bottom.asDouble,
-      bbox.width.asDouble,
-      bbox.height.asDouble
-    ))
   }
 
 }
@@ -306,52 +262,62 @@ object Padding {
 
 
 trait GeometricFigureCodecs extends TypeTagCodecs {
-  // TODO get rid of all of these codecs and use Transcript codecs
   import io.circe
   import circe.generic.semiauto._
   import io.circe._, io.circe.generic.auto._
   import circe.syntax._
+  import cats.syntax.functor._
 
-  import utils.DoOrDieHandlers._
+  // import utils.DoOrDieHandlers._
 
-  implicit val Enc_Int_FloatRep: Encoder[Int@@FloatRep] = Encoder.encodeInt.contramap(_.unwrap)
-  implicit val Dec_Int_FloatRep: Decoder[Int@@FloatRep] = Decoder.decodeInt.map(FloatRep(_))
+  type I2 = (Int, Int)
+  type I3 = (Int, Int, Int)
+  type I4 = (Int, Int, Int, Int)
+  type FloatRep2 = (Int@@FloatRep, Int@@FloatRep)
+  type FloatRep3 = (Int@@FloatRep, Int@@FloatRep, Int@@FloatRep)
+  type FloatRep4 = (Int@@FloatRep, Int@@FloatRep, Int@@FloatRep, Int@@FloatRep)
 
-  // val Enc_LTBounds_v1: ObjectEncoder[LTBounds] = deriveEncoder
-  val Dec_LTBounds_v1: Decoder[LTBounds] = deriveDecoder
+  implicit val FloatRepEncoder: Encoder[Int@@FloatRep] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit val FloatRepDecoder: Decoder[Int@@FloatRep] = Decoder.decodeInt.map(FloatRep(_))
 
-  implicit val Enc_LTBounds: Encoder[LTBounds] = Encoder.instance { bbox =>
-    val LTBounds.IntReps(l, t, w, h) = bbox
-    List(l, t, w, h).asJson
+  implicit val LTBoundsEncoder: Encoder[LTBounds] = Encoder[FloatRep4]
+    .contramap(b => (b.left, b.top, b.width, b.height))
+
+  implicit val LTBoundsDecoder: Decoder[LTBounds] = Decoder[I4]
+    .map(b => LTBounds.IntReps(b._1, b._2, b._3, b._4))
+
+  implicit val Enc_Point: Encoder[Point] =
+    Encoder[FloatRep2].contramap(b => (b.x, b.y))
+
+  implicit val Dec_Point: Decoder[Point] = Decoder[I2]
+    .map(b => Point.IntReps(b._1, b._2))
+
+  implicit val LineEncoder: Encoder[Line] = Encoder[(Point, Point)]
+    .contramap(b => (b.p1, b.p2))
+
+  implicit val LineDecoder: Decoder[Line] = Decoder[(Point, Point)]
+    .map(b => Line(b._1, b._2))
+
+  implicit val TrapezoidEnc: Encoder[Trapezoid] = Encoder[(Point, Int@@FloatRep, Point, Int@@FloatRep)]
+    .contramap(b => (b.topLeft, b.topWidth, b.bottomLeft, b.bottomWidth))
+
+  implicit val TrapezoidDec: Decoder[Trapezoid] = Decoder[(Point, Int@@FloatRep, Point, Int@@FloatRep)]
+    .map(b => Trapezoid(b._1, b._2, b._3, b._4))
+
+  implicit val GeometricFigureDecoder: Decoder[GeometricFigure] =
+    List[Decoder[GeometricFigure]](
+      Decoder[Point].widen,
+      Decoder[Line].widen,
+      Decoder[LTBounds].widen,
+      Decoder[Trapezoid].widen,
+    ).reduce(_ or _)
+
+  implicit val GeometricFigureEncoder: Encoder[GeometricFigure] = Encoder.instance {
+    case v: Point => v.asJson
+    case v: Line => v.asJson
+    case v: LTBounds => v.asJson
+    case v: Trapezoid => v.asJson
   }
-
-  val Dec_LTBounds_v2: Decoder[LTBounds] = Decoder.instance { hCursor =>
-    val intVals = hCursor.focus.orDie().decodeOrDie[List[Int]]()
-    intVals match {
-      case List(l, t, w, h) =>
-        Right(LTBounds.IntReps(l, t, w, h))
-
-      case _ =>
-        Left(DecodingFailure("",List()))
-    }
-  }
-
-  implicit val Dec_LTBounds = Dec_LTBounds_v1.or(Dec_LTBounds_v2)
-
-  implicit val Enc_LBBounds: Encoder.AsObject[LBBounds] = deriveEncoder
-  implicit val Dec_LBBounds: Decoder[LBBounds] = deriveDecoder
-
-  implicit val Enc_Point: Encoder.AsObject[Point] = deriveEncoder
-  implicit val Dec_Point: Decoder[Point] = deriveDecoder
-
-  implicit val Enc_Line: Encoder.AsObject[Line] = deriveEncoder
-  implicit val Dec_Line: Decoder[Line] = deriveDecoder
-
-  implicit val Enc_Trapezoid: Encoder.AsObject[Trapezoid] = deriveEncoder
-  implicit val Dec_Trapezoid: Decoder[Trapezoid] = deriveDecoder
-
-  implicit val Enc_GeometricFigure: Encoder.AsObject[GeometricFigure] = deriveEncoder
-  implicit val Dec_GeometricFigure: Decoder[GeometricFigure] = deriveDecoder
 
 }
 
