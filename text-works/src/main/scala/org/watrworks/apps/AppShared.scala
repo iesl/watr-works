@@ -33,6 +33,8 @@ object ProcessPipelineSteps {
       .through(cleanFileArtifacts(conf))
       .through(runSegmentation(conf))
       .through(writeExtractedTextFile(conf))
+      // .through(cleanTraceLogArtifacts(conf))
+      // .through(writeTraceLogs(conf))
 
     val prog = processStream.compile.drain
 
@@ -69,7 +71,7 @@ object ProcessPipelineSteps {
   }
 
   def createInputStream[F[_]: Effect](
-      conf: IOConfig
+    conf: IOConfig
   ): fs2.Stream[F, ProcessableInput] = {
     conf.inputMode
       .map { mode =>
@@ -124,7 +126,7 @@ object ProcessPipelineSteps {
   }
 
   def filterInputMatchRegex(
-      regex: Option[String]
+    regex: Option[String]
   ): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
     _.map {
       case r @ Right(p @ Processable.CorpusFile(corpusEntry)) =>
@@ -143,7 +145,7 @@ object ProcessPipelineSteps {
   }
 
   def pickupTextgridFiles(
-      conf: TextWorksConfig.Config
+    conf: TextWorksConfig.Config
   ): fs2.Pipe[IO, MarkedInput, MarkedOutput] = {
     _.map {
       case Left(inputMode) => Left("no textgrid.json")
@@ -160,7 +162,7 @@ object ProcessPipelineSteps {
   }
 
   def cleanFileArtifacts(
-      conf: TextWorksConfig.Config
+    conf: TextWorksConfig.Config
   ): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
     _.map {
       case Left(inputMode) => Left(inputMode)
@@ -186,8 +188,8 @@ object ProcessPipelineSteps {
   }
 
   def doSegment1(
-      input: Processable,
-      conf: TextWorksConfig.Config
+    input: Processable,
+    conf: TextWorksConfig.Config
   ): Either[String, ProcessedInput] = {
     try {
       input match {
@@ -234,9 +236,7 @@ object ProcessPipelineSteps {
               println(s"Error: ${s}")
               s
             }
-            .map { s =>
-              Processable.ExtractedFile(s, m)
-            }
+            .map { s => Processable.ExtractedFile(s, m) }
 
         case m => Left(s"Unsupported Processable ${m}")
       }
@@ -261,9 +261,8 @@ object ProcessPipelineSteps {
       .asJson
   }
 
-
   def writeExtractedTextFile(
-      conf: TextWorksConfig.Config
+    conf: TextWorksConfig.Config
   ): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
     _.map {
       case m @ Right(Processable.ExtractedFile(segmentation, input)) =>
@@ -295,7 +294,7 @@ object ProcessPipelineSteps {
   }
 
   def writeTraceLogs(
-      conf: TextWorksConfig.Config
+    conf: TextWorksConfig.Config
   ): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = _.map {
     case m @ Right(Processable.ExtractedFile(segmentation, input)) =>
       Processable.withCorpusEntry(input) { corpusEntry =>
@@ -315,11 +314,10 @@ object ProcessPipelineSteps {
           )
 
           log.trace(s"writing tracelogs")
-          val pageLogs = segmentation.pageSegmenters
-            .foldLeft(List[Json]()) {
-              case (accum, pageSegmenter) =>
-                accum ++ pageSegmenter.emitLogs()
-            }
+          val pageLogs = segmentation.pageSegmenters.foldLeft(List[Json]()) {
+            case (accum, pageSegmenter) =>
+              accum ++ pageSegmenter.emitLogs()
+          }
 
           fs.write(rootPath / "tracelog.json", pageLogs.asJson.noSpaces)
         }
@@ -331,7 +329,7 @@ object ProcessPipelineSteps {
   }
 
   def cleanTraceLogArtifacts(
-      conf: TextWorksConfig.Config
+    conf: TextWorksConfig.Config
   ): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
     _.map {
       case m @ Right(Processable.ExtractedFile(segmentation, input)) =>
@@ -350,7 +348,7 @@ object ProcessPipelineSteps {
   }
 
   def runSegmentation(
-      conf: TextWorksConfig.Config
+    conf: TextWorksConfig.Config
   ): fs2.Pipe[IO, MarkedInput, MarkedOutput] =
     inStream => {
       inStream.map {
@@ -360,7 +358,7 @@ object ProcessPipelineSteps {
     }
 
   def markUnextractedProcessables(
-      conf: TextWorksConfig.Config
+    conf: TextWorksConfig.Config
   ): fs2.Pipe[IO, MarkedInput, MarkedInput] = _.map { markedInput =>
     markedInput match {
       case Right(input) =>
@@ -399,8 +397,8 @@ object ProcessPipelineSteps {
   )
 
   def extractText(
-      stableId: String @@ DocumentID,
-      inputPdf: fs.Path
+    stableId: String @@ DocumentID,
+    inputPdf: fs.Path
   ): DocumentSegmentation = {
 
     println(s"Extracting ${stableId}")

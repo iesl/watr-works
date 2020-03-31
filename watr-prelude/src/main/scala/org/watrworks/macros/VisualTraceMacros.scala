@@ -25,7 +25,7 @@ object VisualTraceMacros {
   type VTraceContext = Context { type PrefixType = EnableTrace }
 
 
-  def runOnTraceLevel[T](c: VTraceContext)(vtl: c.Expr[VisualTraceLevel])(body: c.Tree): c.Tree = {
+  def runOnTraceLevel(c: VTraceContext)(vtl: c.Expr[VisualTraceLevel])(body: c.Tree): c.Tree = {
     import c.universe._
     q"""
     if (${c.prefix}.tracingEnabled()) {

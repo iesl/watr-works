@@ -5,8 +5,6 @@ import TypeTags._
 
 import textboxing.{TextBoxing => TB}, TB._
 
-
-
 sealed trait BioPin {
   def label: Label
   def pinChar: Char
@@ -95,7 +93,6 @@ case class Label(
   def L: BioPin = LPin(this)
   def U: BioPin = UPin(this)
 
-
   def fqn: String = {
     key
   }
@@ -129,6 +126,5 @@ case class Label(
   def /(l: Label): Label = {
     Label(s"${fqn}/${l.fqn}")
   }
-
 }
 

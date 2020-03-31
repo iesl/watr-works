@@ -118,7 +118,6 @@ object Transcript {
     }
   }
 
-
   implicit val labelIdCodec = TypeTagCodecs.strCodec[LabelID]
 
   case class Label(

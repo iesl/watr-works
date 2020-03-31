@@ -15,9 +15,9 @@ import scala.collection.mutable
 import java.time.Instant
 import textboxing.{TextBoxing => TB}
 import GeometryCodecs._
-import TraceLog._
 import extract.FontExportRecords
-
+import TraceLog._
+import transcripts.Transcript
 
 sealed trait TraceLog {
   def withCallSite(s: String): TraceLog
@@ -86,7 +86,7 @@ object TraceLog {
 
   case class GeometryTraceLog(
     headers: Headers = Headers(),
-    body: Json
+    body: Seq[Transcript.Label]
   ) extends TraceLog {
     def withCallSite(s: String) = copy(headers = headers.withCallSite(s))
     def tagged(s: String) = copy(headers = headers.tagged(s))
@@ -116,6 +116,7 @@ object TraceLog {
 
 
 trait ScopedTracing extends VisualTracer { self  =>
+
 
   protected val traceLogs = mutable.ArrayBuffer[TraceLog]()
 
@@ -226,8 +227,6 @@ trait PageScopeTracing extends ScopedTracing { self  =>
     shape(filtered:_*)
   }
 
-
-
   def relation(
     name: String
   ): RelationTraceLog = {
@@ -235,32 +234,61 @@ trait PageScopeTracing extends ScopedTracing { self  =>
       body = List()
     ).named(name)
   }
+
   def figure(figures: GeometricFigure): GeometryTraceLog = {
     figure(Seq(figures))
   }
 
   def figure(figures: Seq[GeometricFigure]): GeometryTraceLog = {
+    figures.map(fig => {
+      val range = figureToTransRange(fig)
+    })
     GeometryTraceLog(
-      body = figures.toList.asJson
+      body = figures.map(figureToTransLabel(_))
+    )
+  }
+
+  def figureToTransLabel(figure: GeometricFigure): Transcript.Label = {
+    val range = figureToTransRange(figure);
+    Transcript.Label(
+      "(anon)",
+      id = TypeTags.LabelID(""),
+      range = List(range),
+      props = None
+    )
+  }
+
+  def figureToTransRange(figure: GeometricFigure): Transcript.GeometryRange = {
+    val unit = figure match {
+      case shape: LTBounds => Transcript.GeometryLabelUnit.Rect
+      case shape: Line => Transcript.GeometryLabelUnit.Line
+      case shape: Point => Transcript.GeometryLabelUnit.Point
+      case shape: Trapezoid => Transcript.GeometryLabelUnit.Trapezoid
+    }
+    Transcript.GeometryRange(
+      unit,
+      this.pageNum.unwrap,
+      figure
     )
   }
 
   def shape[A <: GeometricFigure](lshapes: AnyShape*): GeometryTraceLog = {
-    ???
+    val shapes = lshapes.map{ lshape: AnyShape =>
+      val id = TypeTags.LabelID(lshape.id.unwrap.toString())
+      val labelName = lshape.labels.map(_.fqn).mkString(",")
+      val atShape = figureToTransRange(lshape.shape);
 
-    // val shapes = lshapes.map{ lshape: AnyShape =>
-    //   lshape.shape.asJson
-    //     .add("id", lshape.id.asJson)
-    //     .add("labels", lshape.labels.mkString(" ").asJson)
-    // }
+      Transcript.Label(
+        name = labelName,
+        id = id,
+        range = List(atShape),
+        props = None
+      )
+    }
 
-    // val labels = lshapes.flatMap{ lshape =>
-    //   lshape.labels
-    // }.toSet.toList.mkString(" ")
-
-    // GeometryTraceLog(
-    //   body = shapes.asJson
-    // ).tagged(labels)
+    GeometryTraceLog(
+      body = shapes
+    )
   }
 
 }
