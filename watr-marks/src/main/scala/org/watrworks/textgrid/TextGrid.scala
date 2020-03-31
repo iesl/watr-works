@@ -98,10 +98,6 @@ trait TextGrid { self =>
     }.toList
   }
 
-  def toJson(): Json = {
-    new TextOutputBuilder(this).gridToJson()
-  }
-
 
   def split(row: Int, col: Int): Option[TextGrid] = {
     if (0 <= row && row < rows.length) {
@@ -156,26 +152,6 @@ trait TextGrid { self =>
 
 
 object TextGrid {
-
-  def fromJsonStr(jsStr: String): TextGrid = {
-    circe.parser.parse(jsStr).fold(
-      fail => sys.error(s"could not decode TextGrid: ${fail}: ${jsStr}"),
-      succ => fromJson(succ)
-    )
-
-  }
-
-  def fromJson(js: Json): TextGrid = {
-    val cursor = js.hcursor
-
-    cursor.downField("stableId").as[String].fold(fail => {
-      sys.error(s" could not decode textgrid: ${fail}")
-    }, stableId => {
-      val codecs =  new AccumulatingTextGridCodecs(DocumentID(stableId))
-      codecs.decodeGrid(js)
-    })
-
-  }
 
   sealed trait GridCell extends LabelTarget {
     def pageRegion: PageRegion
@@ -310,10 +286,6 @@ object TextGrid {
 
     def showRow(): Box = {
       hcat(top, cells.map(_.showCell()))
-    }
-
-    protected[textgrid] def serialize(codecs: AccumulatingTextGridCodecs): Unit = {
-      codecs.encodeRow(this)
     }
   }
 

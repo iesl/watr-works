@@ -4,7 +4,6 @@ package segment
 import scala.{ collection => sc }
 import sc.Seq
 import textgrid._
-import textgraph._
 import geometry._
 import geometry.syntax._
 import utils.ExactFloats._
@@ -14,6 +13,8 @@ import TypeTags._
 import scalaz.{@@ => _, _} //, Scalaz._
 import utils.intervals._
 import watrmarks._
+import utils.SlicingAndDicing._
+import scalaz.syntax.std.list._
 
 
 
@@ -21,94 +22,6 @@ trait TextReconstruction extends PageScopeSegmenter
     with LineSegmentation { self =>
 
   lazy val textReconstruction = self
-
-  def getTextGraph(): TextGraphJvm = {
-    val textGraph = TextGraphJvm.create(docScope.stableId)
-
-    val textLineReprShape = LB.BaselineMidriseBand
-    val rows1 = getLabeledShapes(textLineReprShape)
-      .flatMap { reprShape =>
-        val shapeChars = getCharsForShape(reprShape).map(_.id.unwrap)
-        if (shapeChars.nonEmpty) {
-          val minId  = shapeChars.min
-
-          val textRow = insertSpacesInGraphRow(
-            textGraphRowFromReprShape(reprShape)
-          )
-          Some((minId, textRow))
-        } else None
-      }
-
-
-    val rows = rows1.sortBy(_._1).map(_._2)
-
-    rows.foreach { row =>
-      textGraph.appendRow(row)
-    }
-
-    textGraph
-  }
-
-
-
-
-
-  private def textGraphRowFromReprShape(reprShape: AnyShape): Seq[TextGraph.GridCell] = {
-
-    val extractedItems = getExtractedItemsForShape(reprShape).sortBy(_.minBBox.left)
-
-    extractedItems.flatMap{
-      case item: ExtractedItem.CharItem =>
-        val cells = item.char.headOption.map{ char =>
-          val charAtom = PageItem.CharAtom(
-            item.id,
-            PageRegion(
-              StablePage(
-                docScope.stableId,
-                pageNum
-              ),
-              item.minBBox
-            ),
-            item.char
-          )
-          val cell = TextGraph.GlyphCell(char, charAtom, Seq())
-
-          // val continuations = item.char.tail.map { cn =>
-          //   cell.createInsert(cn)
-          // }
-          // val allCells: Seq[TextGrid.GridCell] = cell +: continuations
-          cell
-        }
-        cells
-
-      case item =>
-        // TODO this is skipping over text represented as paths (but I have to figure out sup/sub script handling to make it work)
-        Seq()
-    }
-  }
-
-
-  import utils.SlicingAndDicing._
-  import scalaz.syntax.std.list._
-
-  private def insertSpacesInGraphRow(cells: Seq[TextGraph.GridCell]): Seq[TextGraph.GridCell] =  {
-
-    val glyphCells: Seq[TextGraph.GlyphCell] = cells.collect{
-      case c: TextGraph.GlyphCell => c
-    }
-
-    val splitValue = guessWordbreakWhitespaceThreshold(glyphCells.map(_.headItem))
-
-    val wordGroups: Seq[Seq[TextGraph.GridCell]] = glyphCells.groupByPairs ((e1, e2) => {
-      val pairwiseDist = e2.pageRegion.bbox.left - e1.pageRegion.bbox.right
-      pairwiseDist < splitValue
-    })
-
-    wordGroups.toList.intersperse(List(TextGraph.InsertCell(' '))).flatten.toList
-  }
-
-
-
 
   private def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact =  {
     if (sortedLineCCs.isEmpty) 0d.toFloatExact() else {

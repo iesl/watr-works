@@ -1,6 +1,8 @@
 package org.watrworks
 package utils
 
+import os.SubPath
+
 object PathUtils {
 
   import ammonite.{ops => fs}
@@ -18,7 +20,7 @@ object PathUtils {
     fs.FilePath(nioPath) match {
       case p: fs.Path =>  p
       case p: fs.RelPath => fs.pwd / p
-      case _ => ???
+      case p: SubPath => fs.pwd / p
     }
   }
 
@@ -26,7 +28,7 @@ object PathUtils {
     fs.FilePath(str) match {
       case p: fs.Path =>  p
       case p: fs.RelPath => fs.pwd / p
-      case _ => ???
+      case p: SubPath => fs.pwd / p
     }
   }
 

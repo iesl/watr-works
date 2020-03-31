@@ -17,7 +17,6 @@ import _root_.io.circe, circe._, circe.syntax._
 
 import textgrid._
 
-
 object ProcessPipelineSteps {
   private[this] val log = org.log4s.getLogger
 
@@ -69,44 +68,46 @@ object ProcessPipelineSteps {
     prog.unsafeRunSync()
   }
 
-  def createInputStream[F[_]: Effect](conf: IOConfig): fs2.Stream[F, ProcessableInput] = {
-    conf.inputMode.map{ mode =>
+  def createInputStream[F[_]: Effect](
+      conf: IOConfig
+  ): fs2.Stream[F, ProcessableInput] = {
+    conf.inputMode
+      .map { mode =>
+        mode match {
+          case in @ Processable.SingleFile(f) =>
+            fs2.Stream.emit(in).covary[F]
 
-      mode match {
-        case in@ Processable.SingleFile(f) =>
-          fs2.Stream.emit(in).covary[F]
+          case Processable.CorpusRoot(corpusRoot) =>
+            Corpus(corpusRoot)
+              .entryStream[F]()
+              .filter { entry =>
+                conf.pathFilter
+                  .map { filter => entry.entryDescriptor.matches(filter) }
+                  .getOrElse { true }
+              }
+              .map { entry => Processable.CorpusFile(entry) }
 
-        case Processable.CorpusRoot(corpusRoot) =>
-          Corpus(corpusRoot).entryStream[F]()
-            .filter { entry =>
-              conf.pathFilter.map { filter =>
-                entry.entryDescriptor.matches(filter)
-              }.getOrElse { true }
-            }
-            .map{ entry => Processable.CorpusFile(entry) }
+          case Processable.ListOfFiles(p) =>
+            die("TODO")
 
-        case Processable.ListOfFiles(p) =>
-          die("TODO")
-
-        case Processable.CorpusFile(entry) =>
-          die("TODO")
+          case Processable.CorpusFile(entry) =>
+            die("TODO")
+        }
       }
-    }.orDie("inputStream(): Invalid input options")
+      .orDie("inputStream(): Invalid input options")
 
   }
-
 
   val PrettyPrint2Spaces = circe.Printer.spaces2
 
   type MarkedInput = Either[ProcessableInput, ProcessableInput]
   type MarkedOutput = Either[String, ProcessedInput]
 
-
   def dropSkipAndRun(conf: IOConfig): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
     var skipCount = conf.numToSkip
     var runCount = conf.numToRun
     _.map {
-      case r@ Right(p@ Processable.CorpusFile(corpusEntry)) =>
+      case r @ Right(p @ Processable.CorpusFile(corpusEntry)) =>
         if (skipCount > 0) {
           skipCount -= 1;
           Left(p)
@@ -122,13 +123,15 @@ object ProcessPipelineSteps {
     _.map { Right(_) }
   }
 
-  def filterInputMatchRegex(regex: Option[String]): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
+  def filterInputMatchRegex(
+      regex: Option[String]
+  ): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
     _.map {
-      case r@ Right(p@ Processable.CorpusFile(corpusEntry)) =>
+      case r @ Right(p @ Processable.CorpusFile(corpusEntry)) =>
         // println(s"filterInputMatchRegex? ${regex} == ${corpusEntry.entryDescriptor}")
         val filterMatches = regex.map { re =>
           corpusEntry.entryDescriptor.matches(re)
-        } getOrElse(true)
+        } getOrElse (true)
 
         if (filterMatches) {
           r
@@ -139,12 +142,14 @@ object ProcessPipelineSteps {
     }
   }
 
-  def pickupTextgridFiles(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedOutput] = {
+  def pickupTextgridFiles(
+      conf: TextWorksConfig.Config
+  ): fs2.Pipe[IO, MarkedInput, MarkedOutput] = {
     _.map {
       case Left(inputMode) => Left("no textgrid.json")
       case Right(inputMode) =>
-        val textgridFile = Processable.getTextgridOutputFile(inputMode, conf.ioConfig)
-
+        val textgridFile =
+          Processable.getTextgridOutputFile(inputMode, conf.ioConfig)
 
         if (textgridFile.toFile().exists()) {
           Right(Processable.ExtractedTextGridFile(textgridFile, inputMode))
@@ -154,7 +159,9 @@ object ProcessPipelineSteps {
     }
   }
 
-  def cleanFileArtifacts(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
+  def cleanFileArtifacts(
+      conf: TextWorksConfig.Config
+  ): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
     _.map {
       case Left(inputMode) => Left(inputMode)
       case Right(inputMode) =>
@@ -166,7 +173,9 @@ object ProcessPipelineSteps {
             fs.rm(nioToAmm(output))
             Right(inputMode)
           } else {
-            log.info(s"Skipping ${inputMode}, output path ${output} already exists")
+            log.info(
+              s"Skipping ${inputMode}, output path ${output} already exists"
+            )
             log.info(s"use --overwrite to force overwrite")
             Left(inputMode)
           }
@@ -176,11 +185,13 @@ object ProcessPipelineSteps {
     }
   }
 
-  def doSegment1(input: Processable, conf: TextWorksConfig.Config): Either[String, ProcessedInput] = {
+  def doSegment1(
+      input: Processable,
+      conf: TextWorksConfig.Config
+  ): Either[String, ProcessedInput] = {
     try {
       input match {
-        case m@ Processable.SingleFile(f) =>
-
+        case m @ Processable.SingleFile(f) =>
           val pdfName = f.getFileName.toString()
           val stableId = DocumentID(pdfName)
           val input = nioToAmm(f)
@@ -194,20 +205,20 @@ object ProcessPipelineSteps {
               Processable.ExtractedFile(extractText(stableId, input), m)
             )
           } else {
-            val msg = s"File ${output} already exists. Move file or use --overwrite"
+            val msg =
+              s"File ${output} already exists. Move file or use --overwrite"
             println(msg)
             Left(msg)
           }
 
-
-        case m@ Processable.CorpusFile(corpusEntry) =>
-
+        case m @ Processable.CorpusFile(corpusEntry) =>
           val stableId = DocumentID(corpusEntry.entryDescriptor)
 
           println(s"Processing ${stableId}")
 
           val maybeSegmenter = for {
-            pdfEntry <- corpusEntry.getPdfArtifact.toRight(left="Could not get PDF")
+            pdfEntry <- corpusEntry.getPdfArtifact
+              .toRight(left = "Could not get PDF")
             pdfPath <- pdfEntry.asPath.toEither.left.map(_.toString())
           } yield {
 
@@ -218,15 +229,14 @@ object ProcessPipelineSteps {
               extractText(stableId, pdfPath)
             }
           }
-          maybeSegmenter.left.map { s =>
-            println(s"Error: ${s}")
-            s
-          }.map {s =>
-            Processable.ExtractedFile(
-              s, m
-            )
-          }
-
+          maybeSegmenter.left
+            .map { s =>
+              println(s"Error: ${s}")
+              s
+            }
+            .map { s =>
+              Processable.ExtractedFile(s, m)
+            }
 
         case m => Left(s"Unsupported Processable ${m}")
       }
@@ -238,7 +248,8 @@ object ProcessPipelineSteps {
   }
 
   def getExecutableInfo(): Json = {
-    val buildInfoMap = buildinfo.BuildInfo.toJson.jsonOrDie("BuildInfo produced invalid Json")
+    val buildInfoMap =
+      buildinfo.BuildInfo.toJson.jsonOrDie("BuildInfo produced invalid Json")
     val now = System.currentTimeMillis()
     val dtf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
     dtf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
@@ -250,19 +261,27 @@ object ProcessPipelineSteps {
       .asJson
   }
 
-  def writeExtractedTextFile(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
+
+  def writeExtractedTextFile(
+      conf: TextWorksConfig.Config
+  ): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
     _.map {
-      case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
+      case m @ Right(Processable.ExtractedFile(segmentation, input)) =>
         val outputFile = Processable.getTextgridOutputFile(input, conf.ioConfig)
 
         val jsonOutput = time("build json output") {
           TextGridOutputFormats.jsonOutputGridPerPage(segmentation)
         }
 
-        val writeable = jsonOutput
-          .add("buildInfo", getExecutableInfo())
+        val writeable = jsonOutput.deepMerge(
+          Json.obj("buildInfo" := getExecutableInfo())
+        )
 
-        val gridJsStr = writeable.asJson.printWith(JsonPrettyPrinter)
+        val gridJsStr = writeable.asJson
+          .printWith(JsonPrettyPrinter)
+          .split("\n")
+          .filter(l => l.trim().length() > 0)
+          .reduce(_ + _ + "\n")
 
         println(s"writing ${outputFile}")
 
@@ -275,10 +294,10 @@ object ProcessPipelineSteps {
     }
   }
 
-
-  def writeTraceLogs(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = _.map {
-    case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
-
+  def writeTraceLogs(
+      conf: TextWorksConfig.Config
+  ): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = _.map {
+    case m @ Right(Processable.ExtractedFile(segmentation, input)) =>
       Processable.withCorpusEntry(input) { corpusEntry =>
         val traceLogRoot = if (conf.runTraceLogging) {
           val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
@@ -302,9 +321,7 @@ object ProcessPipelineSteps {
                 accum ++ pageSegmenter.emitLogs()
             }
 
-          fs.write(rootPath / "tracelog.json",
-            pageLogs.asJson.noSpaces
-          )
+          fs.write(rootPath / "tracelog.json", pageLogs.asJson.noSpaces)
         }
       }
 
@@ -313,26 +330,28 @@ object ProcessPipelineSteps {
     case x => x
   }
 
-  def cleanTraceLogArtifacts(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
-      _.map {
-        case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
-
-          Processable.withCorpusEntry(input) { corpusEntry =>
-
-            if (conf.runTraceLogging) {
-              println("cleaning tracelogs")
-              val group = corpusEntry.ensureArtifactGroup("tracelogs")
-              group.deleteGroupArtifacts()
-            }
+  def cleanTraceLogArtifacts(
+      conf: TextWorksConfig.Config
+  ): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
+    _.map {
+      case m @ Right(Processable.ExtractedFile(segmentation, input)) =>
+        Processable.withCorpusEntry(input) { corpusEntry =>
+          if (conf.runTraceLogging) {
+            println("cleaning tracelogs")
+            val group = corpusEntry.ensureArtifactGroup("tracelogs")
+            group.deleteGroupArtifacts()
           }
+        }
 
-          m
+        m
 
-        case x => x
-      }
+      case x => x
+    }
   }
 
-  def runSegmentation(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedOutput] =
+  def runSegmentation(
+      conf: TextWorksConfig.Config
+  ): fs2.Pipe[IO, MarkedInput, MarkedOutput] =
     inStream => {
       inStream.map {
         case Right(input) => doSegment1(input, conf)
@@ -340,14 +359,15 @@ object ProcessPipelineSteps {
       }
     }
 
-
-  def markUnextractedProcessables(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedInput] = _.map {
-    markedInput => markedInput match {
+  def markUnextractedProcessables(
+      conf: TextWorksConfig.Config
+  ): fs2.Pipe[IO, MarkedInput, MarkedInput] = _.map { markedInput =>
+    markedInput match {
       case Right(input) =>
-
         input match {
-          case m@ Processable.CorpusFile(corpusEntry) =>
-            val textGridFile = Processable.getTextgridOutputFile(m, conf.ioConfig)
+          case m @ Processable.CorpusFile(corpusEntry) =>
+            val textGridFile =
+              Processable.getTextgridOutputFile(m, conf.ioConfig)
             val isProcessed = fs.exists(textGridFile.toFsPath())
             if (isProcessed) {
               log.info(s"Already processed ${corpusEntry}: ${textGridFile}")
@@ -356,7 +376,7 @@ object ProcessPipelineSteps {
               Right(input)
             }
 
-          case m@ Processable.SingleFile(filePath) =>
+          case m @ Processable.SingleFile(filePath) =>
             ???
           case _ => ???
         }
@@ -364,25 +384,23 @@ object ProcessPipelineSteps {
     }
   }
 
-
-
   val JsonPrettyPrinter = circe.Printer(
     dropNullValues = false,
     indent = "  ",
-    lbraceRight = "",
+    lbraceRight = "\n",
     rbraceLeft = "\n",
     lbracketRight = "",
     rbracketLeft = "",
     lrbracketsEmpty = "",
     arrayCommaRight = " ",
     objectCommaRight = "\n",
-    colonLeft = " ",
+    colonLeft = "",
     colonRight = " "
   )
 
   def extractText(
-    stableId: String@@DocumentID,
-    inputPdf: fs.Path
+      stableId: String @@ DocumentID,
+      inputPdf: fs.Path
   ): DocumentSegmentation = {
 
     println(s"Extracting ${stableId}")
@@ -390,8 +408,8 @@ object ProcessPipelineSteps {
     val zoningApi = new MemDocZoningApi
 
     val segmenter = time("createSegmenter") {
-        DocumentSegmenter.createSegmenter(stableId, inputPdf, zoningApi)
-      }
+      DocumentSegmenter.createSegmenter(stableId, inputPdf, zoningApi)
+    }
 
     time("runDocumentSegmentation") {
       segmenter.runDocumentSegmentation()

@@ -2,7 +2,7 @@ package org.watrworks
 package formats
 
 import org.watrworks.watrmarks.WeightedLabeling
-import scala.{ collection => sc }
+import scala.{collection => sc}
 import sc.Seq
 
 import rtrees._
@@ -13,111 +13,87 @@ import _root_.io.circe, circe._, circe.syntax._
 import circe.generic.auto._
 import circe.generic._
 import geometry._
+import transcripts._
+import java.nio.{file => nio}
+import ammonite.{ops => fs}
+import utils.DoOrDieHandlers._
+import org.watrworks.textgrid.TextGrid
 
-object TextGridOutputFormats  {
-  /**
-    *   {
-    *     description: "desc",
-    *     documentId: "doc-25-id",
-    *     pages: [{
-    *       pdfPageBounds: [0, 0, 61200, 79200],
-    *       lines: [{
-    *         text: "I Ã ffi",
-    *         glyphs: [
-    *           [1, 2, 3, 4],
-    *           [[59, 2, 3, 4], {}],
-    *           [[3, 2, 3, 4], {
-    *             "gs": [
-    *               [[1, 2, 3, 4], { "g": "A" }],
-    *               [[1, 2, 3, 4], { "g": "~" }]
-    *             ]
-    *           }],
-    *         ]
-    *       }, {
-    *         text: "Fe_{3}",
-    *         glyphs: [
-    *           [11, 2, 3, 4],
-    *           [22, 2, 3, 4],
-    *           [[53, 2, 3, 4], { "os": [-2, -1, 1] }],
-    *           [[54, 2, 3, 4], { "o": 1 }]
-    *         ]
-    *       }]
-    *     }],
-    *     labels: [
-    *       { name: "HasRefs", id: "L#2", range: [{ unit: "page", at: [7, 2] }] },
-    *       { name: "IsGoldLabled", id: "L#3", range: [{ unit: "document" }] },
-    *     ]
-    *   }
-    *
-    */
+object TextGridOutputFormats {
 
-  @JsonCodec
-  case class PageDef(
-    pdfPageBounds: (Int, Int, Int, Int),
-    lines: Json
-  )
-
-  @JsonCodec
-  case class DocumentTextGrids(
-    description: String,
-    documentId: String,
-    pages: Seq[PageDef],
-    // labels: ...
-  )
-
-  import java.nio.{file => nio}
-  import ammonite.{ops => fs}
-  import utils.DoOrDieHandlers._
-
-  def readDocumentJsonDef(f: nio.Path): DocumentTextGrids = {
-    val jsonStr = fs.read(fs.Path(f))
-    jsonStr.decodeOrDie[DocumentTextGrids]()
-  }
-
-  def jsonOutputGridPerPage(docSeg: DocumentSegmentation): JsonObject = {
+  def jsonOutputGridPerPage(docSeg: DocumentSegmentation): Json = {
     val stableId = docSeg.stableId
 
-    val allPageTextGrids = docSeg.pageSegmenters
-      .map { pageSegmenter =>
-        val textGrid = pageSegmenter.getTextGrid(None)
-        val rows = textGrid.rows.length
-        val pageJs = textGrid.toJson()
+    val pages = docSeg.pageSegmenters.map { pageSegmenter =>
+      val textGrid = pageSegmenter.getTextGrid(None)
 
+      val lines = textGrid.rows().map(row => {
+        val text = row.toText()
 
-        val LTBounds.IntReps(l, t, w, h) = pageSegmenter.pageGeometry
-        val geom = Json.arr(Json.fromInt(l), Json.fromInt(t), Json.fromInt(w), Json.fromInt(h))
+        val glyphs = row.cells().map(_ match {
 
-        pageJs.deepMerge(Json.obj(
-          "pdfPageBounds" := geom,
-        ));
-      }
+          case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
 
-    val fontDescriptions = fontDescription(docSeg)
+            val props = if (tailItems.isEmpty) None else {
+              val tailGlyphs = tailItems.map(pageItem => {
+                Transcript.Glyph(
+                  pageItem.bbox,
+                  props = Some(Transcript.GlyphProps(
+                  ))
+                )
+              }).toList
 
-    Json.obj(
-      "description" := s"Extracted Pages for ${stableId}",
-      "documentId" := stableId.unwrap,
-      "pages" := allPageTextGrids
-    ).asObject.get
+              Some(Transcript.GlyphProps(
+                gs = Some(tailGlyphs)
+              ))
+            }
+
+            Transcript.Glyph(
+              cell.pageRegion.bbox,
+              props
+            )
+
+          case cell@ TextGrid.InsertCell(char, insertAt) =>
+            Transcript.Glyph(
+              cell.pageRegion.bbox,
+              props = Some(Transcript.GlyphProps(
+              )))
+        }).toList
+
+        Transcript.Line(text, glyphs)
+      }).toList
+
+      Transcript.Page(
+        pageSegmenter.pageGeometry,
+        lines
+      )
+    }
+
+    Transcript(
+      s"Extracted Pages for ${stableId}",
+      stableId,
+      pages.toList,
+      labels = List()
+    ).asJson
   }
-
 
   def fontDescription(docSeg: DocumentSegmentation): Seq[Json] = {
 
     val fontDefs = docSeg.docScope.fontDefs
 
     val scaledMetrics = fontDefs.fontProperties.map { fp =>
-
-      val metrics = fp.scaledMetrics.map{ scaledMetrics =>
+      val metrics = fp.scaledMetrics.map { scaledMetrics =>
         // val perPageGlyphCounts = fp.natLangGlyphOccurrenceCounts.column(scaledMetrics.scalingFactor)
 
         // val perPageList = perPageGlyphCounts.entrySet().asScala.toList
-        val perPageList = fp.natLangGlyphOccurrenceCounts.getColumn(scaledMetrics.scalingFactor)
+        val perPageList =
+          fp.natLangGlyphOccurrenceCounts.getColumn(scaledMetrics.scalingFactor)
 
-        val sortedByPage = perPageList.map { case(pageNum, glyphCount)  =>
-          // val pageNum = entry.getKey()
-          // val glyphCount = entry.getValue()
-          (pageNum.unwrap, glyphCount)
+        val sortedByPage = perPageList.map {
+          case (pageNum, glyphCount) =>
+            // val pageNum = entry.getKey()
+            // val glyphCount = entry.getValue()
+            (pageNum.unwrap, glyphCount)
         }.sorted
 
         val res = Json.obj(
@@ -132,7 +108,7 @@ object TextGridOutputFormats  {
         res
       }
 
-      val name = if (fp.name != null && fp.name.trim().length()>0) {
+      val name = if (fp.name != null && fp.name.trim().length() > 0) {
         fp.name
       } else {
         "font"

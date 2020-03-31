@@ -246,20 +246,21 @@ trait PageScopeTracing extends ScopedTracing { self  =>
   }
 
   def shape[A <: GeometricFigure](lshapes: AnyShape*): GeometryTraceLog = {
+    ???
 
-    val shapes = lshapes.map{ lshape: AnyShape =>
-      lshape.shape.asJsonObject
-        .add("id", lshape.id.asJson)
-        .add("labels", lshape.labels.mkString(" ").asJson)
-    }
+    // val shapes = lshapes.map{ lshape: AnyShape =>
+    //   lshape.shape.asJson
+    //     .add("id", lshape.id.asJson)
+    //     .add("labels", lshape.labels.mkString(" ").asJson)
+    // }
 
-    val labels = lshapes.flatMap{ lshape =>
-      lshape.labels
-    }.toSet.toList.mkString(" ")
+    // val labels = lshapes.flatMap{ lshape =>
+    //   lshape.labels
+    // }.toSet.toList.mkString(" ")
 
-    GeometryTraceLog(
-      body = shapes.asJson
-    ).tagged(labels)
+    // GeometryTraceLog(
+    //   body = shapes.asJson
+    // ).tagged(labels)
   }
 
 }

@@ -6,6 +6,8 @@ trait AppMainBasics {
 
   def argsToMap(args: Seq[String]): Map[String, List[String]] = {
     import scala.collection.mutable.{ListMap => LMap}
+    // import scala.collection.immutable.ListMap
+
     val argmap = LMap[String, List[String]]()
     args.foldLeft(argmap)({(m, k:String) => {
       val ss:Seq[Char] = k
