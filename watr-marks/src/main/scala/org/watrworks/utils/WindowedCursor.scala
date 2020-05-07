@@ -1,16 +1,16 @@
 package org.watrworks
 package utils
 
-import scalaz.{@@ => _, _} , Scalaz._
+import scalaz.{@@ => _, _}, Scalaz._
 
-import scala.{ collection => sc }
+import scala.{collection => sc}
 import sc.Seq
-
-// import scala.collection.{ immutable => sci }
-// import scala.collection.{ mutable => scm }
 
 import scala.annotation.tailrec
 
+/**
+  *
+  */
 object Cursors {
 
   def groupByWindow[A](f: (Seq[A], A) => Boolean, as: Seq[A]): Seq[Seq[A]] = {
@@ -25,7 +25,7 @@ object Cursors {
           // println(s"loop = C: ${cursor.debugString()}")
           // println(s"       W: ${group.debugString()}")
           // println(s"     Acc: ${acc1}")
-          loop(group.nextCursor(), acc1 )
+          loop(group.nextCursor(), acc1)
 
         case None =>
           acc
@@ -40,16 +40,15 @@ object Cursor {
   def init[A](z: Zipper[A]) = new Cursor[A] {
     def zipper: Zipper[A] = z
   }
+  def init[A](optZ: Maybe[Zipper[A]]): Option[Cursor[A]] =
+    init(optZ.toOption)
 
   def init[A](optZ: Option[Zipper[A]]): Option[Cursor[A]] =
-    optZ.map{ z =>
-      new Cursor[A] {
-        def zipper: Zipper[A] = z
-      }
-    }
+    optZ.map(init(_))
 
-  def init[A](cells: Seq[A]): Option[Cursor[A]] =
+  def init[A](cells: Seq[A]): Option[Cursor[A]] = {
     init[A](cells.toList.toZipper)
+  }
 
 }
 
@@ -58,84 +57,88 @@ trait Cursor[A] { self =>
 
   def focus: A = zipper.focus
 
-
   def next: Option[Cursor[A]] =
-    Cursor.init[A]{ zipper.next }
+    Cursor.init[A] { zipper.next }
 
   def prev: Option[Cursor[A]] =
-    Cursor.init[A]{ zipper.previous }
+    Cursor.init[A] { zipper.previous }
 
   def insertLeft(g: A): Cursor[A] =
-    Cursor.init[A]{ zipper.insertLeft(g)}
+    Cursor.init[A] { zipper.insertLeft(g) }
 
   def insertRight(g: A): Cursor[A] =
-    Cursor.init[A]{ zipper.insertRight(g)}
+    Cursor.init[A] { zipper.insertRight(g) }
 
   def toList(): List[A] = zipper.toList
 
   def atStart: Boolean = zipper.atStart
   def atEnd: Boolean = zipper.atEnd
 
-  def start: Cursor[A] = Cursor.init[A]{ zipper.start }
-  def end: Cursor[A] = Cursor.init[A]{ zipper.end }
+  def start: Cursor[A] = Cursor.init[A] { zipper.start }
+  def end: Cursor[A] = Cursor.init[A] { zipper.end }
 
   def toWindow(): Window[A] = {
-    Window(Seq(focus), zipper.lefts, zipper.focus, zipper.rights)
+    Window(
+      Seq(focus),
+      zipper.lefts.to(LazyList),
+      zipper.focus,
+      zipper.rights.to(LazyList)
+    )
   }
 
   def move(n: Int): Option[Cursor[A]] =
-    Cursor.init[A]{ zipper.move(n) }
+    Cursor.init[A] { zipper.move(n) }
 
   def slurpRight(p: A => Boolean): Window[A] = {
-    val (winTail, tail) = zipper.rights.span(p)
+    val (winTail, tail) = zipper.rights.to(LazyList).span(p)
     val window = zipper.focus +: winTail
-    Window(window, zipper.lefts, zipper.focus, tail)
+    Window(window, zipper.lefts.to(LazyList), zipper.focus, tail)
   }
 
   def findNext(p: A => Boolean): Option[Cursor[A]] = {
-    Cursor.init[A]{ zipper.findNext(p) }
+    Cursor.init[A] { zipper.findNext(p) }
   }
 
   def findPrevious(p: A => Boolean): Option[Cursor[A]] = {
-    Cursor.init[A]{ zipper.findPrevious(p) }
+    Cursor.init[A] { zipper.findPrevious(p) }
   }
 
   @tailrec
-  final def unfold(f: Cursor[A] => Option[Cursor[A]]): Cursor[A]  = {
+  final def unfold(f: Cursor[A] => Option[Cursor[A]]): Cursor[A] = {
     f(self) match {
-      case Some(cmod) => cmod.next match {
-        case Some(cnext) => cnext.unfold(f)
-        case None => cmod
+      case Some(cmod) =>
+        cmod.next match {
+          case Some(cnext) => cnext.unfold(f)
+          case None        => cmod
 
-      }
+        }
       case None => self
     }
   }
 
-
   def debugString(): String = {
     val ls = zipper.lefts.toList.reverse.mkString(", ")
-    val rs = zipper.rights.toList.mkString(", ")
+    val rs = zipper.rights.to(LazyList).toList.mkString(", ")
     val f = zipper.focus
     s"""Cursor([$ls] [[ ${f} ]] [$rs])"""
   }
 }
 
-
-
-
 object Window {
-  def apply[A](window: Seq[A], lefts: Stream[A], focus: A, rights: Stream[A]): Window[A] = {
+  def apply[A](
+    window: Seq[A],
+    lefts: LazyList[A],
+    focus: A,
+    rights: LazyList[A]
+  ): Window[A] = {
     new Window[A] {
       def cells: Seq[A] = window
 
       def winStart: Zipper[A] =
-        Zipper.zipper(lefts, focus, rights)
+        Zipper.zipper(lefts.to(Stream), focus, rights.to(Stream))
     }
   }
 }
-
-
 
 sealed trait Window[A] { self =>
   def winStart: Zipper[A]
@@ -156,19 +159,19 @@ sealed trait Window[A] { self =>
   }
 
   def closeWindow(): Cursor[A] = {
-    val newLefts = cells.init.reverse.toStream ++ winStart.lefts
+    val newLefts = cells.init.reverse.to(Stream) ++ winStart.lefts
     val newFocus = cells.last
 
-    Cursor.init[A]{
+    Cursor.init[A] {
       Zipper.zipper(newLefts, newFocus, winStart.rights)
     }
   }
 
   def nextCursor(): Option[Cursor[A]] = {
-    Cursor.init[A]{
-      winStart.next.map{znext =>
+    Cursor.init[A] {
+      winStart.next.map { znext =>
         Zipper.zipper(
-          cells.reverse.toStream ++ znext.lefts,
+          cells.reverse.to(Stream) ++ znext.lefts,
           znext.focus,
           znext.rights
         )
@@ -179,35 +182,45 @@ sealed trait Window[A] { self =>
   def widen(n: Int): Option[Window[A]] = {
     if (winStart.rights.length < n) {
       val (as, bs) = winStart.rights.splitAt(n)
-      Some(Window(cells++as, winStart.lefts, winStart.focus, bs))
+      Some(Window(cells ++ as, winStart.lefts.to(LazyList), winStart.focus, bs.to(LazyList)))
     } else None
   }
 
-  private def rinits(as: Stream[A]): Seq[Seq[A]]= {
+  private def rinits(as: LazyList[A]): Seq[Seq[A]] = {
     (1 to as.length) map { as.slice(0, _) }
   }
 
+
   def slurpRight(p: (Seq[A], A) => Boolean): Window[A] = {
-    val slurped = rinits(winStart.rights)
-      .map{ init =>
+    val slurped = rinits(winStart.rights.to(LazyList))
+      .map { init =>
         val nextWin = cells ++ init
         (nextWin.init, nextWin.last)
       }
-      .takeWhile { case (init, last) =>
-        p(init, last)
+      .takeWhile {
+        case (init, last) =>
+          p(init, last)
       }
 
-    val slcells = slurped.map{case (ws, t) => ws :+ t}.toList
-      .lastOption
-      .getOrElse { cells }
+    val slcells =
+      slurped.map { case (ws, t) => ws :+ t }.toList.lastOption.getOrElse {
+        cells
+      }
 
-    Window(slcells, winStart.lefts, winStart.focus, winStart.rights.drop(slurped.length))
+    Window(
+      slcells,
+      winStart.lefts.to(LazyList),
+      winStart.focus,
+      winStart.rights.drop(slurped.length).to(LazyList)
+    )
   }
 
   def extendRight(a: => A): Window[A] = {
     Window(
       cells :+ a,
-      winStart.lefts, winStart.focus, winStart.rights
+      winStart.lefts.to(LazyList),
+      winStart.focus,
+      winStart.rights.to(LazyList)
     )
 
   }

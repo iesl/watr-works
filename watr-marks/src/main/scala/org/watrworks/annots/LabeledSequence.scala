@@ -7,7 +7,6 @@ import scala.collection.mutable
 import watrmarks._
 import textboxing.{TextBoxing => TB}, TB._
 
-// import scala.scalajs.js.annotation._
 import utils.Cursor
 import utils.DoOrDieHandlers._
 
@@ -134,9 +133,8 @@ trait LabeledSequence[A <: LabelTarget] {
     } yield extents
   }
 
-
   def findUnlabeledExtents(offset: Int): Option[(Int, Seq[A])] = {
-    for {
+    (for {
       zip                  <- labelTargets().toList.toZipper
       atRowColZ            <- zip.move(offset)
     } yield {
@@ -148,7 +146,7 @@ trait LabeledSequence[A <: LabelTarget] {
       val labelEnd = offset + rights.length
       val seq = lefts.reverse ++ (focusCell +: rights)
       (start, seq)
-    }
+    }).toOption
   }
 
 
@@ -170,9 +168,9 @@ trait LabeledSequence[A <: LabelTarget] {
       }
     }
 
-    for {
-      zip                  <- labelTargets().toList.toZipper
-      atRowColZ            <- zip.move(offset)
+    (for {
+      zip                  <- labelTargets().toList.toZipper.toOption
+      atRowColZ            <- zip.move(offset).toOption
 
       focusCell             = atRowColZ.focus
       (focusPin, pinIndex) <- findPin(focusCell, label)
@@ -191,8 +189,7 @@ trait LabeledSequence[A <: LabelTarget] {
         .drop(labelStart)
 
       (labelStart, labelSpan)
-    }
-
+    }) // .toOption
   }
 
   def unlabelNear(offset: Int, label: Label): Unit = {

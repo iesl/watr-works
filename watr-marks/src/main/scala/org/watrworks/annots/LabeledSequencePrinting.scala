@@ -5,7 +5,6 @@ import scala.collection.mutable
 import watrmarks._
 import textboxing.{TextBoxing => TB}, TB._
 
-import utils.{Cursor, Cursors, Window}
 import utils.{RelativeDirection => Dir, Orientation}
 
 import utils.DoOrDieHandlers._

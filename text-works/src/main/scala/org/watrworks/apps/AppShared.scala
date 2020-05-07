@@ -20,6 +20,16 @@ import textgrid._
 object ProcessPipelineSteps {
   private[this] val log = org.log4s.getLogger
 
+  val PrettyPrint2Spaces = circe.Printer.spaces2
+
+  /**
+    * Pipeline  streams instances of Either[A, B], where
+    * Left(
+    */
+
+  type MarkedInput = Either[ProcessableInput, ProcessableInput]
+  type MarkedOutput = Either[String, ProcessedInput]
+
   def runTextExtractionOnFile(conf: TextWorksConfig.Config): Unit = {
 
     if (conf.runTraceLogging) {
@@ -97,13 +107,7 @@ object ProcessPipelineSteps {
         }
       }
       .orDie("inputStream(): Invalid input options")
-
   }
-
-  val PrettyPrint2Spaces = circe.Printer.spaces2
-
-  type MarkedInput = Either[ProcessableInput, ProcessableInput]
-  type MarkedOutput = Either[String, ProcessedInput]
 
   def dropSkipAndRun(conf: IOConfig): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
     var skipCount = conf.numToSkip

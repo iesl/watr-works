@@ -23,15 +23,12 @@ lazy val watrmarks = project
   .in(file("watr-marks"))
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++=
+    Lib.circeJson ++
     Seq(
-      "io.circe"                   %% "circe-generic"          % Lib.circeJsonVersion,
-      "io.circe"                   %% "circe-parser"           % Lib.circeJsonVersion,
-      "io.circe"                   %% "circe-literal"          % Lib.circeJsonVersion,
-      "com.chuusai"                %% "shapeless"              % Lib.shapelessV,
       "org.scalatest"              %% "scalatest"              % Lib.scalatestVersion % "test",
       "com.lihaoyi"                %% "fansi"                  % Lib.fansiV,
       "com.lihaoyi"                %% "sourcecode"             % Lib.sourcecodeV,
-      "com.lihaoyi"                %% "pprint"                 % "0.5.6",
+      "com.lihaoyi"                %% "pprint"                 % "0.5.9",
       "org.scalaz"                 %% "scalaz-core"            % Lib.scalazVersion,
       Lib.ammoniteOps,
       Lib.guava % Optional,
@@ -48,11 +45,10 @@ lazy val textworks = (project in file("text-works"))
   .settings(SensibleProject.buildInfoSettings:_*)
   .settings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++
-    Lib.fs2 ++
     Lib.circeJson ++ Seq(
-      "co.fs2" %% "fs2-io" % Lib.fs2Version,
-      "org.apache.pdfbox" % "pdfbox" % "2.0.19",
-      "com.outr" %% "lucene4s" %  Lib.luceneV,
+      Lib.fs2Core,
+      Lib.fs2IO,
+      Lib.pdfbox,
       Lib.lucene4s,
       Lib.guava,
       Lib.scopt,
@@ -60,23 +56,4 @@ lazy val textworks = (project in file("text-works"))
       Lib.shapeless
     ))
   .dependsOn(prelude, watrmarks)
-
-// lazy val watrshed = (project in file("watr-shed"))
-//   .enablePlugins(JavaAppPackaging)
-//   .settings(mappings in Universal in (Compile, packageDoc) := Seq())
-//   .settings(SensibleProject.settings: _*)
-//   .settings(SensibleProject.runForked: _*)
-//   .settings(libraryDependencies ++=
-//     LogLibs.logback ++ TestLibs.testAndCheck ++
-//     DatabaseLibs.doobieDb ++
-//     Lib.fs2 ++
-//     Lib.circeJson ++
-//     Seq(
-//       Lib.scopt,
-//       Lib.ammonite,
-//       Lib.shapeless,
-//       Lib.lucene4s,
-//       "com.github.tototoshi" %% "scala-csv" % "1.3.6"
-//     ))
-//   .dependsOn(prelude, watrmarks, textworks)
 

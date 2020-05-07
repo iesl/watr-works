@@ -13,9 +13,7 @@ import utils.SlicingAndDicing._
 sealed trait TextStructure[A]
 
 object TextStructure {
-
   case class TextLine(repr: AnyShape) extends TextStructure[Nothing]
-
 }
 
 

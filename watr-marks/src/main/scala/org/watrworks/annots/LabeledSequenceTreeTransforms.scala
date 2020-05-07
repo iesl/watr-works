@@ -56,7 +56,7 @@ object LabeledRowElem {
     override val labels: List[Label],
     heading: String
   ) extends LabeledRowElem {
-    def getRowText: String = heading
+    def getRowText(): String = heading
   }
 
 }
@@ -66,7 +66,7 @@ object LabeledSequenceTreeTransforms {
 
   // def gridCellsToLabelTree(gridCells: Seq[TextGrid.GridCell]): Tree[LabelTreeNode] = {
   def labeledSequenceToLabelTree[A <: LabelTarget](labeledSequence: LabeledSequence[A]): Tree[LabelTreeNode[A]] = {
-    val init = Tree.Node[LabelTreeNode[A]](LabelTreeNode.RootNode, Stream.empty)
+    val init = Tree.Node[LabelTreeNode[A]](LabelTreeNode.RootNode, EphemeralStream.emptyEphemeralStream)
     var currLoc = init.loc
 
     def up(): Unit = {
@@ -80,7 +80,7 @@ object LabeledSequenceTreeTransforms {
 
       basePins.takeWhile(p => p.isBegin || p.isUnit)
         .foreach { pin =>
-          val n = Tree.Node[LabelTreeNode[A]](LabelTreeNode.LabelNode(pin.label), Stream.empty)
+          val n = Tree.Node[LabelTreeNode[A]](LabelTreeNode.LabelNode(pin.label), EphemeralStream.emptyEphemeralStream)
           currLoc = currLoc.insertDownLast(n)
         }
 
@@ -137,8 +137,8 @@ object LabeledSequenceTreeTransforms {
     st+len
   }
 
-  private def shiftChildren(ch: Stream[Tree[Tree[Attr]]], init: Int) =
-    ch.foldLeft(Stream.empty[Tree[Attr]]){
+  private def shiftChildren(ch: EphemeralStream[Tree[Tree[Attr]]], init: Int) =
+    ch.foldLeft(EphemeralStream.emptyEphemeralStream[Tree[Attr]]){
       case (acc, child: Tree[Tree[Attr]]) =>
         val offset = acc.headOption.map { h: Tree[Attr] =>
           attrEndIndex(h.rootLabel)
@@ -148,14 +148,16 @@ object LabeledSequenceTreeTransforms {
           (label, begin+offset, len)
         }
 
-        adjusted #:: acc
+        adjusted ##:: acc
     }
 
 
   def spanTreeToJson(spanTree: Tree[Attr]): Json = {
-    def histo(node: Attr, children: Stream[Tree[Option[Json]]]): Option[Json]= {
+    def histo(node: Attr, children: EphemeralStream[Tree[Option[Json]]]): Option[Json]= {
       val (label, begin, len) = node
-      val childs = children.map(_.rootLabel).flatten.asJson
+      // val childs = children.flatMap(_.rootLabel.toStream).asJson
+      // TODO take out this hacky ephemeral stream type-chasing
+      val childs = children.flatMap(ch => EphemeralStream.fromStream(ch.rootLabel.toStream)).toList.asJson
       val atRootNode = begin==0 && len==0 && label.isEmpty
       if (atRootNode) Some(childs) else {
         label.map { l =>
@@ -172,7 +174,7 @@ object LabeledSequenceTreeTransforms {
 
   def labelTreeToSpanTree[A <: LabelTarget](labelTree: Tree[LabelTreeNode[A]]): Tree[Attr] = {
 
-    def histo(node: LabelTreeNode[A], children: Stream[Tree[Tree[Attr]]]): Tree[Attr] = {
+    def histo(node: LabelTreeNode[A], children: EphemeralStream[Tree[Tree[Attr]]]): Tree[Attr] = {
 
       node match {
         case LabelTreeNode.RootNode         => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)
@@ -189,7 +191,7 @@ object LabeledSequenceTreeTransforms {
 
   def labelTreeToMarginalSpanTree[A <: LabelTarget](labelTree: Tree[LabelTreeNode[A]], compactMarginals: Boolean = true): Tree[Attr] = {
 
-    def histo(node: LabelTreeNode[A], children: Stream[Tree[Tree[Attr]]]): Tree[Attr] = {
+    def histo(node: LabelTreeNode[A], children: EphemeralStream[Tree[Tree[Attr]]]): Tree[Attr] = {
 
       node match {
         case LabelTreeNode.RootNode         => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)

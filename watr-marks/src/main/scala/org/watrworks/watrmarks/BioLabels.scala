@@ -76,9 +76,7 @@ object Label {
   implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)
   implicit val Dec_Label: Decoder[Label] = Decoder.decodeString.map(Label(_))
 
-  implicit object LabelShow extends Show[Label] {
-    override def shows(f: Label): String = f.fqn
-  }
+  implicit val LabelShow = Show.shows[Label](_.fqn)
 }
 
 

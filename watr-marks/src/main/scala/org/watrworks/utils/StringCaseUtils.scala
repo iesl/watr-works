@@ -31,10 +31,11 @@ object StringUtils {
 
     def toCamelCase(): String = {
       str.split("-")
-        .map({s => s.headOption
+        .map(s => s
+          .headOption
           .map(_.toUpper)
-          .map(_ + s.substring(1))
-        }).flatten.mkString
+          .map(fc => s"${fc}${s.substring(1)}")
+        ).flatten.mkString
     }
   }
 

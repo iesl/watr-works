@@ -2,7 +2,7 @@ package org.watrworks
 package extract
 
 import org.apache.pdfbox.pdmodel.font.PDFont
-import org.apache.pdfbox.util.{ Matrix, Vector }
+import org.apache.pdfbox.util.{Matrix, Vector}
 import utils.EnrichNumerics._
 
 import org.apache.pdfbox.text._
@@ -31,9 +31,7 @@ import java.lang.{StringBuilder}
   * Scala translation of the java pdftotext implemented in PdfBox.
   * Here for reference and comparison, not actually used to extract text
   */
-
 class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
-
 
   private var _document: PDDocument = null
   private var _output: Writer = null
@@ -44,7 +42,6 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   private def defaultIndentThreshold = 2.0f;
   private def defaultDropThreshold = 2.5f;
   private def useCustomQuickSort = true;
-
 
   protected var LINE_SEPARATOR = System.getProperty("line.separator");
 
@@ -81,7 +78,6 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
 
   private var beadRectangles: ju.List[PDRectangle] = null
 
-
   /**
     * The charactersByArticle is used to extract text by article divisions. For example a PDF that has two columns like
     * a newspaper, we want to extract the first column and then the second column. In this example the PDF would have 2
@@ -96,20 +92,16 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * Most PDFs won't have any beads, so charactersByArticle will contain a single entry.
     */
-
-
-
   // val charactersByArticle = mutable.ArrayBuffer[List[TextPosition]] ()
-  val charactersByArticle: ArrayList[ju.List[TextPosition]]  = new ArrayList[ju.List[TextPosition]]();
-  val characterListMapping: HashMap[String, TreeMap[Float, TreeSet[Float]]]  = new HashMap[String, TreeMap[Float, TreeSet[Float]]]();
-
+  val charactersByArticle: ArrayList[ju.List[TextPosition]] =
+    new ArrayList[ju.List[TextPosition]]();
+  val characterListMapping: HashMap[String, TreeMap[Float, TreeSet[Float]]] =
+    new HashMap[String, TreeMap[Float, TreeSet[Float]]]();
 
   /**
     * True if we started a paragraph but haven't ended it yet.
     */
   private var inParagraph: Boolean = false;
-
-
 
   def getText(doc: PDDocument): String = {
     val outputStream = new StringWriter();
@@ -137,7 +129,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException If the doc is in an invalid state.
     */
-  def writeText(doc: PDDocument,  outputStream: Writer): Unit = {
+  def writeText(doc: PDDocument, outputStream: Writer): Unit = {
     resetEngine();
     _document = doc;
     _output = outputStream;
@@ -151,6 +143,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     processPages(document.getPages());
     endDocument(document);
   }
+
   /**
     * This will process all of the pages and the text that is in them.
     *
@@ -158,9 +151,10 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException If there is an error parsing the text.
     */
-  def  processPages(pages: PDPageTree): Unit = {
-    val startBookmarkPage: PDPage = if (startBookmark == null)  null
-                                    else startBookmark.findDestinationPage(document);
+  def processPages(pages: PDPageTree): Unit = {
+    val startBookmarkPage: PDPage =
+      if (startBookmark == null) null
+      else startBookmark.findDestinationPage(document);
     if (startBookmarkPage != null) {
       startBookmarkPageNumber = pages.indexOf(startBookmarkPage) + 1;
     } else {
@@ -168,8 +162,10 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
       startBookmarkPageNumber = -1;
     }
 
-    val endBookmarkPage: PDPage = if (endBookmark == null)  null
-                                  else endBookmark.findDestinationPage(document);
+    val endBookmarkPage: PDPage =
+      if (endBookmark == null) null
+      else endBookmark.findDestinationPage(document);
+
     if (endBookmarkPage != null) {
       endBookmarkPageNumber = pages.indexOf(endBookmarkPage) + 1;
     } else {
@@ -178,9 +174,8 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     }
 
     if (startBookmarkPageNumber == -1 && startBookmark != null && endBookmarkPageNumber == -1
-      && endBookmark != null
-      && startBookmark.getCOSObject() == endBookmark.getCOSObject())
-    {
+        && endBookmark != null
+        && startBookmark.getCOSObject() == endBookmark.getCOSObject()) {
       // this is a special case where both the start and end bookmark
       // are the same but point to nothing. In this case
       // we will not extract any text.
@@ -188,7 +183,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
       endBookmarkPageNumber = 0;
     }
 
-    for ( page <- pages.iterator().asScala) {
+    for (page <- pages.iterator().asScala) {
       println(s"Proc. Pg ${page}")
       currentPageNo += 1;
       if (page.hasContents()) {
@@ -203,7 +198,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param document The PDF document that is being processed.
     * _throws IOException If an IO error occurs.
     */
-  def  startDocument( document: PDDocument) : Unit = {
+  def startDocument(document: PDDocument): Unit = {
     println(s"startDocument")
   }
 
@@ -214,7 +209,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param document The PDF document that is being processed.
     * _throws IOException If an IO error occurs.
     */
-  def  endDocument(document: PDDocument) : Unit = {
+  def endDocument(document: PDDocument): Unit = {
     println(s"endDocument")
   }
 
@@ -225,23 +220,24 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException If there is an error processing the page.
     */
-  override def  processPage( page: PDPage) : Unit = {
+  override def processPage(page: PDPage): Unit = {
     if (currentPageNo >= startPageNum && currentPageNo <= endPage
-      && (startBookmarkPageNumber == -1 || currentPageNo >= startBookmarkPageNumber)
-      && (endBookmarkPageNumber == -1 || currentPageNo <= endBookmarkPageNumber)) {
+        && (startBookmarkPageNumber == -1 || currentPageNo >= startBookmarkPageNumber)
+        && (endBookmarkPageNumber == -1 || currentPageNo <= endBookmarkPageNumber)) {
 
       startPage(page);
 
-      var numberOfArticleSections : Int = 1;
+      var numberOfArticleSections: Int = 1;
 
       if (shouldSeparateByBeads) {
         fillBeadRectangles(page);
-        numberOfArticleSections = numberOfArticleSections + beadRectangles.size() * 2;
+        numberOfArticleSections =
+          numberOfArticleSections + beadRectangles.size() * 2;
       }
 
-      val originalSize : Int = charactersByArticle.size();
+      val originalSize: Int = charactersByArticle.size();
       charactersByArticle.ensureCapacity(numberOfArticleSections);
-      val lastIndex : Int = math.max(numberOfArticleSections, originalSize);
+      val lastIndex: Int = math.max(numberOfArticleSections, originalSize);
 
       for (i <- 0 until lastIndex) {
         if (i < originalSize) {
@@ -261,7 +257,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     }
   }
 
-  def  fillBeadRectangles( page: PDPage): Unit = {
+  def fillBeadRectangles(page: PDPage): Unit = {
     beadRectangles = new ArrayList[PDRectangle]();
     for (bead <- page.getThreadBeads().iterator().asScala) {
       if (bead == null) {
@@ -269,20 +265,21 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
         beadRectangles.add(null);
       } else {
 
-
-        val rect : PDRectangle= bead.getRectangle();
+        val rect: PDRectangle = bead.getRectangle();
 
         // bead rectangle is in PDF coordinates (y=0 is bottom),
         // glyphs are in image coordinates (y=0 is top),
         // so we must flip
-        val mediaBox : PDRectangle= page.getMediaBox();
-        val upperRightY : Float= mediaBox.getUpperRightY() - rect.getLowerLeftY();
-        val lowerLeftY : Float= mediaBox.getUpperRightY() - rect.getUpperRightY();
+        val mediaBox: PDRectangle = page.getMediaBox();
+        val upperRightY: Float =
+          mediaBox.getUpperRightY() - rect.getLowerLeftY();
+        val lowerLeftY: Float =
+          mediaBox.getUpperRightY() - rect.getUpperRightY();
         rect.setLowerLeftY(lowerLeftY);
         rect.setUpperRightY(upperRightY);
 
         // adjust for cropbox
-        val cropBox : PDRectangle= page.getCropBox();
+        val cropBox: PDRectangle = page.getCropBox();
         if (cropBox.getLowerLeftX() != 0 || cropBox.getLowerLeftY() != 0) {
           rect.setLowerLeftX(rect.getLowerLeftX() - cropBox.getLowerLeftX());
           rect.setLowerLeftY(rect.getLowerLeftY() - cropBox.getLowerLeftY());
@@ -302,7 +299,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException If there is any error writing to the stream.
     */
-  def  startArticle() : Unit = {
+  def startArticle(): Unit = {
     startArticle(true);
   }
 
@@ -313,7 +310,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param isLTR true if primary direction of text is left to right.
     * _throws IOException If there is any error writing to the stream.
     */
-  def  startArticle( isLTR: Boolean) : Unit = {
+  def startArticle(isLTR: Boolean): Unit = {
     output.write(articleStart);
   }
 
@@ -322,7 +319,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException If there is any error writing to the stream.
     */
-  def  endArticle() : Unit = {
+  def endArticle(): Unit = {
     output.write(articleEnd);
   }
 
@@ -333,7 +330,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException If there is any error writing to the stream.
     */
-  def startPage( page: PDPage) : Unit = {
+  def startPage(page: PDPage): Unit = {
     println(s"   Start page ${page}")
   }
 
@@ -344,16 +341,17 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException If there is any error writing to the stream.
     */
-  def  endPage( page: PDPage) : Unit = {
+  def endPage(page: PDPage): Unit = {
     // default is to do nothing
   }
 
-  private val END_OF_LAST_TEXT_X_RESET_VALUE :Float = -1;
-  private val MAX_Y_FOR_LINE_RESET_VALUE :Float = -Float.MaxValue;
-  private val EXPECTED_START_OF_NEXT_WORD_X_RESET_VALUE :Float = -Float.MaxValue;
-  private val MAX_HEIGHT_FOR_LINE_RESET_VALUE :Float = -1;
-  private val MIN_Y_TOP_FOR_LINE_RESET_VALUE :Float = Float.MaxValue
-  private val LAST_WORD_SPACING_RESET_VALUE :Float = -1;
+  private val END_OF_LAST_TEXT_X_RESET_VALUE: Float = -1;
+  private val MAX_Y_FOR_LINE_RESET_VALUE: Float = -Float.MaxValue;
+  private val EXPECTED_START_OF_NEXT_WORD_X_RESET_VALUE
+    : Float = -Float.MaxValue;
+  private val MAX_HEIGHT_FOR_LINE_RESET_VALUE: Float = -1;
+  private val MIN_Y_TOP_FOR_LINE_RESET_VALUE: Float = Float.MaxValue
+  private val LAST_WORD_SPACING_RESET_VALUE: Float = -1;
 
   /**
     * This will print the text of the processed page to "output". It will estimate, based on the coordinates of the
@@ -362,16 +360,16 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException If there is an error writing the text.
     */
-  def  writePage() : Unit = {
-    var  maxYForLine: Float = MAX_Y_FOR_LINE_RESET_VALUE;
-    var  minYTopForLine :Float = MIN_Y_TOP_FOR_LINE_RESET_VALUE;
-    var  endOfLastTextX :Float = END_OF_LAST_TEXT_X_RESET_VALUE;
-    var  lastWordSpacing :Float = LAST_WORD_SPACING_RESET_VALUE;
-    var  maxHeightForLine :Float = MAX_HEIGHT_FOR_LINE_RESET_VALUE;
-    var lastPosition : PositionWrapper = null;
-    var lastLineStartPosition : PositionWrapper= null;
+  def writePage(): Unit = {
+    var maxYForLine: Float = MAX_Y_FOR_LINE_RESET_VALUE;
+    var minYTopForLine: Float = MIN_Y_TOP_FOR_LINE_RESET_VALUE;
+    var endOfLastTextX: Float = END_OF_LAST_TEXT_X_RESET_VALUE;
+    var lastWordSpacing: Float = LAST_WORD_SPACING_RESET_VALUE;
+    var maxHeightForLine: Float = MAX_HEIGHT_FOR_LINE_RESET_VALUE;
+    var lastPosition: PositionWrapper = null;
+    var lastLineStartPosition: PositionWrapper = null;
 
-    var startOfPage : Boolean= true; // flag to indicate start of page
+    var startOfPage: Boolean = true; // flag to indicate start of page
     var startOfArticle: Boolean = false;
 
     if (charactersByArticle.size() > 0) {
@@ -379,19 +377,16 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     }
 
     // for (List[TextPosition] textList : charactersByArticle) {
-    for ( textList <- charactersByArticle.iterator().asScala) {
+    for (textList <- charactersByArticle.iterator().asScala) {
       if (getSortByPosition()) {
-        val comparator : TextPositionComparator= new TextPositionComparator();
+        val comparator: TextPositionComparator = new TextPositionComparator();
 
         // because the TextPositionComparator is not transitive, but
         // JDK7+ enforces transitivity on comparators, we need to use
         // a custom quicksort implementation (which is slower, unfortunately).
-        if (useCustomQuickSort)
-        {
+        if (useCustomQuickSort) {
           QuickSort.sort(textList, comparator);
-        }
-        else
-        {
+        } else {
           ju.Collections.sort(textList, comparator);
         }
       }
@@ -416,14 +411,16 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
       // Keeps track of the previous average character width
       var previousAveCharWidth: Float = -1f;
       while (textIter.hasNext()) {
-        val position : TextPosition= textIter.next();
-        val current : PositionWrapper = new PositionWrapper(position);
-        val characterValue : String= position.getUnicode();
+        val position: TextPosition = textIter.next();
+        val current: PositionWrapper = new PositionWrapper(position);
+        val characterValue: String = position.getUnicode();
 
         // Resets the average character width when we see a change in font
         // or a change in the font size
-        if (lastPosition != null && (position.getFont() != lastPosition.textPosition.getFont()
-          || position.getFontSize() != lastPosition.textPosition.getFontSize())) {
+        if (lastPosition != null && (position
+              .getFont() != lastPosition.textPosition.getFont()
+            || position
+              .getFontSize() != lastPosition.textPosition.getFontSize())) {
           previousAveCharWidth = -1;
         }
 
@@ -434,15 +431,12 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
 
         // If we are sorting, then we need to use the text direction
         // adjusted coordinates, because they were used in the sorting.
-        if (getSortByPosition())
-        {
+        if (getSortByPosition()) {
           positionX = position.getXDirAdj();
           positionY = position.getYDirAdj();
           positionWidth = position.getWidthDirAdj();
           positionHeight = position.getHeightDir();
-        }
-        else
-        {
+        } else {
           positionX = position.getX();
           positionY = position.getY();
           positionWidth = position.getWidth();
@@ -450,25 +444,20 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
         }
 
         // The current amount of characters in a word
-        val wordCharCount : Int = position.getIndividualWidths().length;
+        val wordCharCount: Int = position.getIndividualWidths().length;
 
         // Estimate the expected width of the space based on the
         // space character with some margin.
         val wordSpacing = position.getWidthOfSpace();
         var deltaSpace: Float = 0;
-        if (wordSpacing == 0 || wordSpacing.nan)
-        {
+        if (wordSpacing == 0 || wordSpacing.nan) {
           deltaSpace = Float.MaxValue;
-        }
-        else
-        {
-          if (lastWordSpacing < 0)
-          {
+        } else {
+          if (lastWordSpacing < 0) {
             deltaSpace = wordSpacing * getSpacingTolerance();
-          }
-          else
-          {
-            deltaSpace = (wordSpacing + lastWordSpacing) / 2f * getSpacingTolerance();
+          } else {
+            deltaSpace =
+              (wordSpacing + lastWordSpacing) / 2f * getSpacingTolerance();
           }
         }
 
@@ -477,33 +466,28 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
         // averages) but we found that it gave the best results after numerous experiments.
         // Based on experiments we also found that .3 worked well.
         var averageCharWidth: Float = 0;
-        if (previousAveCharWidth < 0)
-        {
+        if (previousAveCharWidth < 0) {
           averageCharWidth = positionWidth / wordCharCount;
+        } else {
+          averageCharWidth =
+            (previousAveCharWidth + positionWidth / wordCharCount) / 2f;
         }
-        else
-        {
-          averageCharWidth = (previousAveCharWidth + positionWidth / wordCharCount) / 2f;
-        }
-        val deltaCharWidth : Float = averageCharWidth * getAverageCharTolerance();
+        val deltaCharWidth: Float =
+          averageCharWidth * getAverageCharTolerance();
 
         // Compares the values obtained by the average method and the wordSpacing method
         // and picks the smaller number.
-        var expectedStartOfNextWordX : Float= EXPECTED_START_OF_NEXT_WORD_X_RESET_VALUE;
-        if (endOfLastTextX != END_OF_LAST_TEXT_X_RESET_VALUE)
-        {
-          if (deltaCharWidth > deltaSpace)
-          {
+        var expectedStartOfNextWordX: Float =
+          EXPECTED_START_OF_NEXT_WORD_X_RESET_VALUE;
+        if (endOfLastTextX != END_OF_LAST_TEXT_X_RESET_VALUE) {
+          if (deltaCharWidth > deltaSpace) {
             expectedStartOfNextWordX = endOfLastTextX + deltaSpace;
-          }
-          else
-          {
+          } else {
             expectedStartOfNextWordX = endOfLastTextX + deltaCharWidth;
           }
         }
 
-        if (lastPosition != null)
-        {
+        if (lastPosition != null) {
           if (startOfArticle) {
             lastPosition.isArticleStart = true
             startOfArticle = false;
@@ -518,12 +502,20 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
           // full range seen in this line. This is what I tried to do with minYTopForLine,
           // but this caused a lot of regression test failures. So, I'm leaving it be for
           // now
-          if (!overlap(positionY, positionHeight, maxYForLine, maxHeightForLine))
-          {
+          if (!overlap(
+                positionY,
+                positionHeight,
+                maxYForLine,
+                maxHeightForLine
+              )) {
             writeLine(normalize(line));
             line.clear();
-            lastLineStartPosition = handleLineSeparation(current, lastPosition,
-              lastLineStartPosition, maxHeightForLine);
+            lastLineStartPosition = handleLineSeparation(
+              current,
+              lastPosition,
+              lastLineStartPosition,
+              maxHeightForLine
+            );
             expectedStartOfNextWordX = EXPECTED_START_OF_NEXT_WORD_X_RESET_VALUE;
             maxYForLine = MAX_Y_FOR_LINE_RESET_VALUE;
             maxHeightForLine = MAX_HEIGHT_FOR_LINE_RESET_VALUE;
@@ -531,16 +523,14 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
           }
           // test if our TextPosition starts after a new word would be expected to start
           if (expectedStartOfNextWordX != EXPECTED_START_OF_NEXT_WORD_X_RESET_VALUE
-            && expectedStartOfNextWordX < positionX &&
-            // only bother adding a space if the last character was not a space
-            lastPosition.textPosition.getUnicode() != null
-            && !lastPosition.textPosition.getUnicode().endsWith(" "))
-          {
+              && expectedStartOfNextWordX < positionX &&
+              // only bother adding a space if the last character was not a space
+              lastPosition.textPosition.getUnicode() != null
+              && !lastPosition.textPosition.getUnicode().endsWith(" ")) {
             line.add(LineItem.getWordSeparator());
           }
         }
-        if (positionY >= maxYForLine)
-        {
+        if (positionY >= maxYForLine) {
           maxYForLine = positionY;
         }
         // RDD - endX is what PDF considers to be the x coordinate of the
@@ -548,19 +538,16 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
         endOfLastTextX = positionX + positionWidth;
 
         // add it to the list
-        if (characterValue != null)
-        {
-          if (startOfPage && lastPosition == null)
-          {
-            writeParagraphStart();// not sure this is correct for RTL?
+        if (characterValue != null) {
+          if (startOfPage && lastPosition == null) {
+            writeParagraphStart(); // not sure this is correct for RTL?
           }
           line.add(new LineItem(position));
         }
         maxHeightForLine = math.max(maxHeightForLine, positionHeight);
         minYTopForLine = math.min(minYTopForLine, positionY - positionHeight);
         lastPosition = current;
-        if (startOfPage)
-        {
+        if (startOfPage) {
           lastPosition.setParagraphStart();
           lastPosition.setLineStart();
           lastLineStartPosition = lastPosition;
@@ -570,8 +557,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
         previousAveCharWidth = averageCharWidth;
       }
       // print the final line
-      if (line.size() > 0)
-      {
+      if (line.size() > 0) {
         writeLine(normalize(line));
         writeParagraphEnd();
       }
@@ -580,7 +566,12 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     writePageEnd();
   }
 
-  def overlap( y1: Float,  height1: Float,  y2: Float,  height2: Float): Boolean = {
+  def overlap(
+    y1: Float,
+    height1: Float,
+    y2: Float,
+    height2: Float
+  ): Boolean = {
     within(y1, y2, .1f) || y2 <= y1 && y2 >= y1 - height1 || y1 <= y2 && y1 >= y2 - height2;
   }
 
@@ -589,7 +580,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException If there is a problem writing out the lineseparator to the document.
     */
-  def  writeLineSeparator() : Unit = {
+  def writeLineSeparator(): Unit = {
     output.write(getLineSeparator());
   }
 
@@ -598,7 +589,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException If there is a problem writing out the wordseparator to the document.
     */
-  def  writeWordSeparator() : Unit = {
+  def writeWordSeparator(): Unit = {
     output.write(getWordSeparator());
   }
 
@@ -608,7 +599,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param text The text to write to the stream.
     * _throws IOException If there is an error when writing the text.
     */
-  def  writeCharacters( text: TextPosition) : Unit = {
+  def writeCharacters(text: TextPosition): Unit = {
     output.write(text.getUnicode());
   }
 
@@ -620,7 +611,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param textPositions The TextPositions belonging to the text.
     * _throws IOException If there is an error when writing the text.
     */
-  def writeString(text: String, textPositions: ju.List[TextPosition]) : Unit = {
+  def writeString(text: String, textPositions: ju.List[TextPosition]): Unit = {
     println(s"writeString: ${text}")
     writeString(text);
   }
@@ -631,7 +622,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param text The text to write to the stream.
     * _throws IOException If there is an error when writing the text.
     */
-  def  writeString(text: String) : Unit = {
+  def writeString(text: String): Unit = {
     output.write(text);
   }
 
@@ -642,7 +633,11 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param second The second number to compare to.
     * @param variance The allowed variance.
     */
-  private def within( first: Float,  second: Float,  variance: Float): Boolean = {
+  private def within(
+    first: Float,
+    second: Float,
+    variance: Float
+  ): Boolean = {
     second < first + variance && second > first - variance;
   }
 
@@ -652,15 +647,15 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param text The text to process.
     */
-  protected def processTextPosition( text: TextPosition): Unit = {
-    var showCharacter : Boolean= true;
+  protected def processTextPosition(text: TextPosition): Unit = {
+    var showCharacter: Boolean = true;
     if (suppressDuplicateOverlappingText) {
       showCharacter = false;
-      val textCharacter : String= text.getUnicode();
-      val textX : Float= text.getX();
-      val textY : Float= text.getY();
-      var sameTextCharacters: TreeMap[Float, TreeSet[Float]]  = characterListMapping
-        .get(textCharacter);
+      val textCharacter: String = text.getUnicode();
+      val textX: Float = text.getX();
+      val textY: Float = text.getY();
+      var sameTextCharacters: TreeMap[Float, TreeSet[Float]] =
+        characterListMapping.get(textCharacter);
       if (sameTextCharacters == null) {
         sameTextCharacters = new TreeMap[Float, TreeSet[Float]]();
         characterListMapping.put(textCharacter, sameTextCharacters);
@@ -675,20 +670,22 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
       // the TJ just backs up to compensate after each character). Also, we subtract
       // an amount to allow for kerning (a percentage of the width of the last
       // character).
-      var suppressCharacter : Boolean= false;
-      val  tolerance : Float = text.getWidth() / textCharacter.length() / 3.0f;
+      var suppressCharacter: Boolean = false;
+      val tolerance: Float = text.getWidth() / textCharacter.length() / 3.0f;
 
-      val xMatches: ju.SortedMap[Float, TreeSet[Float]]  = sameTextCharacters.subMap(textX - tolerance,
-        textX + tolerance);
-      for (xMatch <- xMatches.values().iterator().asScala if !suppressCharacter) {
-        val yMatches: ju.SortedSet[Float]  = xMatch.subSet(textY - tolerance, textY + tolerance);
+      val xMatches: ju.SortedMap[Float, TreeSet[Float]] =
+        sameTextCharacters.subMap(textX - tolerance, textX + tolerance);
+      for (xMatch <- xMatches.values().iterator().asScala
+           if !suppressCharacter) {
+        val yMatches: ju.SortedSet[Float] =
+          xMatch.subSet(textY - tolerance, textY + tolerance);
         if (!yMatches.isEmpty()) {
           suppressCharacter = true;
         }
       }
 
       if (!suppressCharacter) {
-        var ySet: TreeSet[Float]  = sameTextCharacters.get(textX);
+        var ySet: TreeSet[Float] = sameTextCharacters.get(textX);
         if (ySet == null) {
           ySet = new TreeSet[Float]();
           sameTextCharacters.put(textX, ySet);
@@ -698,107 +695,82 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
       }
     }
 
-
-
-    if (showCharacter)
-    {
+    if (showCharacter) {
       // if we are showing the character then we need to determine which article it belongs to
-      var  foundArticleDivisionIndex : Int= -1;
-      var  notFoundButFirstLeftAndAboveArticleDivisionIndex : Int= -1;
-      var  notFoundButFirstLeftArticleDivisionIndex : Int= -1;
-      var  notFoundButFirstAboveArticleDivisionIndex : Int= -1;
-      val  x : Float= text.getX();
-      val  y : Float= text.getY();
+      var foundArticleDivisionIndex: Int = -1;
+      var notFoundButFirstLeftAndAboveArticleDivisionIndex: Int = -1;
+      var notFoundButFirstLeftArticleDivisionIndex: Int = -1;
+      var notFoundButFirstAboveArticleDivisionIndex: Int = -1;
+      val x: Float = text.getX();
+      val y: Float = text.getY();
 
       if (shouldSeparateByBeads) {
         // for (int i = 0; i < beadRectangles.size() && foundArticleDivisionIndex == -1; i++)
-        for (i <- 0 until beadRectangles.size() if foundArticleDivisionIndex == -1) {
-          val rect : PDRectangle= beadRectangles.get(i);
+        for (i <- 0 until beadRectangles.size()
+             if foundArticleDivisionIndex == -1) {
+          val rect: PDRectangle = beadRectangles.get(i);
 
           if (rect != null) {
-            if (rect.contains(x, y))
-            {
+            if (rect.contains(x, y)) {
               foundArticleDivisionIndex = i * 2 + 1;
-            }
-            else if ((x < rect.getLowerLeftX() || y < rect.getUpperRightY())
-              && notFoundButFirstLeftAndAboveArticleDivisionIndex == -1)
-            {
+            } else if ((x < rect.getLowerLeftX() || y < rect.getUpperRightY())
+                       && notFoundButFirstLeftAndAboveArticleDivisionIndex == -1) {
               notFoundButFirstLeftAndAboveArticleDivisionIndex = i * 2;
-            }
-            else if (x < rect.getLowerLeftX()
-              && notFoundButFirstLeftArticleDivisionIndex == -1)
-            {
+            } else if (x < rect.getLowerLeftX()
+                       && notFoundButFirstLeftArticleDivisionIndex == -1) {
               notFoundButFirstLeftArticleDivisionIndex = i * 2;
-            }
-            else if (y < rect.getUpperRightY()
-              && notFoundButFirstAboveArticleDivisionIndex == -1)
-            {
+            } else if (y < rect.getUpperRightY()
+                       && notFoundButFirstAboveArticleDivisionIndex == -1) {
               notFoundButFirstAboveArticleDivisionIndex = i * 2;
             }
-          }
-          else
-          {
+          } else {
             foundArticleDivisionIndex = 0;
           }
         }
-      }
-      else
-      {
+      } else {
         foundArticleDivisionIndex = 0;
       }
       var articleDivisionIndex: Int = 0;
-      if (foundArticleDivisionIndex != -1)
-      {
+      if (foundArticleDivisionIndex != -1) {
         articleDivisionIndex = foundArticleDivisionIndex;
-      }
-      else if (notFoundButFirstLeftAndAboveArticleDivisionIndex != -1)
-      {
+      } else if (notFoundButFirstLeftAndAboveArticleDivisionIndex != -1) {
         articleDivisionIndex = notFoundButFirstLeftAndAboveArticleDivisionIndex;
-      }
-      else if (notFoundButFirstLeftArticleDivisionIndex != -1)
-      {
+      } else if (notFoundButFirstLeftArticleDivisionIndex != -1) {
         articleDivisionIndex = notFoundButFirstLeftArticleDivisionIndex;
-      }
-      else if (notFoundButFirstAboveArticleDivisionIndex != -1)
-      {
+      } else if (notFoundButFirstAboveArticleDivisionIndex != -1) {
         articleDivisionIndex = notFoundButFirstAboveArticleDivisionIndex;
-      }
-      else
-      {
+      } else {
         articleDivisionIndex = charactersByArticle.size() - 1;
       }
 
-      val textList : ju.List[TextPosition]  = charactersByArticle.get(articleDivisionIndex);
+      val textList: ju.List[TextPosition] =
+        charactersByArticle.get(articleDivisionIndex);
 
       // In the wild, some PDF encoded documents put diacritics (accents on
       // top of characters) into a separate Tj element. When displaying them
       // graphically, the two chunks get overlayed. With text output though,
       // we need to do the overlay. This code recombines the diacritic with
       // its associated character if the two are consecutive.
-      if (textList.isEmpty())
-      {
+      if (textList.isEmpty()) {
         textList.add(text);
-      }
-      else
-      {
+      } else {
         // test if we overlap the previous entry.
         // Note that we are making an assumption that we need to only look back
         // one TextPosition to find what we are overlapping.
         // This may not always be true. */
-        val previousTextPosition : TextPosition= textList.get(textList.size() - 1);
+        val previousTextPosition: TextPosition =
+          textList.get(textList.size() - 1);
         if (text.isDiacritic() && previousTextPosition.contains(text)) {
           previousTextPosition.mergeDiacritic(text);
         }
         // If the previous TextPosition was the diacritic, merge it into this
         // one and remove it from the list.
-        else if (previousTextPosition.isDiacritic() && text.contains(previousTextPosition))
-        {
+        else if (previousTextPosition
+                   .isDiacritic() && text.contains(previousTextPosition)) {
           text.mergeDiacritic(previousTextPosition);
           textList.remove(textList.size() - 1);
           textList.add(text);
-        }
-        else
-        {
+        } else {
           textList.add(text);
         }
       }
@@ -821,7 +793,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param startPageValue New value of 1-based startPage property.
     */
-  def  setStartPage( startPageValue: Int): Unit = {
+  def setStartPage(startPageValue: Int): Unit = {
     startPageNum = startPageValue;
   }
 
@@ -832,7 +804,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return Value of property endPage.
     */
-  def  getEndPage(): Int = {
+  def getEndPage(): Int = {
     endPage;
   }
 
@@ -841,7 +813,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param endPageValue New value of 1-based endPage property.
     */
-  def setEndPage( endPageValue: Int): Unit = {
+  def setEndPage(endPageValue: Int): Unit = {
     endPage = endPageValue;
   }
 
@@ -851,7 +823,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param separator The desired line separator string.
     */
-  def  setLineSeparator( separator: String): Unit = {
+  def setLineSeparator(separator: String): Unit = {
     lineSeparator = separator;
   }
 
@@ -881,7 +853,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param separator The desired page separator string.
     */
-  def  setWordSeparator( separator: String): Unit = {
+  def setWordSeparator(separator: String): Unit = {
     wordSeparator = separator;
   }
 
@@ -906,7 +878,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return The stream that output is being written to.
     */
-  def  getOutput(): Writer = {
+  def getOutput(): Writer = {
     return output;
   }
 
@@ -916,7 +888,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return A double List of TextPositions for all text strings on the page.
     */
-  def  getCharactersByArticle(): ju.List[ju.List[TextPosition]] = {
+  def getCharactersByArticle(): ju.List[ju.List[TextPosition]] = {
     return charactersByArticle;
   }
 
@@ -927,7 +899,9 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param suppressDuplicateOverlappingTextValue The suppressDuplicateOverlappingText to set.
     */
-  def  setSuppressDuplicateOverlappingText( suppressDuplicateOverlappingTextValue: Boolean): Unit = {
+  def setSuppressDuplicateOverlappingText(
+    suppressDuplicateOverlappingTextValue: Boolean
+  ): Unit = {
     suppressDuplicateOverlappingText = suppressDuplicateOverlappingTextValue;
   }
 
@@ -936,7 +910,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return If the text will be grouped by beads.
     */
-  def  getSeparateByBeads(): Boolean = {
+  def getSeparateByBeads(): Boolean = {
     return shouldSeparateByBeads;
   }
 
@@ -945,7 +919,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param aShouldSeparateByBeads The new grouping of beads.
     */
-  def  setShouldSeparateByBeads( aShouldSeparateByBeads: Boolean): Unit = {
+  def setShouldSeparateByBeads(aShouldSeparateByBeads: Boolean): Unit = {
     shouldSeparateByBeads = aShouldSeparateByBeads;
   }
 
@@ -963,7 +937,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param aEndBookmark The ending bookmark.
     */
-  def  setEndBookmark( aEndBookmark: PDOutlineItem): Unit = {
+  def setEndBookmark(aEndBookmark: PDOutlineItem): Unit = {
     endBookmark = aEndBookmark;
   }
 
@@ -972,7 +946,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return The starting bookmark.
     */
-  def  getStartBookmark(): PDOutlineItem = {
+  def getStartBookmark(): PDOutlineItem = {
     return startBookmark;
   }
 
@@ -981,7 +955,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param aStartBookmark The starting bookmark.
     */
-  def  setStartBookmark( aStartBookmark: PDOutlineItem): Unit = {
+  def setStartBookmark(aStartBookmark: PDOutlineItem): Unit = {
     startBookmark = aStartBookmark;
   }
 
@@ -999,7 +973,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param newAddMoreFormatting Tell PDFBox to add some more text formatting
     */
-  def  setAddMoreFormatting( newAddMoreFormatting: Boolean): Unit = {
+  def setAddMoreFormatting(newAddMoreFormatting: Boolean): Unit = {
     addMoreFormatting = newAddMoreFormatting;
   }
 
@@ -1023,7 +997,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param newSortByPosition Tell PDFBox to sort the text positions.
     */
-  def  setSortByPosition( newSortByPosition: Boolean): Unit = {
+  def setSortByPosition(newSortByPosition: Boolean): Unit = {
     sortByPosition = newSortByPosition;
   }
 
@@ -1033,7 +1007,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return The current tolerance / scaling factor
     */
-  def  getSpacingTolerance(): Float = {
+  def getSpacingTolerance(): Float = {
     return spacingTolerance;
   }
 
@@ -1044,7 +1018,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param spacingToleranceValue tolerance / scaling factor to use
     */
-  def  setSpacingTolerance( spacingToleranceValue: Float): Unit = {
+  def setSpacingTolerance(spacingToleranceValue: Float): Unit = {
     spacingTolerance = spacingToleranceValue;
   }
 
@@ -1054,7 +1028,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return The current tolerance / scaling factor
     */
-  def  getAverageCharTolerance(): Float = {
+  def getAverageCharTolerance(): Float = {
     return averageCharTolerance;
   }
 
@@ -1065,7 +1039,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param averageCharToleranceValue average tolerance / scaling factor to use
     */
-  def  setAverageCharTolerance( averageCharToleranceValue: Float):Unit = {
+  def setAverageCharTolerance(averageCharToleranceValue: Float): Unit = {
     averageCharTolerance = averageCharToleranceValue;
   }
 
@@ -1075,7 +1049,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return the number of whitespace character widths to use when detecting paragraph indents.
     */
-  def  getIndentThreshold(): Float = {
+  def getIndentThreshold(): Float = {
     return indentThreshold;
   }
 
@@ -1086,7 +1060,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param indentThresholdValue the number of whitespace character widths to use when detecting paragraph indents.
     */
-  def  setIndentThreshold( indentThresholdValue: Float): Unit = {
+  def setIndentThreshold(indentThresholdValue: Float): Unit = {
     indentThreshold = indentThresholdValue;
   }
 
@@ -1096,7 +1070,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return the character height multiple for max allowed whitespace between lines in the same paragraph.
     */
-  def  getDropThreshold(): Float = {
+  def getDropThreshold(): Float = {
     return dropThreshold;
   }
 
@@ -1107,7 +1081,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param dropThresholdValue the character height multiple for max allowed whitespace between lines in the same
     * paragraph.
     */
-  def  setDropThreshold( dropThresholdValue: Float): Unit = {
+  def setDropThreshold(dropThresholdValue: Float): Unit = {
     dropThreshold = dropThresholdValue;
   }
 
@@ -1116,7 +1090,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return the paragraph start string
     */
-  def  getParagraphStart(): String = {
+  def getParagraphStart(): String = {
     return paragraphStart;
   }
 
@@ -1125,7 +1099,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param s the paragraph start string
     */
-  def  setParagraphStart( s: String): Unit = {
+  def setParagraphStart(s: String): Unit = {
     paragraphStart = s;
   }
 
@@ -1134,7 +1108,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return the paragraph end string
     */
-  def  getParagraphEnd(): String = {
+  def getParagraphEnd(): String = {
     return paragraphEnd;
   }
 
@@ -1143,7 +1117,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param s the paragraph end string
     */
-  def  setParagraphEnd( s: String): Unit = {
+  def setParagraphEnd(s: String): Unit = {
     paragraphEnd = s;
   }
 
@@ -1152,7 +1126,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return the page start string
     */
-  def  getPageStart(): String = {
+  def getPageStart(): String = {
     return pageStart;
   }
 
@@ -1161,7 +1135,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param pageStartValue the page start string
     */
-  def  setPageStart( pageStartValue: String): Unit = {
+  def setPageStart(pageStartValue: String): Unit = {
     pageStart = pageStartValue;
   }
 
@@ -1170,7 +1144,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @return the page end string
     */
-  def  getPageEnd(): String = {
+  def getPageEnd(): String = {
     return pageEnd;
   }
 
@@ -1179,7 +1153,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * @param pageEndValue the page end string
     */
-  def  setPageEnd( pageEndValue: String): Unit = {
+  def setPageEnd(pageEndValue: String): Unit = {
     pageEnd = pageEndValue;
   }
 
@@ -1238,11 +1212,16 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     lastPosition: PositionWrapper,
     _lastLineStartPosition: PositionWrapper,
     maxHeightForLine: Float
-  ) : PositionWrapper = {
+  ): PositionWrapper = {
 
     var lastLineStartPosition: PositionWrapper = _lastLineStartPosition
     current.setLineStart();
-    isParagraphSeparation(current, lastPosition, lastLineStartPosition, maxHeightForLine);
+    isParagraphSeparation(
+      current,
+      lastPosition,
+      lastLineStartPosition,
+      maxHeightForLine
+    );
     lastLineStartPosition = current;
     if (current.isParagraphStart) {
       if (lastPosition.isArticleStart) {
@@ -1282,21 +1261,32 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param lastLineStartPosition the last text position that followed a line separator, or null.
     * @param maxHeightForLine max height for text positions since lasLineStartPosition.
     */
-  def  isParagraphSeparation( position: PositionWrapper,  lastPosition: PositionWrapper,
-    lastLineStartPosition: PositionWrapper,  maxHeightForLine: Float): Unit = {
-    var result : Boolean= false;
+  def isParagraphSeparation(
+    position: PositionWrapper,
+    lastPosition: PositionWrapper,
+    lastLineStartPosition: PositionWrapper,
+    maxHeightForLine: Float
+  ): Unit = {
+    var result: Boolean = false;
     if (lastLineStartPosition == null) {
       result = true;
     } else {
-      val yGap : Float= Math.abs(position.textPosition.getYDirAdj()
-        - lastPosition.textPosition.getYDirAdj());
-      val newYVal : Float= multiplyFloat(getDropThreshold(), maxHeightForLine);
+      val yGap: Float = Math.abs(
+        position.textPosition.getYDirAdj()
+          - lastPosition.textPosition.getYDirAdj()
+      );
+      val newYVal: Float = multiplyFloat(getDropThreshold(), maxHeightForLine);
+
       // do we need to flip this for rtl?
-      val xGap : Float= position.textPosition.getXDirAdj()
-        - lastLineStartPosition.textPosition.getXDirAdj();
-      val newXVal : Float= multiplyFloat(getIndentThreshold(),
-        position.textPosition.getWidthOfSpace());
-      val positionWidth : Float= multiplyFloat(0.25f, position.textPosition.getWidth());
+      val xGap: Float = position.textPosition
+        .getXDirAdj() - lastLineStartPosition.textPosition.getXDirAdj();
+
+      val newXVal: Float = multiplyFloat(
+        getIndentThreshold(),
+        position.textPosition.getWidthOfSpace()
+      );
+      val positionWidth: Float =
+        multiplyFloat(0.25f, position.textPosition.getWidth());
 
       if (yGap > newYVal) {
         result = true;
@@ -1320,9 +1310,9 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
         } else if (lastLineStartPosition.isParagraphStart) {
           // check to see if the previous line looks like
           // any of a number of standard list item formats
-          val liPattern : Pattern= matchListItemPattern(lastLineStartPosition);
+          val liPattern: Pattern = matchListItemPattern(lastLineStartPosition);
           if (liPattern != null) {
-            val currentPattern : Pattern= matchListItemPattern(position);
+            val currentPattern: Pattern = matchListItemPattern(position);
             if (liPattern == currentPattern) {
               result = true;
             }
@@ -1335,7 +1325,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     }
   }
 
-  def  multiplyFloat( value1: Float,  value2: Float): Float = {
+  def multiplyFloat(value1: Float, value2: Float): Float = {
     // multiply 2 floats and truncate the resulting value to 3 decimal places
     // to avoid wrong results when comparing with another float
     return Math.round(value1 * value2 * 1000) / 1000f;
@@ -1346,8 +1336,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException if something went wrong
     */
-  def  writeParagraphSeparator() : Unit =
-  {
+  def writeParagraphSeparator(): Unit = {
     writeParagraphEnd();
     writeParagraphStart();
   }
@@ -1357,10 +1346,8 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException if something went wrong
     */
-  def  writeParagraphStart() : Unit =
-  {
-    if (inParagraph)
-    {
+  def writeParagraphStart(): Unit = {
+    if (inParagraph) {
       writeParagraphEnd();
       inParagraph = false;
     }
@@ -1373,10 +1360,8 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException if something went wrong
     */
-  def  writeParagraphEnd() : Unit =
-  {
-    if (!inParagraph)
-    {
+  def writeParagraphEnd(): Unit = {
+    if (!inParagraph) {
       writeParagraphStart();
     }
     output.write(getParagraphEnd());
@@ -1388,8 +1373,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException if something went wrong
     */
-  def  writePageStart() : Unit =
-  {
+  def writePageStart(): Unit = {
     output.write(getPageStart());
   }
 
@@ -1398,8 +1382,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     *
     * _throws IOException if something went wrong
     */
-  def  writePageEnd() : Unit =
-  {
+  def writePageEnd(): Unit = {
     output.write(getPageEnd());
   }
 
@@ -1412,9 +1395,9 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param pw position
     * @return the matching pattern
     */
-  def  matchListItemPattern( pw: PositionWrapper): Pattern = {
-    val tp : TextPosition = pw.textPosition;
-    val txt : String= tp.getUnicode();
+  def matchListItemPattern(pw: PositionWrapper): Pattern = {
+    val tp: TextPosition = pw.textPosition;
+    val txt: String = tp.getUnicode();
     return matchPattern(txt, getListItemPatterns());
   }
 
@@ -1422,20 +1405,27 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * a list of regular expressions that match commonly used list item formats, i.e. bullets, numbers, letters, Roman
     * numerals, etc. Not meant to be comprehensive.
     */
-  val LIST_ITEM_EXPRESSIONS: List[String]  = List(
-    "\\.", "\\d+\\.", "\\[\\d+\\]",
-    "\\d+\\)", "[A-Z]\\.", "[a-z]\\.", "[A-Z]\\)", "[a-z]\\)", "[IVXL]+\\.",
+  val LIST_ITEM_EXPRESSIONS: List[String] = List(
+    "\\.",
+    "\\d+\\.",
+    "\\[\\d+\\]",
+    "\\d+\\)",
+    "[A-Z]\\.",
+    "[a-z]\\.",
+    "[A-Z]\\)",
+    "[a-z]\\)",
+    "[IVXL]+\\.",
     "[ivxl]+\\."
   )
 
-  var listOfPatterns: ju.List[Pattern]  = null;
+  var listOfPatterns: ju.List[Pattern] = null;
 
   /**
     * use to supply a different set of regular expression patterns for matching list item starts.
     *
     * @param patterns list of patterns
     */
-  def  setListItemPatterns(patterns: ju.List[Pattern] ): Unit = {
+  def setListItemPatterns(patterns: ju.List[Pattern]): Unit = {
     listOfPatterns = patterns;
   }
 
@@ -1461,8 +1451,8 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   def getListItemPatterns(): ju.List[Pattern] = {
     if (listOfPatterns == null) {
       listOfPatterns = new ArrayList[Pattern]();
-      for ( expression <- LIST_ITEM_EXPRESSIONS) {
-        val p : Pattern= Pattern.compile(expression);
+      for (expression <- LIST_ITEM_EXPRESSIONS) {
+        val p: Pattern = Pattern.compile(expression);
         listOfPatterns.add(p);
       }
     }
@@ -1481,7 +1471,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param patterns list of patterns
     * @return matching pattern
     */
-  def  matchPattern( string: String, patterns: ju.List[Pattern]) : Pattern = {
+  def matchPattern(string: String, patterns: ju.List[Pattern]): Pattern = {
     for (p <- patterns.iterator().asScala) {
       if (p.matcher(string).matches()) {
         return p;
@@ -1496,11 +1486,11 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param line a list with the words of the given line
     * _throws IOException if something went wrong
     */
-  def  writeLine(line : ju.List[WordWithTextPositions]): Unit = {
-    val numberOfStrings : Int = line.size();
+  def writeLine(line: ju.List[WordWithTextPositions]): Unit = {
+    val numberOfStrings: Int = line.size();
 
-    for (i <-  0 until numberOfStrings) {
-      val word : WordWithTextPositions  = line.get(i);
+    for (i <- 0 until numberOfStrings) {
+      val word: WordWithTextPositions = line.get(i);
       writeString(word.getText(), word.getTextPositions());
       if (i < numberOfStrings - 1) {
         writeWordSeparator();
@@ -1515,11 +1505,12 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @return a list of strings, one string for every word
     */
   def normalize(line: ju.List[LineItem]): ju.List[WordWithTextPositions] = {
-    val normalized: ju.List[WordWithTextPositions]  = new ju.LinkedList[WordWithTextPositions]();
-    var lineBuilder : StringBuilder= new StringBuilder();
-    val wordPositions: ju.List[TextPosition]  = new ArrayList[TextPosition]();
+    val normalized: ju.List[WordWithTextPositions] =
+      new ju.LinkedList[WordWithTextPositions]();
+    var lineBuilder: StringBuilder = new StringBuilder();
+    val wordPositions: ju.List[TextPosition] = new ArrayList[TextPosition]();
 
-    for ( item <- line.iterator().asScala) {
+    for (item <- line.iterator().asScala) {
       lineBuilder = normalizeAdd(normalized, lineBuilder, wordPositions, item);
     }
 
@@ -1540,42 +1531,48 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param word The word that shall be processed
     * @return new word with the correct direction of the containing characters
     */
-  def  handleDirection( word: String): String = {
-    val bidi : Bidi= new Bidi(word, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
+  def handleDirection(word: String): String = {
+    val bidi: Bidi = new Bidi(word, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
 
     // if there is pure LTR text no need to process further
-    if (!bidi.isMixed() && bidi.getBaseLevel() == Bidi.DIRECTION_LEFT_TO_RIGHT) {
+    if (!bidi
+          .isMixed() && bidi.getBaseLevel() == Bidi.DIRECTION_LEFT_TO_RIGHT) {
       return word;
     }
 
     // collect individual bidi information
-    val runCount : Int= bidi.getRunCount();
+    val runCount: Int = bidi.getRunCount();
     // Array.fill
-    val levels: Array[Byte] =  Array.ofDim[Byte](runCount)
-    val runs: Array[Integer]  =  Array.ofDim[Integer](runCount)
+    val levels: Array[Byte] = Array.ofDim[Byte](runCount)
+    val runs: Array[Integer] = Array.ofDim[Integer](runCount)
 
-    for ( i <- 0 until runCount) {
+    for (i <- 0 until runCount) {
       levels(i) = bidi.getRunLevel(i).toByte
       runs(i) = i;
     }
 
-
     // reorder individual parts based on their levels
-    Bidi.reorderVisually(levels, 0, runs.asInstanceOf[Array[Object]], 0, runCount);
+    Bidi.reorderVisually(
+      levels,
+      0,
+      runs.asInstanceOf[Array[Object]],
+      0,
+      runCount
+    );
 
     // collect the parts based on the direction within the run
-    val result : StringBuilder= new StringBuilder();
+    val result: StringBuilder = new StringBuilder();
 
-    for ( i <- 0 until runCount) {
-      val index : Int= runs(i)
-      val start : Int= bidi.getRunStart(index);
-      var end : Int= bidi.getRunLimit(index);
+    for (i <- 0 until runCount) {
+      val index: Int = runs(i)
+      val start: Int = bidi.getRunStart(index);
+      var end: Int = bidi.getRunLimit(index);
 
-      val level : Int = levels(index).toInt
+      val level: Int = levels(index).toInt
 
       if ((level & 1) != 0) {
-        while (end-1 >= start) {
-          end = end-1
+        while (end - 1 >= start) {
+          end = end - 1
           val character = word.charAt(end);
           if (Character.isMirrored(word.codePointAt(end))) {
             if (MIRRORING_CHAR_MAP.containsKey(character)) {
@@ -1600,18 +1597,21 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   {
     val path = "org/apache/pdfbox/resources/text/BidiMirroring.txt";
     val cls = classOf[PDFTextStripper]
-    val input : InputStream = cls.getClassLoader().getResourceAsStream(path);
+    val input: InputStream = cls.getClassLoader().getResourceAsStream(path);
     try {
       parseBidiFile(input);
     } catch {
 
-      case  e: IOException =>
-        println("Could not parse BidiMirroring.txt, mirroring char map will be empty: " + e.getMessage());
+      case e: IOException =>
+        println(
+          "Could not parse BidiMirroring.txt, mirroring char map will be empty: " + e
+            .getMessage()
+        );
     } finally {
       try {
         input.close();
       } catch {
-        case  e: IOException =>
+        case e: IOException =>
           println("Could not close BidiMirroring.txt " + e);
       }
     }
@@ -1623,7 +1623,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param inputStream - The bidi file as inputstream
     * _throws IOException if any line could not be read by the LineNumberReader
     */
-  def parseBidiFile(inputStream: InputStream) : Unit = {
+  def parseBidiFile(inputStream: InputStream): Unit = {
     val source = scala.io.Source.fromInputStream(inputStream)
     for {
       l <- source.getLines
@@ -1632,9 +1632,8 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
       val line = chars.mkString
 
       if (line.nonEmpty) {
-        val fields = line.split(";").map{ t =>
-          Integer.parseInt(t.trim(), 16).toChar
-        }
+        val fields =
+          line.split(";").map { t => Integer.parseInt(t.trim(), 16).toChar }
 
         if (fields.length == 2) {
           // initialize the MIRRORING_CHAR_MAP
@@ -1650,7 +1649,10 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   /**
     * Used within { #normalize(List)} to create a single { WordWithTextPositions} entry.
     */
-  def createWord(word: String, wordPositions: ju.List[TextPosition]): WordWithTextPositions = {
+  def createWord(
+    word: String,
+    wordPositions: ju.List[TextPosition]
+  ): WordWithTextPositions = {
     return new WordWithTextPositions(normalizeWord(word), wordPositions);
   }
 
@@ -1661,22 +1663,21 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @param word Word to normalize
     * @return Normalized word
     */
-  def  normalizeWord( word: String): String = {
-    var builder : StringBuilder= null;
-    var p : Int= 0;
-    val strLength : Int= word.length();
+  def normalizeWord(word: String): String = {
+    var builder: StringBuilder = null;
+    var p: Int = 0;
+    val strLength: Int = word.length();
     val q = strLength
 
-    for ( q <- 0 until strLength) {
+    for (q <- 0 until strLength) {
       // We only normalize if the codepoint is in a given range.
       // Otherwise, NFKC converts too many things that would cause
       // confusion. For example, it converts the micro symbol in
       // extended Latin to the value in the Greek script. We normalize
       // the Unicode Alphabetic and Arabic A&B Presentation forms.
-      val c : Char= word.charAt(q);
+      val c: Char = word.charAt(q);
       if (0xFB00 <= c && c <= 0xFDFF || 0xFE70 <= c && c <= 0xFEFF) {
-        if (builder == null)
-        {
+        if (builder == null) {
           builder = new StringBuilder(strLength * 2);
         }
         builder.append(word.substring(p, q));
@@ -1684,15 +1685,15 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
         // They add an extra U+0627 character to compensate.
         // This removes the extra character for those fonts.
         if (c == 0xFDF2 && q > 0
-          && (word.charAt(q - 1) == 0x0627 || word.charAt(q - 1) == 0xFE8D))
-        {
+            && (word.charAt(q - 1) == 0x0627 || word.charAt(q - 1) == 0xFE8D)) {
           builder.append("\u0644\u0644\u0647");
-        }
-        else
-        {
+        } else {
           // Trim because some decompositions have an extra space, such as U+FC5E
-          builder.append(Normalizer
-            .normalize(word.substring(q, q + 1), Normalizer.Form.NFKC).trim());
+          builder.append(
+            Normalizer
+              .normalize(word.substring(q, q + 1), Normalizer.Form.NFKC)
+              .trim()
+          );
         }
         p = q + 1;
       }
@@ -1714,24 +1715,27 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   def normalizeAdd(
     normalized: ju.List[WordWithTextPositions],
     _lineBuilder: StringBuilder,
-    wordPositions: ju.List[TextPosition] ,
+    wordPositions: ju.List[TextPosition],
     item: LineItem
   ): StringBuilder = {
     var lineBuilder: StringBuilder = _lineBuilder
     if (item.isWordSeparator()) {
       normalized.add(
-        createWord(lineBuilder.toString(), new ArrayList[TextPosition](wordPositions)));
+        createWord(
+          lineBuilder.toString(),
+          new ArrayList[TextPosition](wordPositions)
+        )
+      );
       lineBuilder = new StringBuilder();
       wordPositions.clear();
     } else {
-      val text : TextPosition= item.textPosition;
+      val text: TextPosition = item.textPosition;
       lineBuilder.append(text.getUnicode());
       wordPositions.add(text);
     }
 
     lineBuilder;
   }
-
 
   override protected def showFontGlyph(
     textRenderingMatrix: Matrix,
@@ -1764,20 +1768,17 @@ object LineItem {
 
   val WORD_SEPARATOR = new LineItem();
 
-  def  getWordSeparator(): LineItem = {
+  def getWordSeparator(): LineItem = {
     WORD_SEPARATOR;
   }
 }
-class LineItem(
-  var  textPosition: TextPosition = null
-) {
+class LineItem(var textPosition: TextPosition = null) {
 
-
-  def  getTextPosition(): TextPosition = {
+  def getTextPosition(): TextPosition = {
     return textPosition;
   }
 
-  def  isWordSeparator(): Boolean  = {
+  def isWordSeparator(): Boolean = {
     return textPosition == null;
   }
 }
@@ -1788,14 +1789,11 @@ class LineItem(
   *
   * @author Axel Dörfler
   */
-class WordWithTextPositions(
-  word: String,
-  positions: ju.List[TextPosition]
-) {
+class WordWithTextPositions(word: String, positions: ju.List[TextPosition]) {
   var text: String = word;
   var textPositions: ju.List[TextPosition] = positions
 
-  def  getText(): String = {
+  def getText(): String = {
     return text;
   }
 
@@ -1814,40 +1812,34 @@ class WordWithTextPositions(
   *
   * @author m.martinez@ll.mit.edu
   */
+class PositionWrapper(val textPosition: TextPosition) {
+  var isLineStart: Boolean = false;
+  var isParagraphStart: Boolean = false;
+  var isPageBreak: Boolean = false;
+  var isHangingIndent: Boolean = false;
+  var isArticleStart: Boolean = false;
 
-class PositionWrapper(
-  val textPosition: TextPosition
-) {
-  var  isLineStart : Boolean= false;
-  var  isParagraphStart : Boolean= false;
-  var  isPageBreak : Boolean= false;
-  var  isHangingIndent : Boolean= false;
-  var  isArticleStart : Boolean= false;
-
-
-  def  getTextPosition(): TextPosition = {
+  def getTextPosition(): TextPosition = {
     return textPosition;
   }
 
-  def  setLineStart(): Unit = {
+  def setLineStart(): Unit = {
     this.isLineStart = true;
   }
-
 
   def setParagraphStart(): Unit = {
     this.isParagraphStart = true;
   }
 
-
-  def  setArticleStart(): Unit = {
+  def setArticleStart(): Unit = {
     this.isArticleStart = true;
   }
 
-  def  setPageBreak(): Unit = {
+  def setPageBreak(): Unit = {
     this.isPageBreak = true;
   }
 
-  def  setHangingIndent(): Unit = {
+  def setHangingIndent(): Unit = {
     this.isHangingIndent = true;
   }
 }

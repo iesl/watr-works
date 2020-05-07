@@ -127,8 +127,6 @@ object GuavaHelpers {
   }
 
 
-
-
   def initTable[RowT: Ordering, ColT: Ordering, A <: Any](): TabularData[RowT, ColT, A, Unit, Unit] = {
     new TabularData[RowT, ColT, A, Unit, Unit](
       gcol.HashBasedTable.create[RowT, ColT, Any](),
@@ -144,12 +142,7 @@ object GuavaHelpers {
     )
   }
 
-
-  implicit object StringShow extends Show[String] {
-    override def show(f: String): Cord = Cord(FingerTree.three("\"", f, "\"")(Cord.sizer).toTree)
-    override def shows(f: String): String = f
-  }
-
+  implicit val StringShow = Show.shows[String](s => s)
 }
 
 

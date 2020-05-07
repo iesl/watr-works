@@ -2,7 +2,7 @@ import sbt._
 import Keys._
 
 trait LibVersions {
-  val scalazVersion       = "7.2.30"
+  val scalazVersion       = "7.3.0"
   val scalatestVersion    = "3.1.1"
   val logbackVersion      = "1.7.30"
   val scrimageVersion     = "2.1.8"
@@ -16,9 +16,9 @@ trait LibVersions {
   val http4sVersion       = "0.20.6"
   val fs2Version          = "2.3.0"
   val circeJsonVersion    = "0.13.0"
-  val ammoniteVersion     = "2.0.4"
+  val ammoniteVersion     = "2.1.1"
   val catsV               = "2.0.0"
-  val catsEffectV         = "2.1.2"
+  val catsEffectV         = "2.1.3"
   val postgresqlV         = "42.2.6"
   val freestyleV          = "0.7.0"
   val guavaV              = "23.0"
@@ -33,7 +33,7 @@ object TestLibs extends LibVersions {
   )
 
   val scalacheck = Seq(
-    "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.2.30-scalacheck-1.14" % Test,
+    "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.3.0" % Test,
     "org.scalacheck" %% "scalacheck"                % "1.14.3"       % "test" //  force()
   )
 
@@ -72,9 +72,13 @@ trait CommonLibs extends LibVersions {
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
   val guava            = "com.google.guava"         % "guava"            % guavaV
   val lucene4s         = "com.outr"                %% "lucene4s"         % luceneV
+  val fs2Core          = "co.fs2"                  %% "fs2-core" % fs2Version
+  val fs2IO            = "co.fs2"                  %% "fs2-io" % fs2Version
+  val pdfbox           = "org.apache.pdfbox"        % "pdfbox" % "2.0.19"
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,
+    "co.fs2" %% "fs2-io" % fs2Version,
     "org.typelevel" %% "cats-effect" % catsEffectV
   )
 

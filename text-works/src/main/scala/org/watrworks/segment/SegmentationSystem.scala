@@ -128,7 +128,7 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
             .getColMarginal(scalingFactor)
             .getOrElse(0)
 
-          (fontProps.getFontIdentifier(scalingFactor), docWideCount),
+          (fontProps.getFontIdentifier(scalingFactor), docWideCount)
         }
       } else List[(String@@ScaledFontID, Int)]()
     }

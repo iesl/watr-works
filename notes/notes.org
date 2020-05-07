@@ -1,10 +1,6 @@
 * TextWorks Project Tasks, Roadmap
 
 ** Near future Roadmap
-
-   - [ ] TextWorks CLI
-     - [ ] 
-
        
 ** Project structure
 

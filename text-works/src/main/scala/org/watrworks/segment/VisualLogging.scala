@@ -127,9 +127,6 @@ trait ScopedTracing extends VisualTracer { self  =>
   implicit def Encode_FontEntryLog: Encoder[FontEntryLog] =  deriveEncoder
   implicit def Encode_Headers: Encoder[Headers] =  deriveEncoder
 
-
-
-
   def traceAll(logs: => Seq[TraceLog])(
     implicit enclosing: sourcecode.Enclosing
   ) = ifTrace(tracemacros.VisualTraceLevel.JsonLogs) {

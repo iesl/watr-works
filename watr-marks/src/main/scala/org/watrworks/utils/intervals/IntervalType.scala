@@ -115,16 +115,7 @@ object Interval {
     interval != null && interval.nonEmpty()
   }
 
-
-  // implicit object StringShow extends Show[String] {
-  //   override def show(f: String): Cord = new Cord(FingerTree.three("\"", f, "\"")(Cord.sizer).toTree)
-  //   override def shows(f: String): String = f
-  // }
-
-  implicit object UnitShow extends Show[Unit] {
-    // override def show(f: Unit): Cord = new Cord(FingerTree.three("\"", f, "\"")(Cord.sizer).toTree)
-    override def shows(f: Unit): String = ""
-  }
+  implicit val UnitShow = Show.shows[Unit](_ => "")
 
   object bounded {
     object create {
