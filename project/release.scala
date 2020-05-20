@@ -35,6 +35,7 @@ object Release {
   val pkgTgzStep: ReleaseStep = releaseStepTask(textworks / Universal / PKeys.packageZipTarball)
 
   val settings = Seq(
+    publish / skip := true,
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,
