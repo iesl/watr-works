@@ -1,7 +1,7 @@
 import sbt.Keys._
 import ReleaseTransformations._
 
-Release.settings
+// Release.settings
 Global / onChangedBuildSource := ReloadOnSourceChanges // | IgnoreSourceChanges
 
 val Lib = CommonLibs
@@ -43,6 +43,7 @@ lazy val textworks = (project in file("text-works"))
   .settings(SensibleProject.settings: _*)
   .settings(SensibleProject.runForked: _*)
   .settings(SensibleProject.buildInfoSettings:_*)
+  .settings(Release.settings:_*)
   .settings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++
     Lib.circeJson ++ Seq(
