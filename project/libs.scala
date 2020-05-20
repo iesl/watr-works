@@ -2,8 +2,8 @@ import sbt._
 import Keys._
 
 trait LibVersions {
-  val scalazVersion       = "7.3.0"
-  val scalatestVersion    = "3.1.1"
+  val scalazVersion       = "7.3.1"
+  val scalatestVersion    = "3.1.2"
   val logbackVersion      = "1.7.30"
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
@@ -16,7 +16,7 @@ trait LibVersions {
   val http4sVersion       = "0.20.6"
   val fs2Version          = "2.3.0"
   val circeJsonVersion    = "0.13.0"
-  val ammoniteVersion     = "2.1.1"
+  val ammoniteVersion     = "2.1.4"
   val catsV               = "2.0.0"
   val catsEffectV         = "2.1.3"
   val postgresqlV         = "42.2.6"
@@ -33,7 +33,7 @@ object TestLibs extends LibVersions {
   )
 
   val scalacheck = Seq(
-    "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.3.0" % Test,
+    "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.3.1" % Test,
     "org.scalacheck" %% "scalacheck"                % "1.14.3"       % "test" //  force()
   )
 
