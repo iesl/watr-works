@@ -75,8 +75,6 @@ class MemDocZoningApi extends DocumentZoningApi {
     }
   }
 
-
-
   import tables._
 
   def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID] = {
