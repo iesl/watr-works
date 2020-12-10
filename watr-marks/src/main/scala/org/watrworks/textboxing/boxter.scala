@@ -65,11 +65,11 @@ object TextBoxing extends ToListOps with ToIdOps {
 
   // Implicit to use bare string literals as boxes.
   implicit def stringToBox(s: String): Box = {
-    linesToBox(scala.io.Source.fromString(s).getLines.toSeq)
+    linesToBox(scala.io.Source.fromString(s).getLines().toSeq)
   }
 
   // The basic data type.  A box has a specified size and some sort of contents.
-  
+
   case class Box(rows:Int, cols:Int, content: Content) {
     // Paste two boxes together horizontally, using a default (top) alignment.
     def +(r: Box) : Box = beside(r)
@@ -610,7 +610,7 @@ object TextBoxing extends ToListOps with ToIdOps {
     def words(s:String): Seq[String] = {
       val wordSplit = """\s+""".r
       (for {
-        l <- scala.io.Source.fromString(s).getLines.toSeq
+        l <- scala.io.Source.fromString(s).getLines().toSeq
         w <- wordSplit.split(l)
       } yield {
         w.trim

@@ -82,7 +82,7 @@ object TextGridOutputFormats {
     val fontDefs = docSeg.docScope.fontDefs
 
     val scaledMetrics = fontDefs.fontProperties.map { fp =>
-      val metrics = fp.scaledMetrics.map { scaledMetrics =>
+      val metrics = fp.scaledMetrics().map { scaledMetrics =>
         // val perPageGlyphCounts = fp.natLangGlyphOccurrenceCounts.column(scaledMetrics.scalingFactor)
 
         // val perPageList = perPageGlyphCounts.entrySet().asScala.toList

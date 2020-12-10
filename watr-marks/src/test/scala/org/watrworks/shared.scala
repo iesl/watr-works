@@ -85,7 +85,7 @@ trait TextGridTestExamples extends TextGridConstruction {
     }
     val stableId = DocumentID("Bishop-Clark")
     var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
-    val labeledRow = addLabelsToGridRow(textGrid.rows.head, bishopClarkLabelSpans)
+    val labeledRow = addLabelsToGridRow(textGrid.rows().head, bishopClarkLabelSpans)
     textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
     textGrid = textGrid.splitOneLeafLabelPerLine()
     textGrid = textGrid.split(9, 7).get

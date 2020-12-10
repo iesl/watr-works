@@ -28,7 +28,7 @@ lazy val watrmarks = project
       "org.scalatest"              %% "scalatest"              % Lib.scalatestVersion % "test",
       "com.lihaoyi"                %% "fansi"                  % Lib.fansiV,
       "com.lihaoyi"                %% "sourcecode"             % Lib.sourcecodeV,
-      "com.lihaoyi"                %% "pprint"                 % "0.5.9",
+      "com.lihaoyi"                %% "pprint"                 % "0.6.0",
       "org.scalaz"                 %% "scalaz-core"            % Lib.scalazVersion,
       Lib.ammoniteOps,
       Lib.guava % Optional,

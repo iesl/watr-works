@@ -138,8 +138,8 @@ case class GlyphProps(
   prevSimilar: Int@@CharID
 ) {
 
-  lazy val fontBBox = finalFontBounds.getBounds2D().toLTBounds
-  lazy val glyphBBox = finalGlyphBounds.map(_.getBounds2D().toLTBounds).getOrElse { fontBBox }
+  lazy val fontBBox = finalFontBounds.getBounds2D().toLTBounds()
+  lazy val glyphBBox = finalGlyphBounds.map(_.getBounds2D().toLTBounds()).getOrElse { fontBBox }
   lazy val scalingFactor: Int@@ScalingFactor = {
     val determinant = finalAffineTrans.getDeterminant
     val normDet = determinant * 1000 * 1000
@@ -184,14 +184,14 @@ case class FontBaselineOffsets(
   private val _bottom       : Int@@FloatRep,
 ) {
   override def toString(): String = {
-    s"""|(${scaledFontId} @ ${fontBaseline.pp} =
-        |top: ${topLine.pp}+${_top.pp},
-        |cap: ${capLine.pp}+${_cap.pp},
-        |asc: ${ascentLine.pp}+${_ascent.pp},
-        |mid: ${midriseLine.pp}+${_midrise.pp}
-        |bas: ${baseLine.pp}+${_baseline.pp}
-        |des: ${descentLine.pp}+${_descent.pp}
-        |bot: ${bottomLine.pp}+${_bottom.pp})
+    s"""|(${scaledFontId} @ ${fontBaseline.pp()} =
+        |top: ${topLine.pp()}+${_top.pp()},
+        |cap: ${capLine.pp()}+${_cap.pp()},
+        |asc: ${ascentLine.pp()}+${_ascent.pp()},
+        |mid: ${midriseLine.pp()}+${_midrise.pp()}
+        |bas: ${baseLine.pp()}+${_baseline.pp()}
+        |des: ${descentLine.pp()}+${_descent.pp()}
+        |bot: ${bottomLine.pp()}+${_bottom.pp()})
         |""".stripMargin.replaceAll("\n", " ")
 
   }
@@ -533,7 +533,7 @@ class FontDefs(pageCount: Int) {
   def getFontIdentifiers(isNatLang: Boolean): Seq[String@@ScaledFontID] = {
     fontProperties
       .filter { p => isNatLang == p.isNatLangFont() }
-      .flatMap(_.getFontIdentifiers)
+      .flatMap(_.getFontIdentifiers())
   }
 
   sealed trait DummyID

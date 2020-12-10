@@ -2,8 +2,8 @@ import sbt._
 import Keys._
 
 trait LibVersions {
-  val scalazVersion       = "7.3.1"
-  val scalatestVersion    = "3.1.2"
+  val scalazVersion       = "7.3.2"
+  val scalatestVersion    = "3.2.3"
   val logbackVersion      = "1.7.30"
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
@@ -14,15 +14,15 @@ trait LibVersions {
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
   val http4sVersion       = "0.20.6"
-  val fs2Version          = "2.3.0"
+  val fs2Version          = "2.4.6"
   val circeJsonVersion    = "0.13.0"
-  val ammoniteVersion     = "2.1.4"
+  val ammoniteVersion     = "2.3.8"
   val catsV               = "2.0.0"
   val catsEffectV         = "2.1.3"
   val postgresqlV         = "42.2.6"
   val freestyleV          = "0.7.0"
   val guavaV              = "23.0"
-  val luceneV             = "1.9.1"
+  val luceneV             = "1.10.0"
 }
 
 object LibVersions extends LibVersions
@@ -33,8 +33,8 @@ object TestLibs extends LibVersions {
   )
 
   val scalacheck = Seq(
-    "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.3.1" % Test,
-    "org.scalacheck" %% "scalacheck"                % "1.14.3"       % "test" //  force()
+    "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.3.2" % Test,
+    "org.scalacheck" %% "scalacheck"                % "1.15.1"       % "test" //  force()
   )
 
   val testAndCheck = scalatest ++ scalacheck
@@ -42,7 +42,7 @@ object TestLibs extends LibVersions {
 
 object LogLibs extends LibVersions {
   val logback = Seq(
-    "org.log4s"      %% "log4s"            % "1.8.2",
+    "org.log4s"      %% "log4s"            % "1.9.0",
     "ch.qos.logback"  % "logback-classic"  % "1.2.3",
     "org.slf4j"       % "slf4j-api"        % logbackVersion,
     "org.slf4j"       % "jul-to-slf4j"     % logbackVersion,
@@ -67,14 +67,14 @@ object DatabaseLibs extends LibVersions {
 trait CommonLibs extends LibVersions {
   val ammonite         = "com.lihaoyi"             % "ammonite"          % ammoniteVersion cross CrossVersion.full
   val ammoniteOps      = "com.lihaoyi"             %% "ammonite-ops"     % ammoniteVersion
-  val scopt            = "com.github.scopt"        %% "scopt"            % "3.7.1"
+  val scopt            = "com.github.scopt"        %% "scopt"            % "4.0.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
   val guava            = "com.google.guava"         % "guava"            % guavaV
   val lucene4s         = "com.outr"                %% "lucene4s"         % luceneV
   val fs2Core          = "co.fs2"                  %% "fs2-core" % fs2Version
   val fs2IO            = "co.fs2"                  %% "fs2-io" % fs2Version
-  val pdfbox           = "org.apache.pdfbox"        % "pdfbox" % "2.0.19"
+  val pdfbox           = "org.apache.pdfbox"        % "pdfbox" % "2.0.21"
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,

@@ -48,7 +48,6 @@ class OrFilter(
   override val upperAngle: Double
 ) extends AngleFilter {
 
-
   def matches(angle: Double): Boolean = {
     // val nangle = n.bbox.toPoint(Dir.Center).angleTo(origin.bbox.toPoint(Dir.Center))
     lowerAngle <= angle || angle < upperAngle

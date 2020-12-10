@@ -34,7 +34,6 @@ object LabeledSequenceCodecs {
     spanTreeToJson(labelSpanTree)
   }
 
-
   def decodeAndApplyBioLabels[A <: LabelTarget](jsonRep: Json, labeledSequence: LabeledSequence[A]): Unit = {
     val labelingTrees = jsonRep.decodeOrDie[Seq[LabelingTree]]()
 

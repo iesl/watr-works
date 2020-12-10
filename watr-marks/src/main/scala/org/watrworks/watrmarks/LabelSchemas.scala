@@ -6,21 +6,17 @@ import _root_.io.circe, circe._
 import circe.generic.semiauto._
 import TypeTags._
 
-
 case class LabelSchema(
   label: Label,
   abbrev: Option[(Char, Char)] = None,
   description: Option[String] = None,
-  children: List[LabelSchema] = List()
-) {
+  children: List[LabelSchema] = List()) {
   def getAbbrev(): String = {
-    abbrev
-      .map{ case (c1, c2) => ""+c1+c2 }
-      .getOrElse{
-        val uppers = label.fqn.filter(_.isUpper).map(_.toLower)
-        val lowers = label.fqn.filter(_.isLower)
-          (uppers ++ lowers).take(2).mkString("")
-      }
+    abbrev.map { case (c1, c2) => "" + c1 + c2 }.getOrElse {
+      val uppers = label.fqn.filter(_.isUpper).map(_.toLower)
+      val lowers = label.fqn.filter(_.isLower)
+      (uppers ++ lowers).take(2).mkString("")
+    }
   }
   def abbrevFor(l: Label): Option[String] = {
     if (label == l) {
@@ -31,7 +27,7 @@ case class LabelSchema(
   def allLabels(): List[Label] = label +: children.flatMap(_.allLabels())
 
   def childLabelsFor(l: Label): List[Label] = {
-    if (label==l) {
+    if (label == l) {
       children.map(_.label)
     } else {
       children.flatMap(_.childLabelsFor(l))
@@ -58,11 +54,9 @@ object LabelSchema {
 
 }
 
-
 case class LabelSchemas(
-  name: String@@LabelSchemaName,
-  schemas: List[LabelSchema]
-) {
+  name: String @@ LabelSchemaName,
+  schemas: List[LabelSchema]) {
 
   val allLabels: List[String] = {
     schemas.flatMap(_.allLabels()).map(_.fqn)
@@ -77,38 +71,37 @@ case class LabelSchemas(
   }
 
   def childLabelsFor(label: Label): List[String] = {
-    schemas.flatMap(_.childLabelsFor(label))
-      .map(_.fqn)
+    schemas.flatMap(_.childLabelsFor(label)).map(_.fqn)
   }
 }
-
-
 
 object LabelSchemas {
   def labelSchemaToBox(schema: LabelSchemas): TB.Box = {
 
     def renderSchema(s: LabelSchema): TB.Box = {
-      val lbox = s.getAbbrev.box + ": " + s.label.fqn.box
+      val lbox = s.getAbbrev().box + ": " + s.label.fqn.box
 
       if (s.children.nonEmpty) {
-        lbox atop indent(4,
-          vcat(left, s.children.map(renderSchema(_)))
-        )
+        lbox atop indent(4, vcat(left, s.children.map(renderSchema(_))))
       } else { lbox }
     }
 
-    vjoin(left,
-      "Label Schema", indent(4,
+    vjoin(
+      left,
+      "Label Schema",
+      indent(
+        4,
         vjoins(
           schema.schemas.map(renderSchema(_))
-        ))
+        )
+      )
     )
   }
 
-  implicit val L_Encoder: Encoder[String@@LabelSchemaName] =
+  implicit val L_Encoder: Encoder[String @@ LabelSchemaName] =
     Encoder[String].contramap { _.unwrap }
 
-  implicit val L_Decoder: Decoder[String@@LabelSchemaName] =
+  implicit val L_Decoder: Decoder[String @@ LabelSchemaName] =
     Decoder[String].map { LabelSchemaName(_) }
 
   implicit val Encode_LabelSchemas: Encoder[LabelSchemas] = deriveEncoder

@@ -220,7 +220,7 @@ trait PageScopeTracing extends ScopedTracing { self  =>
     val f = if (labels.nonEmpty) filterf(_)
             else (_: AnyShape) => true
 
-    val filtered = shapeIndex.shapeRIndex.getItems.filter(f)
+    val filtered = shapeIndex.shapeRIndex.getItems().filter(f)
     shape(filtered:_*)
   }
 
@@ -256,15 +256,15 @@ trait PageScopeTracing extends ScopedTracing { self  =>
   }
 
   def figureToTransRange(figure: GeometricFigure): Transcript.GeometryRange = {
-    val unit = figure match {
-      case shape: LTBounds => Transcript.GeometryLabelUnit.Rect
-      case shape: Line => Transcript.GeometryLabelUnit.Line
-      case shape: Point => Transcript.GeometryLabelUnit.Point
-      case shape: Trapezoid => Transcript.GeometryLabelUnit.Trapezoid
-    }
+    // val unit = figure match {
+    //   case shape: LTBounds => Transcript.GeometryLabelUnit.Rect
+    //   case shape: Line => Transcript.GeometryLabelUnit.Line
+    //   case shape: Point => Transcript.GeometryLabelUnit.Point
+    //   case shape: Trapezoid => Transcript.GeometryLabelUnit.Trapezoid
+    // }
+
     Transcript.GeometryRange(
-      unit,
-      this.pageNum.unwrap,
+      "shape",
       figure
     )
   }

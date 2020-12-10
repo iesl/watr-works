@@ -147,7 +147,7 @@ class Corpus(
       .sorted
       .map{ new CorpusEntry(_, this) }
 
-    artifacts.filterNot(_.getArtifacts.isEmpty)
+    artifacts.filterNot(_.getArtifacts().isEmpty)
   }
 
 }
@@ -271,7 +271,7 @@ class CorpusEntry(
   }
 
   def getPdfArtifact(): Option[CorpusArtifact] = {
-    getArtifacts.filter(_.endsWith(".pdf"))
+    getArtifacts().filter(_.endsWith(".pdf"))
       .headOption
       .flatMap { getArtifact(_, None) }
   }

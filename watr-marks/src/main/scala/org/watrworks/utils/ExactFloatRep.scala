@@ -1,7 +1,6 @@
 package org.watrworks
 package utils
 
-
 object ExactFloats {
   import scalaz.Tag
   import TypeTags._
@@ -24,9 +23,10 @@ object ExactFloats {
   implicit class RicherFloatExact(val self: Int@@FloatRep) extends AnyVal {
     def +(r: Int@@FloatRep): Int@@FloatRep = FloatRep(self.unwrap+r.unwrap)
     def -(r: Int@@FloatRep): Int@@FloatRep = FloatRep(self.unwrap-r.unwrap)
-    def *(r: Int@@FloatRep): Int@@FloatRep = (self.asDouble*r.asDouble).toFloatExact
-    def /(r: Int@@FloatRep): Int@@FloatRep = (self.asDouble/r.asDouble).toFloatExact
-    def unary_-(): Int@@FloatRep = FloatRep(-self.unwrap)
+    def *(r: Int@@FloatRep): Int@@FloatRep = (self.asDouble()*r.asDouble()).toFloatExact()
+    def /(r: Int@@FloatRep): Int@@FloatRep = (self.asDouble()/r.asDouble()).toFloatExact()
+
+    def unary_- : Int@@FloatRep = FloatRep(-self.unwrap)
 
     def <(r: Int@@FloatRep): Boolean = self.unwrap<r.unwrap
     def <=(r: Int@@FloatRep): Boolean = self.unwrap<=r.unwrap
@@ -36,28 +36,28 @@ object ExactFloats {
 
     def +(r: Double): Int@@FloatRep = self + r.toFloatExact()
     def -(r: Double): Int@@FloatRep = self - r.toFloatExact()
-    def *(r: Double): Int@@FloatRep = (self.asDouble * r).toFloatExact
-    def /(r: Double): Int@@FloatRep = (self.asDouble / r).toFloatExact
+    def *(r: Double): Int@@FloatRep = (self.asDouble() * r).toFloatExact()
+    def /(r: Double): Int@@FloatRep = (self.asDouble() / r).toFloatExact()
 
-    def <(r:  Double): Boolean = self.asFloat<r
-    def <=(r: Double): Boolean = self.asFloat<=r
-    def >=(r: Double): Boolean = self.asFloat>=r
-    def >(r: Double): Boolean  = self.asFloat>r
+    def <(r:  Double): Boolean = self.asFloat()<r
+    def <=(r: Double): Boolean = self.asFloat()<=r
+    def >=(r: Double): Boolean = self.asFloat()>=r
+    def >(r: Double): Boolean  = self.asFloat()>r
 
     def +(r: Int): Int@@FloatRep = self + r.toFloatExact()
     def -(r: Int): Int@@FloatRep = self - r.toFloatExact()
-    def *(r: Int): Int@@FloatRep = (self.asDouble * r).toFloatExact
-    def /(r: Int): Int@@FloatRep = (self.asDouble / r).toFloatExact
+    def *(r: Int): Int@@FloatRep = (self.asDouble() * r).toFloatExact()
+    def /(r: Int): Int@@FloatRep = (self.asDouble() / r).toFloatExact()
 
-    def <(r:  Int): Boolean = self.asFloat<r
-    def <=(r: Int): Boolean = self.asFloat<=r
-    def >=(r: Int): Boolean = self.asFloat>=r
-    def >(r: Int): Boolean  = self.asFloat>r
+    def <(r:  Int): Boolean = self.asFloat()<r
+    def <=(r: Int): Boolean = self.asFloat()<=r
+    def >=(r: Int): Boolean = self.asFloat()>=r
+    def >(r: Int): Boolean  = self.asFloat()>r
 
-    def +(r: Float): Int@@FloatRep = self + r.toFloatExact
-    def -(r: Float): Int@@FloatRep = self - r.toFloatExact
-    def *(r: Float): Int@@FloatRep = (self.asFloat * r).toFloatExact
-    def /(r: Float): Int@@FloatRep = (self.asFloat / r).toFloatExact
+    def +(r: Float): Int@@FloatRep = self + r.toFloatExact()
+    def -(r: Float): Int@@FloatRep = self - r.toFloatExact()
+    def *(r: Float): Int@@FloatRep = (self.asFloat() * r).toFloatExact()
+    def /(r: Float): Int@@FloatRep = (self.asFloat() / r).toFloatExact()
 
 
     def asFloat(): Float = { self.unwrap/100.0f }
@@ -83,8 +83,8 @@ object ExactFloats {
 
 
     def compareFuzzy(tolerance: Double)(d20: Int@@FloatRep): Int = {
-      val d2 = d20.asDouble
-      val d1 = self.asDouble
+      val d2 = d20.asDouble()
+      val d1 = self.asDouble()
       if (math.abs(d1 - d2) < tolerance) 0
       else if (d1 < d2) -1
       else 1

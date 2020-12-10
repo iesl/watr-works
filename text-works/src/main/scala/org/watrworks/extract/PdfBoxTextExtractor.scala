@@ -144,7 +144,7 @@ class PdfBoxTextExtractor(
     val y = pageBoundsPdfCoords.getUpperRightY - x2
     val toPoint = new Point2D.Float(x, y)
 
-    val line = Line(getCurrentPoint().toPoint(), toPoint.toPoint)
+    val line = Line(getCurrentPoint().toPoint(), toPoint.toPoint())
     addItem(ExtractedItem.PathItem(
       charIdGen.nextId,
       line.bounds(),

@@ -1626,7 +1626,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   def parseBidiFile(inputStream: InputStream): Unit = {
     val source = scala.io.Source.fromInputStream(inputStream)
     for {
-      l <- source.getLines
+      l <- source.getLines()
     } {
       val (chars, comment) = l.span(_ != '#')
       val line = chars.mkString

@@ -32,7 +32,7 @@ case class TestShape(
 ) extends LabeledShape[GeometricFigure, Unit] {
 
   def attr: Unit = ()
-  def labels() = Set()
+  def labels = Set()
   def addLabels(l: Label*) = this
 }
 
@@ -66,11 +66,11 @@ class RTreeIndexTest extends AnyFlatSpec with Matchers {
     rtreeIndex.add(shape)
 
     println(rtreeIndex.spatialIndex.asString())
-    rtreeIndex.getItems.size should equal (1)
+    rtreeIndex.getItems().size should equal (1)
 
     rtreeIndex.remove(shape)
 
-    rtreeIndex.getItems.size should equal (0)
+    rtreeIndex.getItems().size should equal (0)
     println(rtreeIndex.spatialIndex.asString())
 
   }

@@ -174,7 +174,7 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
   }
 
   def getShapesWithLabel(l: Label): Seq[Shape] = {
-    shapeRIndex.getItems
+    shapeRIndex.getItems()
       .filter { item =>
         item.labels.contains(l)
       }
@@ -215,7 +215,7 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
 
   def initClustering(l: Label, f: Shape => Boolean): Seq[Shape] = {
     assume(!disjointSets.contains(l))
-    val toAdd = shapeRIndex.getItems.filter(f)
+    val toAdd = shapeRIndex.getItems().filter(f)
     disjointSets.getOrElseUpdate(l,
       OrderedDisjointSet.apply[Shape](toAdd:_*)
     )
@@ -254,7 +254,7 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
 
   private def _getClusterMembers(l: Label, cc: Shape): Option[Seq[Shape]] = {
     disjointSets.get(l).map{set =>
-      set.sets.toSeq.map(_.toSeq)
+      set.sets().toSeq.map(_.toSeq)
         .filter(_.contains(cc))
         .headOption
     } getOrElse(None)
@@ -263,12 +263,12 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
 
   def getClusters(l: Label): Option[Seq[Seq[Shape]]] = {
     disjointSets.get(l)
-      .map{ set => set.sets }
+      .map{ set => set.sets() }
   }
 
   def getClustersWithReprID(l: Label): Seq[(Int@@ShapeID, Seq[Shape])] = {
     disjointSets.get(l).map { disjointSet =>
-      disjointSet.sets.map{ cluster =>
+      disjointSet.sets().map{ cluster =>
         val repr = disjointSet.getCanonical(cluster.head)
         (repr.id, cluster)
       }
@@ -277,7 +277,7 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
 
   def getClusterRoots(l: Label): Seq[Shape] = {
     disjointSets.get(l).map{set =>
-      set.sets.map{ cluster =>
+      set.sets().map{ cluster =>
         set.getCanonical(cluster.head)
       }
     } getOrElse(Seq())

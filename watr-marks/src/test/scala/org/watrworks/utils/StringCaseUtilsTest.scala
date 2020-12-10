@@ -14,7 +14,7 @@ class StringCaseUtilsTest extends AnyFlatSpec with Matchers {
   it should "convert camel/snake/underscore case" in {
 
     assertResult("this-is-camel-case"){
-      "ThisIsCamelCase".toSnakeCase
+      "ThisIsCamelCase".toSnakeCase()
     }
     assertResult("ThisIsCamelCase"){
       "this-is-camel-case".toCamelCase()

@@ -17,7 +17,6 @@ import utils.SlicingAndDicing._
 import scalaz.syntax.std.list._
 
 
-
 trait TextReconstruction extends PageScopeSegmenter
     with LineSegmentation { self =>
 
@@ -39,7 +38,7 @@ trait TextReconstruction extends PageScopeSegmenter
         charWidths.max
       } else if (charSpacings.length > 1) {
         val mostCommonSpacingBin = charSpacings.head
-        val mostCommonSpacing = mostCommonSpacingBin.maxValue
+        val mostCommonSpacing = mostCommonSpacingBin.maxValue()
         val largerSpacings = charSpacings.filter(b => b.centroid.value > mostCommonSpacing*2)
         if (largerSpacings.nonEmpty) {
           val nextCommonSpacing = largerSpacings.head.centroid.value
@@ -130,7 +129,7 @@ trait TextReconstruction extends PageScopeSegmenter
 
   private def insertSpacesInRow(textRow: TextGrid.Row): Unit =  {
 
-    val lineCCs = textRow.cells.collect{
+    val lineCCs = textRow.cells().collect{
       case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
         headItem
     }

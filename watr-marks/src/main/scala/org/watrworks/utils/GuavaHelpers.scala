@@ -194,8 +194,8 @@ class TabularData[RowT: Ordering, ColT: Ordering, A, RM, CM](
     )
   }
 
-  def rowKeys(): Set[RowT] = table.rowKeySet().asScala.toSet
-  def columnKeys(): Set[ColT] = table.columnKeySet().asScala.toSet
+  def rowKeys: Set[RowT] = table.rowKeySet().asScala.toSet
+  def columnKeys: Set[ColT] = table.columnKeySet().asScala.toSet
 
   def getColumn(c: ColT): Seq[(RowT, A)] = {
     table.column(c).entrySet().asScala.toList.map{ e =>
@@ -211,11 +211,11 @@ class TabularData[RowT: Ordering, ColT: Ordering, A, RM, CM](
   }
 
   def getRows(): Seq[(RowT, Seq[(ColT, A)])] = {
-    rowKeys().toList.sorted.map(r => (r, getRow(r)))
+    rowKeys.toList.sorted.map(r => (r, getRow(r)))
   }
 
   def getColumns(): Seq[(ColT, Seq[(RowT, A)])] = {
-    columnKeys().toList.sorted.map(c => (c, getColumn(c)))
+    columnKeys.toList.sorted.map(c => (c, getColumn(c)))
   }
 
   def set(r: RowT, c: ColT, a: A): Unit = {

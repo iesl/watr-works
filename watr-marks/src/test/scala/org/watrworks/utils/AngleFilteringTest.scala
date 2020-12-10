@@ -22,8 +22,8 @@ class AngleFilteringTest extends AnyFlatSpec with Matchers {
     // }
 
     // pointsOnUnitCircle.foreach { case(point, r) =>
-    //   val atan = math.atan2(point.y.asDouble, point.x.asDouble)
-    //   // println(s"r:${r.pp} (${(r/Pi).pp})  = ${point.prettyPrint}, atan: ${atan.pp} p1 angleto p2: ${ctr.angleTo(point)}")
+    //   val atan = math.atan2(point.y.asDouble(), point.x.asDouble())
+    //   // println(s"r:${r.pp()} (${(r/Pi).pp()})  = ${point.prettyPrint}, atan: ${atan.pp()} p1 angleto p2: ${ctr.angleTo(point)}")
     // }
 
     // val pointsOnUnitCircleRev = (0.0 to -Pi by -0.2).map{ r =>
@@ -32,7 +32,7 @@ class AngleFilteringTest extends AnyFlatSpec with Matchers {
 
     // pointsOnUnitCircleRev.foreach { case(point, r) =>
     //   val atan = math.atan2(point.y, point.x)
-    //   println(s"r:${r.pp} (${(r/Pi).pp})  = ${point.prettyPrint}, atan: ${atan.pp} p1 angleto p2: ${ctr.angleTo(point)}")
+    //   println(s"r:${r.pp()} (${(r/Pi).pp()})  = ${point.prettyPrint}, atan: ${atan.pp()} p1 angleto p2: ${ctr.angleTo(point)}")
     // }
 
 

@@ -25,7 +25,6 @@ object LabelTarget {
   case class Thing[A](a: A) extends LabelTarget
 }
 
-
 trait LabelTarget {
 
   val pins: LabelTarget.PinSet = LabelTarget.PinSet()
@@ -89,9 +88,16 @@ object LabeledSequence {
   import LabelTarget.Thing
 
   case class Things[A](labelTargets: Seq[Thing[A]]) extends LabeledSequence[Thing[A]]
+
+  def findPin[A <: LabelTarget](c: A, l: Label): Option[(BioPin, Int)] = {
+    val pinIndex = c.pins.indexWhere(_.label == l)
+    if (pinIndex > -1) Some( (c.pins(pinIndex), pinIndex) )
+    else None
+  }
 }
 
 trait LabeledSequence[A <: LabelTarget] {
+  import LabeledSequence._
 
   def labelTargets(): Seq[A]
 
@@ -111,11 +117,6 @@ trait LabeledSequence[A <: LabelTarget] {
     }
   }
 
-  def findPin(c: A, l: Label): Option[(BioPin, Int)] = {
-    val pinIndex = c.pins.indexWhere(_.label == l)
-    if (pinIndex > -1) Some( (c.pins(pinIndex), pinIndex) )
-    else None
-  }
 
   def get(offset: Int): Option[A] = {
     if (0 <= offset && offset < labelTargets().length) {

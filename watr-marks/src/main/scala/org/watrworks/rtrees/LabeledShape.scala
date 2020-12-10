@@ -9,7 +9,7 @@ import geometry.syntax._
 trait LabeledShape[+T <: GeometricFigure, W] {
   def id: Int@@ShapeID
   def shape: T
-  def labels(): Set[Label]
+  def labels: Set[Label]
   def attr: W
 
   def hasLabel(l: Label) = labels.exists(_ == l)

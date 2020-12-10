@@ -2,18 +2,8 @@
 -Dfile.encoding=UTF8
 -Xms1400M
 -Xmx1400M
-# -XX:MaxMetaspaceSize=512M
-# -XX:ReservedCodeCacheSize=250M
 -XX:+TieredCompilation
 -XX:-UseGCOverheadLimit
-# effectively adds GC to Perm space
--XX:+UseConcMarkSweepGC
--XX:+CMSClassUnloadingEnabled
-# must be enabled for CMSClassUnloadingEnabled to work
--XX:MaxDirectMemorySize=15927m
 
--Dakka.loglevel=OFF
--Dorg.ensime.loglevel=DEBUG
-# -Dstorage.diskCache.bufferSize=7200
 -Dio.netty.leakDetection.level=advanced
 -Dio.netty.leakDetection.maxRecords=30

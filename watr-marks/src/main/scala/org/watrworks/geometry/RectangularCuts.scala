@@ -179,7 +179,7 @@ trait RectangularCuts extends GeometricOps {
       val lldeg = (lla * 180) / math.Pi
       val lrdeg = (lra * 180) / math.Pi
 
-      s"${lls}◻${lrs}:<${lldeg.pp}º,${lrdeg.pp}º>mbr:${minBoundingRect(self)}"
+      s"${lls}◻${lrs}:<${lldeg.pp()}º,${lrdeg.pp()}º>mbr:${minBoundingRect(self)}"
     }
 
     private val defaultAngleTolerance = 0.08d // ~ 4.6 deg.

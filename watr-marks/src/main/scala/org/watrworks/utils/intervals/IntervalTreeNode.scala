@@ -142,7 +142,11 @@ object TreeNode {
     *         interval has been removed. This could be {@code null} if the interval
     *         was the last one stored at the subtree.
     */
-  def  removeInterval[T, W](tree: IntervalTree[T, W], root: TreeNode[T, W], interval: Interval[T, W]): TreeNode[T, W] = {
+  def removeInterval[T, W](
+    tree: IntervalTree[T, W],
+    root: TreeNode[T, W],
+    interval: Interval[T, W]
+  ): TreeNode[T, W] = {
     if (root == null) {
       null
     } else if (interval.contains(root.midpoint)){
@@ -184,8 +188,7 @@ object TreeNode {
         // the right child.
         root.right;
       } else {
-        var  node = root.left;
-        // val Stack[TreeNode[T, W]] stack = new Stack[]();
+        var node = root.left;
         val stack = mutable.Stack[TreeNode[T, W]]();
         while (node.right != null){
           stack.push(node);
@@ -352,24 +355,25 @@ class TreeNode[T: Ordering: MidpointHelper, W](
         nodeGraphRepr.drawString(i1, i2, interval.toString())
       }
 
-    val mp = TB.borderBottom(s"mid:${midpoint}" )
+    val mp = TB.borderBottom(s"""mid:${midpoint.getOrElse("-")}""" )
 
     val nodeBox = vjoin(TB.center1, mp, nodeGraphRepr.asMonocolorString().box)
 
     val leftRepr = "Left" atop (if (self.left == null) {
-      TB.emptyBox(1, 1)
+      "null"
     } else {
-      left.asBox()
+      TB.borderInlineTop(left.asBox())
     })
 
     val rightRepr = "Right" atop (if (self.right == null) {
-      TB.emptyBox(1, 1)
+      "null"
     } else {
-      right.asBox()
+      TB.borderInlineTop(right.asBox())
     })
 
-    val childs = hcat(bottom,
-      List(TB.borderInlineTop(leftRepr), TB.borderInlineTop(rightRepr))
+    val childs = hcat(
+      top,
+      List(leftRepr, "  ", rightRepr)
     )
 
     vjoin(center1,
@@ -563,7 +567,7 @@ class TreeNode[T: Ordering: MidpointHelper, W](
         }
         if (stack.isEmpty)
           throw new NoSuchElementException();
-        currentNode = stack.pop;
+        currentNode = stack.pop();
         it = currentNode.increasing.iterator;
         subtreeRoot = currentNode.right;
       }

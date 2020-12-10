@@ -61,6 +61,7 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
 
         val matchingNatLangFont = docScope.fontDefs.getScaledFontOffsets(natScaledFontId)
         val rescaledOffsets = matchingNatLangFont.rescaledAs(variantName, symScalingFactor)
+
         // println(s"Symbolic Font matches Nat Lang Font, rescaling Nat Lang: ")
         // println(s"    ${matchingNatLangFont}")
         // println(s"        To: ")
@@ -219,7 +220,7 @@ trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { se
       .toList.map{ case (k, vs) =>
         val chars = vs.map(_._2.char).uniqueBy(c => c).sorted.mkString
 
-        (s"+${k.pp}".box, chars.box)
+        (s"+${k.pp()}".box, chars.box)
       }
 
     val byChar = allBaselines.groupBy(_._2.char)
@@ -244,7 +245,7 @@ trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { se
       }
 
       val cvs = counted.map{ case (count, (offset, char)) =>
-        s"${warningSign}${count} x ${offset.pp}"
+        s"${warningSign}${count} x ${offset.pp()}"
       }.mkString(", ")
 
       (k.toString.box, cvs.box)
@@ -258,7 +259,7 @@ trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { se
     // docScope.fontDefs.getScaledFont(scaledFontId)
 
     // println(s"${scaledFontId} Baseline Offsets page ${pageNum}")
-    println(s"    min/max/avg ${min.pp} / ${max.pp} / ${avg.pp}")
+    println(s"    min/max/avg ${min.pp()} / ${max.pp()} / ${avg.pp()}")
     println(
       "Baseline Offsets by char".hangIndent(
         hjoin(

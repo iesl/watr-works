@@ -52,11 +52,12 @@ class IntervalsTest extends AnyFlatSpec with Matchers {
       Interval.bounded.create.leftOpenRightClosed(2, 2),
       Interval.bounded.create.open(2, 2)
     )
-    for (interval <- intervals)
-      assert(interval.isEmpty());
+    for (interval <- intervals) {
+      val isEmpty = interval.isEmpty()
+      assert(isEmpty)
+    }
   }
 
-  //
   it should "test_isNotEmpty" in {
     val intervals = List(
       Interval.bounded.create.closed(2, 2),
@@ -69,8 +70,11 @@ class IntervalsTest extends AnyFlatSpec with Matchers {
       Interval.bounded.create.closed(-123123, -4),
       Interval.unbounded[Int]()
     )
-    for (interval <- intervals)
-      assert(!interval.isEmpty());
+
+    for (interval <- intervals) {
+      val isEmpty = interval.isEmpty()
+      assert(!isEmpty)
+    }
   }
 
 
@@ -442,10 +446,8 @@ class IntervalsTest extends AnyFlatSpec with Matchers {
     val a = Interval.bounded.create.closed(5, 10);
     val a2 = Interval.bounded.create.closed(5, 10);
     val a3 = Interval.bounded.create.closed(5, 11);
-    assertNotEquals(a, new Integer(5));
     assertEquals(a, a2);
     assertNotEquals(a, a3);
-    // assertNotEquals(a, new Date());
   }
 
   it should "isLeftOfBoundedInterval" in {

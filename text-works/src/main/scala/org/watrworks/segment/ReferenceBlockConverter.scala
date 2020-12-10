@@ -225,10 +225,10 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
           // println(leftmostCharBounds.map(_.prettyPrint).mkString("\n  ", "\n  ", "\n"))
 
           // println(s"leftmostCharBottoms")
-          // println(leftmostCharBottoms.map(_.pp).mkString("\n  ", "\n  ", "\n"))
+          // println(leftmostCharBottoms.map(_.pp()).mkString("\n  ", "\n  ", "\n"))
 
           // println(s"yDeltas")
-          // println(yDeltas.map(_.pp).mkString("\n  ", "\n  ", "\n"))
+          // println(yDeltas.map(_.pp()).mkString("\n  ", "\n  ", "\n"))
 
           val maxJumpForIntraRefLines = sortedYJumps.headOption.map(_.maxValue()).orDie("no y-jump val 1 clusters??")
 

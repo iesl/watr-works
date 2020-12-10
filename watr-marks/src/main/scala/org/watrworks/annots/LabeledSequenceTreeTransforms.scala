@@ -208,6 +208,4 @@ object LabeledSequenceTreeTransforms {
     labelTree.scanr(histo).rootLabel
   }
 
-
-
 }

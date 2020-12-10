@@ -50,11 +50,14 @@ object LabeledShapeIndexProps extends Properties("LabeledShapeIndex") {
 
     val shapeIndexRT = asJson.decodeOrDie[LabeledShapeIndex[GeometricFigure, Unit, TestShape]]("error decoding json")
 
-    shapeIndex.getAllShapes == rtreeIndex.getItems
 
-    shapeIndex.getAllShapes.map(_.shape) == example
+    val allShapes = shapeIndex.getAllShapes()
 
-    shapeIndex.getAllShapes.length == shapeIndexRT.getAllShapes().length
+    allShapes == rtreeIndex.getItems()
+
+    allShapes.map(_.shape) == example
+
+    allShapes.length == shapeIndexRT.getAllShapes().length
 
   }
 

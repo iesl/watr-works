@@ -11,6 +11,7 @@ sealed trait DocumentID
 
 sealed trait ZoneID
 sealed trait LabelID
+sealed trait StanzaID
 sealed trait RegionID
 sealed trait WidgetID
 
@@ -118,6 +119,7 @@ trait TypeTags extends TypeTagUtils {
   val CharID = Tag.of[CharID]
   val ComponentID = Tag.of[ComponentID]
   val LabelID = Tag.of[LabelID]
+  val StanzaID = Tag.of[StanzaID]
   val TextReflowID = Tag.of[TextReflowID]
   val ShapeID = Tag.of[ShapeID]
 

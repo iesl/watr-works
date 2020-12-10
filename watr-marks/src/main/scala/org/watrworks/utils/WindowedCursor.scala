@@ -19,7 +19,7 @@ object Cursors {
     def loop(maybeCursor: Option[Cursor[A]], acc: List[Seq[A]]): Seq[Seq[A]] = {
       maybeCursor match {
         case Some(cursor) =>
-          val window = cursor.toWindow
+          val window = cursor.toWindow()
           val group = window.slurpRight(f)
           val acc1 = group.cells :: acc
           // println(s"loop = C: ${cursor.debugString()}")
@@ -123,6 +123,7 @@ trait Cursor[A] { self =>
     s"""Cursor([$ls] [[ ${f} ]] [$rs])"""
   }
 }
+
 
 object Window {
   def apply[A](

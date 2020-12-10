@@ -153,8 +153,6 @@ object Interval {
       }
     }
 
-
-
     def leftClosedRightOpen[T: Numeric: MidpointHelper](lower: T, upper: T): Option[Interval[T, Unit]] = {
       if (Ordering[T].lt(lower, upper)) {
         Some(create.leftClosedRightOpen(lower, upper))
@@ -361,9 +359,9 @@ class Interval[T: Numeric: MidpointHelper, +W: Show](
     val lp = if (isStartInclusive) "[" else "("
     val rp = if (isEndInclusive) "]" else ")"
     val attrStr = implicitly[Show[W]].shows(attr)
-    val att = if (attrStr.isEmpty()) "" else s" #${attrStr}#"
+    val att = if (attrStr.isEmpty()) "" else s" +w=${attrStr}"
 
-    s"${lp}${startstr}, ${endstr}<${att}>${rp}"
+    s"${lp}${startstr}, ${endstr}${att}${rp}"
 
   }
 
@@ -417,7 +415,7 @@ class Interval[T: Numeric: MidpointHelper, +W: Show](
       null
     } else {
 
-      val cmpThisOther = mphelp.increaseIntervalOrdering.compare(this, other)
+      val cmpThisOther = mphelp.increaseIntervalOrdering().compare(this, other)
 
       // Make sure that the one with the smaller starting point gets intersected with the other.
       // If necessary, swap the intervals

@@ -157,20 +157,13 @@ class IntervalTree[T: Ordering: MidpointHelper, W] {
     * of intervals from one node to another. This is why this operation may run in {@code O(n)}
     * worst-case time, even though on average it should run in {@code O(logn)} due to the
     * nature binary trees.
-    *
-    * @param interval
-    * @return
     */
   def remove(interval: Interval[T, W]): Boolean = {
-    (interval.nonEmpty() && root != null &&
-      false
-    )
-
-    if (interval.isEmpty() || root == null)
-      return false;
-    val sizeBeforeOperation = size;
-    root = TreeNode.removeInterval(this, root, interval);
-    return size == sizeBeforeOperation;
+    if (interval.isEmpty() || root == null) false else {
+      val sizeBeforeOperation = size
+      root = TreeNode.removeInterval(this, root, interval)
+      size == sizeBeforeOperation
+    }
   }
 
   def clear(): Unit = {

@@ -46,14 +46,14 @@ object QuickNearestNeighbors {
 
     def toCentroidRangeString(): String = {
       val r = range()
-      s"{n=${size()}: (${r._1.pp}-${r._2.pp})}"
+      s"{n=${size()}: (${r._1.pp()}-${r._2.pp()})}"
     }
 
   }
 
   case class DataPoint(value: Int@@FloatRep, len: Int) {
     override def toString(): String = {
-      val cpp = value.pp
+      val cpp = value.pp()
       val clen = len
       s"[${cpp} x ${clen}]"
     }

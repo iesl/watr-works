@@ -7,7 +7,7 @@ import utils.{RelativeDirection => Dir}
 trait GeometricOps {
   implicit class GeometricOps_RicherLTBounds(val self: LTBounds) {
 
-    def area(): Double = (self.width*self.height).asDouble
+    def area(): Double = (self.width*self.height).asDouble()
 
     def shave(delta: Double): LTBounds = shave(delta.toFloatExact())
 
@@ -88,7 +88,7 @@ trait GeometricOps {
       } else None
 
       val maybeRight = if (x < self.right) {
-        val leftWidth = maybeLeft.map(_.width).getOrElse(0.toFloatExact)
+        val leftWidth = maybeLeft.map(_.width).getOrElse(0.toFloatExact())
         Some(LTBounds(left+leftWidth, top, width-leftWidth, height))
       } else None
       (maybeLeft, maybeRight)
@@ -133,7 +133,7 @@ trait GeometricOps {
 
 
       val maybeBottom = if (y < self.bottom) {
-        val topHeight = maybeTop.map(_.height).getOrElse(0.toFloatExact)
+        val topHeight = maybeTop.map(_.height).getOrElse(0.toFloatExact())
         Some(LTBounds(left, top+topHeight, width, height-topHeight))
       } else None
 
@@ -211,12 +211,11 @@ trait GeometricOps {
       case Dir.Center      => ???
     }
 
-
     def centerDistanceTo(other: LTBounds): Double = {
-      val cx = (self.left+self.width/2).asDouble
-      val cy = (self.top+self.height/2).asDouble
-      val cx2 = (other.left+other.width/2).asDouble
-      val cy2 = (other.top+other.height/2).asDouble
+      val cx = (self.left+self.width/2).asDouble()
+      val cy = (self.top+self.height/2).asDouble()
+      val cx2 = (other.left+other.width/2).asDouble()
+      val cy2 = (other.top+other.height/2).asDouble()
 
       math.sqrt(
         math.pow((cx-cx2), 2) + math.pow((cy-cy2), 2)

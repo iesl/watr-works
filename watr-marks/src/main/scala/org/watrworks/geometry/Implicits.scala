@@ -60,10 +60,10 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
     intersectionMBR(f1, f2).isDefined
 
   def shapesOverlap(f1: GeometricFigure, f2: GeometricFigure): Boolean =
-    intersectionMBR(f1, f2).exists(_.area > 0)
+    intersectionMBR(f1, f2).exists(_.area() > 0)
 
   def shapesTouch(f1: GeometricFigure, f2: GeometricFigure): Boolean =
-    intersectionMBR(f1, f2).exists(_.area == 0)
+    intersectionMBR(f1, f2).exists(_.area() == 0)
 
 
   def makeFringeParts(fig: GeometricFigure, padding: Padding): List[GeometricFigure] = {
@@ -109,15 +109,15 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
   implicit class RicherPoint(val self: Point) extends AnyVal {
     // def +(r: Double): Int@@FloatRep = self + r.toFloatExact()
     // def -(r: Double): Int@@FloatRep = self - r.toFloatExact()
-    // def *(r: Double): Int@@FloatRep = (self.asDouble * r).toFloatExact
-    // def /(r: Double): Int@@FloatRep = (self.asDouble / r).toFloatExact
+    // def *(r: Double): Int@@FloatRep = (self.asDouble() * r).toFloatExact
+    // def /(r: Double): Int@@FloatRep = (self.asDouble() / r).toFloatExact
 
     def +(p: Point): Point = translate(p)
     def -(p: Point): Point = translate(-p)
-    // def *(r: Double): Int@@FloatRep = (self.asDouble * r).toFloatExact
-    // def /(r: Double): Int@@FloatRep = (self.asDouble / r).toFloatExact
+    // def *(r: Double): Int@@FloatRep = (self.asDouble() * r).toFloatExact
+    // def /(r: Double): Int@@FloatRep = (self.asDouble() / r).toFloatExact
 
-    def unary_-(): Point = {
+    def unary_- : Point = {
       Point(-self.x, -self.y)
     }
 
@@ -150,15 +150,15 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
     def angleTo(p1: Point): Double = {
       val dy = self.y - p1.y
       val dx = p1.x - self.x
-      math.atan2(dy.asDouble, dx.asDouble)
+      math.atan2(dy.asDouble(), dx.asDouble())
       // if (self.x > p1.x) {
-      //   math.atan2((self.y - p1.y).asDouble, (self.x - p1.x).asDouble)
+      //   math.atan2((self.y - p1.y).asDouble(), (self.x - p1.x).asDouble())
       // } else {
-      //   math.atan2((p1.y - self.y).asDouble, (p1.x - self.x).asDouble)
+      //   math.atan2((p1.y - self.y).asDouble(), (p1.x - self.x).asDouble())
       // }
     }
     def prettyPrint: String = {
-      s"""(${self.x.pp}, ${self.y.pp})"""
+      s"""(${self.x.pp()}, ${self.y.pp()})"""
     }
 
   }
@@ -178,16 +178,16 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
       s"<$p1->$p2>"
     }
 
-    def rise(): Double = (self.p2.y - self.p1.y).asDouble
+    def rise(): Double = (self.p2.y - self.p1.y).asDouble()
 
-    def run(): Double =  (self.p2.x - self.p1.x).asDouble
+    def run(): Double =  (self.p2.x - self.p1.x).asDouble()
 
-    def angle(): Double = math.atan2(self.rise, self.run)
+    def angle(): Double = math.atan2(self.rise(), self.run())
 
-    def slope(): Double = (self.rise) / (self.run)
+    def slope(): Double = (self.rise()) / (self.run())
 
     def length(): Double = {
-      math.sqrt(self.run*self.run + self.rise*self.rise)
+      math.sqrt(self.run()*self.run()+ self.rise()*self.rise())
     }
 
     def ordered(l2: Line): (Line, Line) = {

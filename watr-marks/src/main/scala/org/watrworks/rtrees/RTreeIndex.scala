@@ -66,7 +66,7 @@ object RTreeIndex {
     Shape <: LabeledShape.Aux[A, W] : Encoder
   ]: Encoder[RTreeIndex[A, W, Shape]] =
     Encoder.instance[RTreeIndex[A, W, Shape]]{ shapeIndex =>
-      val shapes = shapeIndex.getItems
+      val shapes = shapeIndex.getItems()
 
       Json.obj(
         "shapes" := shapes.sortBy(_.id.unwrap)

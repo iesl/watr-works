@@ -51,3 +51,62 @@
 *** Whitespace sep. columns have no distinguishing extra space between tokens, e.g.
     "Adam Smith Rupert Murdoch" rather than "Adam Smith            Rupert Murdoch"
 *** ISBN / DOI links to indicated books, articles, etc.
+
+
+
+
+** All Labeling Methods    
+
+
+
+*** Basics
+**** [[file:~/projects/the-livingroom/rexa-text-extractors/watr-works-projects/watr-works/watr-marks/src/main/scala/org/watrworks/watrmarks/BioLabels.scala::sealed trait BioPin {][BioPin BioLabel]]
+     id+label = string 
+     ops = l1 / l2, qualified namespaces
+    
+*** Text/Char sequence based
+
+**** [[file:~/projects/the-livingroom/rexa-text-extractors/watr-works-projects/watr-works/watr-marks/src/main/scala/org/watrworks/transcripts/Transcript.scala::object Transcript {][Transcript]]
+     Serialization format for PDF extracted text with layout analysis information
+
+****  [[file:~/projects/the-livingroom/rexa-text-extractors/watr-works-projects/watr-works/watr-marks/src/main/scala/org/watrworks/annots/LabeledSequence.scala::trait LabelTarget {][LabelSequence / LabelTarget]]
+     > LabelTarget: Stack[BioPin]  
+     > LabeledSequence: List[LabelTarget]
+     Supports hierarchical labeling via pushing biolu pins in sequences of things 
+     Used for nested labeling tasks over relatively short spans of text (names, affiliations, etc)
+     Used By TextGrid
+
+**** [[file:~/projects/the-livingroom/rexa-text-extractors/watr-works-projects/watr-works/watr-marks/src/main/scala/org/watrworks/annots/LabeledSequenceCodecs.scala::case class LabelSpan(][LabelSpan / LabelingTree]]
+     > ('label-name', (start, len), [ .. children ])
+     Serialization classes to support named, hierarchical out-of-band labels
+     Used by obsolete TextGridLabelWidget, and LabeledSequenceCodecs
+
+**** [[file:~/projects/the-livingroom/rexa-text-extractors/watr-works-projects/watr-works/watr-marks/src/main/scala/org/watrworks/textgrid/TextGrid.scala::trait TextGrid { self =>][TextGrid]]
+     Grid-based representation of hierarchical nested labeling
+     Operations:
+     + split/slurp (split/join rows)
+     + insert chars before/after glyphs 
+
+
+
+**** [[file:~/projects/the-livingroom/rexa-text-extractors/watr-works-projects/watr-works/watr-marks/src/main/scala/org/watrworks/watrmarks/LabelSchemas.scala::case class LabelSchema(][LabelSchemas]]
+     Specify a schema for hierarchical labeling task, like TextGridLabelWidget 
+
+**** [[file:~/projects/the-livingroom/rexa-text-extractors/watr-works-projects/watr-works/watr-marks/src/main/scala/org/watrworks/watrmarks/CountedLabeling.scala::object WeightedLabeling {][WeightedLabeling]]
+     Keep array of BioPins w/ops to uniq --count
+
+
+
+**** [[file:~/projects/the-livingroom/rexa-text-extractors/watr-works-projects/z_watr-works-vers/watr-works-scalajs-snapshot/watr-marks/shared/src/main/scala/edu/umass/cs/iesl/watr/textgrid/TextGridLabelWidget.scala::object TextGridLabelWidget {][TextGridLabelWidget]]
+     Obsolete class used to support user interactive labeling via browser
+     GraphPaper column(gloss) + row
+
+
+**** [[file:~/projects/the-livingroom/rexa-text-extractors/watr-works-projects/watr-works/watr-marks/src/main/scala/org/watrworks/annots/LabeledSequenceTreeTransforms.scala::object LabelTreeNode {][LabelTreeNode / LabeledRowElem]]
+     From LabeledTreeTransforms
+ 
+
+*** Geometry Based
+    LabeledShape (rtree)
+
+*** [[file:~/projects/the-livingroom/rexa-text-extractors/watr-works-projects/watr-works/text-works/src/main/scala/org/watrworks/segment/VisualLogging.scala::object TraceLog {][TraceLog]]

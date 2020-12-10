@@ -223,7 +223,7 @@ object ProcessPipelineSteps {
           println(s"Processing ${stableId}")
 
           val maybeSegmenter = for {
-            pdfEntry <- corpusEntry.getPdfArtifact
+            pdfEntry <- corpusEntry.getPdfArtifact()
               .toRight(left = "Could not get PDF")
             pdfPath <- pdfEntry.asPath.toEither.left.map(_.toString())
           } yield {

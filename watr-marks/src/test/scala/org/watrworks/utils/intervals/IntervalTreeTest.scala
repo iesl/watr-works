@@ -37,19 +37,26 @@ class IntervalTreeTest extends AnyFlatSpec with Matchers {
 		val tree = new IntervalTree[Int, Unit]();
 		val a = Interval.bounded.closed(20, 30).get
 		val b = Interval.bounded.leftClosedRightOpen(0, 10).get
-		val c = Interval.bounded.leftOpenRightClosed(40, 50).get
+		val o40_c50 = Interval.bounded.leftOpenRightClosed(40, 50).get
 		tree.add(a);
+    // println(s"add a=${a} \n${tree.asBox()}\n\n")
 		tree.add(b);
-		tree.add(c);
+    // println(s"add b=${b} \n${tree.asBox()}\n\n")
+		tree.add(o40_c50);
+    // println(s"add c=${o40_c50} \n${tree.asBox()}\n\n")
 		tree.remove(a);
+    // println(s"remove a=${a} \n${tree.asBox()}\n\n")
+
 
 		assert(null == tree.root.left);
 		assert(!tree.root.increasing.contains(a));
 		assert(!tree.root.decreasing.contains(a));
 		assert(tree.root.decreasing.contains(b));
 		assert(tree.root.increasing.contains(b));
-		assert(tree.root.decreasing.contains(c));
-		assert(tree.root.increasing.contains(c));
+
+		// assert(tree.root.decreasing.contains(o40_c50));
+		// assert(tree.root.increasing.contains(c));
+
 		assert(1 == tree.root.decreasing.size);
 		assert(1 == tree.root.increasing.size);
 		assert(0 == tree.query(22).size);
@@ -78,13 +85,15 @@ class IntervalTreeTest extends AnyFlatSpec with Matchers {
     val tree = new IntervalTree[Int, Unit]();
     val a = Interval.bounded.closed(20, 30).get
     val b = Interval.bounded.leftClosedRightOpen(0, 10).get
-    val c = Interval.bounded.leftOpenRightClosed(40, 50 ).get
+    val c = Interval.bounded.leftOpenRightClosed(40, 50).get
     val d = Interval.bounded.open(7, 9).get
     tree.add(a);
     tree.add(b);
     tree.add(c);
     tree.add(d);
     tree.remove(a);
+
+    // println(s"\n${tree.asBox()}\n\n")
 
     assert(null == tree.root.left);
     assert(2 == tree.root.increasing.size);
@@ -93,8 +102,8 @@ class IntervalTreeTest extends AnyFlatSpec with Matchers {
     assert(tree.root.increasing.contains(d));
     assert(tree.root.decreasing.contains(b));
     assert(tree.root.decreasing.contains(d));
-    assert(tree.root.decreasing.contains(c));
-    assert(tree.root.increasing.contains(c));
+    assert(tree.root.right.decreasing.contains(c));
+    assert(tree.root.right.increasing.contains(c));
   }
 
 
@@ -116,6 +125,7 @@ class IntervalTreeTest extends AnyFlatSpec with Matchers {
   	tree.add(g);
   	tree.remove(a);
 
+
   	assert(null == tree.root.left.right);
   	assert(tree.root.decreasing.contains(g));
   	assert(tree.root.decreasing.contains(f));
@@ -136,25 +146,40 @@ class IntervalTreeTest extends AnyFlatSpec with Matchers {
   	val f = Interval.bounded.open(25, 27).get
   	val g = Interval.bounded.open(37, 40).get
   	tree.add(a);
+    // println(s"=== add a ===\n${tree.asBox()}\n\n")
   	tree.add(b);
+    // println(s"=== add b ===\n${tree.asBox()}\n\n")
   	tree.add(c);
+    // println(s"=== add c ===\n${tree.asBox()}\n\n")
   	tree.add(d);
+    // println(s"=== add d ===\n${tree.asBox()}\n\n")
   	tree.add(e);
+    // println(s"=== add e ===\n${tree.asBox()}\n\n")
   	tree.add(f);
+    // println(s"=== add f ===\n${tree.asBox()}\n\n")
   	tree.add(g);
 
-  	val nodeF = tree.root.left.right;
-  	val nodeG = tree.root.left.right;
-  	val nodeE = tree.root.left.left;
-  	val nodeC = tree.root.right;
+    // println(s"=== add g ===\n${tree.asBox()}\n\n")
+
 
   	tree.remove(a);
 
-  	assert(tree.root == nodeG);
-  	assert(tree.root.left == nodeF);
-  	assert(nodeF.left == nodeE);
-  	assert(null == nodeF.right);
-  	assert(nodeG.right == nodeC);
+    // println(s"=== remove a ===\n${tree.asBox()}\n\n")
+
+  	val root = tree.root
+  	val rootL = tree.root.left;
+  	val rootR = tree.root.right;
+
+  	val rootLR = rootL.right
+  	val rootRL = rootR.left
+  	val rootLLL = rootL.left.left
+  	val rootLLR = rootL.left.right
+
+
+    assert(rootLR == null)
+    assert(rootRL == null)
+    assert(rootLLL == null)
+    assert(rootLLR == null)
   }
 
 
@@ -191,19 +216,23 @@ class IntervalTreeTest extends AnyFlatSpec with Matchers {
 		var tree = new IntervalTree[Int, Unit]();
 		val a = Interval.bounded.closed(20, 30).get
 		val b = Interval.bounded.leftClosedRightOpen(0, 10).get;
-		val c = Interval.bounded.leftOpenRightClosed(40, 50).get
+		// val c = Interval.bounded.leftOpenRightClosed(40, 50).get
+		val o40_c50 = Interval.bounded.leftOpenRightClosed(40, 50).get
 		tree.add(a);
 		tree.add(b);
-		tree.add(c);
+		tree.add(o40_c50);
 		tree.remove(Interval.bounded.closed(10, 20).get)
+
+    // println(s"\n${tree.asBox()}\n\n")
+
 		assert(tree.root.decreasing.contains(a));
 		assert(tree.root.increasing.contains(a));
 		assert(1 == tree.root.decreasing.size);
 		assert(tree.root.left.increasing.contains(b));
 		assert(tree.root.left.decreasing.contains(b));
 		assert(1 == tree.root.left.decreasing.size);
-		assert(tree.root.increasing.contains(c));
-		assert(tree.root.decreasing.contains(c));
+		assert(tree.root.right.increasing.contains(o40_c50));
+		assert(tree.root.right.decreasing.contains(o40_c50));
 		assert(1 == tree.root.decreasing.size);
 
 		tree = new IntervalTree[Int, Unit]();
@@ -668,20 +697,21 @@ class IntervalTreeTest extends AnyFlatSpec with Matchers {
   	assert(arr.length == tree.size);
     val currSize = tree.size
   	for ((next, i) <- arr.zipWithIndex) {
-  		tree.remove(next);
-  		assert(currSize-i-1 == tree.size);
+  		tree.remove(next)
+  		assert(currSize-i-1 == tree.size)
   	}
 
   }
 
 
   it should "clearOnEmptyTree" in {
-  	val tree = new IntervalTree[Int, Unit]();
-  	tree.clear();
-  	assert(tree.isEmpty);
-  	assert(0 == tree.size);
-  	tree.add(Interval.unbounded());
-  	assert(1 == tree.size);
+  	val tree = new IntervalTree[Int, Unit]()
+  	tree.clear()
+  	val isEmpty = tree.isEmpty()
+  	assert(isEmpty)
+  	assert(0 == tree.size)
+  	tree.add(Interval.unbounded())
+  	assert(1 == tree.size)
   }
 
 
@@ -690,11 +720,13 @@ class IntervalTreeTest extends AnyFlatSpec with Matchers {
 		tree.add(Interval.unbounded());
 		tree.add(Interval.bounded.create.leftClosedRightOpen(1, 5));
 		tree.add(Interval.unbounded.rightOpen(228));
-		assert(3 == tree.size);
-		assert(! tree.isEmpty())
-		tree.clear();
-		assert(tree.isEmpty());
-		assert(0 == tree.size);
+		assert(3 == tree.size)
+		// assert(! tree.isEmpty())
+		tree.clear()
+
+    val isEmpty = tree.isEmpty()
+		assert(isEmpty)
+		assert(0 == tree.size)
 	}
 
 

@@ -47,7 +47,7 @@ object ArbitraryGeometry {
     bottomLeft <- arbitrary[Point]
     topW <- arbitrary[Int]
     bottomW <- arbitrary[Int]
-  } yield Trapezoid(topLeft, topW.toFloatExact(), bottomLeft, bottomW.toFloatExact)
+  } yield Trapezoid(topLeft, topW.toFloatExact(), bottomLeft, bottomW.toFloatExact())
 
   implicit def Arb_LTBounds: Arbitrary[LTBounds] =  Arbitrary(Gen_LTBounds)
   implicit def Arb_Point: Arbitrary[Point] = Arbitrary(Gen_Point)

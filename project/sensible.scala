@@ -18,7 +18,7 @@ object SensibleProject extends CommonLibs {
     libraryDependencies ++= Seq(acyclic)
   )
 
-  lazy val scalaV = "2.13.2"
+  lazy val scalaV = "2.13.4"
 
   val scala_2_13_RecommendedOptionList = Seq(
     "-Xcheckinit",                      // Wrap field accessors to throw an exception on uninitialized access.
@@ -29,7 +29,6 @@ object SensibleProject extends CommonLibs {
     "-Xlint:inaccessible",              // Inaccessible types in method signatures.
     "-Xlint:infer-any",                 // A type argument is inferred to be `Any`.
     "-Xlint:missing-interpolator",      // A string literal appears to be missing an interpolator id.
-    "-Xlint:nullary-override",          // Warn when non-nullary `def f()' overrides nullary `def f'.
     "-Xlint:nullary-unit",              // Warn when nullary methods return Unit.
     "-Xlint:option-implicit",           // Option.apply used implicit view.
     "-Xlint:package-object-classes",    // Class or object defined in package object.
@@ -100,7 +99,7 @@ object SensibleProject extends CommonLibs {
   lazy val settings = Seq(
     autoCompilerPlugins  := true,
 
-    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full),
+    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.2" cross CrossVersion.full),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
 
     scalaVersion := scalaV,

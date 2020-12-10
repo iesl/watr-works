@@ -82,16 +82,16 @@ trait TextGridConstruction extends GeometricOps {
   }
 
   def addLabelsToGridRow(row: TextGrid.Row, labelSpans: Seq[((Int, Int), watrmarks.Label)]): TextGrid.Row = {
-    val row0 = row.toCursor.get
+    val row0 = row.toCursor().get
     val labeledCursor = labelSpans.foldLeft(row0) {case (accCur, ((start, end), label)) =>
       val win = accCur.move(start)
-        .get.toWindow
+        .get.toWindow()
         .slurpRight({ case (window, next) => window.length <= end-start })
 
       LabeledSequence.addBioLabel(label, win.cells)
-      win.closeWindow.start
+      win.closeWindow().start
     }
 
-    TextGrid.Row.fromCells(labeledCursor.toList)
+    TextGrid.Row.fromCells(labeledCursor.toList())
   }
 }

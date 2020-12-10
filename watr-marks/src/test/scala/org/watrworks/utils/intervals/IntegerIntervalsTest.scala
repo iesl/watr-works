@@ -88,7 +88,7 @@ class IntegerIntervalsTest extends AnyFlatSpec with Matchers {
     )
 
     for (interval <- intervals) {
-      val mid = interval.getMidpoint
+      val mid = interval.getMidpoint()
       assert(interval.getMidpoint().isEmpty);
     }
   }

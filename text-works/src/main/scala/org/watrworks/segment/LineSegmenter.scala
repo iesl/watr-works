@@ -118,7 +118,7 @@ trait LineSegmentation extends PageScopeSegmenter
       }
 
 
-      fontBaselineSets.sets.foreach { set =>
+      fontBaselineSets.sets().foreach { set =>
         val baselineCluster = set.toList
         val baselineMidrisers = baselineCluster.filter{ shape => shape.hasLabel(LB.BaselineMidriseBand) }
         val fontBaselines = baselineCluster.filter{ shape => shape.hasLabel(LB.CharRunFontBaseline) }
@@ -198,7 +198,7 @@ trait LineSegmentation extends PageScopeSegmenter
 
       // val topMidriseBand = maybeTopMidriseBand.orDie(s"Could not split CapDescenderBand (${ascentDescentRect}) into top-midrise / __ at ${offsetsAtLine.midriseLine}; ${offsetsAtLine}")
       // val baselineBottomBand = maybeBaselineBottomBand.orDie(s"Could not split CapDescenderBand (${ascentDescentRect}) into __ / baseline-bottom at ${offsetsAtLine.baseLine}; ${offsetsAtLine}")
-      // val midriseBaselineCenterBand = maybeMidriseBaselineCenterBand.orDie(s"Could not split MidriseBaselineRect (${midriseBaselineRect}) into __ / midrise-baseline-center at ${baselineMidriseMidpoint.pp}; height:${baselineMidriseHeight.pp} ${offsetsAtLine}")
+      // val midriseBaselineCenterBand = maybeMidriseBaselineCenterBand.orDie(s"Could not split MidriseBaselineRect (${midriseBaselineRect}) into __ / midrise-baseline-center at ${baselineMidriseMidpoint.pp()}; height:${baselineMidriseHeight.pp()} ${offsetsAtLine}")
       // val midriseToplineCenterBand = maybeMidriseToplineBand.orDie(s"Could not split CapDescenderBand (${ascentDescentRect}) into midrise-topline-center / __ at ${midriseToplineMidpoint}; ${offsetsAtLine}")
 
       traceLog.trace {

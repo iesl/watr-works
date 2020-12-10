@@ -113,7 +113,7 @@ class RectangularCutTests  extends AnyFlatSpec with Matchers {
     // val rect = LTBounds.Ints(1, 1, 10, 10)
 
     // val (lsplit, rsplit) = rect.splitHorizontal(10.toFloatExact())
-    List(0, 3, 10).map(_.toFloatExact)
+    List(0, 3, 10).map(_.toFloatExact())
       .foreach { splitVal =>
         // println(s" l: ${lsplit}")
         // println(s" r: ${rsplit}")

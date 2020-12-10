@@ -23,12 +23,12 @@ case class LTBounds(
   def right = left+width
   def bottom = top+height
 
-  val getLeft: Double = left.asDouble
-  val getTop: Double = top.asDouble
-  val getWidth: Double = width.asDouble
-  val getHeight: Double = height.asDouble
-  val getRight: Double = right.asDouble
-  val getBottom: Double = bottom.asDouble
+  val getLeft: Double = left.asDouble()
+  val getTop: Double = top.asDouble()
+  val getWidth: Double = width.asDouble()
+  val getHeight: Double = height.asDouble()
+  val getRight: Double = right.asDouble()
+  val getBottom: Double = bottom.asDouble()
 }
 
 
@@ -51,31 +51,31 @@ object LTBounds {
   object Ints {
 
     def apply(left: Int, top: Int, width: Int, height: Int): LTBounds =
-      LTBounds(left.toFloatExact(), top.toFloatExact, width.toFloatExact, height.toFloatExact)
+      LTBounds(left.toFloatExact(), top.toFloatExact(), width.toFloatExact(), height.toFloatExact())
 
     def unapply(bbox: LTBounds): Option[(Int, Int, Int, Int)] = Some((
-      bbox.left.asInt,
-      bbox.top.asInt,
-      bbox.width.asInt,
-      bbox.height.asInt
+      bbox.left.asInt(),
+      bbox.top.asInt(),
+      bbox.width.asInt(),
+      bbox.height.asInt()
     ))
   }
 
   object Doubles {
     def apply(left: Double, top: Double, width: Double, height: Double): LTBounds =
-      LTBounds(left.toFloatExact(), top.toFloatExact, width.toFloatExact, height.toFloatExact)
+      LTBounds(left.toFloatExact(), top.toFloatExact(), width.toFloatExact(), height.toFloatExact())
 
     def unapply(bbox: LTBounds): Option[(Double, Double, Double, Double)] = Some((
-      bbox.left.asDouble,
-      bbox.top.asDouble,
-      bbox.width.asDouble,
-      bbox.height.asDouble
+      bbox.left.asDouble(),
+      bbox.top.asDouble(),
+      bbox.width.asDouble(),
+      bbox.height.asDouble()
     ))
   }
 
   object Floats {
     def apply(left: Float, top: Float, width: Float, height: Float): LTBounds =
-      LTBounds(left.toFloatExact(), top.toFloatExact, width.toFloatExact, height.toFloatExact)
+      LTBounds(left.toFloatExact(), top.toFloatExact(), width.toFloatExact(), height.toFloatExact())
 
     def unapply(bbox: LTBounds): Option[(Float, Float, Float, Float)] = Some((
       bbox.left.asFloat(),
@@ -95,13 +95,13 @@ object LTBounds {
       val top=  theBbox.top
       val width = theBbox.width
       val height = theBbox.height
-      s"""(l:${left.pp}, t:${top.pp}, w:${width.pp}, h:${height.pp})"""
+      s"""(l:${left.pp()}, t:${top.pp()}, w:${width.pp()}, h:${height.pp()})"""
     }
 
     def lowLeftCornerPrint: String = {
       val left = theBbox.left
       val bottom = theBbox.bottom
-      s"""[${left.pp}, ${bottom.pp}]"""
+      s"""[${left.pp()}, ${bottom.pp()}]"""
     }
 
     def compactPrint: String = {
@@ -109,7 +109,7 @@ object LTBounds {
       val top=  theBbox.top
       val width = theBbox.width
       val height = theBbox.height
-      s"""[${left.pp}, ${top.pp}, ${width.pp}, ${height.pp}]"""
+      s"""[${left.pp()}, ${top.pp()}, ${width.pp()}, ${height.pp()}]"""
     }
 
     def uriString: String = {
@@ -117,7 +117,7 @@ object LTBounds {
       val top=  theBbox.top
       val width = theBbox.width
       val height = theBbox.height
-      s"""${left.pp}+${top.pp}+${width.pp}+${height.pp}"""
+      s"""${left.pp()}+${top.pp()}+${width.pp()}+${height.pp()}"""
     }
   }
 
@@ -145,15 +145,15 @@ object Point {
       Point(x.toFloatExact(), y.toFloatExact())
 
     def unapply(p: Point): Option[(Int, Int)] =
-      Some((p.x.asInt, p.y.asInt))
+      Some((p.x.asInt(), p.y.asInt()))
   }
 
   object Doubles {
     def apply(x: Double, y: Double): Point =
-      Point(x.toFloatExact, y.toFloatExact)
+      Point(x.toFloatExact(), y.toFloatExact())
 
     def unapply(p: Point): Option[(Double, Double)] = {
-      Some((p.x.asDouble, p.y.asDouble))
+      Some((p.x.asDouble(), p.y.asDouble()))
     }
   }
 
@@ -165,7 +165,7 @@ case class Line(
   p1: Point,
   p2: Point
 ) extends GeometricFigure {
-  override def toString: String = this.prettyPrint
+  override def toString: String = this.prettyPrint()
 }
 
 case class Trapezoid(
@@ -205,7 +205,7 @@ case class Padding(
   bottom: Int@@FloatRep
 ) {
   override def toString: String = {
-    s"""pad[l:${left.pp}, t:${top.pp}, r:${right.pp}, b:${bottom.pp}]"""
+    s"""pad[l:${left.pp()}, t:${top.pp()}, r:${right.pp()}, b:${bottom.pp()}]"""
   }
 }
 
@@ -229,32 +229,32 @@ object Padding {
 
   object Ints {
     def apply(left: Int, top: Int, right: Int, bottom: Int): Padding =
-      Padding(left.toFloatExact, top.toFloatExact, right.toFloatExact, bottom.toFloatExact)
+      Padding(left.toFloatExact(), top.toFloatExact(), right.toFloatExact(), bottom.toFloatExact())
 
     def apply(p: Int): Padding = apply(p, p, p, p)
 
     def unapply(pad: Padding): Option[(Int, Int, Int, Int)] = {
       Some((
-        pad.left.asInt,
-        pad.top.asInt,
-        pad.right.asInt,
-        pad.bottom.asInt
+        pad.left.asInt(),
+        pad.top.asInt(),
+        pad.right.asInt(),
+        pad.bottom.asInt()
       ))
     }
   }
 
   object Doubles {
     def apply(left: Double, top: Double, right: Double, bottom: Double): Padding =
-      Padding(left.toFloatExact, top.toFloatExact, right.toFloatExact, bottom.toFloatExact)
+      Padding(left.toFloatExact(), top.toFloatExact(), right.toFloatExact(), bottom.toFloatExact())
 
     def apply(p: Double): Padding = apply(p, p, p, p)
 
     def unapply(pad: Padding): Option[(Double, Double, Double, Double)] = {
       Some((
-        pad.left.asDouble,
-        pad.top.asDouble,
-        pad.right.asDouble,
-        pad.bottom.asDouble
+        pad.left.asDouble(),
+        pad.top.asDouble(),
+        pad.right.asDouble(),
+        pad.bottom.asDouble()
       ))
     }
   }

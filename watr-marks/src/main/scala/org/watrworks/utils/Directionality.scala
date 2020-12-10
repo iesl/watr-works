@@ -34,10 +34,3 @@ object RelativeDirection {
   val All: List[RelativeDirection] = Center :: AllAdjacent
 }
 
-
-// object Orientation {
-//   case object Left       extends Orientation
-//   case object Right      extends Orientation
-//   case object Up         extends Orientation
-//   case object Down       extends Orientation
-// }

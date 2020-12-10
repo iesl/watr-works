@@ -28,7 +28,7 @@ class DisjointSetsTest extends AnyFlatSpec with Matchers {
     ds(4) shouldBe 4
     ds(5) shouldBe 4
     ds(6) shouldBe 4
-    ds.sets should contain allOf (Set(1), Set(2,3), Set(4,5,6))
+    ds.sets() should contain allOf (Set(1), Set(2,3), Set(4,5,6))
   }
 
   behavior of  "OrderedDisjointSet"
@@ -64,12 +64,12 @@ class DisjointSetsTest extends AnyFlatSpec with Matchers {
     ds union (4,5)
     ds union (5,6)
 
-    ds.sets should contain allOf (List(1), List(2,3), List(4,5,6))
+    ds.sets() should contain allOf (List(1), List(2,3), List(4,5,6))
 
     ds.at(2).reorderBy(i => -i)
     ds.at(5).reorderWith(_ > _)
 
-    ds.sets should contain allOf (List(1), List(3, 2), List(6, 5, 4))
+    ds.sets() should contain allOf (List(1), List(3, 2), List(6, 5, 4))
   }
   it should "preserve ordering with incremental additions" in {
     val ds = OrderedDisjointSet[Int]()
@@ -84,7 +84,7 @@ class DisjointSetsTest extends AnyFlatSpec with Matchers {
     }
 
 
-    ds.sets should contain (List(0, 1, 2, 3, 4, 5, 6))
+    ds.sets() should contain (List(0, 1, 2, 3, 4, 5, 6))
 
   }
 
