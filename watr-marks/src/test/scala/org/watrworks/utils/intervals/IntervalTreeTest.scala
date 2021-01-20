@@ -182,14 +182,12 @@ class IntervalTreeTest extends AnyFlatSpec with Matchers {
     assert(rootLLR == null)
   }
 
-
   it should "addEmptyInterval" in {
   	val tree = new IntervalTree[Int, Unit]();
   	val a = Interval.bounded.open(5, 6).get
   	tree.add(a);
   	assert(null == tree.root);
 	}
-
 
 	it should "removeFromEmptyTree" in {
 		val tree = new IntervalTree[Int, Unit]();
