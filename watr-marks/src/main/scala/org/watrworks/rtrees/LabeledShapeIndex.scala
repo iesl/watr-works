@@ -103,9 +103,6 @@ object LabeledShapeIndex {
       shapeMap ++= items.map{i => (i.id.unwrap.toLong, i)}
     }
   }
-
-
-
 }
 
 abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]] {

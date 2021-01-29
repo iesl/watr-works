@@ -1,7 +1,7 @@
 package org.watrworks
 package segment
 
-import scala.{ collection => sc }
+import scala.{collection => sc}
 import sc.Seq
 import textgrid._
 import geometry._
@@ -15,18 +15,19 @@ import utils.intervals._
 import watrmarks._
 import utils.SlicingAndDicing._
 import scalaz.syntax.std.list._
+import org.watrworks.transcripts.Transcript
 
-
-trait TextReconstruction extends PageScopeSegmenter
-    with LineSegmentation { self =>
+trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self =>
 
   lazy val textReconstruction = self
 
-  private def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact =  {
-    if (sortedLineCCs.isEmpty) 0d.toFloatExact() else {
+  private def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact = {
+    if (sortedLineCCs.isEmpty) 0d.toFloatExact()
+    else {
 
       val charSpacings = qnn(
-        pairwiseItemDistances(sortedLineCCs), 0.5d
+        pairwiseItemDistances(sortedLineCCs),
+        0.5d
       )
 
       if (charSpacings.length == 1) {
@@ -39,10 +40,10 @@ trait TextReconstruction extends PageScopeSegmenter
       } else if (charSpacings.length > 1) {
         val mostCommonSpacingBin = charSpacings.head
         val mostCommonSpacing = mostCommonSpacingBin.maxValue()
-        val largerSpacings = charSpacings.filter(b => b.centroid.value > mostCommonSpacing*2)
+        val largerSpacings = charSpacings.filter(b => b.centroid.value > mostCommonSpacing * 2)
         if (largerSpacings.nonEmpty) {
           val nextCommonSpacing = largerSpacings.head.centroid.value
-            (mostCommonSpacing + nextCommonSpacing) / 2
+          (mostCommonSpacing + nextCommonSpacing) / 2
         } else {
           mostCommonSpacing + 1.0
         }
@@ -52,26 +53,33 @@ trait TextReconstruction extends PageScopeSegmenter
     }
   }
 
-
-
-  private def clipTextRow(textRow: TextGrid.Row, clipTo: LTBounds): TextGrid.Row = {
+  private def clipTextRow(
+    textRow: TextGrid.Row,
+    clipTo: LTBounds
+  ): TextGrid.Row = {
     val filtered = textRow.cells().filter { cell =>
       cell.pageRegion.bbox.intersects(clipTo)
     }
     TextGrid.Row.fromCells(filtered)
   }
-  private def textRowFromReprShape(reprShape: AnyShape, maybeClipTo: Option[LTBounds]): TextGrid.Row = {
+
+  private def textRowFromReprShape(
+    reprShape: AnyShape,
+    maybeClipTo: Option[LTBounds]
+  ): TextGrid.Row = {
 
     val items = getExtractedItemsForShape(reprShape).sortBy(_.minBBox.left)
 
-    val extractedItems =  maybeClipTo.map{ clipTo =>
-      items.filter { _.minBBox.intersects(clipTo) }
-    }.getOrElse(items)
+    val extractedItems = maybeClipTo
+      .map { clipTo =>
+        items.filter { _.minBBox.intersects(clipTo) }
+      }
+      .getOrElse(items)
 
     new TextGrid.MutableRow { self =>
-      val init = extractedItems.map{
+      val init = extractedItems.map {
         case item: ExtractedItem.CharItem =>
-          val cells = item.char.headOption.map{ char =>
+          val cells = item.char.headOption.map { char =>
             val charAtom = PageItem.CharAtom(
               item.id,
               PageRegion(
@@ -104,8 +112,10 @@ trait TextReconstruction extends PageScopeSegmenter
     }
   }
 
-
-  private def insertEscapeCodesInRow(textRow: TextGrid.Row, labeledIntervals: Seq[Interval[Int, Label]]):  Unit =  {
+  private def insertEscapeCodesInRow(
+    textRow: TextGrid.Row,
+    labeledIntervals: Seq[Interval[Int, Label]]
+  ): Unit = {
     val cells = textRow.cells()
     labeledIntervals.foreach { interval =>
       val label = interval.attr
@@ -127,12 +137,13 @@ trait TextReconstruction extends PageScopeSegmenter
 
   }
 
-  private def insertSpacesInRow(textRow: TextGrid.Row): Unit =  {
+  private def insertSpacesInRow(textRow: TextGrid.Row): Unit = {
+    // TODO make use of page/document wide font information to infer spacing thresholds, not just local line spacing
 
-    val lineCCs = textRow.cells().collect{
-      case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
+    val lineCCs =
+      textRow.cells().collect { case cell @ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
         headItem
-    }
+      }
 
     val splitValue = guessWordbreakWhitespaceThreshold(lineCCs)
 
@@ -154,15 +165,15 @@ trait TextReconstruction extends PageScopeSegmenter
 
   }
 
-  val textLineReprShape = LB.BaselineMidriseBand
+  val TextLineReprShape = LB.BaselineMidriseBand
 
   def setTextForReprShapes(): Unit = {
-    val lineReprShapes = getLabeledRects(textLineReprShape)
+    val lineReprShapes = getLabeledRects(TextLineReprShape)
     lineReprShapes.foreach { reprShape =>
       val shapeChars = getCharsForShape(reprShape).map(_.id.unwrap)
 
       if (shapeChars.nonEmpty) {
-        val minId  = shapeChars.min
+        val minId = shapeChars.min
 
         val textRow = textRowFromReprShape(reprShape, None)
         insertSpacesInRow(textRow)
@@ -172,27 +183,30 @@ trait TextReconstruction extends PageScopeSegmenter
   }
 
   def getTextGrid(maybeClipTo: Option[LTBounds]): TextGrid = {
-    val clipRegion = maybeClipTo.getOrElse{ pageGeometry }
-    val lines = searchForRects(clipRegion, textLineReprShape)
+    val clipRegion = maybeClipTo.getOrElse { pageGeometry }
+    val lines = searchForRects(clipRegion, TextLineReprShape)
 
     val rows1 = lines.flatMap { reprShape =>
-      val shapeChars = getCharsForShape(reprShape).map(_.id.unwrap)
+      val shapeChars = getCharsForShape(reprShape)
+        .map(_.id.unwrap)
 
       if (shapeChars.nonEmpty) {
-        val minId  = shapeChars.min
+        val minId = shapeChars.min
 
         val textRow = textRowFromReprShape(reprShape, maybeClipTo)
 
+        // Put super/sub escapes into text (TODO make this configurable in cli args)
+        getLabeledIntervalsForShape(reprShape)
+          .map { labeledIntervals => insertEscapeCodesInRow(textRow, labeledIntervals) }
 
-        getLabeledIntervalsForShape(reprShape).map{ labeledIntervals =>
-          insertEscapeCodesInRow(textRow, labeledIntervals)
-        }
         insertSpacesInRow(textRow)
 
-        val clippedRow =  maybeClipTo.map{ clipTo =>
-          clipTextRow(textRow, clipTo)
-        }.getOrElse(textRow)
+        val clippedRow = maybeClipTo
+          .map { clipTo => clipTextRow(textRow, clipTo) }
+          .getOrElse(textRow)
 
+        // char ids reflect order in which chars were extracted from the PDF,
+        //   so here they are used to guide the ordering of lines of text
         Some((minId, textRow))
       } else None
     }
@@ -201,7 +215,22 @@ trait TextReconstruction extends PageScopeSegmenter
 
     val rows2 = rows.map(_.expand())
 
-    TextGrid.fromRows(docScope.stableId,  rows2)
+    TextGrid.fromRows(docScope.stableId, rows2)
+  }
+
+  def createPageStanzas(): Unit = {
+    // TODO create individual stanzas (body text, references, captions, etc.) and store them on the page
+  }
+
+  def createPageLevelTranscript(): Transcript = {
+    val lines = searchForRects(pageGeometry, TextLineReprShape)
+
+    Transcript(
+      docScope.stableId,
+      pages = List(), // pages.toList,
+      labels = List(),
+      stanzas = List()
+    )
   }
 
 }

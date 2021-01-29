@@ -249,9 +249,10 @@ trait PageScopeTracing extends ScopedTracing { self  =>
     val range = figureToTransRange(figure);
     Transcript.Label(
       "(anon)",
-      id = TypeTags.LabelID(""),
+      id = None, // TypeTags.LabelID(""),
       range = List(range),
-      props = None
+      props = None,
+      children = None
     )
   }
 
@@ -277,9 +278,10 @@ trait PageScopeTracing extends ScopedTracing { self  =>
 
       Transcript.Label(
         name = labelName,
-        id = id,
+        id = Some(id),
         range = List(atShape),
-        props = None
+        props = None,
+        children = None
       )
     }
 

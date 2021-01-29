@@ -89,7 +89,6 @@ object TextWorksConfig {
       }
     } text("if specified, only files matching regex will be processed")
 
-
     note("\nOutput file options\n")
 
     opt[nio.Path]('o', "output") action { (v, conf) =>

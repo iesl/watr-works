@@ -146,17 +146,12 @@ trait LineSegmentation extends PageScopeSegmenter
     }
   }
 
-
-
   private def segmentSuperSubScripts(): Unit = {
     val textlineReprShapes = getLabeledRects(LB.BaselineMidriseBand)
     textlineReprShapes.foreach { textlineReprShape =>
       findSuperSubScriptsInLine(textlineReprShape)
     }
   }
-
-
-
 
   private def findSuperSubScriptsInLine(
     midriseBaselineBand: RectShape

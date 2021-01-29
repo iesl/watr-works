@@ -28,31 +28,35 @@ object Transcript {
 
   @JsonCodec
   case class Page(
-    page: Int @@ PageID,
+    page: Int @@ PageNum,
     bounds: LTBounds,
-    glyphs: List[Glyph])
+    glyphs: List[Glyph]
+  )
 
   case class Glyph(
     str: String,
+    id: Int @@ GlyphID,
     rect: LTBounds,
-    props: Option[GlyphProps])
+    props: Option[GlyphProps]
+  )
 
   implicit val Enc_Glyph: Encoder[Glyph] = new Encoder[Glyph] {
     def apply(glyph: Glyph): Json = {
+      val id = glyph.id.asJson
       val str = glyph.str.asJson
       val rect = glyph.rect.asJson
 
       glyph.props
-        .map(props => Json.arr(str, rect, props.asJson))
-        .getOrElse(Json.arr(str, rect))
+        .map(props => Json.arr(str, id, rect, props.asJson))
+        .getOrElse(Json.arr(str, id, rect))
     }
   }
 
   def GlyphDec0: Decoder[Glyph] =
-    Decoder[(String, LTBounds)].map(rp => Glyph(rp._1, rp._2, None))
+    Decoder[(String, Int@@GlyphID, LTBounds)].map(rp => Glyph(rp._1, rp._2, rp._3, None))
 
   def GlyphDec1: Decoder[Glyph] =
-    Decoder[(String, LTBounds, GlyphProps)].map(rp => Glyph(rp._1, rp._2, Some(rp._3)))
+    Decoder[(String, Int@@GlyphID, LTBounds, GlyphProps)].map(rp => Glyph(rp._1, rp._2, rp._3, Some(rp._4)))
 
   implicit def Dec_Glyph: Decoder[Glyph] = GlyphDec1.or(GlyphDec0)
 

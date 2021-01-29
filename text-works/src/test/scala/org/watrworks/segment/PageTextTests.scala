@@ -57,7 +57,7 @@ class PageTextTest extends SegmentationTestUtils  {
 
         println(s"${docId} ${page} ready; segmenting")
 
-        val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
+        val segmenter = DocumentSegmenter.createSegmenter(docId, path)
 
 
         segmenter.runDocumentSegmentation()

@@ -69,6 +69,7 @@ case class PageGeometry(
 
 @JsonCodec
 sealed trait PageItem {
+  def id: Int@@CharID
   def pageRegion: PageRegion
   def bbox: LTBounds = pageRegion.bbox
 }
@@ -77,6 +78,7 @@ object PageItem {
 
   @JsonCodec
   case class ImageAtom(
+    id: Int@@CharID,
     override val pageRegion: PageRegion
   ) extends PageItem
 
@@ -88,6 +90,7 @@ object PageItem {
 
   @JsonCodec
   case class Path(
+    id: Int@@CharID,
     override val pageRegion: PageRegion,
     points: Seq[Point]
   ) extends PageItem {

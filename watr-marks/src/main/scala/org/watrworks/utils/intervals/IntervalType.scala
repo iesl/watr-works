@@ -346,7 +346,6 @@ class Interval[T: Numeric: MidpointHelper, +W: Show](
 
   import Interval._
 
-
   val mphelp = implicitly[MidpointHelper[T]]
 
   def withAttr[W2: Show](w2: W2): Interval[T, W2] = {

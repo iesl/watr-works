@@ -121,11 +121,9 @@ object ExtractedItem {
     minBBox: LTBounds,
     waypoints: Seq[Point]
   ) extends ExtractedItem {
-
     lazy val pp = waypoints.map(_.prettyPrint).take(4).mkString(", ")
 
     def strRepr(): String = s"[path ${minBBox.prettyPrint}=[$pp]]"
-
   }
 
 }

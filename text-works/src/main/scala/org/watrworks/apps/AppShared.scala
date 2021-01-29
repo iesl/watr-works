@@ -23,19 +23,15 @@ object ProcessPipelineSteps {
   val PrettyPrint2Spaces = circe.Printer.spaces2
 
   /**
-    * Pipeline  streams instances of Either[A, B], where
-    * Left(
+    *
     */
 
   type MarkedInput = Either[ProcessableInput, ProcessableInput]
   type MarkedOutput = Either[String, ProcessedInput]
 
   def runTextExtractionOnFile(conf: TextWorksConfig.Config): Unit = {
-
     if (conf.runTraceLogging) {
-      log.info(s"Visual tracing is enabled")
-    } else {
-      log.info(s"Visual tracing is disabled")
+      log.info(s"Visual tracing is enabled; performance will be lowered")
     }
 
     val processStream = createInputStream[IO](conf.ioConfig)
@@ -43,8 +39,6 @@ object ProcessPipelineSteps {
       .through(cleanFileArtifacts(conf))
       .through(runSegmentation(conf))
       .through(writeExtractedTextFile(conf))
-      // .through(cleanTraceLogArtifacts(conf))
-      // .through(writeTraceLogs(conf))
 
     val prog = processStream.compile.drain
 
@@ -148,11 +142,11 @@ object ProcessPipelineSteps {
     }
   }
 
-  def pickupTextgridFiles(
+  def pickupTranscriptFiles(
     conf: TextWorksConfig.Config
   ): fs2.Pipe[IO, MarkedInput, MarkedOutput] = {
     _.map {
-      case Left(inputMode) => Left("no textgrid.json")
+      case Left(inputMode) => Left("no transcript.json")
       case Right(inputMode) =>
         val textgridFile =
           Processable.getTextgridOutputFile(inputMode, conf.ioConfig)
@@ -160,7 +154,7 @@ object ProcessPipelineSteps {
         if (textgridFile.toFile().exists()) {
           Right(Processable.ExtractedTextGridFile(textgridFile, inputMode))
         } else {
-          Left("no textgrid.json")
+          Left("no transcript.json")
         }
     }
   }
@@ -203,13 +197,11 @@ object ProcessPipelineSteps {
           val input = nioToAmm(f)
 
           val output = conf.ioConfig.outputPath.getOrElse {
-            nio.Paths.get(f.getFileName().toString() + ".textgrid.json")
+            nio.Paths.get(f.getFileName().toString() + ".transcript.json")
           }
 
           if (!output.toFile().exists()) {
-            Right(
-              Processable.ExtractedFile(extractText(stableId, input), m)
-            )
+            Right(Processable.ExtractedFile(extractText(stableId, input), m))
           } else {
             val msg =
               s"File ${output} already exists. Move file or use --overwrite"
@@ -223,8 +215,7 @@ object ProcessPipelineSteps {
           println(s"Processing ${stableId}")
 
           val maybeSegmenter = for {
-            pdfEntry <- corpusEntry.getPdfArtifact()
-              .toRight(left = "Could not get PDF")
+            pdfEntry <- corpusEntry.getPdfArtifact().toRight(left = "Could not get PDF")
             pdfPath <- pdfEntry.asPath.toEither.left.map(_.toString())
           } yield {
 
@@ -235,6 +226,7 @@ object ProcessPipelineSteps {
               extractText(stableId, pdfPath)
             }
           }
+
           maybeSegmenter.left
             .map { s =>
               println(s"Error: ${s}")
@@ -260,8 +252,8 @@ object ProcessPipelineSteps {
     val nowStr = dtf.format(new java.util.Date(now))
 
     buildInfoMap.asObject.get
-      .add("runAtMillis", now.asJson)
-      .add("runAtStr", nowStr.asJson)
+      .add("runAtTime", nowStr.asJson)
+      .remove("builtAtMillis")
       .asJson
   }
 
@@ -273,7 +265,8 @@ object ProcessPipelineSteps {
         val outputFile = Processable.getTextgridOutputFile(input, conf.ioConfig)
 
         val jsonOutput = time("build json output") {
-          TextGridOutputFormats.jsonOutputGridPerPage(segmentation)
+          val transcript = segmentation.createTranscript()
+          transcript.asJson
         }
 
         val writeable = jsonOutput.deepMerge(
@@ -282,13 +275,10 @@ object ProcessPipelineSteps {
 
         val gridJsStr = writeable.asJson
           .printWith(JsonPrettyPrinter)
-          .split("\n")
-          .filter(l => l.trim().length() > 0)
-          .reduce(_ + _ + "\n")
 
         println(s"writing ${outputFile}")
 
-        time(s"write textgrid.json") {
+        time(s"write transcript.json") {
           fs.write(outputFile.toFsPath(), gridJsStr)
         }
         m
@@ -407,10 +397,8 @@ object ProcessPipelineSteps {
 
     println(s"Extracting ${stableId}")
 
-    val zoningApi = new MemDocZoningApi
-
     val segmenter = time("createSegmenter") {
-      DocumentSegmenter.createSegmenter(stableId, inputPdf, zoningApi)
+      DocumentSegmenter.createSegmenter(stableId, inputPdf)
     }
 
     time("runDocumentSegmentation") {
@@ -421,3 +409,4 @@ object ProcessPipelineSteps {
   }
 
 }
+

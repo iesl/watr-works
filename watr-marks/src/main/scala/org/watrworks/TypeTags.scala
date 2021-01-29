@@ -17,6 +17,7 @@ sealed trait WidgetID
 
 sealed trait PageID
 sealed trait CharID
+sealed trait GlyphID
 sealed trait ComponentID
 
 sealed trait MentionID
@@ -117,6 +118,7 @@ trait TypeTags extends TypeTagUtils {
   val WidgetID = Tag.of[WidgetID]
   val PageID = Tag.of[PageID]
   val CharID = Tag.of[CharID]
+  val GlyphID = Tag.of[GlyphID]
   val ComponentID = Tag.of[ComponentID]
   val LabelID = Tag.of[LabelID]
   val StanzaID = Tag.of[StanzaID]
@@ -221,6 +223,9 @@ trait TypeTagCodecs {
 
   implicit val Enc_Int_CharID: Encoder[Int@@CharID] = Encoder.encodeInt.contramap(_.unwrap)
   implicit val Dec_Int_CharID: Decoder[Int@@CharID] = Decoder.decodeInt.map(CharID(_))
+
+  implicit val Enc_Int_GlyphID: Encoder[Int@@GlyphID] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit val Dec_Int_GlyphID: Decoder[Int@@GlyphID] = Decoder.decodeInt.map(GlyphID(_))
 
   implicit val Enc_String_EmailAddr: Encoder[String@@EmailAddr] = Encoder.encodeString.contramap(_.unwrap)
   implicit val Dec_String_EmailAddr: Decoder[String@@EmailAddr] = Decoder.decodeString.map(EmailAddr(_))

@@ -85,16 +85,16 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
     }.toMap
   }
 
-  def getNumberedPages(): Seq[(Int@@PageID, Int@@PageNum)] =
-    docStore.getPages(docId).zipWithIndex.map {
-      case (a, b) => (a, PageNum(b))
+  def getNumberedPages(): Seq[Int@@PageNum] =
+    pageAtomsAndGeometry.zipWithIndex.map {
+      case (a, b) => PageNum(b)
     }
 
   lazy val pageSegmenters = {
 
     def createPageSegmenters(): Seq[PageSegmenter] = for {
-      (pageId, pageNum) <- getNumberedPages()
-    } yield PageSegmenter(pageId, pageNum, self)
+      pageNum <- getNumberedPages()
+    } yield PageSegmenter(pageNum, self)
 
     createPageSegmenters()
   }
@@ -106,13 +106,9 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
 
   def fontDefs: FontDefs
 
-  def docStore: DocumentZoningApi
-
   def docStats: DocumentLayoutStats
 
   def stableId: String@@DocumentID
-  def docId: Int@@DocumentID
-
 
   def getPagewiseLinewidthTable(): TabularData[Int@@PageNum, String@@ScaledFontID, List[Int@@FloatRep], Unit, Unit] = {
     docScope.docStats.getTable[Int@@PageNum, String@@ScaledFontID, List[Int@@FloatRep]]("PagewiseLineWidths")
@@ -141,17 +137,14 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
 
   def docScope: DocumentScopeSegmenter
 
-  def pageId: Int@@PageID
   def pageNum: Int@@PageNum
   def pageStats: PageLayoutStats
 
   lazy val (pageItems, pageGeom) = docScope.pageAtomsAndGeometry(pageNum.unwrap)
 
-  def docStore: DocumentZoningApi = docScope.docStore
-
   def pageGeometry = pageGeom.bounds
-  lazy val shapeIndex: ShapeIndex = docScope.getLabeledShapeIndex(pageNum)
 
+  lazy val shapeIndex: ShapeIndex = docScope.getLabeledShapeIndex(pageNum)
 
   protected def pageVerticalSlice(left: Double, width: Double): Option[LTBounds] = {
     pageGeometry.getVerticalSlice(left.toFloatExact(), width.toFloatExact())
@@ -295,9 +288,6 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     getExtractedItemsForShape(shape)
       .collect{ case i: ExtractedItem.CharItem =>  i }
   }
-
-
-
 
   protected def setTrapezoidForShape = setAttrForShape[Trapezoid](LB.LinePairTrapezoid)
   protected def getTrapezoidForShape = getAttrForShape[Trapezoid](LB.LinePairTrapezoid)

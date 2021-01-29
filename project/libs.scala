@@ -2,19 +2,19 @@ import sbt._
 import Keys._
 
 trait LibVersions {
-  val scalazVersion       = "7.3.2"
+  val scalazVersion       = "7.3.3"
   val scalatestVersion    = "3.2.3"
   val logbackVersion      = "1.7.30"
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
   val doobieVersion       = "0.7.0"
   val matryoshkaCoreV     = "0.21.3"
-  val sourcecodeV         = "0.2.1"
-  val fansiV              = "0.2.9"
+  val sourcecodeV         = "0.2.3"
+  val fansiV              = "0.2.10"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
   val http4sVersion       = "0.20.6"
-  val fs2Version          = "2.4.6"
+  val fs2Version          = "2.5.0"
   val circeJsonVersion    = "0.13.0"
   val ammoniteVersion     = "2.3.8"
   val catsV               = "2.0.0"
@@ -23,6 +23,7 @@ trait LibVersions {
   val freestyleV          = "0.7.0"
   val guavaV              = "23.0"
   val luceneV             = "1.10.0"
+  val featranV            = "0.7.0"
 }
 
 object LibVersions extends LibVersions
@@ -33,8 +34,8 @@ object TestLibs extends LibVersions {
   )
 
   val scalacheck = Seq(
-    "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.3.2" % Test,
-    "org.scalacheck" %% "scalacheck"                % "1.15.1"       % "test" //  force()
+    "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.3.3" % Test,
+    "org.scalacheck" %% "scalacheck"                % "1.15.2"       % "test" //  force()
   )
 
   val testAndCheck = scalatest ++ scalacheck
@@ -74,7 +75,9 @@ trait CommonLibs extends LibVersions {
   val lucene4s         = "com.outr"                %% "lucene4s"         % luceneV
   val fs2Core          = "co.fs2"                  %% "fs2-core" % fs2Version
   val fs2IO            = "co.fs2"                  %% "fs2-io" % fs2Version
-  val pdfbox           = "org.apache.pdfbox"        % "pdfbox" % "2.0.21"
+  val pdfbox           = "org.apache.pdfbox"        % "pdfbox" % "2.0.22"
+  val smile            = Seq("com.github.haifengl" %% "smile-scala" % "2.6.0")
+  val featran          = Seq("com.spotify"         %% "featran-core" % featranV)
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,

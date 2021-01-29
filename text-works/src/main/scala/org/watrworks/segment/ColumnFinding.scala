@@ -95,9 +95,7 @@ trait ColumnFinding extends PageScopeSegmenter
                 val hitRightX = baselineShape.shape.p2.x
                 hitRightX <= colActual.right
               })
-
             }
-
 
             hitsAndOverlaps.foreach{ _ match {
               case Right(baselineShapes) if baselineShapes.length > 1 =>

@@ -15,14 +15,12 @@ object PageSegmenter {
   import SegmentationSystem._
 
   def apply(
-    pageId0: Int@@PageID,
     pageNum0: Int@@PageNum,
     documentSegmenter0: DocumentScopeSegmenter
   ): PageSegmenter = new PageSegmenter {
 
     override val docScope: DocumentScopeSegmenter = documentSegmenter0
 
-    override val pageId: Int@@PageID = pageId0
     override val pageNum: Int@@PageNum = pageNum0
     override val pageStats: PageLayoutStats = new PageLayoutStats()
 

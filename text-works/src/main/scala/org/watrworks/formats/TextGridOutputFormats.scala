@@ -21,62 +21,6 @@ import org.watrworks.textgrid.TextGrid
 
 object TextGridOutputFormats {
 
-  def jsonOutputGridPerPage(docSeg: DocumentSegmentation): Json = {
-    val stableId = docSeg.stableId
-
-    val pages = docSeg.pageSegmenters.map { pageSegmenter =>
-      val textGrid = pageSegmenter.getTextGrid(None)
-
-      val lines = textGrid.rows().map(row => {
-        val text = row.toText()
-
-        val glyphs = row.cells().map(_ match {
-
-          case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
-
-            val props = if (tailItems.isEmpty) None else {
-              val tailGlyphs = tailItems.map(pageItem => {
-                Transcript.Glyph(
-                  pageItem.bbox,
-                  props = Some(Transcript.GlyphProps(
-                  ))
-                )
-              }).toList
-
-              Some(Transcript.GlyphProps(
-                gs = Some(tailGlyphs)
-              ))
-            }
-
-            Transcript.Glyph(
-              cell.pageRegion.bbox,
-              props
-            )
-
-          case cell@ TextGrid.InsertCell(char, insertAt) =>
-            Transcript.Glyph(
-              cell.pageRegion.bbox,
-              props = Some(Transcript.GlyphProps(
-              )))
-        }).toList
-
-        Transcript.Line(text, glyphs)
-      }).toList
-
-      Transcript.Page(
-        pageSegmenter.pageGeometry,
-        lines
-      )
-    }
-
-    Transcript(
-      s"Extracted Pages for ${stableId}",
-      stableId,
-      pages.toList,
-      labels = List()
-    ).asJson
-  }
-
   def fontDescription(docSeg: DocumentSegmentation): Seq[Json] = {
 
     val fontDefs = docSeg.docScope.fontDefs

@@ -344,7 +344,6 @@ class PdfBoxTextExtractor(
 
             val isLigature = CharClasses.Ligatures.All.contains(unicodeStr)
 
-
             val similarGlyph = sameFont && sameScalingFactor && sameFontBaseline
 
             val nextItem = if (similarGlyph) {
@@ -548,8 +547,6 @@ class PdfBoxTextExtractor(
 }
 
 object PdfBoxTextExtractor {
-
-
 
   def extractPages(stableId: String@@DocumentID, pdfPath: Path): (List[(Seq[ExtractedItem], PageGeometry)], FontDefs) = {
     val pages = mutable.ListBuffer[(Seq[ExtractedItem], PageGeometry)]()

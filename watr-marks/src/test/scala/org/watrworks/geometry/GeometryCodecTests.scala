@@ -13,6 +13,7 @@ import geometry.syntax._
 import utils.DoOrDieHandlers._
 import _root_.io.circe, circe.syntax._
 
+import TypeTags._
 
 object ArbitraryGeometry {
   import Arbitrary._
@@ -21,6 +22,9 @@ object ArbitraryGeometry {
 
   implicit def Arb_FloatExact: Arbitrary[Int@@FloatRep] = {
     arbDouble.map(_.toFloatExact())
+  }
+  implicit def Arb_CharID: Arbitrary[Int@@CharID] = {
+    arbInt.map(CharID(_))
   }
 
   def Gen_LTBounds: Gen[LTBounds] = for {
@@ -132,21 +136,23 @@ object ArbitaryPageComponents {
     for {
       p <- arbitrary[PageRegion]
       points <- Gen.listOf[Point](Gen_Point)
-    } yield PageItem.Path(p, points)
+      charId <- arbitrary[Int@@CharID]
+    } yield PageItem.Path(charId, p, points)
   }
 
   def Gen_PageItem_ImageAtom: Gen[PageItem.ImageAtom] = Gen.sized{ size =>
     for {
       p <- arbitrary[PageRegion]
-    } yield PageItem.ImageAtom(p)
+      charId <- arbitrary[Int@@CharID]
+    } yield PageItem.ImageAtom(charId, p)
   }
 
   def Gen_PageItem_CharAtom: Gen[PageItem.CharAtom] = Gen.sized{ size =>
     for {
-      n <- arbitrary[Int]
       c <- arbitrary[Char]
       p <- arbitrary[PageRegion]
-    } yield PageItem.CharAtom(CharID(n), p, c.toString)
+      charId <- arbitrary[Int@@CharID]
+    } yield PageItem.CharAtom(charId, p, c.toString)
   }
 
   def Gen_PageItem: Gen[PageItem] = Gen.oneOf(

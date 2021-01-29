@@ -7,6 +7,7 @@ import scala.{collection => sc}
 import sc.Seq
 
 import scala.annotation.tailrec
+import scala.annotation.nowarn
 
 /**
   *
@@ -125,6 +126,7 @@ trait Cursor[A] { self =>
 }
 
 
+
 object Window {
   def apply[A](
     window: Seq[A],
@@ -135,6 +137,7 @@ object Window {
     new Window[A] {
       def cells: Seq[A] = window
 
+      @nowarn
       def winStart: Zipper[A] =
         Zipper.zipper(lefts.to(Stream), focus, rights.to(Stream))
     }
@@ -160,6 +163,7 @@ sealed trait Window[A] { self =>
   }
 
   def closeWindow(): Cursor[A] = {
+    @nowarn
     val newLefts = cells.init.reverse.to(Stream) ++ winStart.lefts
     val newFocus = cells.last
 
@@ -170,19 +174,24 @@ sealed trait Window[A] { self =>
 
   def nextCursor(): Option[Cursor[A]] = {
     Cursor.init[A] {
-      winStart.next.map { znext =>
+      winStart.next.map { znext => {
+        @nowarn
+        val prevs = cells.reverse.to(Stream) ++ znext.lefts
+
         Zipper.zipper(
-          cells.reverse.to(Stream) ++ znext.lefts,
+          prevs,
           znext.focus,
           znext.rights
         )
-      }
+      }}
     }
   }
 
   def widen(n: Int): Option[Window[A]] = {
     if (winStart.rights.length < n) {
-      val (as, bs) = winStart.rights.splitAt(n)
+      val split = winStart.rights.splitAt(n)
+      val as = split._1
+      val bs = split._2
       Some(Window(cells ++ as, winStart.lefts.to(LazyList), winStart.focus, bs.to(LazyList)))
     } else None
   }

@@ -5,7 +5,6 @@ import java.nio.{file => nio}
 import corpora.filesys._
 import segment._
 
-
 sealed trait Processable
 sealed trait ProcessableInput extends Processable
 sealed trait ProcessedInput extends Processable
@@ -31,11 +30,11 @@ object Processable {
       input match {
         case SingleFile(f) =>
           conf.outputPath.getOrElse {
-            nio.Paths.get(f.getFileName().toString() + ".textgrid.json")
+            nio.Paths.get(f.getFileName().toString() + ".transcript.json")
           }
 
         case CorpusFile(corpusEntry) =>
-          (corpusEntry.getRootPath() / "textgrid.json").toNIO
+          (corpusEntry.getRootPath() / "transcript.json").toNIO
 
         case _ => ???
 
