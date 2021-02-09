@@ -23,7 +23,7 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
 
   def findContiguousBlocks(label: Label): Unit = {
 
-    val fontsByMostOccuring = getFontsSortedByHighestOccuranceCount()
+    val fontsByMostOccuring = getFontsSortedByHighestOccurrenceCount()
 
     val sortedLines = getLabeledShapes(label).sortBy { lineShape =>
       getCharsForShape(lineShape).head.id.unwrap

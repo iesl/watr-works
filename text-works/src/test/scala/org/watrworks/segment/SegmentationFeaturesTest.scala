@@ -9,6 +9,7 @@ import com.spotify.featran.transformers._
 
 // Import Featran core, transformers and `asDouble` converter for `Boolean`
 import com.spotify.featran.converters._
+import breeze.linalg._
 
 class SegmentationFeaturesTest extends SegmentationTestUtils {
   // Input record type
@@ -34,17 +35,78 @@ class SegmentationFeaturesTest extends SegmentationTestUtils {
     s2 <- Gen.listOfN(n, Gen.alphaStr.map(_.take(5)))
   } yield Record(b, f, d1, d2, d3, s1, s2)
 
-  it should "demo code examples 2" in {
+  // Method for extracting an `Array[Double]` from a `Record`
+  def toArray(r: Record): Array[Double] =
+    Array(r.b.asDouble, r.f.toDouble, r.d1, r.d2.getOrElse(0.0))
 
-    // Random generator for `Seq[Record]`
-    val recordsGen: Gen[List[Record]] = Gen.listOfN(3, recordGen)
+  // Random generator for `Seq[Record]`
+  val recordsGen: Gen[List[Record]] = Gen.listOfN(3, recordGen)
 
+  it should "feature specs #one" in {
     // Random input records
     val records = recordsGen.sample.get
 
-    // Method for extracting an `Array[Double]` from a `Record`
-    def toArray(r: Record): Array[Double] =
-      Array(r.b.asDouble, r.f.toDouble, r.d1, r.d2.getOrElse(0.0))
+    // # Feature specification
+
+    // A `FeatureSpec` defines the record type to extract features from plus a set of required or
+    // optional field extractors and corresponding transformers.
+
+    // Start a specification for input record type `Record`
+    val spec = FeatureSpec
+      .of[Record]
+      // Required field with `Boolean`/`Float` to `Double` conversion, pass value through with
+      // Identity transformer
+      .required(_.b.asDouble)(Identity("id1"))
+      .required(_.f.toDouble)(Identity("id2"))
+
+    // Extract features from `Seq[Record]`
+    val f1: FeatureExtractor[List, Record] = spec.extract(records)
+
+    // Extract feature names and values as `Seq[Double]`
+    val fnames = f1.featureNames.map(_.mkString(", ")).mkString("\n")
+
+    // Get feature values in different output types
+    val doubleS = f1.featureValues[Seq[Double]]
+    println("Seq[Double]")
+    pprint.pprintln(doubleS)
+
+    val floatA = f1.featureValues[Array[Float]]
+    println("Array[Float]")
+    pprint.pprintln(floatA)
+    val doubleA = f1.featureValues[Array[Double]]
+
+    val floatDV = f1.featureValues[DenseVector[Float]]
+    println("DenseVector[Float]")
+    pprint.pprintln(floatDV)
+    val doubleDV = f1.featureValues[DenseVector[Double]]
+    val floatSV = f1.featureValues[SparseVector[Float]]
+    println("SparseVector[Float]")
+    pprint.pprintln(floatSV)
+    val doubleSV = f1.featureValues[SparseVector[Double]]
+
+
+
+    // Get feature values as above with rejections and the original input record
+    println("Results")
+    val doubleAResults = f1.featureResults[Array[Double]]
+
+    println("Results: A[D]")
+    pprint.pprintln(doubleAResults)
+
+    val doubleAValues = doubleAResults.map(_.value)
+    println("Results: A[V]")
+    pprint.pprintln(doubleAValues)
+
+    val doubleARejections = doubleAResults.map(_.rejections)
+    println("Rejections")
+    pprint.pprintln(doubleARejections)
+
+  }
+
+  it should "demo all feature specs" in {
+
+    // Random input records
+    val records = recordsGen.sample.get
 
     // # Feature specification
 
@@ -134,12 +196,10 @@ class SegmentationFeaturesTest extends SegmentationTestUtils {
     val floatA = f1.featureValues[Array[Float]]
     val doubleA = f1.featureValues[Array[Double]]
 
-    import breeze.linalg._
     val floatDV = f1.featureValues[DenseVector[Float]]
     val doubleDV = f1.featureValues[DenseVector[Double]]
     val floatSV = f1.featureValues[SparseVector[Float]]
     val doubleSV = f1.featureValues[SparseVector[Double]]
-
 
     // Get feature values as above with rejections and the original input record
     val doubleAResults = f1.featureResults[Array[Double]]

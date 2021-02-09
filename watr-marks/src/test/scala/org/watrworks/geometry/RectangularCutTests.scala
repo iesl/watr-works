@@ -5,8 +5,7 @@ import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-
-class RectangularCutTests  extends AnyFlatSpec with Matchers {
+class RectangularCutTests extends AnyFlatSpec with Matchers {
   behavior of "Geometric Figures"
 
   import GeometryImplicits._
@@ -32,8 +31,10 @@ class RectangularCutTests  extends AnyFlatSpec with Matchers {
     //   )
 
     List(
-      (LTBounds.Ints(2, 2, 4, 1), LTBounds.Ints(2, 2, 4, 1), {
-        """|┌────────────┐
+      (
+        LTBounds.Ints(2, 2, 4, 1),
+        LTBounds.Ints(2, 2, 4, 1), {
+          """|┌────────────┐
            |│░░░░░░░░░░░░│
            |│░┣━━┫░░░░░░░│
            |│░░░░░░░░░░░░│
@@ -48,9 +49,12 @@ class RectangularCutTests  extends AnyFlatSpec with Matchers {
            |│░░░░░░░░░░░░│
            |└────────────┘
            |""".stripMargin
-      }),
-      (LTBounds.Ints(1, 3, 4, 1), LTBounds.Ints(2, 2, 4, 4), {
-        """|┌────────────┐┌────────────┐┌────────────┐┌────────────┐┌────────────┐┌────────────┐┌────────────┐
+        }
+      ),
+      (
+        LTBounds.Ints(1, 3, 4, 1),
+        LTBounds.Ints(2, 2, 4, 4), {
+          """|┌────────────┐┌────────────┐┌────────────┐┌────────────┐┌────────────┐┌────────────┐┌────────────┐
            |│░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░│
            |│░┌──┐░░░░░░░││░┌──┐░░░░░░░││░┣━┫┐░░░░░░░││░┌──┐░░░░░░░││░┌──◻░░░░░░░││░┌──┐░░░░░░░││░┌──┐░░░░░░░│
            |│╠┣━┫│░░░░░░░││◻│═╣│░░░░░░░││╠│═╣│░░░░░░░││╠│═╣│░░░░░░░││╠│═╣│░░░░░░░││╠│═╣◻░░░░░░░││╠│═╣│░░░░░░░│
@@ -66,9 +70,12 @@ class RectangularCutTests  extends AnyFlatSpec with Matchers {
            |└────────────┘└────────────┘└────────────┘└────────────┘└────────────┘└────────────┘└────────────┘
            |""".stripMargin
 
-      }),
-      (LTBounds.Ints(2, 2, 4, 1), LTBounds.Ints(2, 2, 6, 1), {
-        """|┌────────────┐┌────────────┐
+        }
+      ),
+      (
+        LTBounds.Ints(2, 2, 4, 1),
+        LTBounds.Ints(2, 2, 6, 1), {
+          """|┌────────────┐┌────────────┐
            |│░░░░░░░░░░░░││░░░░░░░░░░░░│
            |│░┣━━┫─┤░░░░░││░├───┣┫░░░░░│
            |│░░░░░░░░░░░░││░░░░░░░░░░░░│
@@ -84,40 +91,46 @@ class RectangularCutTests  extends AnyFlatSpec with Matchers {
            |└────────────┘└────────────┘
            |""".stripMargin
 
-      })
-    ) foreach {case (bbox1, bbox2, expectedOutput) =>
-
-        val burstRegions = bbox1.withinRegion(bbox2).burstAll()
-
-        def drawAdjacencyDiagram(adjacent: LTBounds): Box = {
-          val g = makeGraph(graphSize)
-          drawBoxDouble(g, bbox1)
-          drawBox(g, bbox2)
-          drawBoxBold(g, adjacent)
-          g.asMonocolorString().box
         }
+      )
+    ) foreach { case (bbox1, bbox2, expectedOutput) =>
+      val burstRegions = bbox1.withinRegion(bbox2).burstAll()
 
-        val adjs = burstRegions.map{ r =>
-          drawAdjacencyDiagram(r)
-        }
+      def drawAdjacencyDiagram(adjacent: LTBounds): Box = {
+        val g = makeGraph(graphSize)
+        drawBoxDouble(g, bbox1)
+        drawBox(g, bbox2)
+        drawBoxBold(g, adjacent)
+        g.asMonocolorString().box
+      }
 
-        val actualOutput = hcat(top, adjs)
-        // println(actualOutput)
-        assertExpectedText(expectedOutput, actualOutput.toString())
+      val adjs = burstRegions.map { r =>
+        drawAdjacencyDiagram(r)
+      }
+
+      val actualOutput = hcat(top, adjs)
+      // println(actualOutput)
+      assertExpectedText(expectedOutput, actualOutput.toString())
     }
   }
 
-
-
   it should "split rectangles vertically and horizontally" in {
-    // val rect = LTBounds.Ints(1, 1, 10, 10)
+    val rect = LTBounds.Ints(1, 1, 10, 10)
 
-    // val (lsplit, rsplit) = rect.splitHorizontal(10.toFloatExact())
-    List(0, 3, 10).map(_.toFloatExact())
-      .foreach { splitVal =>
-        // println(s" l: ${lsplit}")
-        // println(s" r: ${rsplit}")
-      }
+    {
+      val (lsplit, rsplit) = rect.splitHorizontal(10.toFloatExact())
+      println("Horizontal Split")
+      println(s" l: ${lsplit}")
+      println(s" r: ${rsplit}")
+    }
+    {
+      val vsplit = 20.toFloatExact()
+      val (lsplit, rsplit) = rect.splitVertical(vsplit)
+      println(s"Vertical Split ${rect} at ${vsplit}")
+      println(s" l: ${lsplit}")
+      println(s" r: ${rsplit}")
+    }
+
   }
   it should "find  adjacent regions when inner rect is not strictly within outer" in {
     val graphSize = LTBounds.Ints(0, 0, 14, 14)
@@ -134,12 +147,15 @@ class RectangularCutTests  extends AnyFlatSpec with Matchers {
 
     {
       val boxes = List(Dir.Left, Dir.Center, Dir.Right, Dir.Top, Dir.Bottom)
-        .map{ dir =>
+        .map { dir =>
           (dir, inner.withinRegion(outer).adjacentRegion(dir))
-        }.map{ case (d, maybAdjacent) =>
-            maybAdjacent.map{ adjacent =>
+        }
+        .map { case (d, maybAdjacent) =>
+          maybAdjacent
+            .map { adjacent =>
               drawAdjacencyDiagram(adjacent)
-            }.getOrElse { "  <empty>  ".box }
+            }
+            .getOrElse { "  <empty>  ".box }
         }
 
       val expectedOutput = {
@@ -171,10 +187,11 @@ class RectangularCutTests  extends AnyFlatSpec with Matchers {
         List(Dir.Left, Dir.Bottom),
         List(Dir.Right, Dir.BottomRight),
         List(Dir.Right, Dir.Bottom)
-      ).flatMap{ dirs =>
-        inner.withinRegion(outer)
-          .adjacentRegions(dirs:_*)
-          .map{ adjacent => drawAdjacencyDiagram(adjacent) }
+      ).flatMap { dirs =>
+        inner
+          .withinRegion(outer)
+          .adjacentRegions(dirs: _*)
+          .map { adjacent => drawAdjacencyDiagram(adjacent) }
       }
 
       val expectedOutput = {
@@ -201,7 +218,6 @@ class RectangularCutTests  extends AnyFlatSpec with Matchers {
     }
   }
 
-
   it should "find regions adjacent to rectangle within enclosing region" in {
     val graphSize = LTBounds.Ints(0, 0, 14, 14)
     val outer = LTBounds.Ints(1, 1, 10, 10)
@@ -222,10 +238,11 @@ class RectangularCutTests  extends AnyFlatSpec with Matchers {
 
     {
       val boxes = List(Dir.Left, Dir.Center, Dir.Right, Dir.Top, Dir.Bottom)
-        .flatMap{ dir =>
-          inner.withinRegion(outer)
+        .flatMap { dir =>
+          inner
+            .withinRegion(outer)
             .adjacentRegion(dir)
-            .map{ adjacent => drawAdjacencyDiagram(adjacent) }
+            .map { adjacent => drawAdjacencyDiagram(adjacent) }
         }
 
       val expectedOutput = {
@@ -251,13 +268,13 @@ class RectangularCutTests  extends AnyFlatSpec with Matchers {
       assertExpectedText(expectedOutput, actualOutput)
     }
 
-
     {
       val boxes = List(Dir.TopLeft, Dir.TopRight, Dir.BottomLeft, Dir.BottomRight)
-        .flatMap{ dir =>
-          inner.withinRegion(outer)
+        .flatMap { dir =>
+          inner
+            .withinRegion(outer)
             .adjacentRegion(dir)
-            .map{ adjacent => drawAdjacencyDiagram(adjacent) }
+            .map { adjacent => drawAdjacencyDiagram(adjacent) }
         }
 
       val expectedOutput = {
@@ -291,10 +308,11 @@ class RectangularCutTests  extends AnyFlatSpec with Matchers {
         List(Dir.Left, Dir.Bottom),
         List(Dir.Right, Dir.BottomRight),
         List(Dir.Right, Dir.Bottom)
-      ).flatMap{ dirs =>
-        inner.withinRegion(outer)
-          .adjacentRegions(dirs:_*)
-          .map{ adjacent => drawAdjacencyDiagram(adjacent) }
+      ).flatMap { dirs =>
+        inner
+          .withinRegion(outer)
+          .adjacentRegions(dirs: _*)
+          .map { adjacent => drawAdjacencyDiagram(adjacent) }
       }
 
       val expectedOutput = {

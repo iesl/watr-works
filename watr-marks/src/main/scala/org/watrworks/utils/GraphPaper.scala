@@ -3,7 +3,6 @@ package utils
 
 import geometry._
 import utils.{RelativeDirection => Dir}
-// import scala.scalajs.js.annotation._
 
 import scala.{collection => sc}
 import sc.Seq
@@ -27,9 +26,8 @@ abstract class GraphPaper {
     y: Int,
     str: String
   ): Unit = {
-    str.zipWithIndex.foreach {
-      case (ch, i) =>
-        drawChar(GraphPaper.GridCell(x + i, y), ch)
+    str.zipWithIndex.foreach { case (ch, i) =>
+      drawChar(GraphPaper.GridCell(x + i, y), ch)
     }
   }
 
@@ -88,10 +86,7 @@ object GraphPaper {
   def cellAt(x: Int, y: Int) = GridCell(x, y)
   def boxAt(x: Int, y: Int) = Box(cellAt(x, y), 0, 0)
 
-  case class Box(
-    origin: GridCell,
-    spanRight: Int,
-    spanDown: Int) {
+  case class Box(origin: GridCell, spanRight: Int, spanDown: Int) {
     val left: Int = origin.x
     val top: Int = origin.y
     val right: Int = origin.x + spanRight
@@ -226,11 +221,8 @@ object GraphPaper {
 
 import scala.collection.mutable
 
-class CharBasedGraphPaper(
-  val initWidth: Int,
-  val initHeight: Int,
-  useColor: Boolean = true)
-    extends GraphPaper {
+class CharBasedGraphPaper(val initWidth: Int, val initHeight: Int, useColor: Boolean = true)
+  extends GraphPaper {
 
   import GraphPaper._
 
@@ -239,9 +231,8 @@ class CharBasedGraphPaper(
 
   val charBuffer: mutable.ArrayBuffer[
     mutable.ArrayBuffer[Char]
-  ] = mutable.ArrayBuffer.tabulate(height, width) {
-    case (y, x) =>
-      '░'
+  ] = mutable.ArrayBuffer.tabulate(height, width) { case (y, x) =>
+    '░'
   }
 
   def cellDimensions(): CellDimensions = {
@@ -250,16 +241,14 @@ class CharBasedGraphPaper(
 
   val colorMods: mutable.ArrayBuffer[
     mutable.ArrayBuffer[fansi.Attrs]
-  ] = mutable.ArrayBuffer.tabulate(height, width) {
-    case (y, x) =>
-      fansi.Attrs.Empty
+  ] = mutable.ArrayBuffer.tabulate(height, width) { case (y, x) =>
+    fansi.Attrs.Empty
   }
 
   val charMods: mutable.ArrayBuffer[
     mutable.ArrayBuffer[fansi.Attrs]
-  ] = mutable.ArrayBuffer.tabulate(height, width) {
-    case (y, x) =>
-      fansi.Attrs.Empty
+  ] = mutable.ArrayBuffer.tabulate(height, width) { case (y, x) =>
+    fansi.Attrs.Empty
   }
 
   private def resizeToFit(cell: GridCell): Unit = {
@@ -328,11 +317,10 @@ class CharBasedGraphPaper(
         box.getCells(d).foreach(cell => drawChar(cell, borderChars.charFor(d)))
       }
 
-      List(Dir.TopLeft, Dir.TopRight, Dir.BottomLeft, Dir.BottomRight).foreach {
-        d =>
-          box
-            .getCells(d)
-            .foreach(cell => drawChar(cell, borderChars.charFor(d)))
+      List(Dir.TopLeft, Dir.TopRight, Dir.BottomLeft, Dir.BottomRight).foreach { d =>
+        box
+          .getCells(d)
+          .foreach(cell => drawChar(cell, borderChars.charFor(d)))
       }
 
     }
@@ -390,15 +378,13 @@ class CharBasedGraphPaper(
 
   def asColorString(): String = {
     if (useColor) {
-      val rws = charBuffer.zipWithIndex.map {
-        case (charRow, rowNum) =>
-          val chs = charRow.zipWithIndex.map {
-            case (char, colNum) =>
-              val clr = colorMods(rowNum)(colNum)
-              val fmt = charMods(rowNum)(colNum)
-              clr(fmt(char.toString()))
-          }
-          chs.mkString
+      val rws = charBuffer.zipWithIndex.map { case (charRow, rowNum) =>
+        val chs = charRow.zipWithIndex.map { case (char, colNum) =>
+          val clr = colorMods(rowNum)(colNum)
+          val fmt = charMods(rowNum)(colNum)
+          clr(fmt(char.toString()))
+        }
+        chs.mkString
       }
       rws.mkString("\n")
     } else {
@@ -407,14 +393,12 @@ class CharBasedGraphPaper(
   }
 
   def asMonocolorString(): String = {
-    val rws = charBuffer.zipWithIndex.map {
-      case (charRow, rowNum) =>
-        val chs = charRow.zipWithIndex.map {
-          case (char, colNum) =>
-            val fmt = charMods(rowNum)(colNum)
-            fmt(char.toString())
-        }
-        chs.mkString
+    val rws = charBuffer.zipWithIndex.map { case (charRow, rowNum) =>
+      val chs = charRow.zipWithIndex.map { case (char, colNum) =>
+        val fmt = charMods(rowNum)(colNum)
+        fmt(char.toString())
+      }
+      chs.mkString
     }
     rws.mkString("\n")
   }

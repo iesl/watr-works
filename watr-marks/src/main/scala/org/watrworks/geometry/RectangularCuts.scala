@@ -16,11 +16,21 @@ object AngleType {
   case object Obtuse extends AngleType
 }
 
-
 trait RectangularCuts extends GeometricOps {
   import GeometryImplicits._
 
   class RectangularCutOps(innerRect: LTBounds, enclosingRect: LTBounds) {
+    def burstAllPossibleDirections(): Seq[(Dir, Option[LTBounds])] = {
+
+      val overlapOps = innerRect.withinRegion(enclosingRect)
+
+      Dir.All.foldLeft(
+        List.empty[(Dir, Option[LTBounds])]
+      ){ case (acc, dir) => {
+        (dir, overlapOps.adjacentRegion(dir)) :: acc
+      }}
+
+    }
 
     def burstAllDirections(): (Option[LTBounds], Seq[(Dir, LTBounds)]) = {
       val intersection = innerRect.intersection(enclosingRect)
@@ -37,16 +47,14 @@ trait RectangularCuts extends GeometricOps {
           .map(r => (dir, r))
       }
 
-      // val burstRegions = (burst1 ++ burst2).flatten.sortBy(b => (b.left, b.top))
       val burstRegions = (burst1 ++ burst2).flatten.sortBy{b =>
         (b._2.left, b._2.top
         )
       }
-      // (b => (b.left, b.top))
 
       (intersection, burstRegions)
-
     }
+
     def burstAllAdjacent(): (Option[LTBounds], Seq[LTBounds]) = {
       val intersection = innerRect.intersection(enclosingRect)
 
@@ -131,7 +139,7 @@ trait RectangularCuts extends GeometricOps {
         case Dir.TopRight =>
           for {
             right  <- enclosingRect.splitVertical(innerRect.right)._2
-            top   <- right.splitHorizontal(innerRect.top)._1
+            top    <- right.splitHorizontal(innerRect.top)._1
           } yield top
 
         case Dir.BottomRight =>

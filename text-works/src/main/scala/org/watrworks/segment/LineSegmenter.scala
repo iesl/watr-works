@@ -50,7 +50,7 @@ trait LineSegmentation extends PageScopeSegmenter
 
 
   def mergeFontBaselinePairwise(): Unit = {
-    val fontsByMostOccuring = getFontsSortedByHighestOccuranceCount()
+    val fontsByMostOccuring = getFontsSortedByHighestOccurrenceCount()
 
     fontsByMostOccuring.zipWithIndex.foreach { case (scaledFontId, fontIndex) =>
 
@@ -344,7 +344,7 @@ trait LineSegmentation extends PageScopeSegmenter
 
     val startingLines = getLabeledLines(startingShapeLabel)
 
-    val fontsByMostOccuring = getFontsSortedByHighestOccuranceCount()
+    val fontsByMostOccuring = getFontsSortedByHighestOccurrenceCount()
 
     _loop(fontsByMostOccuring.toList, startingLines)
   }
@@ -537,8 +537,7 @@ trait LineSegmentation extends PageScopeSegmenter
       findNatLangBaselineRuns(retainNatLang=true)
     )
 
-
-     // combineCombiningMarks()
+    // combineCombiningMarks()
 
     indexPathRegions()
 

@@ -557,7 +557,6 @@ class FontDefs(pageCount: Int) {
   }
 
   def report(): TB.Box = {
-
     s"Font Definitions. Page Count: ${pageCount}".hangIndent(
       vjoins(fontProperties.map(_.report()))
     )
