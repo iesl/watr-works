@@ -16,9 +16,9 @@ import org.watrworks.transcripts.Transcript
 import scala.collection.mutable.ArrayBuffer
 
 trait DocumentLevelFunctions
-  extends DocumentScopeSegmenter
-  with FontAndGlyphMetricsDocWide
-  with MarginalMatterDetectionDocScope
+    extends DocumentScopeSegmenter
+    with FontAndGlyphMetricsDocWide
+    with MarginalMatterDetectionDocScope
 
 trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 

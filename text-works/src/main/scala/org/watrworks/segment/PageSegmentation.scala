@@ -6,6 +6,7 @@ import textgrid._
 
 trait PageLevelFunctions extends ColumnFinding
     with TextReconstruction
+    with GlyphRuns
     with TextBlockGrouping
     with ShapeFunctions
     with ReferenceBlockConverter

@@ -406,4 +406,11 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     idsAreConsecutive(item1.id, item2.id)
 
 
+  protected def clipRectBetween(x1: Int@@FloatRep, x2: Int@@FloatRep, rect: LTBounds): Option[LTBounds] = {
+    for {
+      rightHalf <- rect.splitVertical(x1)._2
+      leftHalf <- rightHalf.splitVertical(x2)._1
+    } yield leftHalf
+  }
+
 }
