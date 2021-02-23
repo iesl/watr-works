@@ -51,7 +51,7 @@ trait SegmentationTestUtils extends SegmentationTest {
   ): Option[(String@@DocumentID, Int, fs.Path)] = {
 
     allPages
-      .filter { case (stableId, pg, path) =>
+      .filter { case (stableId, pg, _) =>
         stableId.unwrap.contains(pdfStr) && pg == page
       }
       .map { case (stableId, pg, path) =>

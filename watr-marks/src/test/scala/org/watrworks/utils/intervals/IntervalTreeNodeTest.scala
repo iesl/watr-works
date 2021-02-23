@@ -1,12 +1,7 @@
 package org.watrworks
 package utils.intervals
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-class IntervalTreeNodeTest extends AnyFlatSpec with Matchers {
-
+class IntervalTreeNodeTest extends WatrSpec {
 
   it should "_iteratorNormal" in {
     val tree = new IntervalTree[Int, Unit]();

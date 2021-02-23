@@ -2,7 +2,6 @@ package org.watrworks
 package textgrid
 
 import TypeTags._
-import textboxing.{TextBoxing => TB}, TB._
 
 class TextGridTests extends TextGridSpec {
 

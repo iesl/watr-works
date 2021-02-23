@@ -30,7 +30,8 @@ class SegmentationFeaturesTest extends SegmentationTestUtils {
     s1 <- Gen.alphaStr.map(_.take(5))
     n <- Gen.choose(0, 10)
     s2 <- Gen.listOfN(n, Gen.alphaStr.map(_.take(5)))
-  } yield Record(b, f, d1, d2, d3, s1, s2)
+  } yield Record(b, f, d1, d2, d3.toDouble, s1, s2)
+
 
   // Method for extracting an `Array[Double]` from a `Record`
   def toArray(r: Record): Array[Double] =
@@ -60,7 +61,7 @@ class SegmentationFeaturesTest extends SegmentationTestUtils {
     val f1: FeatureExtractor[List, Record] = spec.extract(records)
 
     // Extract feature names and values as `Seq[Double]`
-    val fnames = f1.featureNames.map(_.mkString(", ")).mkString("\n")
+    // val fnames = f1.featureNames.map(_.mkString(", ")).mkString("\n")
 
     // Get feature values in different output types
     val doubleS = f1.featureValues[Seq[Double]]
@@ -70,16 +71,16 @@ class SegmentationFeaturesTest extends SegmentationTestUtils {
     val floatA = f1.featureValues[Array[Float]]
     println("Array[Float]")
     pprint.pprintln(floatA)
-    val doubleA = f1.featureValues[Array[Double]]
+    // val doubleA = f1.featureValues[Array[Double]]
 
     val floatDV = f1.featureValues[DenseVector[Float]]
     println("DenseVector[Float]")
     pprint.pprintln(floatDV)
-    val doubleDV = f1.featureValues[DenseVector[Double]]
+    // val doubleDV = f1.featureValues[DenseVector[Double]]
     val floatSV = f1.featureValues[SparseVector[Float]]
     println("SparseVector[Float]")
     pprint.pprintln(floatSV)
-    val doubleSV = f1.featureValues[SparseVector[Double]]
+    // val doubleSV = f1.featureValues[SparseVector[Double]]
 
 
 
@@ -190,19 +191,19 @@ class SegmentationFeaturesTest extends SegmentationTestUtils {
     f1.featureValues[Seq[Double]].foreach(println)
 
     // Get feature values in different output types
-    val floatA = f1.featureValues[Array[Float]]
-    val doubleA = f1.featureValues[Array[Double]]
+    // val floatA = f1.featureValues[Array[Float]]
+    // val doubleA = f1.featureValues[Array[Double]]
 
-    val floatDV = f1.featureValues[DenseVector[Float]]
-    val doubleDV = f1.featureValues[DenseVector[Double]]
-    val floatSV = f1.featureValues[SparseVector[Float]]
-    val doubleSV = f1.featureValues[SparseVector[Double]]
+    // val floatDV = f1.featureValues[DenseVector[Float]]
+    // val doubleDV = f1.featureValues[DenseVector[Double]]
+    // val floatSV = f1.featureValues[SparseVector[Float]]
+    // val doubleSV = f1.featureValues[SparseVector[Double]]
 
     // Get feature values as above with rejections and the original input record
-    val doubleAResults = f1.featureResults[Array[Double]]
-    val doubleAValues = doubleAResults.map(_.value)
-    val doubleARejections = doubleAResults.map(_.rejections)
-    val doubleAOriginals = doubleAResults.map(_.original)
+    // val doubleAResults = f1.featureResults[Array[Double]]
+    // val doubleAValues = doubleAResults.map(_.value)
+    // val doubleARejections = doubleAResults.map(_.rejections)
+    // val doubleAOriginals = doubleAResults.map(_.original)
 
     // # Feature settings
 
@@ -218,10 +219,10 @@ class SegmentationFeaturesTest extends SegmentationTestUtils {
 
     // Extract features from new records, but reuse previously saved settings. This bypasses
     // the reduce step that aggregates feature settings from the dataset.
-    val f2 = spec.extractWithSettings(recordsGen.sample.get, settings)
+    // val f2 = spec.extractWithSettings(recordsGen.sample.get, settings)
 
     // Filter out results with rejections and extract valid values
-    val validValues = f2.featureResults[Seq[Double]].filter(_.rejections.isEmpty).map(_.value)
+    // val validValues = f2.featureResults[Seq[Double]].filter(_.rejections.isEmpty).map(_.value)
 
     // # Extract from an unbounded source
 

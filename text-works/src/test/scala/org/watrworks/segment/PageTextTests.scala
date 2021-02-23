@@ -1,7 +1,6 @@
 package org.watrworks
 package segment
 
-import corpora._
 // import org.watrworks.tracing._
 import ammonite.{ops => fs}
 
@@ -73,7 +72,7 @@ class PageTextTest extends SegmentationTestUtils  {
 
 
   }
-  import _root_.io.circe, circe._, circe.syntax._
+  import _root_.io.circe, circe._
 
   def writeLogs(logJson: Json, outputRoot: fs.Path, logfile: String): Unit = {
 

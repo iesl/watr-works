@@ -14,7 +14,7 @@ trait LibVersions {
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
   val http4sVersion       = "0.20.6"
-  val fs2Version          = "2.5.2"
+  val fs2Version          = "2.5.3"
   val circeJsonVersion    = "0.13.0"
   val ammoniteVersion     = "2.3.8"
   val catsV               = "2.0.0"

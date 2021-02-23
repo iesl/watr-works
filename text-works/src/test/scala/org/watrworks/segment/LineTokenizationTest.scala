@@ -1,7 +1,6 @@
 package org.watrworks
 package segment
 
-import org.scalatest._
 import org.scalatest.diagrams.Diagrams
 
 // import rtrees._

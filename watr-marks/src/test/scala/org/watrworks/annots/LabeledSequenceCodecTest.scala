@@ -2,22 +2,21 @@ package org.watrworks
 package annots
 
 import org.scalacheck._
-// import scalaz.{@@ => _, _}, Scalaz._
 
 import LabeledSequenceCodecs._
-import LabeledSequencePrinting._
-import LabeledSequence.Things
-import LabelTarget.Thing
+// import LabeledSequencePrinting._
+// import LabeledSequence.Things
+// import LabelTarget.Thing
 
 
 
 object LabeledSequenceCodecChecks extends Properties("LabeledSequenceCodecChecks") with LabeledSequenceThings {
-  import ArbitraryStuff._
+  // import ArbitraryStuff._
 
-  property("json <--> LabeledSequence") = Prop.forAll{ (labeledSequence: LabeledSequence[Thing[Char]]) =>
-    // TODO
-    true
-  }
+  // property("json <--> LabeledSequence") = Prop.forAll{ (labeledSequence: LabeledSequence[Thing[Char]]) =>
+  //   // TODO
+  //   true
+  // }
 
 }
 

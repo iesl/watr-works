@@ -1,9 +1,6 @@
 package org.watrworks
 package segment
 
-import rtrees._
-import textgrid._
-
 trait PageLevelFunctions extends ColumnFinding
     with TextReconstruction
     with GlyphRuns
@@ -13,7 +10,6 @@ trait PageLevelFunctions extends ColumnFinding
     with MarginalMatterDetectionPageScope
 
 object PageSegmenter {
-  import SegmentationSystem._
 
   def apply(
     pageNum0: Int@@PageNum,

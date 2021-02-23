@@ -1,6 +1,5 @@
 package org.watrworks
 
-import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalacheck._
@@ -22,6 +21,8 @@ trait LabeledSequenceThings {
   }
 
 }
+
+trait WatrSpec extends AnyFlatSpec with Matchers
 
 
 trait TextGridTestExamples extends TextGridConstruction {
@@ -93,14 +94,12 @@ trait TextGridTestExamples extends TextGridConstruction {
   }
 }
 
+
 trait TextGridSpec extends AnyFlatSpec with Matchers with TextGridTestExamples with LabeledSequenceThings {
-
-
   def infobox(heading: String, b: TB.Box): Unit = {
     info(heading)
     info("\n" + indent(4, b).toString() + "\n")
   }
-
 }
 
 object ArbitraryStuff extends LabeledSequenceThings {
@@ -116,9 +115,7 @@ object ArbitraryStuff extends LabeledSequenceThings {
     c <- arbitrary[Char]
   } yield Thing[Char](c)
 
-
   def genThings(): Gen[LabeledSequence[Thing[Char]]] = for {
-    i <- Gen.choose(0, 20)
     l <- listOf[Thing[Char]](genThing)
   } yield Things(l)
 
