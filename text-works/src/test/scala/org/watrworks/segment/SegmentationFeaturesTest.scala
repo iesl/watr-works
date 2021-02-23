@@ -1,9 +1,6 @@
 package org.watrworks
 package segment
 
-import org.scalatest._
-import org.scalatest.diagrams.Diagrams
-
 import com.spotify.featran._
 import com.spotify.featran.transformers._
 

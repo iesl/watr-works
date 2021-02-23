@@ -7,6 +7,7 @@ object `package` {
   type LineShape = DocSegShape[Line]
   type PointShape = DocSegShape[Point]
   type RectShape = DocSegShape[LTBounds]
+  type TrapShape = DocSegShape[Trapezoid]
   type AnyShape = DocSegShape[GeometricFigure]
 
   val Dir = utils.RelativeDirection

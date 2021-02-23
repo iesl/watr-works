@@ -159,7 +159,7 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
         val groupBoundsShape = initShape(groupBounds, LB.TextLineGroup)
         List(
           shape(groupBoundsShape) tagged "Grouped Text Blocks",
-          relation("TextLineGroups").field(groupBoundsShape).field(group)
+          // relation("TextLineGroups").field(groupBoundsShape).field(group)
         )
       }
 

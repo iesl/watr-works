@@ -1,7 +1,6 @@
 package org.watrworks
 package segment
 
-import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -10,7 +9,9 @@ import geometry._
 import java.net.URL
 import TypeTags._
 
-trait SegmentationTestUtils extends AnyFlatSpec with Matchers {
+trait SegmentationTest extends AnyFlatSpec with Matchers
+
+trait SegmentationTestUtils extends SegmentationTest {
 
   import ammonite.{ops => fs}
 

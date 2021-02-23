@@ -8,15 +8,11 @@ import geometry._
 import geometry.syntax._
 import extract._
 import utils.ExactFloats._
-import utils.FunctionalHelpers._
-import utils.SlicingAndDicing._
 import watrmarks._
 import textboxing.{TextBoxing => TB}, TB._
-import utils.DoOrDieHandlers._
 import utils.SlicingAndDicing._
 
 import TypeTags._
-import utils.DisjointSet
 
 trait LineSegmentation
   extends PageScopeSegmenter
@@ -31,7 +27,6 @@ trait LineSegmentation
     reindexShapes(LB.Glyph)
     segmentSuperSubScripts()
   }
-
 
   private def getBaselineMidrisePageSlice(fontOffsets: FontBaselineOffsets): Option[LTBounds] = {
     fontOffsets.sliceBetween(
@@ -178,11 +173,12 @@ trait LineSegmentation
 
                 val fontRanges = fontSpansOverChars._1.reverse
 
-                val rel = relation("TextLineFontRanges")
-                  .field(pageBand)
-                  .col("FontRanges", fontRanges)
+                // val rel = relation("TextLineFontRanges")
+                //   .field(pageBand)
+                //   .col("FontRanges", fontRanges)
 
-                List(shape(pageBand), rel)
+                // List(shape(pageBand), rel)
+                List(shape(pageBand) )
               }
 
               setExtractedItemsForShape(pageBand, charSetWithRootChar)

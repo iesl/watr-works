@@ -1,14 +1,9 @@
 package org.watrworks
 package rtrees
 
-import scala.jdk.CollectionConverters._
 import utils.DoOrDieHandlers._
-
 import com.github.davidmoten.rtree.{geometry => RG, _}
-import com.github.davidmoten.rtree
-import rx.functions.Func1
 import geometry._
-import geometry.syntax._
 
 /**
   * Wrapper around Java-based R-Tree implementation, for better scala interop
@@ -30,14 +25,14 @@ class RTreeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]](
   def remove(item: Shape): Unit = {
     spatialIndex = spatialIndex.delete(
       item,
-      toRGRectangle(item.bounds)
+      toRGRectangle(item.minBounds)
     )
   }
 
   def add(item: Shape): Unit = {
     spatialIndex = spatialIndex.add(
       item,
-      toRGRectangle(item.bounds)
+      toRGRectangle(item.minBounds)
     )
   }
 
@@ -48,7 +43,7 @@ class RTreeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]](
 }
 
 object RTreeIndex {
-  import RGeometryConversions._
+  // import RGeometryConversions._
 
   def empty[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]](): RTreeIndex[A, W, Shape] = {
     val init = RTree.create[Shape, RG.Geometry]()

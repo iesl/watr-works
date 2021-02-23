@@ -6,13 +6,11 @@ import sc.Seq
 
 import annots._
 import geometry._
-import geometry.syntax._
 
 trait TextGridConstruction extends GeometricOps {
   import geometry._
 
   import utils.EnrichNumerics._
-  import geometry.syntax._
 
   val charIds = utils.IdGenerator[CharID]()
 

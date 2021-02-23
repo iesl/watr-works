@@ -3,9 +3,7 @@ package segment
 
 import ammonite.{ops => fs}, fs._
 
-import corpora.DocumentZoningApi
 import extract._
-import rtrees._
 import utils.Timer.time
 import utils.ExactFloats._
 import textgrid._
@@ -13,12 +11,12 @@ import utils.QuickNearestNeighbors._
 
 import TypeTags._
 import org.watrworks.transcripts.Transcript
-import scala.collection.mutable.ArrayBuffer
 
 trait DocumentLevelFunctions
     extends DocumentScopeSegmenter
     with FontAndGlyphMetricsDocWide
     with MarginalMatterDetectionDocScope
+    with TrapezoidAnalysis
 
 trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
@@ -129,6 +127,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       pageSegmenters.foreach { p =>
         p.buildLinePairTrapezoids()
       }
+      self.createFeatureVectors()
     }
 
     time("classifyLines") {
@@ -237,7 +236,6 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 }
 
 object DocumentSegmenter {
-  import rtrees._
 
   def createSegmenter(
     stableId0: String @@ DocumentID,

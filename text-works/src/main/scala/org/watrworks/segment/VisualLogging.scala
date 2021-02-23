@@ -22,7 +22,6 @@ import transcripts.Transcript
 sealed trait TraceLog {
   def withCallSite(s: String): TraceLog
   def tagged(s: String): TraceLog
-  def named(s: String): TraceLog
 }
 
 object TraceLog {
@@ -41,10 +40,6 @@ object TraceLog {
     def tagged(s: String) = copy(
       tags = (tags.trim + " " + s.trim).trim
     )
-
-    def named(s: String) = copy(
-      name = s.trim
-    )
   }
 
   case class RelationTraceLog(
@@ -54,8 +49,6 @@ object TraceLog {
   ) extends TraceLog {
     def withCallSite(s: String) = copy(headers = headers.withCallSite(s))
     def tagged(s: String) = copy(headers = headers.tagged(s))
-    def named(s: String) = copy(headers = headers.named(s))
-
 
     def col[A: Encoder](colname: String, a: A): RelationTraceLog = {
       copy(
@@ -90,7 +83,6 @@ object TraceLog {
   ) extends TraceLog {
     def withCallSite(s: String) = copy(headers = headers.withCallSite(s))
     def tagged(s: String) = copy(headers = headers.tagged(s))
-    def named(s: String) = copy(headers = headers.named(s))
   }
 
   case class BoxTextLog(
@@ -99,7 +91,6 @@ object TraceLog {
   ) extends TraceLog {
     def withCallSite(s: String) = copy(headers = headers.withCallSite(s))
     def tagged(s: String) = copy(headers = headers.tagged(s))
-    def named(s: String) = copy(headers = headers.named(s))
   }
 
   case class FontEntryLog(
@@ -108,9 +99,7 @@ object TraceLog {
   ) extends TraceLog {
     def withCallSite(s: String) = copy(headers = headers.withCallSite(s))
     def tagged(s: String) = copy(headers = headers.tagged(s))
-    def named(s: String) = copy(headers = headers.named(s))
   }
-
 }
 
 
@@ -212,6 +201,7 @@ trait PageScopeTracing extends ScopedTracing { self  =>
     }
   }
 
+
   def labeledShapes(labels: Label*): GeometryTraceLog = {
     def filterf(shape: AnyShape): Boolean = {
       labels.exists(shape.hasLabel(_))
@@ -222,14 +212,6 @@ trait PageScopeTracing extends ScopedTracing { self  =>
 
     val filtered = shapeIndex.shapeRIndex.getItems().filter(f)
     shape(filtered:_*)
-  }
-
-  def relation(
-    name: String
-  ): RelationTraceLog = {
-    RelationTraceLog(
-      body = List()
-    ).named(name)
   }
 
   def figure(figures: GeometricFigure): GeometryTraceLog = {

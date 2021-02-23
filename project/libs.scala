@@ -14,7 +14,7 @@ trait LibVersions {
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
   val http4sVersion       = "0.20.6"
-  val fs2Version          = "2.5.0"
+  val fs2Version          = "2.5.2"
   val circeJsonVersion    = "0.13.0"
   val ammoniteVersion     = "2.3.8"
   val catsV               = "2.0.0"
@@ -35,7 +35,7 @@ object TestLibs extends LibVersions {
 
   val scalacheck = Seq(
     "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.3.3" % Test,
-    "org.scalacheck" %% "scalacheck"                % "1.15.2"       % "test" //  force()
+    "org.scalacheck" %% "scalacheck"                % "1.15.3"       % "test" //  force()
   )
 
   val testAndCheck = scalatest ++ scalacheck

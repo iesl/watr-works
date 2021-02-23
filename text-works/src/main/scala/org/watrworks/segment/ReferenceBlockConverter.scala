@@ -203,7 +203,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
         // Case 2. LeftJustifiedColumn exists
 
         val leftJustifiedColumnShape = leftJustifiedColumnShapes.head
-        val leftmostCharBounds = queryForLeftmostCharsInColumn(leftJustifiedColumnShape.bounds, refBlockRegion.bbox)
+        val leftmostCharBounds = queryForLeftmostCharsInColumn(leftJustifiedColumnShape.minBounds, refBlockRegion.bbox)
         if (leftmostCharBounds.isEmpty) {
           println(s"Warning: no chars found in left-justified column")
 

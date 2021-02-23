@@ -7,75 +7,28 @@ import sc.Seq
 
 import watrmarks._
 import geometry._
-import geometry.syntax._
 
 import rtrees._
 import utils.OrderedDisjointSet
 
-import utils.ExactFloats._
 import textboxing.{TextBoxing => TB}
 import scala.reflect.ClassTag
 import com.google.{common => guava}
 import guava.{collect => gcol}
-import com.github.davidmoten.rtree.{geometry => RG}
 import utils.DoOrDieHandlers._
 
 
 object LabeledShapeIndex {
-
-
-  def qualifyCluster(l: Label): Label = { l.qualifiedAs("cluster") }
-  def qualifyOrdering(l: Label): Label = { l.qualifiedAs("ordering") }
-  def qualifyRelation(l: Label): Label = { l.qualifiedAs("relation") }
-  def qualifyRep(l: Label): Label = { l.qualifiedAs("rep") }
 
   import _root_.io.circe
   import circe._
   import circe.syntax._
   import circe.literal._
 
-  implicit def LabelShapeIndexEncoder[
-    A <: GeometricFigure,
-    W,
-    Shape <: LabeledShape.Aux[A, W] : Encoder
-  ](implicit
-    RTreeEncoder: Encoder[RTreeIndex[A, W, Shape]]
-  ): Encoder[LabeledShapeIndex[A, W, Shape]] = {
-    Encoder.instance[LabeledShapeIndex[A, W, Shape]]{ shapeIndex =>
-
-      Json.obj(
-        "rtree" := shapeIndex.shapeRIndex.asJson,
-        "nextId" := shapeIndex.shapeIDGen.peekId.unwrap,
-        "shapeMap" := shapeIndex.shapeMap.values.toList.sortBy(_.id.unwrap)
-      )
-    }
-  }
-
-  implicit def LabeledShapeIndexDecoder[
-    A <: GeometricFigure,
-    W,
-    Shape <: LabeledShape.Aux[A, W] : Decoder
-  ]: Decoder[LabeledShapeIndex[A, W, Shape]] = {
-    Decoder.instance[LabeledShapeIndex[A, W, Shape]]{ c =>
-
-      val rtreeIndex = RTreeIndex.empty[A, W, Shape]()
-      val rtreeJson = c.downField("rtree").focus.orDie("no shapes field found")
-      val rtree = rtreeJson.decodeOrDie[RTreeIndex[A, W, Shape]]("Invalid shape list")
-      val shapeIndex =  LabeledShapeIndex.withRTree[A, W, Shape](rtree)
-
-
-      val nextId = c.downField("nextId").focus.orDie().decodeOrDie[Int]()
-      shapeIndex.shapeIDGen.setNextId(nextId)
-
-      val shapeMapValues = c.downField("shapeMap").focus.orDie().decodeOrDie[List[Shape]]()
-      shapeMapValues.foreach{ shape =>
-        shapeIndex.shapeMap.put(shape.id.unwrap.longValue(), shape)
-      }
-      Right(shapeIndex)
-    }
-
-  }
-
+  def qualifyCluster(l: Label): Label = { l.qualifiedAs("cluster") }
+  def qualifyOrdering(l: Label): Label = { l.qualifiedAs("ordering") }
+  def qualifyRelation(l: Label): Label = { l.qualifiedAs("relation") }
+  def qualifyRep(l: Label): Label = { l.qualifiedAs("rep") }
 
   def empty[
     A <: GeometricFigure,
@@ -107,7 +60,6 @@ object LabeledShapeIndex {
 
 abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]] {
 
-  import LabeledShapeIndex._
 
   val shapeIDGen = utils.IdGenerator[ShapeID]()
   def shapeRIndex: RTreeIndex[A, W, Shape]
@@ -162,7 +114,7 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
   def deleteShape(lshape: Shape): Unit = {
     unindexShape(lshape)
     lshape.setIndexed(false)
-    shapeMap.remove(lshape.id.unwrap.toLong)
+    val _ = shapeMap.remove(lshape.id.unwrap.toLong)
   }
 
   def deleteShapes(): Unit = {
@@ -288,6 +240,7 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
 
   def reportClusters(): Unit = {
     import TB._
+
     val allSets = disjointSets.keys.toList
       .map{ l =>
         val dsets = disjointSets(l)
@@ -316,16 +269,18 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
   def setShapeAttribute[C](shapeId: Int@@ShapeID, l: Label, attr: C)
     (implicit act: ClassTag[C]): Unit = {
     val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
-    shapeAttributeTable.put(shapeId, typedLabel, attr)
+    val _ = shapeAttributeTable.put(shapeId, typedLabel, attr)
   }
 
   def getShapeAttribute[C](shapeId: Int@@ShapeID, l: Label)
     (implicit act: ClassTag[C]): Option[C] = {
     val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
+
     if (shapeAttributeTable.contains(shapeId, typedLabel)) {
       Some(shapeAttributeTable.get(shapeId, typedLabel).asInstanceOf[C])
     } else None
   }
+
 
 
 }

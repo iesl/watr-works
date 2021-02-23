@@ -19,15 +19,11 @@ trait LabeledShape[+T <: GeometricFigure, W] {
   def isIndexed(): Boolean = _isIndexed
   def setIndexed(b: Boolean): Unit = _isIndexed = b
 
-  val bounds: LTBounds = minBoundingRect(shape)
+  val minBounds: LTBounds = minBoundingRect(shape)
 }
 
 
 object LabeledShape {
-  import _root_.io.circe._
-  import TypeTags._
-
   type Aux[T <: GeometricFigure, W] = LabeledShape[T, W]
-
-  implicit val shapeIdCodec = TypeTagCodecs.intCodec[ShapeID]
+  //   implicit val shapeIdCodec = TypeTagCodecs.intCodec[ShapeID]
 }

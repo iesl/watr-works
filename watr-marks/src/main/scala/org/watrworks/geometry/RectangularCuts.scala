@@ -1,9 +1,6 @@
 package org.watrworks
 package geometry
 
-import utils.ExactFloats._
-import utils.Interval
-import utils.Interval._
 import utils.{RelativeDirection => Dir}
 import TypeTags._
 import utils.EnrichNumerics._
@@ -15,6 +12,7 @@ object AngleType {
   case object Acute extends AngleType
   case object Obtuse extends AngleType
 }
+
 
 trait RectangularCuts extends GeometricOps {
   import GeometryImplicits._
@@ -154,97 +152,6 @@ trait RectangularCuts extends GeometricOps {
 
 
 
-  implicit class RectangularCuts_RicherTrapezoid(val self: Trapezoid) {
-    def leftBaseAngle(): Double = {
-      toPoint(Dir.BottomLeft).angleTo(toPoint(Dir.TopLeft))
-    }
-
-    def rightBaseAngle(): Double = {
-      math.Pi - toPoint(Dir.BottomRight).angleTo(toPoint(Dir.TopRight))
-    }
-
-    def prettyPrint: String = {
-
-      val lla = leftBaseAngle()
-      val lra = rightBaseAngle()
-
-      val (llba, lrba) = classifyBaseAngles()
-
-      val lls = llba match {
-        case AngleType.Right => "◻"
-        case AngleType.Acute => s"◿"
-        case AngleType.Obtuse => s"◹"
-      }
-
-      val lrs = lrba match {
-        case AngleType.Right => "◻"
-        case AngleType.Acute => s"◺"
-        case AngleType.Obtuse => s"◸"
-      }
-
-      // val tline = self.toLine(Dir.Top)
-      // val bline = self.toLine(Dir.Bottom)
-      val lldeg = (lla * 180) / math.Pi
-      val lrdeg = (lra * 180) / math.Pi
-
-      s"${lls}◻${lrs}:<${lldeg.pp()}º,${lrdeg.pp()}º>mbr:${minBoundingRect(self)}"
-    }
-
-    private val defaultAngleTolerance = 0.08d // ~ 4.6 deg.
-    private val pi2 = math.Pi/2
-
-    def leftBaseAngleType(tolerance: Double = defaultAngleTolerance): AngleType = {
-      val lla = leftBaseAngle()
-      val deg90 = Interval.Doubles(pi2-tolerance, tolerance*2)
-
-      if (lla.withinRange(deg90)) AngleType.Right
-      else if (lla < pi2) AngleType.Acute
-      else AngleType.Obtuse
-
-    }
-
-    def rightBaseAngleType(tolerance: Double = defaultAngleTolerance): AngleType = {
-      val lra = rightBaseAngle()
-      val deg90 = Interval.Doubles(pi2-tolerance, tolerance*2)
-
-      if (lra.withinRange(deg90)) AngleType.Right
-      else if (lra < pi2) AngleType.Acute
-      else AngleType.Obtuse
-    }
-
-    def classifyBaseAngles(tolerance: Double = defaultAngleTolerance): (AngleType, AngleType) = {
-      (leftBaseAngleType(tolerance), rightBaseAngleType(tolerance))
-    }
-
-    def toPoint(dir: Dir): Point = {
-      val Trapezoid(Point(tlx, tly), twidth, Point(blx, bly), bwidth) = self
-
-      dir match {
-        case Dir.Top         => ???
-        case Dir.Bottom      => ???
-        case Dir.Right       => ???
-        case Dir.Left        => ???
-        case Dir.TopLeft     => self.topLeft
-        case Dir.BottomLeft  => self.bottomLeft
-        case Dir.TopRight    => Point(tlx+twidth, tly)
-        case Dir.BottomRight => Point(blx+bwidth, bly)
-        case Dir.Center      => ???
-      }
-    }
-
-    def toLine(dir: Dir): Line = dir match {
-      case Dir.Top         => Line(toPoint(Dir.TopLeft), toPoint(Dir.TopRight))
-      case Dir.Bottom      => Line(toPoint(Dir.BottomLeft), toPoint(Dir.BottomRight))
-      case Dir.Right       => Line(toPoint(Dir.TopRight), toPoint(Dir.BottomRight))
-      case Dir.Left        => Line(toPoint(Dir.TopLeft), toPoint(Dir.BottomLeft))
-      case Dir.TopLeft     => ???
-      case Dir.BottomLeft  => ???
-      case Dir.TopRight    => ???
-      case Dir.BottomRight => ???
-      case Dir.Center      => ???
-    }
-
-  }
 
   implicit class RectangularCuts_RicherLTBounds(val self: LTBounds) {
 

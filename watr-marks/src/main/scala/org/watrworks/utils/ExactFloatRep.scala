@@ -3,7 +3,6 @@ package utils
 
 object ExactFloats {
   import scalaz.Tag
-  import TypeTags._
 
   sealed trait FloatRep
 

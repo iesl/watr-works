@@ -13,6 +13,7 @@
   </appender>
 
   <logger name="akka" level="OFF" />
+  <logger name="smile" level="OFF" />
 
   <logger name="com.zaxxer.hikari" level="OFF" />
   <logger name="io.netty" level="INFO" />

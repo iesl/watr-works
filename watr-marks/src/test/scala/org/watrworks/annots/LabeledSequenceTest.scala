@@ -1,16 +1,9 @@
 package org.watrworks
 package annots
 
-import _root_.io.circe
-import circe.syntax._
-
-import LabeledSequenceCodecs._
 import LabeledSequencePrinting._
-import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import LabeledSequence.Things
-import LabelTarget.Thing
 
 
 trait LabeledSequenceTestBasics

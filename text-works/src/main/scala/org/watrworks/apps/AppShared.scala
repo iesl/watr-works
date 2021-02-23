@@ -7,7 +7,6 @@ import corpora.filesys._
 import cats.effect._
 import utils.DoOrDieHandlers._
 import ammonite.{ops => fs} // , fs._
-import _root_.io.circe // circe._, circe.syntax._
 import utils.PathUtils._
 import TypeTags._
 import utils.Timer.time

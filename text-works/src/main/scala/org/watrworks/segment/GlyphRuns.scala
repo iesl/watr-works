@@ -1,4 +1,3 @@
-
 package org.watrworks
 package segment
 
@@ -9,15 +8,11 @@ import geometry._
 import geometry.syntax._
 import extract._
 import utils.ExactFloats._
-import utils.FunctionalHelpers._
-import utils.SlicingAndDicing._
 import watrmarks._
-import textboxing.{TextBoxing => TB}, TB._
-import utils.DoOrDieHandlers._
+// import textboxing.{TextBoxing => TB}, TB._
 import utils.SlicingAndDicing._
 
 import TypeTags._
-import utils.DisjointSet
 
 trait GlyphRuns extends PageScopeSegmenter
     with FontAndGlyphMetrics { self =>
@@ -46,7 +41,7 @@ trait GlyphRuns extends PageScopeSegmenter
       }
     }
 
-    traceLog.trace { labeledShapes(LB.NatLangGlyph) tagged "All Natural Lang Glyph Rects" }
+    traceLog.trace { labeledShapes(LB.NatLangGlyph) tagged "All NatLang Glyph Rects" }
     traceLog.trace { labeledShapes(LB.SymbolicGlyph) tagged "All Symbolic Glyph Rects" }
 
     initSymbolicCharSpans(symbolicLangCharRuns)
@@ -81,32 +76,31 @@ trait GlyphRuns extends PageScopeSegmenter
     charRuns
   }
 
-  private def combineCombiningMarks(): Unit = {
-    val combiningMarks = pageScope.pageItems.toSeq
-      .collect { case item: ExtractedItem.CombiningMark => item }
 
-    combiningMarks.foreach { combiningMark =>
-      val cmShape = indexShapeAndSetItems(combiningMark.minBBox, LB.Glyph, combiningMark)
-      traceLog.trace { shape(cmShape) }
-    }
-  }
+
+  // private def combineCombiningMarks(): Unit = {
+  //   val combiningMarks = pageScope.pageItems.toSeq
+  //     .collect { case item: ExtractedItem.CombiningMark => item }
+
+  //   combiningMarks.foreach { combiningMark =>
+  //     val cmShape = indexShapeAndSetItems(combiningMark.minBBox, LB.Glyph, combiningMark)
+  //     traceLog.trace { shape(cmShape) }
+  //   }
+  // }
 
 
   private def indexPathRegions(): Unit = {
-    val pathShapes = pageScope.pageItems.toSeq
-      .filter { _.isInstanceOf[ExtractedItem.PathItem] }
-      .map { item =>
-        indexShape(item.minBBox, LB.PathBounds)
-      }
+    val pathShapes =
+      pageScope.pageItems.toSeq
+        .filter { _.isInstanceOf[ExtractedItem.PathItem] }
+        .map { item => indexShape(item.minBBox, LB.PathBounds)}
 
-    // traceLog.trace { shape(pathShapes:_*) tagged "Path Line Bounds" }
-
+    traceLog.trace { shape(pathShapes:_*) tagged "Path Line Bounds" }
   }
 
 
 
   private def initSymbolicCharSpans(symbolicRuns: Seq[Seq[ExtractedItem.CharItem]]): Unit = {
-
     symbolicRuns.map { charRun =>
       val xSorted = charRun.sortBy { _.minBBox.left }
       val p1 = xSorted.head.minBBox.toPoint(Dir.Center)
@@ -120,7 +114,6 @@ trait GlyphRuns extends PageScopeSegmenter
 
       symbolicGlyphLine
     }.asLineShapes
-
 
     traceLog.trace { labeledShapes(LB.SymbolicGlyphLine) }
   }
