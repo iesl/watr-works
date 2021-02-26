@@ -1,19 +1,11 @@
 package org.watrworks
 package transcripts
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
 import io.circe, circe._
 import circe.parser._
-import TypeTags._
-import utils.ExactFloats._
 import circe.syntax._
 
-import geometry._
-
-class TranscriptionFormatTest extends AnyFlatSpec with Matchers {
+class TranscriptionFormatTest extends WatrSpec {
 
   val JsonPrettyPrinter = circe.Printer(
     dropNullValues = false,
@@ -62,11 +54,11 @@ class TranscriptionFormatTest extends AnyFlatSpec with Matchers {
   it should "ser/desr glyphs" in {
 
     val examples = List(
-      """["a", [1, 2, 3, 4]]""",
-      """|["ffi", [3, 2, 3, 4], {
+      """["a", 1, [1, 2, 3, 4]]""",
+      """|["ffi", 23, [3, 2, 3, 4], {
          |  "kind": "rewrite",
          |  "gs": [
-         |    ["ﬃ", [1, 2, 3, 4]]
+         |    ["ﬃ", 24, [1, 2, 3, 4]]
          |   ]
          |  }
          |]""".stripMargin,
@@ -85,19 +77,19 @@ class TranscriptionFormatTest extends AnyFlatSpec with Matchers {
       """{ "unit": "shape", "at": [123, 234, 345, 456] }""",
       """{ "unit": "document", "at": "docId#32" }""",
       """{ "unit": "page", "at": 0 }""",
-      """{ "unit": "label", "at": "Label#32" }""",
+      """{ "unit": "label", "at": 23 }""",
       """{ "unit": "stanza", "at": 32 }""",
     )
 
     examples.foreach(example => {
-      assert(isIsomorphic[Transcript.Range](example))
+      assert(isIsomorphic[Transcript.Range](example, verbose))
     })
   }
 
   it should "ser/desr labels" in {
     val examples = List(
       """{ "name": "Paragraph",
-           "id": "0", "range": [ { "unit": "text:line", "at": [10, 20] } ],
+           "id": 0, "range": [ { "unit": "text:line", "at": [10, 20] } ],
            "props": { "key": "value" } }""",
       """{ "name": "Author",
            "range": [ { "unit": "text:line", "at": [10, 20] } ],
@@ -106,7 +98,7 @@ class TranscriptionFormatTest extends AnyFlatSpec with Matchers {
               { "name": "LastName", "range": [ { "unit": "text:char", "at": [1, 3] } ] }
            ]}""",
       """{ "name": "Foo",
-           "id": "0",
+           "id": 1,
            "range": [
               { "unit": "text:line",  "at": [10, 20] },
               { "unit": "shape", "at": [123, 234, 345, 456] },
@@ -118,7 +110,7 @@ class TranscriptionFormatTest extends AnyFlatSpec with Matchers {
 
 
     examples.foreach(example => {
-      assert(isIsomorphic[Transcript.Label](example))
+      assert(isIsomorphic[Transcript.Label](example, verbose))
     })
   }
 
@@ -164,13 +156,13 @@ class TranscriptionFormatTest extends AnyFlatSpec with Matchers {
          |     "page": 1,
          |     "bounds": [0, 0, 61200, 79200],
          |     "glyphs": [
-         |       ["e", [1, 2, 3, 4]],
-         |       ["ffi", [3, 2, 3, 4], { "kind": "rewrite", "gs": [["ﬃ", [1, 2, 3, 4]]] } ]
+         |       ["e", 1, [1, 2, 3, 4]],
+         |       ["ffi", 2, [3, 2, 3, 4], { "kind": "rewrite", "gs": [["ﬃ", 3, [1, 2, 3, 4]]] } ]
          |     ]
          |   }],
          |   "labels": [
-         |     { "name": "HasRefs", "id": "L#2", "range": [{ "unit": "page", "at": 7 }] },
-         |     { "name": "IsGoldLabled", "id": "L#3", "range": [{ "unit": "document", "at": "self" }] }
+         |     { "name": "HasRefs", "id": 2, "range": [{ "unit": "page", "at": 7 }] },
+         |     { "name": "IsGoldLabled", "id": 3, "range": [{ "unit": "document", "at": "self" }] }
          |   ],
          |  "stanzas": [
          |      { "id": 20, "lines": [], "labels": [] },

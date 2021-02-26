@@ -1,18 +1,12 @@
 package org.watrworks
 package annots
 
-import scala.collection.mutable
 import watrmarks._
 import textboxing.{TextBoxing => TB}, TB._
-
 import utils.{RelativeDirection => Dir, Orientation}
-
-import utils.DoOrDieHandlers._
-
 
 /**
   * Various utilities to output string representations of BIOLU labeled sequences
-  *
   */
 
 object LabeledSequencePrinting {

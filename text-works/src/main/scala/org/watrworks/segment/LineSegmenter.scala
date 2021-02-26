@@ -9,7 +9,7 @@ import geometry.syntax._
 import extract._
 import utils.ExactFloats._
 import watrmarks._
-import textboxing.{TextBoxing => TB}, TB._
+
 import utils.SlicingAndDicing._
 
 import TypeTags._
@@ -26,14 +26,6 @@ trait LineSegmentation
     joinFontBaselinesViaPageBands(LB.CharRunFontBaseline, LB.BaselineMidriseBand)
     reindexShapes(LB.Glyph)
     segmentSuperSubScripts()
-  }
-
-  private def getBaselineMidrisePageSlice(fontOffsets: FontBaselineOffsets): Option[LTBounds] = {
-    fontOffsets.sliceBetween(
-      _.baseLine,
-      _.midriseLine,
-      pageGeometry
-    )
   }
 
   private def getAscentDescentPageSlice(fontOffsets: FontBaselineOffsets): Option[LTBounds] = {
@@ -73,7 +65,7 @@ trait LineSegmentation
           (lineShape, offsetsAtLine, lineChars.head)
         }
 
-        linesAndOffsetsAndHeadChar.foreach { case (lineShape, offsetsAtLine, headChar) =>
+        linesAndOffsetsAndHeadChar.foreach { case (_, offsetsAtLine, headChar) =>
           getAscentDescentPageSlice(offsetsAtLine).foreach { slice =>
             findLineCharsInPageBand(slice, headChar, outputLabel)
           }
@@ -102,7 +94,7 @@ trait LineSegmentation
       (g, getCharsForShape(g).head)
     }
 
-    val orderedById = glyphsWithChar.sortBy { case (glyphShape, charItem) =>
+    val orderedById = glyphsWithChar.sortBy { case (glyphShape@_, charItem) =>
       charItem.id
     }
 
@@ -112,12 +104,11 @@ trait LineSegmentation
 
     val indexedSets = consecutiveById.zipWithIndex
 
-    val setWithRootChar = indexedSets.filter { case (charSet, setNum) =>
+    val setWithRootChar = indexedSets.filter { case (charSet, setNum@_) =>
       charSet.map(_._2.id).contains(rootChar.id)
     }
 
     if (setWithRootChar.nonEmpty) {
-      val setNum = setWithRootChar.head._2
       val charSetWithRootChar = setWithRootChar.flatMap(_._1.map(_._2))
       val orderedLeftToRight = charSetWithRootChar.sortBy { _.minBBox.left }
       val sameOrderByIdAndByLeftToRight = charSetWithRootChar
@@ -137,7 +128,7 @@ trait LineSegmentation
 
         val fontIds = charSetWithRootChar.map(_.scaledFontId).toSet
         val charBounds = charSetWithRootChar.map(_.minBBox).reduce(_ union _)
-        val charSetText = charSetWithRootChar.map(_.char).mkString
+        // val charSetText = charSetWithRootChar.map(_.char).mkString
 
         rootFontOffsets
           .sliceBetween(_.baseLine, _.midriseLine, pageGeometry)
@@ -148,8 +139,8 @@ trait LineSegmentation
               baselineMidriseSlice
             )
 
-            setWithRootChar.foreach { case (charSet, setNum) =>
-              charSet.foreach { case (glyphShape, charItem) =>
+            setWithRootChar.foreach { case (charSet, setNum@_) =>
+              charSet.foreach { case (glyphShape, charItem@_) =>
                 unindexShape(glyphShape)
               }
             }
@@ -157,29 +148,28 @@ trait LineSegmentation
             baselineMidriseRect.map { baselineMidrise =>
               val pageBand = indexShape(baselineMidrise, outputLabel).asRectShape
 
-              traceLog.traceAll {
-
-                val allFontIds = charSetWithRootChar.map(_.scaledFontId)
-                val fontSpansOverChars = allFontIds
-                  .map(_.unwrap)
-                  .groupByPairs(_ == _)
-                  .map { fontIds =>
-                    (fontIds.head, fontIds.length)
-                  }
-                  .foldLeft((List[(String, Int, Int)](), 0)) {
-                    case ((accList, accBegin), (fontId, spanLen)) =>
-                      ((fontId, accBegin, spanLen) :: accList, accBegin + spanLen)
-                  }
-
-                val fontRanges = fontSpansOverChars._1.reverse
-
-                // val rel = relation("TextLineFontRanges")
-                //   .field(pageBand)
-                //   .col("FontRanges", fontRanges)
-
-                // List(shape(pageBand), rel)
-                List(shape(pageBand) )
+              traceLog.trace {
+                shape(pageBand)
               }
+              // traceLog.traceAll {
+              //   val allFontIds = charSetWithRootChar.map(_.scaledFontId)
+              //   val fontSpansOverChars = allFontIds
+              //     .map(_.unwrap)
+              //     .groupByPairs(_ == _)
+              //     .map { fontIds =>
+              //       (fontIds.head, fontIds.length)
+              //     }
+              //     .foldLeft((List[(String, Int, Int)](), 0)) {
+              //       case ((accList, accBegin), (fontId, spanLen)) =>
+              //         ((fontId, accBegin, spanLen) :: accList, accBegin + spanLen)
+              //     }
+              //   val fontRanges = fontSpansOverChars._1.reverse
+              //   // val rel = relation("TextLineFontRanges")
+              //   //   .field(pageBand)
+              //   //   .col("FontRanges", fontRanges)
+              //   // List(shape(pageBand), rel)
+              //   List(shape(pageBand) )
+              // }
 
               setExtractedItemsForShape(pageBand, charSetWithRootChar)
               setFontsForShape(pageBand, fontIds)

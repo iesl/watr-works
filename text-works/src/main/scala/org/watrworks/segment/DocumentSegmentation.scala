@@ -13,10 +13,9 @@ import TypeTags._
 import org.watrworks.transcripts.Transcript
 
 trait DocumentLevelFunctions
-    extends DocumentScopeSegmenter
-    with FontAndGlyphMetricsDocWide
-    with MarginalMatterDetectionDocScope
-    with TrapezoidAnalysis
+  extends DocumentScopeSegmenter
+  with FontAndGlyphMetricsDocWide
+  with TrapezoidAnalysis
 
 trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
@@ -71,13 +70,8 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
     // TODO pass in extraction features:
     //   e.g., Per-page text, super/subscript escapes, dehyphenation, ...
 
-    docScope.docTraceLogs.trace { boxText(docScope.fontDefs.report()) }
-
-    docScope.docTraceLogs.trace {
-      fontSummaries(
-        docScope.fontDefs.getFontSummaries()
-      )
-    }
+    // TODO it would be useful to have font info written somewhere
+    // docScope.docTraceLogs.trace { boxText(docScope.fontDefs.report()) }
 
     docScope.docStats.initTable[Int @@ PageNum, String @@ ScaledFontID, Int @@ FloatRep](
       "PagewiseLineWidths"
@@ -136,9 +130,6 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       }
     }
 
-    // time("findRepeatedMarginalLines") {
-    //   findRepeatedMarginalLines()
-    // }
     time("pageStanzaConstruction") {
       // TODO pass in features for stanzas
       pageSegmenters.foreach { p =>
@@ -152,7 +143,6 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
     val stableId = self.stableId
     val pages = self.pageAtomsAndGeometry.map {
       case (pageItems, pageBounds) => {
-        // val glyphBuf = new ArrayBuffer[Transcript.Glyph](pageItems.length)
 
         val glyphs = pageItems.map(pageItem => {
           Transcript.Glyph(
@@ -177,8 +167,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
       // TODO refactor textGridToStanza()
 
-      val lines =
-        textGrid
+      val lines = textGrid
         .rows()
         .map(row => {
           val text = row.toText()
@@ -186,30 +175,10 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
           val glyphRefs = row
             .cells()
             .map(_ match {
-
-              case cell @ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
-                // val props = if (tailItems.isEmpty) None else {
-                //   val tailGlyphs = tailItems.map(pageItem => {
-                //     Transcript.Glyph(
-                //       pageItem.bbox,
-                //       props = Some(Transcript.GlyphProps(
-                //       ))
-                //     )
-                //   }).toList
-
-                //   Some(Transcript.GlyphProps(
-                //     gs = Some(tailGlyphs)
-                //   ))
-                // }
-
+              case _ @TextGrid.PageItemCell(headItem, _, _, _) =>
                 Transcript.GlyphRef.I(headItem.id.unwrap)
 
-              case cell @ TextGrid.InsertCell(char, insertAt) =>
-                // Transcript.Glyph(
-                //   cell.pageRegion.bbox,
-                //   props = Some(Transcript.GlyphProps(
-                //   )))
-
+              case _ @TextGrid.InsertCell(char, _) =>
                 Transcript.GlyphRef.S(char.toString())
             })
             .toList
@@ -225,10 +194,12 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       )
     }
 
+    val docScopeLogs = docScope.emitLoggedLabels()
+
     Transcript(
       stableId,
       pages.to(List),
-      labels = List(),
+      labels = docScopeLogs.to(List),
       stanzas.to(List)
     )
   }

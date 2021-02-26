@@ -1,14 +1,7 @@
 package org.watrworks
 package utils
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-// import geometry._
-// import utils.ExactFloats._
-
-class AngleFilteringTest extends AnyFlatSpec with Matchers {
+class AngleFilteringTest extends WatrSpec {
 
   behavior of "angle filtering"
 

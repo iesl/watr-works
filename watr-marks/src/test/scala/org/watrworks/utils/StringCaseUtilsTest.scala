@@ -1,12 +1,7 @@
 package org.watrworks
 package utils
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-
-class StringCaseUtilsTest extends AnyFlatSpec with Matchers {
+class StringCaseUtilsTest extends WatrSpec {
   behavior of "string casing"
 
   import StringUtils._

@@ -45,7 +45,7 @@ object EnrichNumerics {
 
     def plusOrMinus(i: Double@@Percent): Interval.Doubles ={
       val half = theDouble * i.unwrap
-      Interval.Doubles(theDouble-half, theDouble+half)
+      Interval.DblBeginLen(theDouble-half, theDouble+half)
     }
 
     def intersects(r: Interval.Doubles): Boolean = {

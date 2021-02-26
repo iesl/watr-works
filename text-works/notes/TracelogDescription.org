@@ -1,20 +1,81 @@
-
 * Tracelog File Description
 
 ** File Format overview
-   The format of the tracelog.json file is a list of entries, where each entry
-   is either a geometric figure, or a relation.
-
-   Geometric figures can be rectangles, lines, trapezoids, or points. Each
-   figure has an id number and one or more associated labels.
-
-   Entries also have a set of headers, which include the time at which the entry
-   was created, and some additional tags, and a "name" field. The name field is
-   the only one that is useful when parsing the log entries, as it identifies
-   the type of a Relation entry, which is described below.
 
 
-** Tracelog Entry Examples 
+** Tracelog Entry Examples
+*** Geometry Example 0
+
+
+#+BEGIN_SRC js
+{
+    "macros": [
+        { "name": "udoc", "def": { "unit": "document", "at": "$*" } },
+        { "name": "up0", "def": { "unit": "document", "at": "$*" } },
+    ],
+    "labels": [
+        {
+            "name": "CharRunFontBaseline",
+            "id": "1118",
+            "range": [  // Fully spelled out:
+                { "$intersection": [
+                    {"unit": "document", "at": "cmp-0134.pdf"},
+                    {"unit": "page", "at": 0},
+                    {"unit": "shape", "at": [[4277, 33636], [30482, 33636]]}
+                ]},
+            ]
+        },
+        {
+            "name": "CharRunFontBaseline",
+            "id": "1118",
+            "range": [  // Abbreviated Ranges:
+                { "$intersection": [
+                    {"%udoc": "cmp-0134.pdf"},
+                    {"%upage": 0},
+                    {"%ushape": [[4277, 33636], [30482, 33636]]}
+                ]},
+            ]
+        },
+        {
+            "name": "CharRunFontBaseline",
+            "id": "1118",
+            "range": [// Abbreviated URI (doc/page/shape):
+                { "%udps": ["cmp-0134.pdf", 0, [[4277, 33636], [30482, 33636]]]}
+            ]
+        },
+        {
+            "name": "ParaBeginShapes",
+            "id": "2003",
+            "props": {
+                "stats": {
+                    "precision": 0.3,
+                    "recall": 1,
+                    "f1": 1,
+                },
+                "labels": [
+                    "User::CorrectWithExceptions"
+                ]
+            },
+            "range": [
+                {"$merge": [
+                    {"unit": "idref", "range": 1118},
+                    {"props": {
+                        "features": [
+                            {"height-1em%": 120}
+                        ],
+                        "labels": [
+                            "User::Missed",
+                            "User::Added"
+                        ]
+                    }},
+                ],
+                ]
+            },
+        ],
+    }
+
+#+END_SRC
+
 
 
 *** Geometry Example 1

@@ -1,11 +1,7 @@
 package org.watrworks
 package utils
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-class TreeShaperTests extends AnyFlatSpec with Matchers {
+class TreeShaperTests extends WatrSpec {
   import scalaz._
   import Scalaz._
 

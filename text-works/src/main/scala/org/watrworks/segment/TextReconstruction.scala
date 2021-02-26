@@ -10,11 +10,9 @@ import utils.ExactFloats._
 import utils.QuickNearestNeighbors._
 import extract.ExtractedItem
 import TypeTags._
-import scalaz.{@@ => _, _} //, Scalaz._
 import utils.intervals._
 import watrmarks._
 import utils.SlicingAndDicing._
-import scalaz.syntax.std.list._
 import org.watrworks.transcripts.Transcript
 
 trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self =>

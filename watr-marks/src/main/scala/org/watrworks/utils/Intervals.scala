@@ -23,7 +23,7 @@ object Interval {
     }
   }
 
-  def Doubles(b: Double, len: Double): Doubles = {
+  def DblBeginLen(b: Double, len: Double): Doubles = {
     IntervalT((b, len))
   }
 
@@ -37,7 +37,7 @@ object Interval {
     for {
       i <- 0 until slices
     } yield {
-      Doubles(i*stepSize, stepSize)
+      DblBeginLen(i*stepSize, stepSize)
     }
   }
 
@@ -60,7 +60,7 @@ object Interval {
     val start = math.min(r1.min, r2.min)
     val end = math.max(r1.max, r2.max)
 
-    Doubles(start, end-start)
+    DblBeginLen(start, end-start)
   }
 
   implicit class RicherFloatExactInterval(val theRange: FloatExacts) extends AnyVal {
@@ -74,6 +74,7 @@ object Interval {
     def max: Double = theRange.unwrap._1+theRange.unwrap._2
     def len: Double = theRange.unwrap._2
 
+    def contains(i: Double): Boolean = min <= i && i < max
     def union(r2: Doubles): Doubles = {
       doubleIntervalUnion(theRange, r2)
     }

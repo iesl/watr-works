@@ -7,7 +7,6 @@ trait PageLevelFunctions extends ColumnFinding
     with TextBlockGrouping
     with ShapeFunctions
     with ReferenceBlockConverter
-    with MarginalMatterDetectionPageScope
 
 object PageSegmenter {
 

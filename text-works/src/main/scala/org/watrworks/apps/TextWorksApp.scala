@@ -163,6 +163,4 @@ object TextWorks {
       config.exec.foreach { _.apply(config) }
     }
   }
-
-
 }

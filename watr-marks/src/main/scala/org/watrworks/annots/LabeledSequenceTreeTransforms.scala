@@ -5,7 +5,6 @@ import scalaz.{@@ => _, _} // , Scalaz._
 import watrmarks._
 import _root_.io.circe, circe._, circe.syntax._
 import utils.DoOrDieHandlers._
-import TypeTags._
 
 sealed trait LabelTreeNode[+A <: LabelTarget]
 

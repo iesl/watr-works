@@ -1,6 +1,5 @@
 package org.watrworks
 
-import scalaz.syntax
 import scalaz.syntax.std
 import scalaz.Tag
 

@@ -18,7 +18,7 @@ object SensibleProject extends CommonLibs {
     libraryDependencies ++= Seq(acyclic)
   )
 
-  lazy val scalaV = "2.13.5"
+  lazy val scalaV = "2.13.4"
 
   val scala_2_13_RecommendedOptionList = Seq(
     "-Xcheckinit",                      // Wrap field accessors to throw an exception on uninitialized access.
@@ -46,7 +46,7 @@ object SensibleProject extends CommonLibs {
     "-Ywarn-unused:implicits", // Warn if an implicit parameter is unused.
     "-Ywarn-unused:imports", // Warn if an import selector is not referenced.
     "-Ywarn-unused:locals", // Warn if a local definition is unused.
-    "-Ywarn-unused:params", // Warn if a value parameter is unused.
+    // "-Ywarn-unused:params", // Warn if a value parameter is unused.
     "-Ywarn-unused:patvars", // Warn if a variable bound in a pattern is unused.
     "-Ywarn-unused:privates", // Warn if a private member is unused.
     "-Ywarn-value-discard", // Warn when non-Unit expression results are unused.

@@ -1,14 +1,9 @@
 package org.watrworks
 package utils
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-import EnrichNumerics._
 import Interval._
 
-class IntervalSpec extends AnyFlatSpec with Matchers {
+class IntervalSpec extends WatrSpec {
 
   behavior of "ranges int, double"
 
@@ -38,17 +33,4 @@ class IntervalSpec extends AnyFlatSpec with Matchers {
     }
 
   }
-}
-
-import org.scalacheck._
-import org.scalacheck.Arbitrary
-import org.scalacheck.Prop._
-
-object IntervalsCheck extends Properties("IntervalsCheck")  {
-
-  val smallishDouble = Gen.choose(0d, 10000d)
-
-  // property("") = forAll{ (interval: Interval.Ints) =>
-  //   true
-  // }
 }

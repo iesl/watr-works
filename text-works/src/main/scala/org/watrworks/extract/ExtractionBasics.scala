@@ -113,7 +113,7 @@ object ExtractedItem {
     id: Int@@CharID,
     minBBox: LTBounds
   ) extends ExtractedItem {
-    def strRepr(): String = s"[image ${minBBox.prettyPrint}]"
+    def strRepr(): String = s"[img ${minBBox.prettyPrint}]"
   }
 
   case class PathItem(
@@ -121,9 +121,9 @@ object ExtractedItem {
     minBBox: LTBounds,
     waypoints: Seq[Point]
   ) extends ExtractedItem {
-    lazy val pp = waypoints.map(_.prettyPrint).take(4).mkString(", ")
+    lazy val pp = waypoints.map(_.prettyPrint).take(4).mkString("->")
 
-    def strRepr(): String = s"[path ${minBBox.prettyPrint}=[$pp]]"
+    def strRepr(): String = s"[path $pp]"
   }
 
 }
@@ -207,7 +207,7 @@ case class FontBaselineOffsets(
   }
 
   def rescaledAs(newName: String, newScalingFactor: Int@@ScalingFactor): FontBaselineOffsets = {
-    val (fontName, scalingFactor) = FontDefs.splitScaledFontId(scaledFontId)
+    val (fontName@_, scalingFactor) = FontDefs.splitScaledFontId(scaledFontId)
 
     val scalingRatio = newScalingFactor.unwrap.toDouble / scalingFactor.unwrap
 
@@ -240,7 +240,7 @@ case class FontBaselineOffsets(
     val y2 = f2(this)
     val ytop = min(y1, y2)
     val ybot = max(y1, y2)
-    val height = ybot - ytop
+    // val height = ybot - ytop
     val t = max(ytop, r.top)
     val b = min(ybot, r.bottom)
     r.getHorizontalSlice(t, b-t)
@@ -512,7 +512,7 @@ class FontDefs(pageCount: Int) {
   private val scaledFontBaselineOffsets = mutable.HashMap[String@@ScaledFontID, FontBaselineOffsets]()
 
   def setScaledFontOffsets(scaledFontId: String@@ScaledFontID, fontBaselineOffsets: FontBaselineOffsets): Unit = {
-    scaledFontBaselineOffsets.put(scaledFontId, fontBaselineOffsets)
+    val _ = scaledFontBaselineOffsets.put(scaledFontId, fontBaselineOffsets)
   }
 
   def hasScaledFontOffsets(scaledFontId: String@@ScaledFontID): Boolean = {

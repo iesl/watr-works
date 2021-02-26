@@ -1,11 +1,7 @@
 package org.watrworks
 package utils.intervals
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-class IntervalsTest extends AnyFlatSpec with Matchers {
+class IntervalsTest extends WatrSpec {
 
 
   it should "test_isNotPoint" in {
@@ -95,13 +91,16 @@ class IntervalsTest extends AnyFlatSpec with Matchers {
 
   def assertNull(a: Any): Unit = {
     assert(a == null)
+    ()
   }
   def assertEquals(a: Any, b: Any): Unit = {
     assert(a == b)
+    ()
   }
 
   def assertNotEquals(a: Any, b: Any): Unit = {
     assert(a != b)
+    ()
   }
 
   it should "test_equalSameEndPointsDifferentTypes" in {

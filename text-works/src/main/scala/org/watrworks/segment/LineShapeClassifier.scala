@@ -3,7 +3,6 @@ package segment
 
 import watrmarks._
 import geometry._
-import geometry.syntax._
 import textgrid._
 import TypeTags._
 
@@ -246,34 +245,44 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
 
   object ShapeProps {
 
-    /***
-     *  Ideas:
-     *  + bi/trigrams for common char patterns to classify math vs chem vs text regions
-     *  + Font properties:
-     *    - most common (text|symbol)
-     *    - most common non-common-font appearing at line beginnings (inline header, Fig, Table. etc.)
-     *    - most common non-common-font appearing at page extrema (journal headers, page#s, footers)
-     *    - most common non-common-font appearing in references (emphasized, bold or italic)
-     *    - most common non-common-font appearing as complete lines
-     *
-     * + Text Properties
-     *   - Table/figure text tends to occur at extreme top/bottom of page
-     *    - find predominant page top/bottom fonts
-     *
-     *
-     *  - Shape properties
-     *    - Most common para indent shape, as left-angle, e.g., 30 deg  ◿◻◻
-     *    - Most common hanging indent shape left-angle, for refs
-     *    - Most common para end/begin left angle
-     *    - Inset math shape (like para end without a final period)
-     *
-     * + Labels
-     *    - graph axis labels
-     *
-     * + Identifying notes associated with author names (institutions, etc)
-     *   - for each identified superscript symbol, put a column-evidence dot on page, then try
-     *     to draw a column identifying the notes
-     **/
+    /**
+      *  Ideas:
+      *  + bi/trigrams for common char patterns to classify math vs chem vs text regions
+      *  + Font properties:
+      *    - most common (text|symbol)
+      *    - most common non-common-font appearing at line beginnings (inline header, Fig, Table. etc.)
+      *    - most common non-common-font appearing at page extrema (journal headers, page#s, footers)
+      *    - most common non-common-font appearing in references (emphasized, bold or italic)
+      *    - most common non-common-font appearing as complete lines
+      *
+      * + Text Properties
+      *   - Table/figure text tends to occur at extreme top/bottom of page
+      *    - find predominant page top/bottom fonts
+      *
+      *
+      *  - Shape properties
+      *    - Most common para indent shape, as left-angle, e.g., 30 deg  ◿◻◻
+      *    - Most common hanging indent shape left-angle, for refs
+      *    - Most common para end/begin left angle
+      *    - Inset math shape (like para end without a final period)
+      *
+      * + Labels
+      *    - graph axis labels
+      *
+      * + Identifying notes associated with author names (institutions, etc)
+      *   - for each identified superscript symbol, put a column-evidence dot on page, then try
+      *     to draw a column identifying the notes
+      * + Number columns:
+      *    - no punctuation (e.g., (1) [1] 1. )
+      *    - strictly increasing
+      *    - each page starts at 1 or last page max+1
+      *    - alignment is centered on midrise-band
+      *    - tend towards extreme left/right of page
+      *    - font may be unique to numbering
+      *    - relatively constant spacing to page edge
+      *    - wide whitespace margins
+      *
+      **/
 
     def apply(
       t: Trapezoid,

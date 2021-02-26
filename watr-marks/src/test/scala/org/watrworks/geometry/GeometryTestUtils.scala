@@ -1,15 +1,10 @@
 package org.watrworks
 package geometry
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
 import scalaz._, Scalaz._
 import utils.ExactFloats._
 
-
-object GeometryTestUtils extends AnyFlatSpec {
+object GeometryTestUtils extends WatrSpec {
   import utils.AsciiGraphPaper
   import utils.GraphPaper
   import GraphPaper._

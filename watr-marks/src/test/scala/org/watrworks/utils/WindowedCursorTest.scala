@@ -1,11 +1,7 @@
 package org.watrworks
 package utils
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-class WindowedCursorTest extends AnyFlatSpec with Matchers {
+class WindowedCursorTest extends WatrSpec {
   behavior of "Cursors and Windows"
 
 
@@ -40,7 +36,7 @@ class WindowedCursorTest extends AnyFlatSpec with Matchers {
     val ints = List(1)
 
     var calls = 0
-    val groups = Cursors.groupByWindow[Int]({case (prevs, a) =>
+    val groups = Cursors.groupByWindow[Int]({case (_, _) =>
       calls = calls + 1
       false
     }, ints)

@@ -1,26 +1,20 @@
 package org.watrworks
 package transcripts
 
-import TypeTags._
-import utils.ExactFloats._
 import io.circe
-import circe.generic.semiauto._
 import _root_.io.circe, circe.syntax._, circe._
 import io.circe.generic._
 import circe.generic.semiauto._
 import cats.syntax.functor._
 
-import utils.DoOrDieHandlers._
 import geometry._
-import GeometryCodecs._
-import scalaz.Tag.TagOf
 
 @JsonCodec
 case class Transcript(
   documentId: String @@ DocumentID,
   pages: List[Transcript.Page],
   labels: List[Transcript.Label],
-  stanzas: List[Transcript.Stanza],
+  stanzas: List[Transcript.Stanza]
 )
 
 object Transcript {
@@ -53,10 +47,12 @@ object Transcript {
   }
 
   def GlyphDec0: Decoder[Glyph] =
-    Decoder[(String, Int@@GlyphID, LTBounds)].map(rp => Glyph(rp._1, rp._2, rp._3, None))
+    Decoder[(String, Int @@ GlyphID, LTBounds)].map(rp => Glyph(rp._1, rp._2, rp._3, None))
 
   def GlyphDec1: Decoder[Glyph] =
-    Decoder[(String, Int@@GlyphID, LTBounds, GlyphProps)].map(rp => Glyph(rp._1, rp._2, rp._3, Some(rp._4)))
+    Decoder[(String, Int @@ GlyphID, LTBounds, GlyphProps)].map(rp =>
+      Glyph(rp._1, rp._2, rp._3, Some(rp._4))
+    )
 
   implicit def Dec_Glyph: Decoder[Glyph] = GlyphDec1.or(GlyphDec0)
 
@@ -83,15 +79,15 @@ object Transcript {
     }
 
     implicit lazy val encodeGlyphProps: Encoder[GlyphProps] =
-      Encoder.instance {
-        case r: Rewrite => r.asJson
+      Encoder.instance { case r: Rewrite =>
+        r.asJson
       }
 
     implicit def GlyphPropsDec: Decoder[GlyphProps] =
       decodeRewrite.widen
   }
 
-  implicit val labelIdCodec = TypeTagCodecs.strCodec[LabelID]
+  implicit val labelIdCodec = TypeTagCodecs.intCodec[LabelID]
   implicit val stanzaIdCodec = TypeTagCodecs.intCodec[StanzaID]
 
   sealed trait GlyphRef
@@ -123,19 +119,17 @@ object Transcript {
     labels: List[Label]
   )
 
-
   case class Label(
     name: String,
-    id: Option[String @@ LabelID],
+    id: Option[Int @@ LabelID],
     range: List[Range],
-    props: Option[JsonObject],
+    props: Option[Json],
     children: Option[List[Label]]
   )
 
-
   implicit lazy val LabelDecoder: Decoder[Label] = deriveDecoder
   val LabelEncoder: Encoder[Label] = deriveEncoder
-  implicit def LabelEncoderNonNull: Encoder[Label]  = LabelEncoder.mapJson(json => {
+  implicit def LabelEncoderNonNull: Encoder[Label] = LabelEncoder.mapJson(json => {
     val hc = HCursor.fromJson(json)
 
     // TODO abstract out this null-dropping json code
@@ -150,9 +144,7 @@ object Transcript {
 
   })
 
-  sealed case class Span(
-    begin: Int,
-    length: Int)
+  sealed case class Span(begin: Int, length: Int)
 
   implicit val SpanDecoder: Decoder[Span] =
     Decoder[(Int, Int)].map(t => Span(t._1, t._2))
@@ -162,6 +154,11 @@ object Transcript {
 
   sealed trait Range {
     def unit: String;
+  }
+
+  object Range {
+    // case class Uri(segments: List[Label])
+    // implicit class RicherRange(val self: Boolean) {
   }
 
   implicit val RangeDecoder: Decoder[Range] = new Decoder[Range] {
@@ -193,10 +190,7 @@ object Transcript {
   }
 
   @JsonCodec
-  case class TextRange(
-    unit: String,
-    at: Span)
-    extends Range
+  case class TextRange(unit: String, at: Span) extends Range
 
   object TextLabelUnit {
     val Line = "text:line"
@@ -204,42 +198,18 @@ object Transcript {
   }
 
   @JsonCodec
-  case class GeometryRange(
-    unit: String,
-    at: GeometricFigure)
-    extends Range
-
-  // object GeometryLabelUnit {
-  //   val Point = "shape:point"
-  //   val Line = "shape:line"
-  //   val Rect = "shape:rect"
-  //   val Circle = "shape:circle"
-  //   val Triangle = "shape:triangle"
-  //   val Trapezoid = "shape:trapezoid"
-  // }
+  case class GeometryRange(unit: String, at: GeometricFigure) extends Range
 
   @JsonCodec
-  case class DocumentRange(
-    unit: String = "document",
-    at: String @@ DocumentID)
-    extends Range
+  case class DocumentRange(unit: String = "document", at: String @@ DocumentID) extends Range
 
   @JsonCodec
-  case class PageRange(
-    unit: String = "page",
-    at: Int @@ PageID)
-    extends Range
+  case class PageRange(unit: String = "page", at: Int @@ PageNum) extends Range
 
   @JsonCodec
-  case class LabelRange(
-    unit: String = "label",
-    at: String @@ LabelID)
-    extends Range
+  case class LabelRange(unit: String = "label", at: Int @@ LabelID) extends Range
 
   @JsonCodec
-  case class StanzaRange(
-    unit: String = "label",
-    at: Int @@ StanzaID)
-    extends Range
+  case class StanzaRange(unit: String = "stanza", at: Int @@ StanzaID) extends Range
 
 }

@@ -84,7 +84,7 @@ trait TextGridConstruction extends GeometricOps {
     val labeledCursor = labelSpans.foldLeft(row0) {case (accCur, ((start, end), label)) =>
       val win = accCur.move(start)
         .get.toWindow()
-        .slurpRight({ case (window, next) => window.length <= end-start })
+        .slurpRight({ case (window, _) => window.length <= end-start })
 
       LabeledSequence.addBioLabel(label, win.cells)
       win.closeWindow().start

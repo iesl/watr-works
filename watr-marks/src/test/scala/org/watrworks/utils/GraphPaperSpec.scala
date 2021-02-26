@@ -1,12 +1,9 @@
 package org.watrworks
 package utils
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 import textboxing.{TextBoxing => TB}, TB._
 
-class GraphPaperSpec extends AnyFlatSpec with Matchers {
+class GraphPaperSpec extends WatrSpec {
 
   it should "maintain height/width dimensions when rendered as string" in {
     val graphPaper = new AsciiGraphPaper(2, 2)

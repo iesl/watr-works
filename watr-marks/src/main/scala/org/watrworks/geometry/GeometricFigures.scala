@@ -29,8 +29,6 @@ case class LTBounds(
   val getBottom: Double = bottom.asDouble()
 }
 
-
-
 object LTBounds {
   def FromInts(l: Int, t: Int, w: Int, h: Int) = Ints(l, t, w, h)
 
@@ -212,7 +210,7 @@ object Trapezoid {
 
     def leftBaseAngleType(tolerance: Double = defaultAngleTolerance): AngleType = {
       val lla = leftBaseAngle()
-      val deg90 = Interval.Doubles(pi2-tolerance, tolerance*2)
+      val deg90 = Interval.DblBeginLen(pi2-tolerance, tolerance*2)
 
       if (lla.withinRange(deg90)) AngleType.Right
       else if (lla < pi2) AngleType.Acute
@@ -222,7 +220,7 @@ object Trapezoid {
 
     def rightBaseAngleType(tolerance: Double = defaultAngleTolerance): AngleType = {
       val lra = rightBaseAngle()
-      val deg90 = Interval.Doubles(pi2-tolerance, tolerance*2)
+      val deg90 = Interval.DblBeginLen(pi2-tolerance, tolerance*2)
 
       if (lra.withinRange(deg90)) AngleType.Right
       else if (lra < pi2) AngleType.Acute

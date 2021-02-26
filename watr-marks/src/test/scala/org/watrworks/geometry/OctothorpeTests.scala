@@ -1,16 +1,9 @@
-//
 package org.watrworks
 package geometry
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 import GeometryImplicits._
 import utils.{RelativeDirection => Dir}
 import utils.GraphPaper
-
-import scalaz._, Scalaz._
-import utils.ExactFloats._
 
 import Octothorpe._
 
@@ -83,8 +76,7 @@ case class TrapFeatureRec(
   upLeftPointCharCase: String // upper/lower
 )
 
-class OctothorpeTest extends AnyFlatSpec {
-  import GeometryImplicits._
+class OctothorpeTest extends WatrSpec {
   import GeometryTestUtils._
   import textboxing.{TextBoxing => TB}, TB._
 

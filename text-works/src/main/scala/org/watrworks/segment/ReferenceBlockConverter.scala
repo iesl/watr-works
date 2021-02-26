@@ -6,12 +6,8 @@ import sc.Seq
 
 import geometry._
 import geometry.syntax._
-import extract._
 import utils.ExactFloats._
-import utils.FunctionalHelpers._
-import utils.SlicingAndDicing._
 import watrmarks._
-import annots._
 import corpora._
 import textboxing.{TextBoxing => TB}, TB._
 import utils.SlicingAndDicing._

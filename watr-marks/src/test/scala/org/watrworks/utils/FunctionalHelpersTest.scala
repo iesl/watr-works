@@ -1,14 +1,9 @@
-
 package org.watrworks
 package utils
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
 import FunctionalHelpers._
 
-class FunctionalHelpersTest extends AnyFlatSpec with Matchers {
+class FunctionalHelpersTest extends WatrSpec {
   behavior of "Function helper routines"
 
 

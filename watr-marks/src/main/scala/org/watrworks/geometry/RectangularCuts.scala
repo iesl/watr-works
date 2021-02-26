@@ -3,7 +3,6 @@ package geometry
 
 import utils.{RelativeDirection => Dir}
 import TypeTags._
-import utils.EnrichNumerics._
 
 sealed trait AngleType
 
@@ -15,7 +14,6 @@ object AngleType {
 
 
 trait RectangularCuts extends GeometricOps {
-  import GeometryImplicits._
 
   class RectangularCutOps(innerRect: LTBounds, enclosingRect: LTBounds) {
     def burstAllPossibleDirections(): Seq[(Dir, Option[LTBounds])] = {

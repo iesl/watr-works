@@ -347,7 +347,7 @@ class TreeNode[T: Ordering: MidpointHelper, W](
     val nodeGraphRepr = new CharBasedGraphPaper(increasing.size, increasing.size)
 
     increasing.toList
-      .zipWithIndex.sortWith { case ((interval1, i1), (interval2, i2)) =>
+      .zipWithIndex.sortWith { case ((interval1, _), (interval2, _)) =>
         decreaseOrd.lt(interval1, interval2)
       }
       .zipWithIndex
@@ -478,7 +478,7 @@ class TreeNode[T: Ordering: MidpointHelper, W](
     * rotation has been performed.
     */
   private def  rightRotate(): TreeNode[T, W] = {
-    var head: TreeNode[T, W]  = left;
+    val head: TreeNode[T, W]  = left;
     left = head.right;
     head.right = this;
     _height = Math.max(height(right), height(left)) + 1;

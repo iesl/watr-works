@@ -1,14 +1,11 @@
 package org.watrworks
 package utils
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 import scala.util.Random._
 import GuavaHelpers._
 import scalaz._, Scalaz._
 
-class GuavaHelpersTest extends AnyFlatSpec with Matchers {
+class GuavaHelpersTest extends WatrSpec {
 
   it should "draw a marginalized table" in {
     val table = initTable[Int, String, Int]()

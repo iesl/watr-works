@@ -5,9 +5,7 @@ import scalaz.syntax.ToIdOps
 import scalaz.syntax.std.ToListOps
 
 import scala.language.postfixOps
-import scala.language.implicitConversions
 
-// import scala.scalajs.js.annotation._
 import scala.annotation.tailrec
 import scala.{ collection => sc }
 import sc.Seq

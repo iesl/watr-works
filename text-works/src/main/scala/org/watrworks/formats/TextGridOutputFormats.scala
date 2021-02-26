@@ -1,23 +1,12 @@
 package org.watrworks
 package formats
 
-import org.watrworks.watrmarks.WeightedLabeling
 import scala.{collection => sc}
 import sc.Seq
 
-import rtrees._
-import textboxing.{TextBoxing => TB}, TB._
-import segment.{SegmentationLabels => LB}
 import segment._
 import _root_.io.circe, circe._, circe.syntax._
 import circe.generic.auto._
-import circe.generic._
-import geometry._
-import transcripts._
-import java.nio.{file => nio}
-import ammonite.{ops => fs}
-import utils.DoOrDieHandlers._
-import org.watrworks.textgrid.TextGrid
 
 object TextGridOutputFormats {
 

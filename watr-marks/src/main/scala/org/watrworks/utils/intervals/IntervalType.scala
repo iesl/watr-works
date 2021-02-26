@@ -262,11 +262,9 @@ object MidpointHelper {
     def maxValue(): Int = Int.MaxValue
 
     def getMidpoint(t: Interval[Int, _]): Option[Int] = {
-      // println(s"getMidpoint(${t}): isEmpty=${isEmpty(t)}")
       if (isEmpty(t)) None else {
         val from = t.start.map(_.toLong).getOrElse(Int.MinValue.toLong)
         val to = t.end.map(_.toLong).getOrElse(Int.MaxValue.toLong)
-        val range = to - from
         Some(
           ((from + to) / 2).toInt
         )

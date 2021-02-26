@@ -1,11 +1,7 @@
 package org.watrworks
 package textboxing
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-class TextBoxingTest extends AnyFlatSpec with Matchers {
+class TextBoxingTest extends WatrSpec {
   // import TextBoxing._
 
   behavior of "textboxing"

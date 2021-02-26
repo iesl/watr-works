@@ -5,8 +5,9 @@ import scalaz.Equal
 import geometry.syntax._
 import scalaz.syntax.equal._
 
-import _root_.io.circe, circe.syntax._, circe._
+import _root_.io.circe
 import io.circe.generic._
+
 
 /**
 

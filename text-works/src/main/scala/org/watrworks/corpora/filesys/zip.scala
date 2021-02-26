@@ -2,10 +2,10 @@ package org.watrworks
 package corpora
 package filesys
 
+
 import java.nio.file.{ DirectoryStream, Files, Path }
 import fs2._
 import cats.effect._
-import cats.implicits._
 
 
 object zip {

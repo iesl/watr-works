@@ -1,11 +1,7 @@
 package org.watrworks
 package geometry
 
-import org.scalatest._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-class RectangularCutTests extends AnyFlatSpec with Matchers {
+class RectangularCutTests extends WatrSpec {
   behavior of "Geometric Figures"
 
   import GeometryImplicits._

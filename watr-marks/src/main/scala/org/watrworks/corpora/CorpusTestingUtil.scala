@@ -1,7 +1,6 @@
 package org.watrworks
 package corpora
 
-import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 import textgrid._
 
@@ -44,8 +43,8 @@ trait CorpusTestingUtil extends TextGridBuilder {
       stableId
     }
   }
-  def addSampleDoc(doc: List[String]): Unit = {
-    addSampleDocs(List(doc))
+  def addSampleDoc(doc: List[String]): String@@DocumentID = {
+    addSampleDocs(List(doc)).head
   }
 
   def addDummyDocs(n: Int): Seq[String@@DocumentID] = {

@@ -62,7 +62,6 @@ object TypeTags extends TypeTags
 
 
 trait TypeTagUtils {
-  import textboxing.{TextBoxing => TB}, TB._
   import textboxing.{TextBoxing => TB, ShowBox}, TB._
   val Tag = scalaz.Tag
 
