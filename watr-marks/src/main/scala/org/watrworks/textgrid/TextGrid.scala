@@ -2,31 +2,18 @@ package org.watrworks
 package textgrid
 
 import scala.collection.mutable
-import watrmarks._
 import geometry._
 import geometry.PageComponentImplicits._
 import textboxing.{TextBoxing => TB}, TB._
-import TypeTags._
 import annots._
 
-import utils.{Cursor, Cursors, Window}
 import utils.SlicingAndDicing._
-import utils.DoOrDieHandlers._
-
-import _root_.io.circe
-import circe._
-import circe.literal._
-import scala.collection.{Seq}
-
-/**
-
-  */
 
 trait TextGrid { self =>
 
   import TextGrid._
 
-  def stableId: String@@DocumentID
+  def stableId: String @@ DocumentID
 
   object cellLabels extends LabeledSequence[GridCell] {
     def labelTargets(): Seq[GridCell] = self.gridCells()
@@ -57,7 +44,6 @@ trait TextGrid { self =>
     } yield { (cell, rowNum, colNum) }
   }
 
-
   def rowAt(row: Int): Option[Row] = {
     if (0 <= row && row < rows().length) {
       Some(rows().apply(row))
@@ -65,10 +51,10 @@ trait TextGrid { self =>
   }
 
   def indexedCellAt(row: Int, col: Int): Option[(Int, GridCell)] = {
-    val (pre, rest) = indexedCells().span { case (cell, r, c) =>
-      r!=row && c!=col
+    val (pre, rest) = indexedCells().span { case (cell @ _, r, c) =>
+      r != row && c != col
     }
-    rest.headOption.map{ case (cell, r, c) =>
+    rest.headOption.map { case (cell, _, _) =>
       (pre.length, cell)
     }
   }
@@ -85,10 +71,10 @@ trait TextGrid { self =>
 
   def pageBounds(): Seq[PageRegion] = {
 
-    val allBounds = rows().flatMap{ row => row.pageBounds() }
+    val allBounds = rows().flatMap { row => row.pageBounds() }
 
     val regionsByPages = allBounds.groupBy(_.page.pageNum)
-    regionsByPages.map { case (pageNum, pageRegions) =>
+    regionsByPages.map { case (pageNum @ _, pageRegions) =>
       val headRegion = pageRegions.head.page
       val pageBbox = pageRegions.map(_.bbox).reduce(_ union _)
       PageRegion(
@@ -98,22 +84,20 @@ trait TextGrid { self =>
     }.toList
   }
 
-
   def split(row: Int, col: Int): Option[TextGrid] = {
     if (0 <= row && row < rows().length) {
-      rows().apply(row).split(col).map {
-        case (row1, row2) =>
-          val (pre, post) = rows().splitAt(row)
-          val end = row1 +: row2 +: (post.drop(1))
-          val newRows = pre ++ end
-          TextGrid.fromRows(stableId, newRows)
+      rows().apply(row).split(col).map { case (row1, row2) =>
+        val (pre, post) = rows().splitAt(row)
+        val end = row1 +: row2 +: (post.drop(1))
+        val newRows = pre ++ end
+        TextGrid.fromRows(stableId, newRows)
       }
     } else None
   }
 
   def slurp(row: Int): Option[TextGrid] = {
-    if (0 <= row && row < rows().length-1) {
-      val (pre, post) = rows().splitAt(row+1)
+    if (0 <= row && row < rows().length - 1) {
+      val (pre, post) = rows().splitAt(row + 1)
       val r1 = pre.last
       val r2 = post.head
 
@@ -122,17 +106,17 @@ trait TextGrid { self =>
       val newGrid = TextGrid.fromRows(stableId, newRows)
 
       // rows can only be joined if they share the same label stack
-      val maybeNewGrid = r12.cells().headOption.map{ c0 =>
-        val headCellPins  = c0.pins
+      val maybeNewGrid = r12.cells().headOption.map { c0 =>
+        val headCellPins = c0.pins
         val pinlen = headCellPins.length
         val equalPinStackSize = r12.cells().forall(_.pins.length == pinlen)
 
-
         if (equalPinStackSize) {
-          if (pinlen==0) Some(newGrid) else {
+          if (pinlen == 0) Some(newGrid)
+          else {
             val headTopPin = c0.topPin().get
             val validJoin = headTopPin.isBegin || headTopPin.isInside && {
-              val allInsideButLast = r12.cells().tail.dropRight(1).forall{ c =>
+              val allInsideButLast = r12.cells().tail.dropRight(1).forall { c =>
                 val ctop = c.topPin().get
                 ctop.isInside
               }
@@ -150,8 +134,6 @@ trait TextGrid { self =>
     } else None
   }
 }
-
-
 
 object TextGrid {
 
@@ -195,7 +177,6 @@ object TextGrid {
     def isGlyphCell(): Boolean = true
   }
 
-
   case class InsertCell(
     char: Char,
     insertAt: PageRegion
@@ -203,8 +184,6 @@ object TextGrid {
     override val pageRegion: PageRegion = insertAt
     def isGlyphCell(): Boolean = false
   }
-
-
 
   trait Row extends LabelTarget with LabeledSequence[GridCell] {
 
@@ -221,8 +200,8 @@ object TextGrid {
     }
 
     def padRight(): Row = {
-      cells().lastOption.map{ c =>
-        Row.fromCells( cells() :+ c.createInsert(' '))
+      cells().lastOption.map { c =>
+        Row.fromCells(cells() :+ c.createInsert(' '))
       } getOrElse { this }
     }
 
@@ -230,9 +209,12 @@ object TextGrid {
       if (0 < col && col < cells().length) {
         val (c1, c2) = cells().splitAt(col)
 
-        Some((
-          Row.fromCells(c1), Row.fromCells(c2)
-        ))
+        Some(
+          (
+            Row.fromCells(c1),
+            Row.fromCells(c2)
+          )
+        )
       } else None
     }
 
@@ -246,11 +228,11 @@ object TextGrid {
             sameLabel && (isBIL || isIIL)
 
           case (None, None) => true
-          case _ => false
-        }})
+          case _            => false
+        }
+      })
 
-
-      groups.map{ group =>
+      groups.map { group =>
         val r = Row.fromCells(group)
         r.cells().head.topPin().foreach { pin =>
           r.addLabel(pin.label)
@@ -259,7 +241,6 @@ object TextGrid {
       }
     }
 
-
     def append(row: Row): Row = {
       Row.fromCells(cells() ++ row.cells())
     }
@@ -267,7 +248,7 @@ object TextGrid {
     def pageBounds(): Seq[PageRegion] = {
       val regionsByPages = cells().groupBy(_.pageRegion.page.pageNum)
 
-      regionsByPages.map { case (pageNum, pageRegions) =>
+      regionsByPages.map { case (pageNum @ _, pageRegions) =>
         val headRegion = pageRegions.head.pageRegion
         val pageBbox = pageRegions.map(_.pageRegion.bbox).reduce(_ union _)
         PageRegion(
@@ -277,10 +258,9 @@ object TextGrid {
       }.toList
     }
 
-    def foreach(f: GridCell => Unit): Unit  = {
+    def foreach(f: GridCell => Unit): Unit = {
       cells().foreach(f(_))
     }
-
 
     def toText(): String = {
       cells().map(_.char).mkString("")
@@ -291,29 +271,14 @@ object TextGrid {
     }
   }
 
-  abstract class MutableRow extends Row {
-    override val labelTargets: mutable.ArrayBuffer[GridCell] = mutable.ArrayBuffer()
-  }
-
-
   object Row {
-    def fromCells(init: Seq[GridCell]): Row = new MutableRow {
-      labelTargets.appendAll(init)
+    def fromCells(init: Seq[GridCell]): Row = new Row {
+      override val labelTargets = init // labelTargets.appendAll(init)
     }
   }
 
-  abstract class MutableTextGrid extends TextGrid {
-    override val rows: mutable.ArrayBuffer[Row] = mutable.ArrayBuffer()
-
-    def cells(): Seq[Row] = rows.toSeq
-  }
-
-  def fromRows(id: String@@DocumentID, init: Seq[Row]): TextGrid = new MutableTextGrid {
+  def fromRows(id: String @@ DocumentID, init: Seq[Row]): TextGrid = new TextGrid {
     override val stableId = id
-    rows.appendAll(init)
+    override val rows = init
   }
-
-  def fromCells(stableId: String@@DocumentID, init: Seq[GridCell]): TextGrid =
-    fromRows(stableId, Seq(Row.fromCells(init)))
-
 }

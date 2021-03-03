@@ -24,6 +24,7 @@ trait LibVersions {
   val guavaV              = "23.0"
   val luceneV             = "1.10.0"
   val featranV            = "0.7.0"
+  val zioV                = "1.0.4" 
 }
 
 object LibVersions extends LibVersions

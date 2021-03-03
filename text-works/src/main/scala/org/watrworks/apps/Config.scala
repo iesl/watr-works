@@ -11,7 +11,6 @@ sealed trait ProcessedInput extends Processable
 
 object Processable {
   case class SingleFile(f: nio.Path) extends ProcessableInput
-  case class ListOfFiles(f: nio.Path) extends ProcessableInput
   case class CorpusRoot(root: nio.Path) extends ProcessableInput
   case class CorpusFile(corpusEntry: CorpusEntry) extends ProcessableInput
 

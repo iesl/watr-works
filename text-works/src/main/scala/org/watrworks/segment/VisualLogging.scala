@@ -1,8 +1,8 @@
 package org.watrworks
 package segment
 
-import scala.{collection => sc}
-import sc.Seq
+// import scala.{collection => sc}
+// import sc.Seq
 import geometry._
 import watrmarks._
 
@@ -92,7 +92,7 @@ trait ScopedTracing extends VisualTracer { self =>
   }
 
   def emitLogJsons(): Seq[JsonObject] = {
-    for { logEntry <- traceLogs } yield {
+    for { logEntry <- traceLogs.to(Seq) } yield {
       val entry = logEntry match {
         case l: LabelTraceLog =>
           l.asJson.asObject.get
@@ -117,7 +117,7 @@ trait DocumentScopeTracing extends ScopedTracing { self =>
   }
 
   def emitLoggedLabels(): Seq[Transcript.Label] = {
-    self.traceLogs.flatMap({
+    self.traceLogs.to(Seq).flatMap({
       case l: LabelTraceLog => l.body
       case _                => List()
     })

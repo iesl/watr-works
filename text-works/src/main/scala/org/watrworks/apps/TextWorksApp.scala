@@ -126,9 +126,6 @@ object TextWorksConfig {
           case Processable.SingleFile(f) =>
             if (fs.exists(f.toFsPath())) success else failure(s"file ${f} not found")
 
-          case Processable.ListOfFiles(f) =>
-            if (fs.exists(f.toFsPath())) success else failure(s"file ${f} not found")
-
           case Processable.CorpusFile(entry) =>
             ???
 

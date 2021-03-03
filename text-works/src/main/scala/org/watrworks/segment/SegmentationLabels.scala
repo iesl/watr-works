@@ -48,7 +48,9 @@ object SegmentationLabels extends DocSegLabels {
   val WeightedLabels          = Label.auto qualifiedAs Attr
   val TextGridRow             = Label.auto qualifiedAs Attr
 
-  val UpLeftCharCapCase           = Label.auto qualifiedAs Attr
-  val LowRightCharPeriod           = Label.auto qualifiedAs Attr
+  val UpLeftChar              = Label.auto qualifiedAs Attr
+  val LowRightChar            = Label.auto qualifiedAs Attr
+  val UpLeftCharCapCase       = Label.auto qualifiedAs Attr
+  val LowRightCharPeriod      = Label.auto qualifiedAs Attr
 
 }

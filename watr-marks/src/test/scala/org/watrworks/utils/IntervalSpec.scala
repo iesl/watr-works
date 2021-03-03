@@ -23,7 +23,7 @@ class IntervalSpec extends WatrSpec {
 
   it should "generate double interval slices" in {
     val examples = List(
-      Interval.Doubles(0d, 100d)
+      Interval.DblBeginLen(0d, 100d)
     )
 
     examples.foreach{ example =>

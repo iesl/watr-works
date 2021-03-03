@@ -1,8 +1,8 @@
 package org.watrworks
 package segment
 
-import scala.{collection => sc}
-import sc.Seq
+// // import scala.{collection => sc}
+// // import sc.Seq
 
 import geometry._
 import geometry.syntax._
@@ -14,12 +14,14 @@ import utils._
 import TypeTags._
 import watrmarks._
 import utils.intervals.Interval
+import utils.IdGenerator
 import textgrid._
 
 import scala.reflect._
 
 case class DocSegShape[+T <: GeometricFigure](
   id: Int @@ ShapeID,
+  pageNum: Int @@ PageNum,
   shape: T,
   labels: Set[Label]
 ) extends LabeledShape[T, Unit] {
@@ -33,10 +35,12 @@ case class DocSegShape[+T <: GeometricFigure](
 object DocSegShape {
   def create[T <: GeometricFigure](
     id: Int @@ ShapeID,
+    pageNum: Int @@ PageNum,
     shape: T,
     labels: Label*
   ) = DocSegShape[T](
     id,
+    pageNum,
     shape,
     labels.toSet
   )
@@ -69,11 +73,11 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
 
   lazy val docScope = self
 
+  val shapeIdGenerator = IdGenerator[ShapeID]()
   def pageAtomsAndGeometry: Seq[(Seq[ExtractedItem], PageGeometry)]
 
   // All extracted items across all pages, indexed by id, which equals extraction order
   lazy val extractedItemArray: Array[ExtractedItem] = {
-
     val extractedItemCount = (0 +: pageAtomsAndGeometry.map(_._1.length)).sum
     val itemArray = new Array[ExtractedItem](extractedItemCount + 1)
     pageAtomsAndGeometry.foreach { case (items, _) =>
@@ -83,16 +87,16 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
   }
 
   lazy val shapeIndexes: Map[Int @@ PageNum, ShapeIndex] = {
-    pageAtomsAndGeometry.map { case (items, pageGeometry) =>
+    pageAtomsAndGeometry.map { case (items@_, pageGeometry) =>
       (
         pageGeometry.pageNum,
-        LabeledShapeIndex.empty[GeometricFigure, Unit, DocSegShape[GeometricFigure]]
+        LabeledShapeIndex.empty[GeometricFigure, Unit, DocSegShape[GeometricFigure]](shapeIdGenerator)
       )
     }.toMap
   }
 
   def getNumberedPages(): Seq[Int @@ PageNum] =
-    pageAtomsAndGeometry.zipWithIndex.map { case (a, b) =>
+    pageAtomsAndGeometry.zipWithIndex.map { case (a@_, b) =>
       PageNum(b)
     }
 
@@ -123,7 +127,7 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
   }
 
   def getFontsWithDocwideOccurrenceCounts(): Seq[(String @@ ScaledFontID, Int)] = {
-    fontDefs.fontProperties.flatMap { fontProps =>
+    fontDefs.fontProperties.to(Seq).flatMap { fontProps =>
       if (fontProps.isNatLangFont()) {
         fontProps.getScalingFactors().map { scalingFactor =>
           val docWideCount = fontProps.totalGlyphOccurrenceCounts
@@ -208,7 +212,7 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     l: Label
   ): DocSegShape[GeometricFigure] = {
     shapeIndex.initShape { id =>
-      DocSegShape.create(id, shape, l)
+      DocSegShape.create(id, pageNum, shape, l)
     }
   }
   protected def indexShape[T <: GeometricFigure](
@@ -216,7 +220,7 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     l: Label
   ): DocSegShape[GeometricFigure] = {
     shapeIndex.indexShape { id =>
-      DocSegShape.create(id, shape, l)
+      DocSegShape.create(id, pageNum, shape, l)
     }
   }
 
@@ -226,7 +230,7 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     items: ExtractedItem*
   ): DocSegShape[GeometricFigure] = {
     val s = shapeIndex.indexShape { id =>
-      DocSegShape.create(id, shape, l)
+      DocSegShape.create(id, pageNum, shape, l)
     }
     setExtractedItemsForShape(s, items.toSeq)
     s
@@ -265,7 +269,7 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
   }
 
   protected def cluster1(l: Label, shape: DocSegShape[GeometricFigure]): Unit = {
-    shapeIndex.addCluster(l, Seq(shape))
+    val _ = shapeIndex.addCluster(l, Seq(shape))
   }
 
   protected def cluster2(
@@ -277,7 +281,7 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
   }
 
   protected def clusterN(l: Label, shapes: Seq[DocSegShape[GeometricFigure]]): Unit = {
-    shapeIndex.addCluster(l, shapes)
+    val _ = shapeIndex.addCluster(l, shapes)
   }
 
   protected def setAttrForShape[A: ClassTag](label: Label): (AnyShape, A) => Unit = { (shape, a) =>

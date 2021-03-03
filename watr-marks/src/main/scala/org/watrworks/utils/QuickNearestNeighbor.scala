@@ -3,8 +3,8 @@ package utils
 
 import ExactFloats._
 
-import scala.{ collection => sc }
-import sc.Seq
+// import scala.{ collection => sc }
+// import sc.Seq
 
 object QuickNearestNeighbors {
   import TypeTags._

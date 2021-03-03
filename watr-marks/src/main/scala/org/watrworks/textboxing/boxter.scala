@@ -7,8 +7,8 @@ import scalaz.syntax.std.ToListOps
 import scala.language.postfixOps
 
 import scala.annotation.tailrec
-import scala.{ collection => sc }
-import sc.Seq
+// import scala.{ collection => sc }
+// import sc.Seq
 
 sealed trait Alignment
 

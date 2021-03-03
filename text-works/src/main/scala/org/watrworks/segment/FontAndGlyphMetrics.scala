@@ -1,8 +1,8 @@
 package org.watrworks
 package segment
 
-import scala.{ collection => sc }
-import sc.Seq
+// import scala.{ collection => sc }
+// import sc.Seq
 import extract._
 import utils.ExactFloats._
 import utils.SlicingAndDicing._

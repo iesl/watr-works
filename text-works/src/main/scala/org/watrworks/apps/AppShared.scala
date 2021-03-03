@@ -11,132 +11,16 @@ import utils.PathUtils._
 import TypeTags._
 import utils.Timer.time
 import _root_.io.circe, circe._, circe.syntax._
-import transcripts.Transcript
-import geometry._
-import geometry.syntax._
-import utils.ExactFloats._
 
 object ProcessPipelineSteps {
   private[this] val log = org.log4s.getLogger
 
   val PrettyPrint2Spaces = circe.Printer.spaces2
 
+
   type MarkedInput = Either[ProcessableInput, ProcessableInput]
   type MarkedOutput = Either[String, ProcessedInput]
 
-  def visualizeShapeClusters(transcript: Transcript): Unit = {
-    val labelMap = transcript.labels
-      .filter(_.id.isDefined)
-      .map(label => (s"${label.name}:${label.id.get}", label))
-      .toMap
-
-    val formattedCommandInput = for {
-      label <- transcript.labels
-      if label.name == "TrapezoidBins"
-      binChildren <- label.children.toList
-      // Choose which cluster to show...
-      binLabel <- binChildren
-      .sortBy(bc => bc.children.map(_.length).getOrElse(0)) .reverse.drop(6).headOption.toList
-      maybeInstances <- binLabel.children.toList
-      _ = println(s"Running on ${maybeInstances.length} instances")
-      instanceLabel <- maybeInstances
-    } yield {
-
-      val id = instanceLabel.id.get
-      val key = s"Trapezoid:${id}"
-      val trapShape = labelMap(key)
-
-      val sdf = trapShape.range match {
-        case Transcript.DocumentRange(_, doc) ::
-            Transcript.PageRange(_, page) ::
-            Transcript.GeometryRange(_, shape) ::
-            Nil =>
-          val pageN = transcript.pages(page.unwrap)
-          val pageGeometry = pageN.bounds
-          val pageImage = s"../corpus.d/${doc.unwrap}/page-images/page-${page.unwrap+1}.opt.png"
-          val geom = pageGeometry.toPoint(Dir.BottomRight)
-          shape match {
-            case trapezoid: Trapezoid =>
-              val tl = trapezoid.topLeft
-              val tr = tl.translate(trapezoid.topWidth, 0.toFloatExact())
-              val bl = trapezoid.bottomLeft
-              val th = trapezoid.height()
-
-              val br = bl.translate(trapezoid.bottomWidth, 0.toFloatExact())
-              val fmt = (p: Point) => s"${p.x.pp()},${p.y.pp()}"
-              val fmtx = (p: Point) => s"${p.x.pp()}x${p.y.pp()}"
-              val path = s"${fmt(tl)} ${fmt(tr)} ${fmt(br)} ${fmt(bl)}"
-              val crop = s"${geom.x.pp()}x${(th+16.toFloatExact()).pp()}+0+${(tl.y-8.toFloatExact()).pp()}"
-              val args = List(
-                """(""",
-                pageImage,
-                "-resize", fmtx(geom),
-                "-fill", "blue",
-                "-draw", s"""fill-opacity 0.3 path 'M ${path} Z'""",
-                "-crop", crop,
-                "-resize" , "200%",
-                """)""",
-              )
-
-              args
-            case _ => List()
-          }
-        case _ => List()
-      }
-
-      sdf
-    }
-
-    import scala.sys.process._
-    // println(formattedCommandInput.flatten.mkString("\n"))
-      // convert "${args[@]}" miff:- | montage - -bordercolor blue -border 1 -tile 3x -geometry +2+2 show:
-    val combinedArgs = formattedCommandInput.flatten
-      // convert "${args[@]}" miff:- | montage - -bordercolor blue -border 1 -tile 3x -geometry +2+2 show:
-
-    // val cmdList = ("convert" :: combinedArgs) ++ List("x:")
-    val cmdList = ("convert" :: combinedArgs) ++ List("miff:-")
-    val montage = List("montage", "-", "-bordercolor", "blue", "-border", "1", "-tile", "3x", "-geometry", "+2+2", "x:")
-
-    println(s"running...${cmdList} => ${montage}")
-    val _ = (cmdList #| montage).!
-  }
-
-  def runTraceVis(conf: TraceVisConfig.Config): Unit = {
-    println("TraceVis...")
-
-    val processStream = createInputStream[IO](conf.ioConfig)
-      .through(initMarkedInput())
-      .through(dropSkipAndRun(conf.ioConfig))
-
-    val prog = processStream.compile.toList
-
-    val inputs = prog.unsafeRunSync()
-    println(s"inputs: ${inputs}")
-    val _ = inputs.map {
-      case Right(p @ Processable.CorpusFile(corpusEntry)) =>
-        val transcriptArtifact = corpusEntry.resolveArtifact("transcript.json", None)
-        transcriptArtifact.asJson.toEither match {
-          case Left(x) =>
-            println(s"Error: ${x}")
-
-          case Right(json) =>
-            val mtrans = json.as[Transcript]
-            mtrans match {
-              case Left(err)         =>
-                println(s"Error: ${err}")
-              case Right(transcript) =>
-                println(s"Success: ${transcript.documentId}")
-                visualizeShapeClusters(transcript)
-            }
-
-        }
-
-        val transcriptFile = Processable.getTextgridOutputFile(p, conf.ioConfig)
-        println(s"entry: ${transcriptFile}")
-      case x                                              =>
-        println(s"Left entry: ${x}")
-    }
-  }
 
   def runTextExtractionOnFile(conf: TextWorksConfig.Config): Unit = {
     if (conf.runTraceLogging) {
@@ -202,11 +86,8 @@ object ProcessPipelineSteps {
               }
               .map { entry => Processable.CorpusFile(entry) }
 
-          case Processable.ListOfFiles(_) =>
-            die("TODO")
-
-          case Processable.CorpusFile(_) =>
-            die("TODO")
+          case p@ Processable.CorpusFile(_) =>
+            fs2.Stream.emit(p)
         }
       }
       .orDie("inputStream(): Invalid input options")

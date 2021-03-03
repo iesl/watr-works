@@ -1,8 +1,8 @@
 package org.watrworks
 package textgrid
 
-import scala.{ collection => sc }
-import sc.Seq
+// import scala.{ collection => sc }
+// import sc.Seq
 
 import annots._
 import geometry._

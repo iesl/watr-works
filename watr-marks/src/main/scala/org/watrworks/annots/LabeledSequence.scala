@@ -1,14 +1,13 @@
 package org.watrworks
 package annots
 
-import scala.{ collection => sc }
-import sc.Seq
+// import scala.{ collection => sc }
+// import sc.Seq
 import scala.collection.mutable
 import watrmarks._
 import textboxing.{TextBoxing => TB}, TB._
 
 import utils.Cursor
-import utils.DoOrDieHandlers._
 
 import scalaz._
 
@@ -18,7 +17,6 @@ object LabelTarget {
   def PinSet() = mutable.Stack[BioPin]()
 
   def apply[A](a: A): LabelTarget = new LabelTarget {
-    val value = a;
   }
 
   case class LabelAttr[A](a: A) extends LabelTarget
@@ -144,7 +142,7 @@ trait LabeledSequence[A <: LabelTarget] {
       val lefts = atRowColZ.lefts.takeWhile(_.pins.isEmpty)
 
       val start = offset - lefts.length
-      val labelEnd = offset + rights.length
+      // val labelEnd = offset + rights.length
       val seq = lefts.reverse ++ (focusCell +: rights)
       (start, seq)
     }).toOption
@@ -194,7 +192,7 @@ trait LabeledSequence[A <: LabelTarget] {
   }
 
   def unlabelNear(offset: Int, label: Label): Unit = {
-    findLabelExtents(offset, label).foreach{ case (offset, indexedSeq) =>
+    findLabelExtents(offset, label).foreach{ case (offset@_, indexedSeq) =>
       indexedSeq.foreach{ case cell =>
         cell.removeLabel(label)
       }

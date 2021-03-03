@@ -1,8 +1,8 @@
 package org.watrworks
 package segment
 
-import scala.{collection => sc}
-import sc.Seq
+// import scala.{collection => sc}
+// import sc.Seq
 import textgrid._
 import geometry._
 import geometry.syntax._
@@ -51,15 +51,15 @@ trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self
     }
   }
 
-  private def clipTextRow(
-    textRow: TextGrid.Row,
-    clipTo: LTBounds
-  ): TextGrid.Row = {
-    val filtered = textRow.cells().filter { cell =>
-      cell.pageRegion.bbox.intersects(clipTo)
-    }
-    TextGrid.Row.fromCells(filtered)
-  }
+  // private def clipTextRow(
+  //   textRow: TextGrid.Row,
+  //   clipTo: LTBounds
+  // ): TextGrid.Row = {
+  //   val filtered = textRow.cells().filter { cell =>
+  //     cell.pageRegion.bbox.intersects(clipTo)
+  //   }
+  //   TextGrid.Row.fromCells(filtered)
+  // }
 
   private def textRowFromReprShape(
     reprShape: AnyShape,
@@ -74,7 +74,7 @@ trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self
       }
       .getOrElse(items)
 
-    new TextGrid.MutableRow { self =>
+    new TextGrid.Row { self =>
       val init = extractedItems.map {
         case item: ExtractedItem.CharItem =>
           val cells = item.char.headOption.map { char =>
@@ -101,12 +101,12 @@ trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self
           }
           cells.getOrElse(Seq())
 
-        case item =>
+        case item@_ =>
           // TODO this is skipping over text represented as paths (but I have to figure out sup/sub script handling to make it work)
           Seq()
       }
 
-      labelTargets.appendAll(init.flatten)
+      override val labelTargets = init.flatten
     }
   }
 
@@ -139,7 +139,7 @@ trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self
     // TODO make use of page/document wide font information to infer spacing thresholds, not just local line spacing
 
     val lineCCs =
-      textRow.cells().collect { case cell @ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
+      textRow.cells().collect { case TextGrid.PageItemCell(headItem, tailItems@_, char@_, _) =>
         headItem
       }
 
@@ -171,7 +171,7 @@ trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self
       val shapeChars = getCharsForShape(reprShape).map(_.id.unwrap)
 
       if (shapeChars.nonEmpty) {
-        val minId = shapeChars.min
+        // val minId = shapeChars.min
 
         val textRow = textRowFromReprShape(reprShape, None)
         insertSpacesInRow(textRow)
@@ -199,9 +199,9 @@ trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self
 
         insertSpacesInRow(textRow)
 
-        val clippedRow = maybeClipTo
-          .map { clipTo => clipTextRow(textRow, clipTo) }
-          .getOrElse(textRow)
+        // val clippedRow = maybeClipTo
+        //   .map { clipTo => clipTextRow(textRow, clipTo) }
+        //   .getOrElse(textRow)
 
         // char ids reflect order in which chars were extracted from the PDF,
         //   so here they are used to guide the ordering of lines of text
@@ -221,7 +221,7 @@ trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self
   }
 
   def createPageLevelTranscript(): Transcript = {
-    val lines = searchForRects(pageGeometry, TextLineReprShape)
+    // val lines = searchForRects(pageGeometry, TextLineReprShape)
 
     Transcript(
       docScope.stableId,

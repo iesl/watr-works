@@ -1,8 +1,8 @@
 package org.watrworks
 package formats
 
-import scala.{collection => sc}
-import sc.Seq
+// import scala.{collection => sc}
+// import sc.Seq
 
 import segment._
 import _root_.io.circe, circe._, circe.syntax._
@@ -55,6 +55,6 @@ object TextGridOutputFormats {
       res
     }
 
-    scaledMetrics
+    scaledMetrics.to(Seq)
   }
 }

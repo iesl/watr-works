@@ -2,10 +2,10 @@ package org.watrworks
 package utils
 
 import scala.collection.mutable
-import scala.{ collection => sc }
+// import scala.{ collection => sc }
 // import scala.collection.{ immutable => sci }
 // import scala.collection.{ mutable => scm }
-import sc.Seq
+// import sc.Seq
 
 object SlicingAndDicing { outer =>
 

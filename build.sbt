@@ -40,6 +40,7 @@ lazy val watrmarks = project
         "org.scalaz"           %% "scalaz-core"      % Lib.scalazVersion,
         Lib.ammoniteOps,
         Lib.guava               % Optional,
+	"dev.zio"              %% "zio"              % Lib.zioV,
         "com.github.davidmoten" % "rtree"            % "0.8.7",
         "com.github.davidmoten" % "flatbuffers-java" % "1.10.0.2"
       )

@@ -4,8 +4,8 @@ package utils
 import geometry._
 import utils.{RelativeDirection => Dir}
 
-import scala.{collection => sc}
-import sc.Seq
+// import scala.{collection => sc}
+// import sc.Seq
 
 abstract class GraphPaper {
 

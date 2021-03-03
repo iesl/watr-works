@@ -2,8 +2,8 @@ package org.watrworks
 package rtrees
 
 import scala.collection.mutable
-import scala.{collection => sc}
-import sc.Seq
+// import scala.{collection => sc}
+// import sc.Seq
 
 import watrmarks._
 import geometry._
@@ -15,6 +15,7 @@ import textboxing.{TextBoxing => TB}
 import scala.reflect.ClassTag
 import com.google.{common => guava}
 import guava.{collect => gcol}
+import utils.IdGenerator
 
 object LabeledShapeIndex {
 
@@ -23,9 +24,10 @@ object LabeledShapeIndex {
   def qualifyRelation(l: Label): Label = { l.qualifiedAs("relation") }
   def qualifyRep(l: Label): Label = { l.qualifiedAs("rep") }
 
-  def empty[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]]
+  def empty[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]](idGenerator: IdGenerator[ShapeID])
     : LabeledShapeIndex[A, W, Shape] =
     new LabeledShapeIndex[A, W, Shape] {
+      val shapeIDGen = idGenerator
       val shapeRIndex: RTreeIndex[A, W, Shape] = RTreeIndex.empty[A, W, Shape]()
     }
 
@@ -33,6 +35,7 @@ object LabeledShapeIndex {
     rtree: RTreeIndex[A, W, Shape]
   ): LabeledShapeIndex[A, W, Shape] = {
     new LabeledShapeIndex[A, W, Shape] {
+      val shapeIDGen = utils.IdGenerator[ShapeID]()
 
       val items = rtree.getItems()
       val maxId =
@@ -48,7 +51,8 @@ object LabeledShapeIndex {
 }
 
 abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]] {
-  val shapeIDGen = utils.IdGenerator[ShapeID]()
+  // val shapeIDGen = utils.IdGenerator[ShapeID]()
+  def shapeIDGen: utils.IdGenerator[ShapeID]
   def shapeRIndex: RTreeIndex[A, W, Shape]
 
   val shapeMap: mutable.LongMap[Shape] = {

@@ -1,8 +1,8 @@
 package org.watrworks
 package extract
 
-import scala.{ collection => sc }
-import sc.Seq
+// import scala.{ collection => sc }
+// import sc.Seq
 
 import geometry._
 import geometry.syntax._
@@ -436,7 +436,7 @@ case class FontProperties(
 
   def report(): TB.Box = {
     val letterFreqs = TB.hjoins(TB.center1,
-      alphaEvidence.zip(CharClasses.MostFrequentLetters)
+      alphaEvidence.toSeq.zip(CharClasses.MostFrequentLetters)
         .map{ case (count, letter) =>
           s"| ${letter}" atop s"| ${count}"
         }
@@ -529,7 +529,7 @@ class FontDefs(pageCount: Int) {
   }
 
   def getFontIdentifiers(isNatLang: Boolean): Seq[String@@ScaledFontID] = {
-    fontProperties
+    fontProperties.to(Seq)
       .filter { p => isNatLang == p.isNatLangFont() }
       .flatMap(_.getFontIdentifiers())
   }
@@ -558,7 +558,7 @@ class FontDefs(pageCount: Int) {
 
   def report(): TB.Box = {
     s"Font Definitions. Page Count: ${pageCount}".hangIndent(
-      vjoins(fontProperties.map(_.report()))
+      vjoins(fontProperties.to(Seq).map(_.report()))
     )
   }
 

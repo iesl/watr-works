@@ -3,8 +3,8 @@ package utils
 
 import textboxing.{TextBoxing => TB}
 
-import scala.{ collection => sc }
-import sc.Seq
+// import scala.{ collection => sc }
+// import sc.Seq
 
 object TreeShaper {
   def apply[N:Numeric:Ordering] = new TreeShaper {
