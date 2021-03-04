@@ -28,23 +28,18 @@ lazy val watrmarks = project
   .settings(
     libraryDependencies ++=
       LogLibs.logback
-      ++ TestLibs.testAndCheck
-      ++ Lib.featran
-      ++ Lib.smile
-      ++ Lib.circeJson
-      ++ Seq(
-        "org.scalatest"        %% "scalatest"        % Lib.scalatestVersion % "test",
-        "com.lihaoyi"          %% "fansi"            % Lib.fansiV,
-        "com.lihaoyi"          %% "sourcecode"       % Lib.sourcecodeV,
-        "com.lihaoyi"          %% "pprint"           % "0.6.1",
-        "org.scalaz"           %% "scalaz-core"      % Lib.scalazVersion,
-        Lib.ammoniteOps,
-        Lib.guava               % Optional,
-        "dev.zio"              %% "zio"              % Lib.zioV,
-        "dev.zio"              %% "zio-streams"      % Lib.zioV,
-        "com.github.davidmoten" % "rtree"            % "0.8.7",
-        "com.github.davidmoten" % "flatbuffers-java" % "1.10.0.2"
-      )
+        ++ TestLibs.testAndCheck
+        ++ Lib.featran
+        ++ Lib.smile
+        ++ Lib.circeJson
+        ++ Lib.zio
+        ++ Lib.consoleUtils
+        ++ Lib.rtrees
+        ++ Lib.scalaz
+        ++ Seq(
+          Lib.ammoniteOps,
+          Lib.guava
+        )
   )
 
 lazy val textworks = (project in file("text-works"))
@@ -56,19 +51,17 @@ lazy val textworks = (project in file("text-works"))
   .settings(
     libraryDependencies ++=
       LogLibs.logback
-      ++ TestLibs.testAndCheck
-      ++ Lib.featran
-      ++ Lib.smile
-      ++ Lib.circeJson
-      ++ Seq(
-        Lib.fs2Core,
-        Lib.fs2IO,
-        Lib.pdfbox,
-        Lib.lucene4s,
-        Lib.guava,
-        Lib.scopt,
-        Lib.ammoniteOps,
-        Lib.shapeless
-      )
+        ++ TestLibs.testAndCheck
+        ++ Lib.zio
+        ++ Lib.featran
+        ++ Lib.smile
+        ++ Lib.circeJson
+        ++ Seq(
+          Lib.pdfbox,
+          Lib.guava,
+          Lib.scopt,
+          Lib.ammoniteOps,
+          Lib.shapeless
+        )
   )
   .dependsOn(prelude, watrmarks)
