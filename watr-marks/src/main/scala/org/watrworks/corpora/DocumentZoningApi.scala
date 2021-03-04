@@ -2,11 +2,6 @@ package org.watrworks
 package corpora
 
 import geometry._
-import watrmarks._
-import textgrid._
-
-import watrmarks.{StandardLabels => LB}
-
 
 trait DocumentZoningApi {
   val Rel = RelationModel

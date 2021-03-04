@@ -13,7 +13,8 @@ import _root_.io.circe, circe._ // , circe.syntax._
 import circe.parser._
 
 import ammonite.{ops => fs}, fs._
-import cats.effect._
+import zio.stream._
+
 import os.SubPath
 
 
@@ -24,7 +25,7 @@ object Corpus {
     val fullPath = fs.FilePath(corpusRoot) match {
       case p: fs.Path =>  p
       case p: fs.RelPath => fs.pwd / p
-      case p: SubPath => ???
+      case _: SubPath => ???
     }
 
     val validPath = exists(fullPath)
@@ -126,14 +127,13 @@ class Corpus(
     entry
   }
 
-
   // def entryStream[F[_]](implicit F: Effect[F]): fs2.Stream[F, CorpusEntry] = {
-  def entryStream[F[_]: Effect](): fs2.Stream[F, CorpusEntry] = {
-    zip.dirEntries[F](corpusRoot.toNIO, { p =>
+  def entryStream(): UStream[CorpusEntry] = {
+    zip.dirEntries(corpusRoot.toNIO, { p =>
       val f = Path(p)
       f.ext == "d" && f.isDir
     }) flatMap { p =>
-      fs2.Stream.emit(
+      UStream(
         new CorpusEntry(p.toFile().getName, this)
       )
     }

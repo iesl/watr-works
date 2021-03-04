@@ -19,7 +19,7 @@ trait DocumentLevelFunctions
 
 trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
-  protected def outputTableData(): Unit = {
+  protected def printScaledFontTableData(): Unit = {
 
     val allFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang = true) ++ docScope.fontDefs
       .getFontIdentifiers(isNatLang = false)

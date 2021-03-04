@@ -6,9 +6,6 @@ import geometry.syntax._
 import watrmarks._
 import TypeTags._
 import org.dianahep.{histogrammar => HST}
-import utils.ExactFloats._
-import org.watrworks.transcripts.Transcript
-import _root_.io.circe, circe._, circe.syntax._
 import utils.Interval
 import Interval._
 import TraceLog.LabelTraceLog
@@ -99,19 +96,16 @@ trait TrapezoidFinding extends PageScopeSegmenter { self =>
 //   // XMeans
 // }
 import com.spotify.featran._
-import com.spotify.featran.transformers._
+import com.spotify.featran.{ transformers => ft }
 // import com.spotify.featran.converters._
 
-// case class TrapezoidFeatureRec(
-//   trapezoid: TrapShape
-// )
 
 trait TrapezoidPagewiseAnalysis extends PageScopeSegmenter { self =>
 
   def createFeatureSpec(): FeatureSpec[TrapShape] = {
     val spec = FeatureSpec
       .of[TrapShape]
-      .required(_.shape.leftBaseAngle())(Identity("LBaseAngle"))
+      .required(_.shape.leftBaseAngle())(ft.Identity("LBaseAngle"))
       // .required(_.trapezoid.leftBaseAngle())(Identity("1em-Height"))
       // .required(_.trapezoid.leftBaseAngle())(Identity("1em-Height-TopLine"))
       .required(
@@ -119,7 +113,7 @@ trait TrapezoidPagewiseAnalysis extends PageScopeSegmenter { self =>
           .map(x => x.matches("[A-Z]"))
           .map(x => { if (true) 1.0d else 0.0d })
           .getOrElse(0.0)
-      )(Identity("UpLeftCharCapCase"))
+      )(ft.Identity("UpLeftCharCapCase"))
     // .required(_.trapezoid.leftBaseAngle())(Identity("TopLeftNumeric"))
 
     spec
@@ -216,60 +210,3 @@ trait TrapezoidAnalysis extends DocumentScopeSegmenter { self =>
 
   }
 }
-
-// val binClusters = lbAngles.bins.toList
-//   .map { case (bin, counting) =>
-//     val binWidth = lbAngles.binWidth
-//     val binLeft = bin * binWidth
-
-//     val binInterval = Interval.DblBeginLen(binLeft, binWidth)
-//     val binInstances = allTraps.filter(t =>
-//       binInterval.contains(
-//         t.shape.leftBaseAngle()
-//       )
-//     )
-
-//     // val instances = binInstances.map(inst => {
-//     //   val lba = inst.shape.leftBaseAngle()
-//     //   val lbaDeg = (lba * 180) / math.Pi
-//     //   val lbaPP = lbaDeg.toFloatExact().pp()
-//     //   Transcript.Label(
-//     //     "Instance",
-//     //     Some(LabelID(inst.id.unwrap)),
-//     //     List(),
-//     //     Some(
-//     //       Json.obj(
-//     //         "leftBaseAngle" := lbaPP
-//     //       )
-//     //     ),
-//     //     None
-//     //   )
-
-//     // })
-
-//     // Transcript.Label(
-//     //   "Cluster",
-//     //   Some(LabelID(bin.toInt)),
-//     //   List(),
-//     //   Some(
-//     //     Json.obj(
-//     //       "bin-num" := bin,
-//     //       "bin-deg" := binDegs,
-//     //       "entries" := entries
-//     //     )
-//     //   ),
-//     //   Some(instances.toList)
-//     // )
-//   }
-
-// val binLabel = Transcript.Label(
-//   "TrapezoidBins::Clustering",
-//   Some(LabelID(23)),
-//   List(),
-//   Some(
-//     Json.obj(
-//       "bin-width" := lbAngles.binWidth
-//     )
-//   ),
-//   Some(binClusters)
-// )

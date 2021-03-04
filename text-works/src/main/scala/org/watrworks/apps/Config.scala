@@ -37,10 +37,6 @@ object Processable {
 
         case _ => ???
 
-        // case ExtractedFile(_, in) =>
-        //   getTextgridOutputFile(in, conf)
-
-        // case ExtractedTextGridFile(_, in) => ???
       }
     }
   }

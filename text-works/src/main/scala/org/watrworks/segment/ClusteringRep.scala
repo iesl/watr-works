@@ -77,11 +77,9 @@ object ShapeClustering {
     instances: Seq[Instance]
   )
   case class Instance(
-    // documentId: String @@ DocumentID,
     id: Int @@ ShapeID,
     shape: GeometricFigure,
     pageNum: Int @@ PageNum
-    // page: Transcript.Page
   )
 
   def toTranscriptLabel(clustering: Root): Transcript.Label = {

@@ -1,22 +1,24 @@
 package org.watrworks
 package apps
 
-import ammonite.{ops => fs} // , fs._
 import scopt.Read
-import shapeless._
 import java.nio.{file => nio}
 import tracing.VisualTracer
-import utils.PathUtils._
-import utils.TextOps._
 import ProcessPipelineSteps._
 import utils.{RelativeDirection => Dir}
 import scala.sys.process._
-import cats.effect._
+// import cats.effect._
 import segment._
 import transcripts.Transcript
 import geometry._
 import geometry.syntax._
 import utils.ExactFloats._
+
+import zio._
+import zio.stream._
+import zio.console._
+import corpora.filesys.CorpusEntry
+import java.io.IOException
 
 object TraceVisConfig {
 
@@ -30,60 +32,7 @@ object TraceVisConfig {
     initCorpus: Option[nio.Path] = None,
     runTraceLogging: Boolean = VisualTracer.tracingEnabled()
   )
-
-  val parser = new scopt.OptionParser[Config]("text-works") {
-    import scopt._
-
-    override def renderingMode: RenderingMode = RenderingMode.OneColumn
-
-    help("help")
-
-    opt[nio.Path]('c', "corpus") action { (v, conf) =>
-      lens[Config].ioConfig.modify(conf) { ioConfig =>
-        ioConfig.copy(
-          inputMode = Option(Processable.CorpusRoot(v))
-        )
-      }
-    } text ("root path of PDF corpus")
-
-    opt[String]("filter") action { (v, conf) =>
-      lens[Config].ioConfig.pathFilter.modify(conf) { m =>
-        val f = trimQuotes(v)
-        Option(f)
-      }
-    } text ("if specified, only files matching regex will be processed")
-
-    checkConfig { c =>
-      if (c.initCorpus.isDefined) {
-        val corpusRoot = c.initCorpus.get
-        if (fs.exists(corpusRoot.toFsPath())) {
-          success
-        } else {
-          failure(s"Corpus root ${corpusRoot} doesn't exist")
-        }
-      } else {
-        c.ioConfig.inputMode.map {
-          _ match {
-            case Processable.CorpusRoot(rootPath) =>
-              if (fs.exists(rootPath.toFsPath())) success
-              else failure(s"corpus root ${rootPath} not found")
-            case _                                => ???
-
-          }
-        } getOrElse {
-          failure("No input specified")
-        }
-      }
-    }
-  }
-
 }
-
-// import transcripts.Transcript
-// import geometry._
-// import geometry.syntax._
-// import utils.ExactFloats._
-// import textboxing.{TextBoxing => TB}, TB._
 
 object TraceVis {
   def config(filter: String): TraceVisConfig.Config = {
@@ -100,71 +49,60 @@ object TraceVis {
     config
   }
 
-  def selectTranscripts(implicit conf: TraceVisConfig.Config): List[Transcript] = {
-    val processStream = createInputStream[IO](conf.ioConfig)
-      .through(initMarkedInput())
-      .through(dropSkipAndRun(conf.ioConfig))
-
-    val prog = processStream.compile.toList
-
-    val inputs      = prog.unsafeRunSync()
-    println(s"inputs: ${inputs}")
-    val transcripts = inputs.flatMap {
-      case Right(Processable.CorpusFile(corpusEntry)) =>
-        val transcriptArtifact = corpusEntry.resolveArtifact("transcript.json", None)
-        transcriptArtifact.asJson.toEither match {
-          case Left(x) =>
-            println(s"Error: ${x}")
-            List()
-
-          case Right(json) =>
-            val mtrans = json.as[Transcript]
-            mtrans match {
-              case Left(err)         =>
-                println(s"Error: ${err}")
-                List()
-              case Right(transcript) => List(transcript)
-            }
-        }
-
-      case x =>
-        println(s"Left entry: ${x}")
-        List()
-    }
-    transcripts
+  def corpusEntryStream(implicit
+    conf: TraceVisConfig.Config
+  ): Stream[ProcessableInput, CorpusEntry] = {
+    for {
+      maybeIn <- createMarkedInputStream(conf.ioConfig)
+      pinput  <- Stream
+                   .fromEffect(ZIO.fromEither(maybeIn))
+                   .map(_ match {
+                     case Processable.CorpusFile(corpusEntry) => corpusEntry
+                   })
+    } yield pinput
   }
 
-  def listClusterings(transcript: Transcript): Seq[ShapeClustering.Root] = for {
-    label <- transcript.labels
+
+  def listClusterings(transcript: Transcript): Stream[Nothing, ShapeClustering.Root] = for {
+    label <- Stream.fromIterable(transcript.labels)
     if label.name.endsWith("ClusteringRoot")
   } yield {
     ShapeClustering.fromTranscriptLabel(transcript, label)
   }
 
+  type RC = (ShapeClustering.Root, ShapeClustering.ClusteredInstances)
   def chooseClustering(
-    clusterings: Seq[ShapeClustering.Root]
-  ): (ShapeClustering.Root, ShapeClustering.ClusteredInstances) = {
-    import scala.io.StdIn.readLine
-    println(s"Choose Clustering")
-    for {
-      (clustering, clusteringNum) <- clusterings.zipWithIndex
-      clusteringName = clustering.name
-      _              = println(s"  ${clusteringNum}. ${clusteringName}")
-      (cluster, clusterNum) <- clustering.clusters.zipWithIndex
-      _ = println(s"     ${clusterNum} size = ${cluster.instances.length}")
-      // instances <- cluster.instances
-    } yield ()
+    clusterRoots: UStream[ShapeClustering.Root]
+  ): ZIO[Console, Any, RC] = {
 
-    println(s"Clustering, Cluster numbers (3, 23) ? > ")
-    val in            = readLine()
-    val Array(s1, s2) = in.split("[, ][ ]*").map(_.trim())
-    val i1            = s1.toInt
-    val i2            = s2.toInt
-    println(s"Clustering ${i1}, cluster ${i2} ")
+    val res: ZIO[Console, Throwable, RC] = for {
+      _            <- putLn(s"Choose Clustering")
+      askUserStr   <- clusterRoots.zipWithIndex
+                        .map({
+                          case (root, rootIndex) => {
+                            val clusterStrs = root.clusters.zipWithIndex
+                              .map({ case (c, cIndex) => s"   ${cIndex}. count=${c.instances.length}" })
+                            s"${rootIndex}. ${root.name}" :: clusterStrs
+                          }
+                        })
+                        .runCollect
+      _            <- putLn(askUserStr.toList.flatten.mkString("\n"))
+      userResponse <- userPrompt("Choose Clustering, Cluster#")
+      _            <- putLn(s"${userResponse}")
+      Array(s1, s2) = userResponse.split("[, ][ ]*").map(_.trim())
+      i1            = s1.toLong
+      i2            = s2.toInt
+      _       <- putLn(s"Clustering ${i1}, cluster ${i2} ")
+      maybeRC <- clusterRoots
+                   .drop(i1)
+                   .runHead
+                   .map(_.map(root => (root, root.clusters(i2))))
+      rc      <- ZIO.fromOption(maybeRC).absorbWith(_ => new Throwable(""))
+    } yield {
+      rc
+    }
 
-    val root    = clusterings(i1)
-    val cluster = root.clusters(i2)
-    (root, cluster)
+    res
   }
 
   def visualizeShapeClusters(
@@ -222,40 +160,53 @@ object TraceVis {
     val combinedArgs = formattedCommandInput.flatten
 
     val cmdList = (List("convert", "-font", "ubuntu") ++ combinedArgs) ++ List("miff:-")
-    val montage = List(
-      "montage",
-      "-",
-      "-font",
-      "ubuntu",
-      "-bordercolor",
-      "blue",
-      "-border",
-      "1",
-      "-tile",
-      "3x",
-      "-geometry",
-      "+2+2",
-      "x:"
-    )
+    val montage = "montage - -font ubuntu -bordercolor blue -border 1 -tile 3x -geometry +2+2 x:"
+      .split(" ")
+      .toList
 
-    // println(s"running...${cmdList} => ${montage}")
     val _ = (cmdList #| montage).!
   }
 
-  def run(): Unit = {
-    println("Running")
-    implicit val initConfig = config(".*aust.*")
-    val initTranscripts     = selectTranscripts(initConfig)
-    if (initTranscripts.length > 0) {
-      println(s"Transcript Count = ${initTranscripts.length}")
-
-      val headTranscript   = initTranscripts.head
-      val clusterings      = listClusterings(headTranscript)
-      val chosenClustering = chooseClustering(clusterings);
-      val (root, cluster)  = chosenClustering;
-      visualizeShapeClusters(headTranscript, root, cluster)
-    }
-
+  val userPrompt: String => ZIO[Console, Throwable, String] = (prompt: String) => {
+    for {
+      _      <- putStrLn(s":> ${prompt}")
+      _      <- putStr(":> ")
+      filter <- getStrLn
+    } yield filter
   }
 
+  val putLn: String => ZIO[Console, Nothing, Unit] = (msg: String) => {
+    for {
+      _ <- putStrLn(msg)
+    } yield ()
+  }
+
+  val transcriptForEntry: CorpusEntry => Either[Throwable, Transcript] = (corpusEntry) => {
+    val transcriptArtifact = corpusEntry.resolveArtifact("transcript.json", None)
+    for {
+      json       <- transcriptArtifact.asJson.toEither
+      transcript <- json.as[Transcript]
+    } yield transcript
+  }
+
+  val appLogic: ZIO[Console, Any, Any] = for {
+    _           <- putLn(s"___ TraceVis ___")
+    entries     <- corpusEntryStream(config(".*")).runCollect
+                     .absorbWith(_ => new IOException(""))
+    _           <- putLn(s"Entries:")
+    _           <- putLn(entries.map(e => e.entryDescriptor.split("/").last).mkString("\n"))
+    filter      <- userPrompt("Filter Regex")
+    _           <- putLn(s"Running with Filter ${filter}")
+    chosenEntry <- ZIO.fromOption(entries.filter(e => e.entryDescriptor.matches(s".*${filter}.*")).headOption)
+    transcript  <- ZIO.fromEither(transcriptForEntry(chosenEntry))
+    _           <- putLn(s"Transcript:   ${transcript.documentId}")
+    clusterings = listClusterings(transcript)
+    (root, cluster) <- chooseClustering(clusterings)
+    _ = visualizeShapeClusters(transcript, root, cluster)
+  } yield ()
+
+  def go() = {
+    val runtime = Runtime.default
+    runtime.unsafeRun(appLogic)
+  }
 }
