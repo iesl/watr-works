@@ -49,7 +49,7 @@ object SensibleProject extends CommonLibs {
     // "-Ywarn-unused:params", // Warn if a value parameter is unused.
     "-Ywarn-unused:patvars", // Warn if a variable bound in a pattern is unused.
     "-Ywarn-unused:privates", // Warn if a private member is unused.
-    "-Ywarn-value-discard", // Warn when non-Unit expression results are unused.
+    // "-Ywarn-value-discard", // Warn when non-Unit expression results are unused.
     "-deprecation",                     // Warning and location for usages of deprecated APIs.
     "-encoding", "utf-8",               // Specify character encoding used by source files.
     "-explaintypes",                    // Explain type errors in more detail.

@@ -9,7 +9,7 @@ trait LibVersions {
 object LibVersions extends LibVersions
 
 object TestLibs extends LibVersions {
-  val scalatestVersion = "3.2.5"
+  val scalatestVersion = "3.2.6"
   val scalatest        = Seq(
     "org.scalatest" %% "scalatest" % scalatestVersion % "test"
   )
@@ -54,7 +54,7 @@ trait CommonLibs extends LibVersions {
   val ammonite        = "com.lihaoyi"  % "ammonite"     % ammoniteVersion cross CrossVersion.full
   val ammoniteOps     = "com.lihaoyi" %% "ammonite-ops" % ammoniteVersion
 
-  val scopt = "com.github.scopt" %% "scopt" % "4.0.0"
+  val scopt = "com.github.scopt" %% "scopt" % "4.0.1"
 
   val shapelessV = "2.3.3"
   val shapeless  = "com.chuusai" %% "shapeless" % shapelessV
@@ -96,9 +96,9 @@ trait CommonLibs extends LibVersions {
   )
 
   val consoleUtils = Seq(
-    "com.lihaoyi" %% "fansi"      % "0.2.10",
-    "com.lihaoyi" %% "sourcecode" % "0.2.3",
-    "com.lihaoyi" %% "pprint"     % "0.6.1"
+    "com.lihaoyi" %% "fansi"      % "0.2.11",
+    "com.lihaoyi" %% "sourcecode" % "0.2.4",
+    "com.lihaoyi" %% "pprint"     % "0.6.2"
   )
 
   val rtrees = Seq(
