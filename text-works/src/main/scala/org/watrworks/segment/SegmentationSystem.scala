@@ -19,12 +19,14 @@ import textgrid._
 
 import scala.reflect._
 
-case class DocSegShape[+T <: GeometricFigure](
+
+case class DocSegShape[+T <: GeometricFigure: ClassTag](
   id: Int @@ ShapeID,
   pageNum: Int @@ PageNum,
   shape: T,
   labels: Set[Label]
 ) extends LabeledShape[T, Unit] {
+  val shapeType = implicitly[ClassTag[T]].runtimeClass.getSimpleName()
   def addLabels(l: Label*): DocSegShape[T] = copy(
     labels = this.labels ++ l.toSet
   )
@@ -33,7 +35,7 @@ case class DocSegShape[+T <: GeometricFigure](
 }
 
 object DocSegShape {
-  def create[T <: GeometricFigure](
+  def create[T <: GeometricFigure: ClassTag](
     id: Int @@ ShapeID,
     pageNum: Int @@ PageNum,
     shape: T,
@@ -51,19 +53,19 @@ object SegmentationSystem {
   type ShapeIndex = LabeledShapeIndex[GeometricFigure, Unit, DocSegShape[GeometricFigure]]
 
   implicit class SS_LabeledShapeCoercion[+A <: GeometricFigure](val theShape: DocSegShape[A]) {
-    def asLineShape: LineShape = theShape.asInstanceOf[LineShape]
+    def asLineShape: LineShape   = theShape.asInstanceOf[LineShape]
     def asPointShape: PointShape = theShape.asInstanceOf[PointShape]
-    def asRectShape: RectShape = theShape.asInstanceOf[RectShape]
-    def asTrapShape: TrapShape = theShape.asInstanceOf[TrapShape]
+    def asRectShape: RectShape   = theShape.asInstanceOf[RectShape]
+    def asTrapShape: TrapShape   = theShape.asInstanceOf[TrapShape]
   }
 
   implicit class RicherLabeledShapes[A <: GeometricFigure](
     val theShapes: Seq[ShapeIndex#AnyShape]
   ) {
-    def asLineShapes: Seq[LineShape] = theShapes.asInstanceOf[Seq[LineShape]]
+    def asLineShapes: Seq[LineShape]   = theShapes.asInstanceOf[Seq[LineShape]]
     def asPointShapes: Seq[PointShape] = theShapes.asInstanceOf[Seq[PointShape]]
-    def asRectShapes: Seq[RectShape] = theShapes.asInstanceOf[Seq[RectShape]]
-    def asTrapShapes: Seq[TrapShape] = theShapes.asInstanceOf[Seq[TrapShape]]
+    def asRectShapes: Seq[RectShape]   = theShapes.asInstanceOf[Seq[RectShape]]
+    def asTrapShapes: Seq[TrapShape]   = theShapes.asInstanceOf[Seq[TrapShape]]
   }
 
 }
@@ -79,7 +81,7 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
   // All extracted items across all pages, indexed by id, which equals extraction order
   lazy val extractedItemArray: Array[ExtractedItem] = {
     val extractedItemCount = (0 +: pageAtomsAndGeometry.map(_._1.length)).sum
-    val itemArray = new Array[ExtractedItem](extractedItemCount + 1)
+    val itemArray          = new Array[ExtractedItem](extractedItemCount + 1)
     pageAtomsAndGeometry.foreach { case (items, _) =>
       items.foreach { item => itemArray(item.id.unwrap) = item }
     }
@@ -87,16 +89,18 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
   }
 
   lazy val shapeIndexes: Map[Int @@ PageNum, ShapeIndex] = {
-    pageAtomsAndGeometry.map { case (items@_, pageGeometry) =>
+    pageAtomsAndGeometry.map { case (items @ _, pageGeometry) =>
       (
         pageGeometry.pageNum,
-        LabeledShapeIndex.empty[GeometricFigure, Unit, DocSegShape[GeometricFigure]](shapeIdGenerator)
+        LabeledShapeIndex.empty[GeometricFigure, Unit, DocSegShape[GeometricFigure]](
+          shapeIdGenerator
+        )
       )
     }.toMap
   }
 
   def getNumberedPages(): Seq[Int @@ PageNum] =
-    pageAtomsAndGeometry.zipWithIndex.map { case (a@_, b) =>
+    pageAtomsAndGeometry.zipWithIndex.map { case (a @ _, b) =>
       PageNum(b)
     }
 
@@ -169,8 +173,8 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
   protected def pageHorizontalSlice(top: Double, height: Double): Option[LTBounds] = {
     val texact = top.toFloatExact()
     val hexact = height.toFloatExact()
-    val t = max(texact, pageGeometry.top)
-    val b = min(texact + hexact, pageGeometry.bottom)
+    val t      = max(texact, pageGeometry.top)
+    val b      = min(texact + hexact, pageGeometry.bottom)
     pageGeometry.getHorizontalSlice(t, b - t)
   }
 
@@ -194,9 +198,9 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
 
   def getLabeledShapes(l: Label): Seq[AnyShape] = shapeIndex.getShapesWithLabel(l)
 
-  def getLabeledRects(l: Label): Seq[RectShape] = getLabeledShapes(l).map(_.asRectShape)
-  def getLabeledTraps(l: Label): Seq[TrapShape] = getLabeledShapes(l).map(_.asTrapShape)
-  def getLabeledLines(l: Label): Seq[LineShape] = getLabeledShapes(l).map(_.asLineShape)
+  def getLabeledRects(l: Label): Seq[RectShape]   = getLabeledShapes(l).map(_.asRectShape)
+  def getLabeledTraps(l: Label): Seq[TrapShape]   = getLabeledShapes(l).map(_.asTrapShape)
+  def getLabeledLines(l: Label): Seq[LineShape]   = getLabeledShapes(l).map(_.asLineShape)
   def getLabeledPoints(l: Label): Seq[PointShape] = getLabeledShapes(l).map(_.asPointShape)
 
   protected def deleteLabeledShapes(l: Label): Unit = {
@@ -207,7 +211,7 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     shapes.foreach { sh => shapeIndex.deleteShape(sh) }
   }
 
-  protected def initShape[T <: GeometricFigure](
+  protected def initShape[T <: GeometricFigure: ClassTag](
     shape: T,
     l: Label
   ): DocSegShape[GeometricFigure] = {
@@ -215,7 +219,7 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
       DocSegShape.create(id, pageNum, shape, l)
     }
   }
-  protected def indexShape[T <: GeometricFigure](
+  protected def indexShape[T <: GeometricFigure: ClassTag](
     shape: T,
     l: Label
   ): DocSegShape[GeometricFigure] = {
@@ -224,7 +228,7 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
     }
   }
 
-  protected def indexShapeAndSetItems[T <: GeometricFigure](
+  protected def indexShapeAndSetItems[T <: GeometricFigure: ClassTag](
     shape: T,
     l: Label,
     items: ExtractedItem*
@@ -433,7 +437,7 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
   ): Seq[(Int @@ FloatRep, (DocSegShape[G], DocSegShape[G]))] = {
 
     val sorted = shapes.sortBy { getY(_) }
-    val yVals = sorted.map(s => getY(s))
+    val yVals  = sorted.map(s => getY(s))
     val deltas = findDeltas(yVals)
 
     deltas.zip(sorted.zip(sorted.tail))
@@ -464,7 +468,7 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
   ): Option[LTBounds] = {
     for {
       rightHalf <- rect.splitVertical(x1)._2
-      leftHalf <- rightHalf.splitVertical(x2)._1
+      leftHalf  <- rightHalf.splitVertical(x2)._1
     } yield leftHalf
   }
 

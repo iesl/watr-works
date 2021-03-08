@@ -3,7 +3,7 @@ package utils.intervals
 
 import scala.collection.mutable
 import textboxing.{TextBoxing => TB}, TB._
-import utils.CharBasedGraphPaper
+import utils.ConsoleGraphPaper
 
 object TreeNode {
 
@@ -344,7 +344,7 @@ class TreeNode[T: Ordering: MidpointHelper, W](
 
     assume(increasing.size == decreasing.size)
 
-    val nodeGraphRepr = new CharBasedGraphPaper(increasing.size, increasing.size)
+    val nodeGraphRepr = new ConsoleGraphPaper(increasing.size, increasing.size)
 
     increasing.toList
       .zipWithIndex.sortWith { case ((interval1, _), (interval2, _)) =>

@@ -3,12 +3,8 @@ package textboxing
 
 import scalaz.syntax.ToIdOps
 import scalaz.syntax.std.ToListOps
-
 import scala.language.postfixOps
-
 import scala.annotation.tailrec
-// import scala.{ collection => sc }
-// import sc.Seq
 
 sealed trait Alignment
 
@@ -30,9 +26,6 @@ object Content {
   case class Col(bs:Seq[Box]) extends Content
   case class SubBox(hAlign: Alignment, vAlign: Alignment, b:Box) extends Content
 }
-
-
-
 
 object TextBoxing extends ToListOps with ToIdOps {
   // Data type for specifying the alignment of boxes.

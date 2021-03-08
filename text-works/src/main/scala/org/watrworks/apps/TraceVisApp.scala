@@ -112,7 +112,7 @@ object TraceVis {
   ): Unit = {
 
     val formattedCommandInput: Seq[Seq[String]] = for {
-      instances <- cluster.instances
+      instances <- cluster.instances.take(100)
     } yield {
       val pageNum = instances.pageNum
       val doc     = transcript.documentId
@@ -160,7 +160,7 @@ object TraceVis {
     val combinedArgs = formattedCommandInput.flatten
 
     val cmdList = (List("convert", "-font", "ubuntu") ++ combinedArgs) ++ List("miff:-")
-    val montage = "montage - -font ubuntu -bordercolor blue -border 1 -tile 3x -geometry +2+2 x:"
+    val montage = "montage - -font ubuntu -bordercolor blue -background green -mattecolor black -border 1 -tile 3x -geometry +2+2 x:"
       .split(" ")
       .toList
 

@@ -39,7 +39,6 @@ class RTreeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]](
   def getItems(): Seq[Shape] = {
     toScalaSeq(spatialIndex.entries())
   }
-
 }
 
 object RTreeIndex {

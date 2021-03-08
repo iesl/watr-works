@@ -2,11 +2,12 @@ package org.watrworks
 package utils
 
 import textboxing.{TextBoxing => TB}, TB._
+import geometry.GraphPaper
 
 class GraphPaperSpec extends WatrSpec {
 
   it should "maintain height/width dimensions when rendered as string" in {
-    val graphPaper = new AsciiGraphPaper(2, 2)
+    val graphPaper = new ConsoleGraphPaper(2, 2)
     // val (x, y, w, h) = (0, 0, 0, 0)
     // val box = GraphPaper.Box(GraphPaper.GridCell(x, y), w, h)
     // val border = GraphPaper.BorderLineStyle.SingleWidth
@@ -24,9 +25,9 @@ class GraphPaperSpec extends WatrSpec {
       w <- 0 to 2
       h <- 0 to 2
     } yield {
-      val graphPaper = new AsciiGraphPaper(6, 6)
+      val graphPaper = new ConsoleGraphPaper(6, 6)
       val box = GraphPaper.Box(GraphPaper.GridCell(x, y), w, h)
-      val border = GraphPaper.BorderLineStyle.SingleWidth
+      val border = BorderLineStyle.SingleWidth
       graphPaper.drawBox(box, border)
       // val asString = graphPaper.asMonocolorString()
       // val lens = asString.split("\n").map(_.length()).mkString(", ")

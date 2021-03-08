@@ -1,9 +1,6 @@
 package org.watrworks
 package extract
 
-// import scala.{ collection => sc }
-// import sc.Seq
-
 import geometry._
 import geometry.syntax._
 import utils.{RelativeDirection => Dir}
@@ -15,7 +12,6 @@ import java.awt.geom._
 import org.apache.pdfbox.pdmodel.common.PDRectangle
 import _root_.io.circe, circe._
 
-// import scalaz.std.string._
 import scalaz.std.anyVal._
 import scalaz.Show
 

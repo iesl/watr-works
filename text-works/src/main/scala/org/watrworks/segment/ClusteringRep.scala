@@ -50,7 +50,7 @@ object ShapeClustering {
   def labeledShapeToLabel(shape: AnyShape): Transcript.Label = {
     val labelId = LabelID(shape.id.unwrap)
     Transcript.Label(
-      "Trapezoid",
+      shape.shapeType,
       Some(labelId),
       range = List(
         Transcript.PageRange(at = shape.pageNum),

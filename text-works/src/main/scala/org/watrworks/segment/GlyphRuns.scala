@@ -14,8 +14,7 @@ import utils.SlicingAndDicing._
 
 import TypeTags._
 
-trait GlyphRuns extends PageScopeSegmenter
-    with FontAndGlyphMetrics { self =>
+trait GlyphRuns extends PageScopeSegmenter with FontAndGlyphMetrics { self =>
 
   import SegmentationSystem._
 
@@ -23,10 +22,10 @@ trait GlyphRuns extends PageScopeSegmenter
 
     recordNatLangCharSpans(
       LB.CharRunFontBaseline,
-      findNatLangBaselineRuns(retainNatLang=true)
+      findNatLangBaselineRuns(retainNatLang = true)
     )
 
-    // combineCombiningMarks()
+    // TODO combineCombiningMarks()
 
     indexPathRegions()
 
@@ -48,8 +47,6 @@ trait GlyphRuns extends PageScopeSegmenter
 
   }
 
-
-
   private def findNatLangBaselineRuns(retainNatLang: Boolean): Seq[Seq[ExtractedItem.CharItem]] = {
     pageScope.pageItems.toSeq
       .collect { case item: ExtractedItem.CharItem => item }
@@ -59,52 +56,35 @@ trait GlyphRuns extends PageScopeSegmenter
       }
   }
 
-
   private def findSymbolicCharRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
     val charRuns = pageScope.pageItems.toSeq
       .collect { case item: ExtractedItem.CharItem => item }
       .filterNot(_.fontProps.isNatLangFont())
-      .groupByPairs {
-        case (item1, item2) =>
-          lazy val consecutive = itemsAreConsecutive(item1, item2)
-          lazy val leftToRight = item1.minBBox.left < item2.minBBox.left
-          lazy val colinear = item1.minBBox.isNeitherAboveNorBelow(item2.minBBox)
+      .groupByPairs { case (item1, item2) =>
+        lazy val consecutive = itemsAreConsecutive(item1, item2)
+        lazy val leftToRight = item1.minBBox.left < item2.minBBox.left
+        lazy val colinear    = item1.minBBox.isNeitherAboveNorBelow(item2.minBBox)
 
-          consecutive && leftToRight && colinear
+        consecutive && leftToRight && colinear
       }
 
     charRuns
   }
 
-
-
-  // private def combineCombiningMarks(): Unit = {
-  //   val combiningMarks = pageScope.pageItems.toSeq
-  //     .collect { case item: ExtractedItem.CombiningMark => item }
-
-  //   combiningMarks.foreach { combiningMark =>
-  //     val cmShape = indexShapeAndSetItems(combiningMark.minBBox, LB.Glyph, combiningMark)
-  //     traceLog.trace { shape(cmShape) }
-  //   }
-  // }
-
-
   private def indexPathRegions(): Unit = {
     val pathShapes =
       pageScope.pageItems.toSeq
         .filter { _.isInstanceOf[ExtractedItem.PathItem] }
-        .map { item => indexShape(item.minBBox, LB.PathBounds)}
+        .map { item => indexShape(item.minBBox, LB.PathBounds) }
 
-    traceLog.trace { shape(pathShapes:_*) tagged "Path Line Bounds" }
+    traceLog.trace { shape(pathShapes: _*) tagged "Path Line Bounds" }
   }
-
-
 
   private def initSymbolicCharSpans(symbolicRuns: Seq[Seq[ExtractedItem.CharItem]]): Unit = {
     symbolicRuns.map { charRun =>
       val xSorted = charRun.sortBy { _.minBBox.left }
-      val p1 = xSorted.head.minBBox.toPoint(Dir.Center)
-      val p2 = xSorted.last.minBBox.toPoint(Dir.Center)
+      val p1      = xSorted.head.minBBox.toPoint(Dir.Center)
+      val p2      = xSorted.last.minBBox.toPoint(Dir.Center)
 
       val baseLine = Line(p1, p2)
 
@@ -118,7 +98,10 @@ trait GlyphRuns extends PageScopeSegmenter
     traceLog.trace { labeledShapes(LB.SymbolicGlyphLine) }
   }
 
-  private def recordNatLangCharSpans(spanLabel: Label, natLangCharRuns: Seq[Seq[ExtractedItem.CharItem]]): Unit = {
+  private def recordNatLangCharSpans(
+    spanLabel: Label,
+    natLangCharRuns: Seq[Seq[ExtractedItem.CharItem]]
+  ): Unit = {
 
     natLangCharRuns.foreach { charRun =>
       val charItems = charRun.map(_.asInstanceOf[ExtractedItem.CharItem])
@@ -136,7 +119,7 @@ trait GlyphRuns extends PageScopeSegmenter
         setLinkedShape(headGlyphShape, LB.CharRunFontBaseline, baselineShape)
       }
 
-      val fontIds = charItems.map{ _.scaledFontId }.toSet
+      val fontIds = charItems.map { _.scaledFontId }.toSet
 
       setFontsForShape(baselineShape, fontIds)
 
@@ -149,9 +132,9 @@ trait GlyphRuns extends PageScopeSegmenter
   }
 
   private def createCharRunFontBaseline(charRun: Seq[ExtractedItem.CharItem]): Line = {
-    val xSorted = charRun.sortBy { _.minBBox.left }
-    val runBeginPt =  Point(xSorted.head.minBBox.left, xSorted.head.fontBbox.bottom)
-    val runEndPt = Point(xSorted.last.minBBox.right, xSorted.last.fontBbox.bottom)
+    val xSorted    = charRun.sortBy { _.minBBox.left }
+    val runBeginPt = Point(xSorted.head.minBBox.left, xSorted.head.fontBbox.bottom)
+    val runEndPt   = Point(xSorted.last.minBBox.right, xSorted.last.fontBbox.bottom)
     Line(runBeginPt, runEndPt)
   }
 
@@ -165,7 +148,7 @@ trait GlyphRuns extends PageScopeSegmenter
         baseLines
       }
 
-    traceLog.trace { shape(deletedShapes:_*) tagged "Deleted Intersect Image Bounds" }
+    traceLog.trace { shape(deletedShapes: _*) tagged "Deleted Intersect Image Bounds" }
     traceLog.trace { labeledShapes(LB.Image) tagged "Image Regions" }
   }
 

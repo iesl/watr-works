@@ -23,7 +23,7 @@ object LabeledShapeIndexProps extends Properties("LabeledShapeIndex") {
     val rtreeIndex = RTreeIndex.empty[GeometricFigure, Unit, TestShape]()
 
     example.zipWithIndex.foreach{ case(bbox, i) =>
-      val shape = TestShape(bbox, ShapeID(i))
+      val shape = TestShape(bbox, "LTBounds", ShapeID(i))
       rtreeIndex.add(shape)
     }
 

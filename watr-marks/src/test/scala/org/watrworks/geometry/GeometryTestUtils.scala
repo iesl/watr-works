@@ -3,30 +3,32 @@ package geometry
 
 import scalaz._, Scalaz._
 import utils.ExactFloats._
+import utils.{
+  BorderLineStyle
+}
 
 object GeometryTestUtils extends WatrSpec {
-  import utils.AsciiGraphPaper
-  import utils.GraphPaper
+  import utils.ConsoleGraphPaper
   import GraphPaper._
 
   def makeGraph(
     graphDimension: LTBounds
-  ): AsciiGraphPaper = {
+  ): ConsoleGraphPaper = {
     val w: Int = graphDimension.width.asInt()
     val h: Int = graphDimension.height.asInt()
-    val g = new AsciiGraphPaper(w, h)
+    val g = new ConsoleGraphPaper(w, h)
     drawBox(g, graphDimension)
     g
   }
 
-  def drawBox(graphPaper: GraphPaper, region: LTBounds): Unit  = {
-    graphPaper.drawBox(ltb2box(region), GraphPaper.BorderLineStyle.SingleWidth)
+  def drawBox(graphPaper: ConsoleGraphPaper, region: LTBounds): Unit  = {
+    graphPaper.drawBox(ltb2box(region), BorderLineStyle.SingleWidth)
   }
-  def drawBoxBold(graphPaper: GraphPaper, region: LTBounds): Unit  = {
-    graphPaper.drawBox(ltb2box(region), GraphPaper.BorderLineStyle.Bold)
+  def drawBoxBold(graphPaper: ConsoleGraphPaper, region: LTBounds): Unit  = {
+    graphPaper.drawBox(ltb2box(region), BorderLineStyle.Bold)
   }
-  def drawBoxDouble(graphPaper: GraphPaper, region: LTBounds): Unit  = {
-    graphPaper.drawBox(ltb2box(region), GraphPaper.BorderLineStyle.DoubleWidth)
+  def drawBoxDouble(graphPaper: ConsoleGraphPaper, region: LTBounds): Unit  = {
+    graphPaper.drawBox(ltb2box(region), BorderLineStyle.DoubleWidth)
   }
 
   def assertExpectedText(expected: String, actual: String): Unit = {

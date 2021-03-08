@@ -57,9 +57,9 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
       linePair match {
 
         case Seq(l1, l2, l3) =>
-          val (line1ReprShape, line1Chars) = l1
-          val (line2ReprShape, line2Chars) = l2
-          val (line3ReprShape, line3Chars) = l3
+          val (line1ReprShape, line1Chars@_) = l1
+          val (line2ReprShape, line2Chars@_) = l2
+          val (line3ReprShape, line3Chars@_) = l3
 
           val List(line1Text, line2Text, line3Text) =
             getTextRows(line1ReprShape, line2ReprShape, line3ReprShape)
@@ -106,8 +106,8 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
 
 
         case Seq(l1, l2) =>
-          val (line1ReprShape, line1Chars) = l1
-          val (line2ReprShape, line2Chars) = l2
+          val (line1ReprShape, line1Chars@_) = l1
+          val (line2ReprShape, line2Chars@_) = l2
 
           val List(line1Text, line2Text) =
             getTextRows(line1ReprShape, line2ReprShape)
@@ -167,7 +167,7 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
               shape1.like.blockParaBegin    ==>  { line1 += Para.B }
               shape1.like.paraLastAndBegin  ==>  { line1_2 += (Para.L -> Para.B) }
 
-            case (None, Some(t2)) =>
+            case (None, Some(t2@_)) =>
             case (None, None) =>
           }
 
@@ -290,7 +290,7 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
       l2TextOpt: Option[TextGrid.Row]
     ): ShapeProps = {
       val (llAngleType, lrAngleType) = t.classifyBaseAngles()
-      val (llAngle, lrAngle) = (t.leftBaseAngle(), t.rightBaseAngle())
+      // val (llAngle, lrAngle) = (t.leftBaseAngle(), t.rightBaseAngle())
 
       def hasAngles(l: AngleType, r: AngleType) = l==llAngleType && r==lrAngleType
 

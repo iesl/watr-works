@@ -2,10 +2,6 @@ package org.watrworks
 package utils
 
 import scala.collection.mutable
-// import scala.{ collection => sc }
-// import scala.collection.{ immutable => sci }
-// import scala.collection.{ mutable => scm }
-// import sc.Seq
 
 object SlicingAndDicing { outer =>
 
@@ -42,8 +38,6 @@ object SlicingAndDicing { outer =>
   }
 
   implicit class RicherSeq[A](val thisSeq: Seq[A]) extends AnyVal {
-    import scala.collection.mutable
-
 
     def groupByWindow(f: (Seq[A], A) => Boolean): Seq[Seq[A]] = {
       Cursors.groupByWindow(f, thisSeq)
@@ -71,8 +65,7 @@ object SlicingAndDicing { outer =>
                 groupSpans.push((i+1, 1))
               }
 
-            case (Seq(a), i) => // noop
-            case (Seq(), i) => // noop
+            case _ => // noop
           })
 
         groupByStartIndexes(groupSpans.toSeq.map(_._2).reverse, thisSeq)
@@ -85,8 +78,7 @@ object SlicingAndDicing { outer =>
         .zipWithIndex
         .map({
           case (Seq(a1, a2), i) => if (f(a1, a2, i)) Some(i) else None
-          case (Seq(a), i)      => None
-          case (Seq(), i)       => None
+          case _ => None
         })
         .flatten
 
@@ -102,7 +94,7 @@ object SlicingAndDicing { outer =>
 
 
     def foreachPair(f: (A, A) => Unit): Unit = {
-      splitOnPairs((a, b) => {f(a, b); true})
+      val _ = splitOnPairs((a, b) => {f(a, b); true})
     }
 
     def clusterBy(f: (A, A)=>Boolean): Seq[Seq[A]] = {

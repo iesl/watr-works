@@ -21,10 +21,10 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
   protected def printScaledFontTableData(): Unit = {
 
-    val allFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang = true) ++ docScope.fontDefs
+    val allFontIds    = docScope.fontDefs.getFontIdentifiers(isNatLang = true) ++ docScope.fontDefs
       .getFontIdentifiers(isNatLang = false)
     val scaledFontIDs = allFontIds.sorted
-    val dbg = scaledFontIDs.mkString("{\n  ", "\n  ", "\n}")
+    val dbg           = scaledFontIDs.mkString("{\n  ", "\n  ", "\n}")
     println(s" Font IDs: ${dbg}")
 
     val pagewiseLineWidthTable = getPagewiseLinewidthTable()
@@ -141,7 +141,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
   def createTranscript(): Transcript = {
     val stableId = self.stableId
-    val pages = self.pageAtomsAndGeometry.map {
+    val pages    = self.pageAtomsAndGeometry.map {
       case (pageItems, pageBounds) => {
 
         val glyphs = pageItems.map(pageItem => {
@@ -216,9 +216,9 @@ object DocumentSegmenter {
     val (pages, fontDefs0) = PdfBoxTextExtractor.extractPages(stableId0, pdfPath)
 
     val segmenter = new DocumentSegmentation {
-      override val pageAtomsAndGeometry = pages
-      override val fontDefs = fontDefs0
-      override val stableId = stableId0
+      override val pageAtomsAndGeometry          = pages
+      override val fontDefs                      = fontDefs0
+      override val stableId                      = stableId0
       override val docStats: DocumentLayoutStats = new DocumentLayoutStats()
     }
 

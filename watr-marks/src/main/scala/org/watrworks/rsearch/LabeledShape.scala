@@ -9,6 +9,7 @@ import geometry.syntax._
 trait LabeledShape[+T <: GeometricFigure, W] {
   def id: Int@@ShapeID
   def shape: T
+  def shapeType: String
   def labels: Set[Label]
   def attr: W
 

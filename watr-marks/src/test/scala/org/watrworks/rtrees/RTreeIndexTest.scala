@@ -8,6 +8,7 @@ import TypeTags._
 
 case class TestShape(
   shape: GeometricFigure,
+  shapeType: String,
   id: Int@@ShapeID
 ) extends LabeledShape[GeometricFigure, Unit] {
 
@@ -22,7 +23,7 @@ class RTreeIndexTest extends WatrSpec {
 
   it should "index/unindex delete" in {
     val rtreeIndex = RTreeIndex.empty[GeometricFigure, Unit, TestShape]()
-    val shape = TestShape(LTBounds.Ints(0, 0, 1, 1), ShapeID(0))
+    val shape = TestShape(LTBounds.Ints(0, 0, 1, 1), "LTBounds", ShapeID(0))
     rtreeIndex.add(shape)
 
     println(rtreeIndex.spatialIndex.asString())
