@@ -82,7 +82,7 @@ trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self
               item.id,
               PageRegion(
                 StablePage(
-                  docScope.stableId,
+                  docScope.documentId,
                   pageNum
                 ),
                 item.minBBox
@@ -213,7 +213,7 @@ trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self
 
     val rows2 = rows.map(_.expand())
 
-    TextGrid.fromRows(docScope.stableId, rows2)
+    TextGrid.fromRows(docScope.documentId, rows2)
   }
 
   def createPageStanzas(): Unit = {
@@ -224,7 +224,7 @@ trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self
     // val lines = searchForRects(pageGeometry, TextLineReprShape)
 
     Transcript(
-      docScope.stableId,
+      docScope.documentId,
       pages = List(), // pages.toList,
       labels = List(),
       stanzas = List()

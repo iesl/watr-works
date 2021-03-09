@@ -8,8 +8,8 @@ trait DocumentZoningApi {
 
   def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID]
   def getDocumentCount(): Int
-  def addDocument(stableId: String@@DocumentID): Int@@DocumentID
-  def getDocument(stableId: String@@DocumentID): Option[Int@@DocumentID]
+  def addDocument(documentId: String@@DocumentID): Int@@DocumentID
+  def getDocument(documentId: String@@DocumentID): Option[Int@@DocumentID]
   def getDocumentStableId(docId: Int@@DocumentID): String@@DocumentID
 
   def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID

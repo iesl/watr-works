@@ -548,7 +548,7 @@ class PdfBoxTextExtractor(
 
 object PdfBoxTextExtractor {
 
-  def extractPages(stableId: String@@DocumentID, pdfPath: Path): (List[(Seq[ExtractedItem], PageGeometry)], FontDefs) = {
+  def extractPages(documentId: String@@DocumentID, pdfPath: Path): (List[(Seq[ExtractedItem], PageGeometry)], FontDefs) = {
     val pages = mutable.ListBuffer[(Seq[ExtractedItem], PageGeometry)]()
     val charIdGen = IdGenerator[CharID]()
 

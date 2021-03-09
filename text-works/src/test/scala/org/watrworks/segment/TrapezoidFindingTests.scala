@@ -1,10 +1,6 @@
 package org.watrworks
 package segment
 
-import com.spotify.featran._
-
-import org.watrworks.utils.ExactFloats._
-
 import TypeTags._
 
 class TrapezoidFindingTests extends SegmentationTest {

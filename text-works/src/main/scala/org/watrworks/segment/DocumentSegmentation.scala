@@ -140,8 +140,8 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
   }
 
   def createTranscript(): Transcript = {
-    val stableId = self.stableId
-    val pages    = self.pageAtomsAndGeometry.map {
+    val documentId = self.documentId
+    val pages      = self.pageAtomsAndGeometry.map {
       case (pageItems, pageBounds) => {
 
         val glyphs = pageItems.map(pageItem => {
@@ -197,28 +197,27 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
     val docScopeLogs = docScope.emitLoggedLabels()
 
     Transcript(
-      stableId,
+      documentId,
       pages.to(List),
       labels = docScopeLogs.to(List),
       stanzas.to(List)
     )
   }
-
 }
 
 object DocumentSegmenter {
 
   def createSegmenter(
-    stableId0: String @@ DocumentID,
+    documentId0: String @@ DocumentID,
     pdfPath: Path
   ): DocumentSegmentation = {
 
-    val (pages, fontDefs0) = PdfBoxTextExtractor.extractPages(stableId0, pdfPath)
+    val (pages, fontDefs0) = PdfBoxTextExtractor.extractPages(documentId0, pdfPath)
 
     val segmenter = new DocumentSegmentation {
       override val pageAtomsAndGeometry          = pages
       override val fontDefs                      = fontDefs0
-      override val stableId                      = stableId0
+      override val documentId                    = documentId0
       override val docStats: DocumentLayoutStats = new DocumentLayoutStats()
     }
 

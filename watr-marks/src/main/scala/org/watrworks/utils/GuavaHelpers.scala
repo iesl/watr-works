@@ -293,7 +293,7 @@ class TabularData[RowT: Ordering, ColT: Ordering, A, RM, CM](
       colk <- columnKeys.toList.sorted
     } yield {
       val column = table.column(colk)
-      val total = column.asScala.toSeq.foldLeft(z){ case  (acc, (rowk, a)) =>
+      val total = column.asScala.toSeq.foldLeft(z){ case  (acc, (rowk@_, a)) =>
         f(acc, a.asInstanceOf[A])
       }
       (colk, total)
@@ -305,7 +305,7 @@ class TabularData[RowT: Ordering, ColT: Ordering, A, RM, CM](
       rowk <- rowKeys.toList.sorted
     } yield {
       val row = table.row(rowk)
-      val total = row.asScala.toSeq.foldLeft(z){ case  (acc, (colk, a)) =>
+      val total = row.asScala.toSeq.foldLeft(z){ case  (acc, (colk@_, a)) =>
         f(acc, a.asInstanceOf[A])
       }
       (rowk, total)
@@ -342,7 +342,7 @@ class TabularData[RowT: Ordering, ColT: Ordering, A, RM, CM](
 
     val withRowMarginals = rowMarginals.map { rms =>
       cellBoxes.zip(
-        rms.map{ case (rowk, rm) =>
+        rms.map{ case (rowk@_, rm) =>
           hjoin(" ┃ ", rm.toString().box)
         }
       ).map{ case (rowCells, rm) => rowCells :+ rm }

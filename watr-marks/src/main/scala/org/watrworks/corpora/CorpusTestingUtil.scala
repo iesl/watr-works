@@ -38,9 +38,9 @@ trait CorpusTestingUtil extends TextGridBuilder {
     val numDocs = docStore.getDocumentCount()
     for { (doc, i) <- docs.zipWithIndex } yield {
       val d =  i + numDocs
-      val stableId = DocumentID(s"doc#${d}")
-      addDocument(stableId, doc)
-      stableId
+      val documentId = DocumentID(s"doc#${d}")
+      addDocument(documentId, doc)
+      documentId
     }
   }
   def addSampleDoc(doc: List[String]): String@@DocumentID = {
@@ -54,9 +54,9 @@ trait CorpusTestingUtil extends TextGridBuilder {
       "jkl\nmno\npqr"
     );
     (0 until n).map{ i =>
-      val stableId = DocumentID(s"doc#${i}")
-      addDocument(stableId, doc)
-      stableId
+      val documentId = DocumentID(s"doc#${i}")
+      addDocument(documentId, doc)
+      documentId
     }
   }
 

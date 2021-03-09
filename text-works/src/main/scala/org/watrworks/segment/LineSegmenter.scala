@@ -117,10 +117,6 @@ trait LineSegmentation
 
       val allItemsAreConsecutive = consecutiveById.length == 1
 
-      // println(s"ord.by.id  : ${orderedById.map(_._2.char).mkString}")
-      // println(s" (w/root)  : ${charSetWithRootChar.map(_.char).mkString}")
-      // println(s"ord.l->r   : ${orderedLeftToRight.map(_.char).mkString}")
-
       if (sameOrderByIdAndByLeftToRight || allItemsAreConsecutive) {
         val rootFontOffsets = docScope.fontDefs
           .getScaledFontOffsets(rootChar.scaledFontId)
@@ -128,7 +124,6 @@ trait LineSegmentation
 
         val fontIds = charSetWithRootChar.map(_.scaledFontId).toSet
         val charBounds = charSetWithRootChar.map(_.minBBox).reduce(_ union _)
-        // val charSetText = charSetWithRootChar.map(_.char).mkString
 
         rootFontOffsets
           .sliceBetween(_.baseLine, _.midriseLine, pageGeometry)
@@ -151,25 +146,6 @@ trait LineSegmentation
               traceLog.trace {
                 shape(pageBand)
               }
-              // traceLog.traceAll {
-              //   val allFontIds = charSetWithRootChar.map(_.scaledFontId)
-              //   val fontSpansOverChars = allFontIds
-              //     .map(_.unwrap)
-              //     .groupByPairs(_ == _)
-              //     .map { fontIds =>
-              //       (fontIds.head, fontIds.length)
-              //     }
-              //     .foldLeft((List[(String, Int, Int)](), 0)) {
-              //       case ((accList, accBegin), (fontId, spanLen)) =>
-              //         ((fontId, accBegin, spanLen) :: accList, accBegin + spanLen)
-              //     }
-              //   val fontRanges = fontSpansOverChars._1.reverse
-              //   // val rel = relation("TextLineFontRanges")
-              //   //   .field(pageBand)
-              //   //   .col("FontRanges", fontRanges)
-              //   // List(shape(pageBand), rel)
-              //   List(shape(pageBand) )
-              // }
 
               setExtractedItemsForShape(pageBand, charSetWithRootChar)
               setFontsForShape(pageBand, fontIds)

@@ -23,7 +23,7 @@ object LabelTreeNode {
 
   implicit def ShowLabelTreeNode[A <: LabelTarget](implicit ShowA: Show[A]) = Show.shows[LabelTreeNode[A]]{ treeNode =>
     treeNode match {
-      case LabelTreeNode.CellGroup(cells, beginOffset) => cells.map(ShowA.shows(_)).mkString
+      case LabelTreeNode.CellGroup(cells, beginOffset@_) => cells.map(ShowA.shows(_)).mkString
       case LabelTreeNode.LabelNode(l) => l.fqn
       case LabelTreeNode.RootNode => "()"
     }
@@ -87,7 +87,7 @@ object LabeledSequenceTreeTransforms {
         lastChild <- currLoc.lastChild
       } yield {
         lastChild.getLabel match {
-          case prevCell@ LabelTreeNode.CellGroup(cells, beginIndex) =>
+          case _@ LabelTreeNode.CellGroup(cells, beginIndex) =>
 
             lastChild.modifyLabel { p =>
               LabelTreeNode.CellGroup(cell :: cells, beginIndex): LabelTreeNode[A]
@@ -132,7 +132,7 @@ object LabeledSequenceTreeTransforms {
   }
 
   private def attrEndIndex(attr: Attr) = {
-    val (x, st, len) = attr
+    val (_, st, len) = attr
     st+len
   }
 
@@ -143,7 +143,7 @@ object LabeledSequenceTreeTransforms {
           attrEndIndex(h.rootLabel)
         }.getOrElse(init)
 
-        val adjusted = child.rootLabel.map{ case attr@ (label, begin, len) =>
+        val adjusted = child.rootLabel.map{ case (label, begin, len) =>
           (label, begin+offset, len)
         }
 

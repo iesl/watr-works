@@ -1,9 +1,6 @@
 package org.watrworks
 package textgrid
 
-// import scala.{ collection => sc }
-// import sc.Seq
-
 import annots._
 import geometry._
 
@@ -18,12 +15,12 @@ trait TextGridConstruction extends GeometricOps {
   def yscale = 10.0d
 
   def linesWithLeftPadding(str: String): Seq[(Int, String)] = {
-    str.split("\n")
-      .map({s =>
-             val pre = s.takeWhile(_ == ' ').length
-             val line = s.trim
-             (pre, line)
-           })
+    str.split("\n").to(List)
+      .map({ s =>
+        val pre  = s.takeWhile(_ == ' ').length
+        val line = s.trim
+        (pre, line)
+      })
   }
 
   def getRegionBoundsDbl(x: Double, y: Double, w: Double, h: Double): LTBounds = {
@@ -40,51 +37,54 @@ trait TextGridConstruction extends GeometricOps {
     getRegionBoundsDbl(x.toDouble, y.toDouble, w.toDouble, h.toDouble)
   }
 
-
   def mkPageRegion(stablePage: StablePage, x: Int, y: Int, w: Int, h: Int): PageRegion = {
     val bbox = getRegionBounds(x, y, w, h)
     PageRegion(stablePage, bbox)
   }
 
-
   def stringToPageTextGrid(
-    stableId: String@@DocumentID,
+    documentId: String @@ DocumentID,
     initText: String,
-    pageNum: Int@@PageNum,
-    maybePageId: Option[Int@@PageID]
+    pageNum: Int @@ PageNum,
+    maybePageId: Option[Int @@ PageID]
   ): TextGrid = {
 
-    val stablePage = StablePage(stableId, pageNum)
-    val pageLines = linesWithLeftPadding(initText)
+    val stablePage = StablePage(documentId, pageNum)
+    val pageLines  = linesWithLeftPadding(initText)
 
     val rows = for {
-      ((lpad, line), linenum)   <- pageLines.zipWithIndex
+      ((lpad, line), linenum) <- pageLines.zipWithIndex
     } yield {
       val cells = for { (char, ichar) <- line.toCharArray.zipWithIndex } yield {
-        val chnum = lpad + ichar
-        val pageRegion = mkPageRegion(stablePage, x=chnum, y=linenum, w=1, h=1)
+        val chnum        = lpad + ichar
+        val pageRegion   = mkPageRegion(stablePage, x = chnum, y = linenum, w = 1, h = 1)
         // TODO make this clipBorder(..)
         val adjustedBbox = pageRegion.bbox.scale(-2.percent).translate(0.1, 0.1)
-        val adjRegion = pageRegion.copy(bbox = adjustedBbox)
-        val charAtom = PageItem.CharAtom(
+        val adjRegion    = pageRegion.copy(bbox = adjustedBbox)
+        val charAtom     = PageItem.CharAtom(
           charIds.nextId,
           adjRegion,
           char.toString
         )
         TextGrid.PageItemCell(charAtom, char = char)
       }
-      TextGrid.Row.fromCells(cells)
+      TextGrid.Row.fromCells(cells.to(Seq))
     }
 
-    TextGrid.fromRows(stableId, rows)
+    TextGrid.fromRows(documentId, rows)
   }
 
-  def addLabelsToGridRow(row: TextGrid.Row, labelSpans: Seq[((Int, Int), watrmarks.Label)]): TextGrid.Row = {
-    val row0 = row.toCursor().get
-    val labeledCursor = labelSpans.foldLeft(row0) {case (accCur, ((start, end), label)) =>
-      val win = accCur.move(start)
-        .get.toWindow()
-        .slurpRight({ case (window, _) => window.length <= end-start })
+  def addLabelsToGridRow(
+    row: TextGrid.Row,
+    labelSpans: Seq[((Int, Int), watrmarks.Label)]
+  ): TextGrid.Row = {
+    val row0          = row.toCursor().get
+    val labeledCursor = labelSpans.foldLeft(row0) { case (accCur, ((start, end), label)) =>
+      val win = accCur
+        .move(start)
+        .get
+        .toWindow()
+        .slurpRight({ case (window, _) => window.length <= end - start })
 
       LabeledSequence.addBioLabel(label, win.cells)
       win.closeWindow().start

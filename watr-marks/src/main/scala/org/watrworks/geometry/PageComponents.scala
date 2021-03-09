@@ -28,20 +28,20 @@ import GeometryCodecs._
 
 @JsonCodec
 sealed trait StableIdentifier {
-  def stableId: String@@DocumentID
+  def documentId: String@@DocumentID
 }
 
 @JsonCodec
 case class StableDocument(
-  stableId: String@@DocumentID,
+  documentId: String@@DocumentID,
 ) extends StableIdentifier
 
 @JsonCodec
 case class StablePage(
-  stableId: String@@DocumentID,
+  documentId: String@@DocumentID,
   pageNum: Int@@PageNum
 ) extends StableIdentifier {
-  override def toString = s"""${stableId}/pg${pageNum}"""
+  override def toString = s"""${documentId}/pg${pageNum}"""
 }
 
 
@@ -50,7 +50,7 @@ case class PageRegion(
   page: StablePage,
   bbox: LTBounds
 ) extends StableIdentifier {
-  def stableId: String@@DocumentID = page.stableId
+  def documentId: String@@DocumentID = page.documentId
 }
 
 object PageRegion {
@@ -171,8 +171,8 @@ object PageItem {
 
 
 object PageComponentImplicits extends GeometricOps {
-  def createPageRegionUri(stableId: String@@DocumentID, pageNum:Int@@PageNum, bbox: LTBounds): String = {
-    s"${stableId}+${pageNum}+${bbox.uriString}"
+  def createPageRegionUri(documentId: String@@DocumentID, pageNum:Int@@PageNum, bbox: LTBounds): String = {
+    s"${documentId}+${pageNum}+${bbox.uriString}"
   }
 
   implicit class RicherPageRegion(val thePageRegion: PageRegion) extends AnyVal {
@@ -198,7 +198,7 @@ object PageComponentImplicits extends GeometricOps {
 
     def uriString: String = {
       createPageRegionUri(
-        thePageRegion.page.stableId,
+        thePageRegion.page.documentId,
         thePageRegion.page.pageNum,
         thePageRegion.bbox
       )

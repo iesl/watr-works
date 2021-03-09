@@ -13,7 +13,7 @@ trait TextGrid { self =>
 
   import TextGrid._
 
-  def stableId: String @@ DocumentID
+  def documentId: String @@ DocumentID
 
   object cellLabels extends LabeledSequence[GridCell] {
     def labelTargets(): Seq[GridCell] = self.gridCells()
@@ -30,7 +30,7 @@ trait TextGrid { self =>
       row.splitOnLeafLabels()
     }
 
-    TextGrid.fromRows(stableId, splitRows)
+    TextGrid.fromRows(documentId, splitRows)
   }
 
   def gridCells(): Seq[GridCell] = {
@@ -90,7 +90,7 @@ trait TextGrid { self =>
         val (pre, post) = rows().splitAt(row)
         val end = row1 +: row2 +: (post.drop(1))
         val newRows = pre ++ end
-        TextGrid.fromRows(stableId, newRows)
+        TextGrid.fromRows(documentId, newRows)
       }
     } else None
   }
@@ -103,7 +103,7 @@ trait TextGrid { self =>
 
       val r12 = r1.append(r2)
       val newRows = pre.dropRight(1) ++ (r12 +: post.drop(1))
-      val newGrid = TextGrid.fromRows(stableId, newRows)
+      val newGrid = TextGrid.fromRows(documentId, newRows)
 
       // rows can only be joined if they share the same label stack
       val maybeNewGrid = r12.cells().headOption.map { c0 =>
@@ -278,7 +278,7 @@ object TextGrid {
   }
 
   def fromRows(id: String @@ DocumentID, init: Seq[Row]): TextGrid = new TextGrid {
-    override val stableId = id
+    override val documentId = id
     override val rows = init
   }
 }

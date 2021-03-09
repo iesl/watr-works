@@ -121,7 +121,7 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
 
   def docStats: DocumentLayoutStats
 
-  def stableId: String @@ DocumentID
+  def documentId: String @@ DocumentID
 
   def getPagewiseLinewidthTable()
     : TabularData[Int @@ PageNum, String @@ ScaledFontID, List[Int @@ FloatRep], Unit, Unit] = {

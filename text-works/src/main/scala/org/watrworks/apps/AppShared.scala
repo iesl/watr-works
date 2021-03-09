@@ -147,7 +147,7 @@ object ProcessPipelineSteps {
       input match {
         case m @ Processable.SingleFile(f) =>
           val pdfName  = f.getFileName.toString()
-          val stableId = DocumentID(pdfName)
+          val documentId = DocumentID(pdfName)
           val input    = nioToAmm(f)
 
           val output = conf.ioConfig.outputPath.getOrElse {
@@ -155,7 +155,7 @@ object ProcessPipelineSteps {
           }
 
           if (!output.toFile().exists()) {
-            Right(Processable.ExtractedFile(extractText(stableId, input), m))
+            Right(Processable.ExtractedFile(extractText(documentId, input), m))
           } else {
             val msg =
               s"File ${output} already exists. Move file or use --overwrite"
@@ -164,9 +164,9 @@ object ProcessPipelineSteps {
           }
 
         case m @ Processable.CorpusFile(corpusEntry) =>
-          val stableId = DocumentID(corpusEntry.entryDescriptor)
+          val documentId = DocumentID(corpusEntry.entryDescriptor)
 
-          println(s"Processing ${stableId}")
+          println(s"Processing ${documentId}")
 
           val maybeSegmenter = for {
             pdfEntry <- corpusEntry.getPdfArtifact().toRight(left = "Could not get PDF")
@@ -177,7 +177,7 @@ object ProcessPipelineSteps {
             // val ammPath = nioToAmm(output)
 
             time("extractText") {
-              extractText(stableId, pdfPath)
+              extractText(documentId, pdfPath)
             }
           }
 
@@ -345,14 +345,14 @@ object ProcessPipelineSteps {
   )
 
   def extractText(
-    stableId: String @@ DocumentID,
+    documentId: String @@ DocumentID,
     inputPdf: fs.Path
   ): DocumentSegmentation = {
 
-    println(s"Extracting ${stableId}")
+    println(s"Extracting ${documentId}")
 
     val segmenter = time("createSegmenter") {
-      DocumentSegmenter.createSegmenter(stableId, inputPdf)
+      DocumentSegmenter.createSegmenter(documentId, inputPdf)
     }
 
     time("runDocumentSegmentation") {

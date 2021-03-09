@@ -20,12 +20,7 @@ trait GlyphRuns extends PageScopeSegmenter with FontAndGlyphMetrics { self =>
 
   def findContiguousGlyphSpans(): Unit = {
 
-    recordNatLangCharSpans(
-      LB.CharRunFontBaseline,
-      findNatLangBaselineRuns(retainNatLang = true)
-    )
-
-    // TODO combineCombiningMarks()
+    recordNatLangCharSpans(LB.CharRunFontBaseline, findNatLangBaselineRuns())
 
     indexPathRegions()
 
@@ -47,10 +42,10 @@ trait GlyphRuns extends PageScopeSegmenter with FontAndGlyphMetrics { self =>
 
   }
 
-  private def findNatLangBaselineRuns(retainNatLang: Boolean): Seq[Seq[ExtractedItem.CharItem]] = {
+  private def findNatLangBaselineRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
     pageScope.pageItems.toSeq
       .collect { case item: ExtractedItem.CharItem => item }
-      .filter(_.fontProps.isNatLangFont() == retainNatLang)
+      .filter(_.fontProps.isNatLangFont())
       .groupByPairs { case (item1, item2) =>
         item2.glyphProps.prevSimilar == item1.id
       }
@@ -103,14 +98,15 @@ trait GlyphRuns extends PageScopeSegmenter with FontAndGlyphMetrics { self =>
     natLangCharRuns: Seq[Seq[ExtractedItem.CharItem]]
   ): Unit = {
 
-    natLangCharRuns.foreach { charRun =>
-      val charItems = charRun.map(_.asInstanceOf[ExtractedItem.CharItem])
+    natLangCharRuns.foreach { charItems =>
 
+      // Index each glyph as both NatLangGlyph & Glyph
       val glyphShapes = charItems.map { item =>
         indexShapeAndSetItems(item.minBBox, LB.NatLangGlyph, item)
         indexShapeAndSetItems(item.minBBox, LB.Glyph, item)
       }
 
+      // Create a line corresponding to font bbox underline
       val baseLine = createCharRunFontBaseline(charItems)
 
       val baselineShape = indexShape(baseLine, spanLabel)
@@ -123,7 +119,7 @@ trait GlyphRuns extends PageScopeSegmenter with FontAndGlyphMetrics { self =>
 
       setFontsForShape(baselineShape, fontIds)
 
-      setExtractedItemsForShape(baselineShape, charRun)
+      setExtractedItemsForShape(baselineShape, charItems)
 
       baselineShape
     }

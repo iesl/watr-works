@@ -26,7 +26,7 @@ object RelationModel extends GeometricFigureCodecs {
   @JsonCodec
   case class Document(
     prKey   : Int@@DocumentID,
-    stableId: String@@DocumentID
+    documentId: String@@DocumentID
   )
 
   @JsonCodec

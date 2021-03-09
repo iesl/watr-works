@@ -8,12 +8,12 @@ trait TextGridBuilder extends TextGridConstruction {
   def docStore: DocumentZoningApi
   def annotApi: DocumentAnnotationApi
 
-  def addDocument(stableId: String@@DocumentID, pages:Seq[String]): Seq[TextGrid]  = {
-    docStore.addDocument(stableId)
+  def addDocument(documentId: String@@DocumentID, pages:Seq[String]): Seq[TextGrid]  = {
+    docStore.addDocument(documentId)
     val pageRegions = for {
       (page, n) <- pages.zipWithIndex
     } yield {
-      val textGrid = loadPageFromString(stableId, PageNum(n), page)
+      val textGrid = loadPageFromString(documentId, PageNum(n), page)
       (textGrid, textGrid.pageBounds().head)
     }
 
@@ -22,22 +22,22 @@ trait TextGridBuilder extends TextGridConstruction {
   }
 
   def loadPageFromString(
-    stableId: String@@DocumentID,
+    documentId: String@@DocumentID,
     pageNum: Int@@PageNum,
     pageBlock: String
   ): TextGrid = {
-    val docId = docStore.getDocument(stableId).get
+    val docId = docStore.getDocument(documentId).get
     val pageId = docStore.addPage(docId, pageNum)
 
-    stringToPageTextGrid(stableId, pageBlock, pageNum, Some(pageId))
+    stringToPageTextGrid(documentId, pageBlock, pageNum, Some(pageId))
   }
 
   def visualizeDocStore(): Unit = {
     for {
-      stableId     <- docStore.getDocuments()
-      _             = println(s"stableId: ${stableId}")
-      docId        <- docStore.getDocument(stableId).toSeq
-      _             = println(s"Document $stableId id:${docId}")
+      documentId     <- docStore.getDocuments()
+      _             = println(s"documentId: ${documentId}")
+      docId        <- docStore.getDocument(documentId).toSeq
+      _             = println(s"Document $documentId id:${docId}")
       pageId       <- docStore.getPages(docId)
       pageGeometry  = docStore.getPageGeometry(pageId)
       _             = println(s"  Page  ${pageId}: ${pageGeometry}")

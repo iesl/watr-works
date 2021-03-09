@@ -5,7 +5,7 @@ import TypeTags._
 
 class TextGridTests extends TextGridSpec {
 
-  val stableId = DocumentID("SampleDocument")
+  val documentId = DocumentID("SampleDocument")
 
   info("behavior of textgrid char-level labeling")
   info("behavior of textgrid row-level labeling")

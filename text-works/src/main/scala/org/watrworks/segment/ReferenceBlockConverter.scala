@@ -1,9 +1,6 @@
 package org.watrworks
 package segment
 
-// import scala.{ collection => sc }
-// import sc.Seq
-
 import geometry._
 import geometry.syntax._
 import utils.ExactFloats._
@@ -91,7 +88,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
       }
       if (includedCharItems.nonEmpty) {
         val leftmostItem = includedCharItems.minBy(_.minBBox.left)
-        val LTBounds(l, t, w, h) = leftmostItem.minBBox
+        val LTBounds(l, _, w, _) = leftmostItem.minBBox
 
         if (docScope.fontDefs.hasScaledFontOffsets(leftmostItem.scaledFontId)) {
           val fontOffsets = docScope.fontDefs.getScaledFontOffsets(leftmostItem.scaledFontId)
@@ -282,7 +279,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
 
     val autoLabeledBlocks = referenceBlockZones.map { zones => zones.flatMap { refBlockZone =>
       val refBlockRegion = refBlockZone.regions.headOption.orDie(s"no regions found in zone ${refBlockZone}")
-      val stablePage = refBlockRegion.page
+      // val stablePage = refBlockRegion.page
       val referenceShapes = searchForRects(refBlockRegion.bbox, Reference)
       val sortedRefShapes = referenceShapes.map{ referenceShape =>
         val textGrid = getTextGrid(Some(referenceShape.shape))
@@ -297,7 +294,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
       val isSane = sanityCheckReferences(block)
       val marker = if (isSane) "#" else "*"
 
-      block.foreach{ case (referenceShape, textGrid, pageRegion) =>
+      block.foreach{ case (referenceShape@_, textGrid, pageRegion@_) =>
         println(
           TB.borderLeft(s"##${marker}>> ")(
             s"-- Reference ---".hangIndent(
@@ -313,7 +310,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
   }
 
   def sanityCheckReferences(referenceTextGrids: Seq[(LTBounds, TextGrid, PageRegion)]): Boolean = {
-    referenceTextGrids.zipWithIndex.foreach{ case ((bbox, textGrid, pageRegion), refNum) =>
+    referenceTextGrids.zipWithIndex.foreach{ case ((bbox@_, textGrid, pageRegion), refNum) =>
       val isEmpty = textGrid.toText().replaceAll("\n", " ").trim.isEmpty()
 
       if (isEmpty) {
@@ -321,7 +318,7 @@ trait ReferenceBlockConverter extends PageScopeSegmenter
       }
     }
 
-    val refTexts = referenceTextGrids.flatMap{ case (bbox, textGrid, pageRegion) =>
+    val refTexts = referenceTextGrids.flatMap{ case (bbox@_, textGrid, pageRegion@_) =>
       textGrid.toText().split("\n").headOption
     }
 

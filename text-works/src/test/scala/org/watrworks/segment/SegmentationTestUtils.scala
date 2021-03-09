@@ -38,8 +38,8 @@ trait SegmentationTestUtils extends SegmentationTest {
           val pathName = s"${pathRoot}/pg_${pg}.pdf"
           val pdfIns = resourcePaperUrl(pathName)
           val path = fs.Path(pdfIns.getPath)
-          val stableIdent = pathName.trim.replaceAll("/","_")
-          val docId = DocumentID(stableIdent)
+          val documentId = pathName.trim.replaceAll("/","_")
+          val docId = DocumentID(documentId)
           (docId, page,  path)
         }
       }
@@ -51,11 +51,11 @@ trait SegmentationTestUtils extends SegmentationTest {
   ): Option[(String@@DocumentID, Int, fs.Path)] = {
 
     allPages
-      .filter { case (stableId, pg, _) =>
-        stableId.unwrap.contains(pdfStr) && pg == page
+      .filter { case (documentId, pg, _) =>
+        documentId.unwrap.contains(pdfStr) && pg == page
       }
-      .map { case (stableId, pg, path) =>
-        (stableId, pg, path)
+      .map { case (documentId, pg, path) =>
+        (documentId, pg, path)
       }
       .headOption
   }
@@ -69,8 +69,8 @@ trait SegmentationTestUtils extends SegmentationTest {
       .map{ pdfName =>
         val pdfIns = resourcePaperUrl(pdfName)
         val path = fs.Path(pdfIns.getPath)
-        val stableIdent = pdfName.replaceAll("/","_")
-        val docId = DocumentID(stableIdent)
+        val documentId = pdfName.replaceAll("/","_")
+        val docId = DocumentID(documentId)
 
         (docId, path)
       }

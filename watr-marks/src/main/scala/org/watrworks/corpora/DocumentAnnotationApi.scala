@@ -10,7 +10,7 @@ import utils.DoOrDieHandlers._
 
 @JsonCodec
 sealed trait AnnotatedLocation {
-  def stableId: String@@DocumentID
+  def documentId: String@@DocumentID
 }
 
 
@@ -20,7 +20,7 @@ object AnnotatedLocation extends GeometricFigureCodecs {
   case class Location(
     location: StableIdentifier
   ) extends AnnotatedLocation {
-    def stableId: String@@DocumentID = location.stableId
+    def documentId: String@@DocumentID = location.documentId
 
   }
 
@@ -29,9 +29,9 @@ object AnnotatedLocation extends GeometricFigureCodecs {
     regions: Seq[PageRegion]
   ) extends AnnotatedLocation {
 
-    def stableId: String@@DocumentID = {
+    def documentId: String@@DocumentID = {
       val r0 = regions.headOption.orDie("No regions in Zone")
-      r0.stableId
+      r0.documentId
     }
 
   }
