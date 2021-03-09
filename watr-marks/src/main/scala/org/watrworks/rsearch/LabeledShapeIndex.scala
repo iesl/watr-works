@@ -2,9 +2,6 @@ package org.watrworks
 package rtrees
 
 import scala.collection.mutable
-// import scala.{collection => sc}
-// import sc.Seq
-
 import watrmarks._
 import geometry._
 

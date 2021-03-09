@@ -1,9 +1,6 @@
 package org.watrworks
 package utils
 
-// import scala.{ collection => sc }
-// import sc.Seq
-
 object FunctionalHelpers {
   import scalaz._
 

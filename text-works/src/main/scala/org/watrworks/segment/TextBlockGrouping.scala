@@ -1,9 +1,6 @@
 package org.watrworks
 package segment
 
-// import scala.{ collection => sc }
-// import sc.Seq
-
 import watrmarks._
 import geometry.syntax._
 import utils.ExactFloats._

@@ -1,15 +1,11 @@
 package org.watrworks
 package segment
 
-// import scala.{ collection => sc }
-// import sc.Seq
-
 import geometry._
 import geometry.syntax._
 import extract._
 import utils.ExactFloats._
 import watrmarks._
-// import textboxing.{TextBoxing => TB}, TB._
 import utils.SlicingAndDicing._
 
 import TypeTags._

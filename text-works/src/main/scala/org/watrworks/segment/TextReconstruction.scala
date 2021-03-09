@@ -1,8 +1,6 @@
 package org.watrworks
 package segment
 
-// import scala.{collection => sc}
-// import sc.Seq
 import textgrid._
 import geometry._
 import geometry.syntax._

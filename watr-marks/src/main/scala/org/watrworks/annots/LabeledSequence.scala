@@ -1,8 +1,6 @@
 package org.watrworks
 package annots
 
-// import scala.{ collection => sc }
-// import sc.Seq
 import scala.collection.mutable
 import watrmarks._
 import textboxing.{TextBoxing => TB}, TB._

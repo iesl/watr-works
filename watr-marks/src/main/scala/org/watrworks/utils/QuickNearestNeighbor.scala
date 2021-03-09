@@ -3,9 +3,6 @@ package utils
 
 import ExactFloats._
 
-// import scala.{ collection => sc }
-// import sc.Seq
-
 object QuickNearestNeighbors {
   import TypeTags._
   import utils.SlicingAndDicing._
