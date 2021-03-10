@@ -2,15 +2,9 @@ package org.watrworks
 package segment
 
 import org.scalatest.diagrams.Diagrams
+import java.util.stream
 
-// import rtrees._
-// import ComponentOperations._
-// import TextReflowConversion.toTextReflow
-// import watrmarks.{StandardLabels => LB}
-// import TypeTags._
-// import textreflow.data._
-
-class LineTokenizationTest extends SegmentationTestUtils  with Diagrams {
+class LineTokenizationTest extends SegmentationTestUtils with Diagrams {
   // N.B. this paper removed from test cases b/c the visible text is actually image overlays, w/ some hand-entered text
   //   """Page:0 file:///Schauer-1987.pdf""",
   behavior of "text line identification"
@@ -82,7 +76,6 @@ class LineTokenizationTest extends SegmentationTestUtils  with Diagrams {
       """|Abstract
          |""".stripMargin
     ),
-
     TextExample(
       """|Page:0 /101016jactamat200401025.pdf
          |""".stripMargin,
@@ -98,7 +91,6 @@ class LineTokenizationTest extends SegmentationTestUtils  with Diagrams {
       """|To combine at best economic welding and safety
          |""".stripMargin
     ),
-
     TextExample(
       """| Page:1 /101016jactamat201501032.pdf
          |""".stripMargin,
@@ -107,7 +99,6 @@ class LineTokenizationTest extends SegmentationTestUtils  with Diagrams {
       """|C.M. Cepeda-Jiménez et al. / Acta Materialia 88 (2015) 232–244
          |""".stripMargin
     ),
-
     TextExample(
       """|Page:1 /101016jactamat201501032.pdf
          |""".stripMargin,
@@ -120,96 +111,74 @@ class LineTokenizationTest extends SegmentationTestUtils  with Diagrams {
       """|grain size of 1 lm in pure Mg samples fabricated by hot
          |""".stripMargin
     )
-
   )
 
+  import smile.sequence.{CRF, crf}
+  import smile.data.{Tuple, DataFrame}
+  import scala.jdk.StreamConverters._
+  import com.spotify.featran._
+  import com.spotify.featran.transformers._
+  import com.spotify.featran.converters._
 
-  // it should "identify text lines" in {
-  //   // val justRunThisOne:Option[Int] = None
-  //   val justRunThisOne:Option[Int] = Some(0)
+  // Features for each individual "focus" shape (as defined by octothorpe)
+  case class TextLineFeatures(
+    b: Boolean,
+    f: Double
+  )
+  it should "identify text lines" in {
+    //
+    val spec = FeatureSpec
+      .of[TextLineFeatures]
+      .required(_.b.asDouble)(Identity("isWhatever"))
+      .required(_.f.toDouble)(Identity("goldenRatio"))
 
-  //   val examples = testExamples.map(cutAndPasteToTestExample(_))
+    // This corresponds to the list of shape feature vectors for a single line
+    val textLineObserved: Array[TextLineFeatures] = Array(
+      TextLineFeatures(true, 12.3),
+      TextLineFeatures(false, 22.4),
+      TextLineFeatures(true, 1.3),
+      TextLineFeatures(false, 2.4),
+      TextLineFeatures(false, 2.4),
+      TextLineFeatures(true, 1.3)
+    )
 
-  //   justRunThisOne
-  //     .map(i => examples.drop(i).take(1))
-  //     .getOrElse(examples)
-  //     .foreach({example =>
-  //       testExample(example)
-  //     })
+    // Use featran to generate sequences...
+    val featureExtractor: FeatureExtractor[Array, TextLineFeatures] =
+      spec.extract(textLineObserved)
 
-  // }
+    val featuresAsDoubles: Array[Array[Double]] =
+      featureExtractor.featureValues[Array[Double]]
 
+    val featureNames              = featureExtractor.featureNames
+    val featureNames0             = featureNames.head
+    val labels: Array[Array[Int]] = Array(
+      Array(1, 1, 1, 0, 0, 1)
+    )
 
-  def println0(s: String): Unit = {
-    println(s)
+    val dataFrame = DataFrame.of(featuresAsDoubles, featureNames0: _*)
+    pprint.pprintln(dataFrame)
+
+    val tupleStream: stream.Stream[Tuple] = dataFrame.data.stream()
+    val tupleArray: Array[Tuple]          = tupleStream.toScala(Array)
+
+    //
+    val tupleArrays: Array[Array[Tuple]] = Array(
+      tupleArray
+    )
+
+    val theCrf: CRF = crf(
+      tupleArrays,
+      labels,
+      ntrees = 100,
+      maxDepth = 20,
+      maxNodes = 100,
+      nodeSize = 5,
+      shrinkage = 1.0
+    )
+
+    val prediction = theCrf.predict(tupleArray)
+    pprint.pprintln(s"""Prediction ${prediction.mkString(", ")}""")
+
   }
-
-
-  // def testExample(example: ParsedExample): Unit = {
-  //   println0(s"\ntesting ${example.source}")
-
-  //   val pdfIns = papers.paperUrl(example.source)
-  //   println(s"pdfIns = ${pdfIns}")
-  //   // Assume these example regions are all from one page
-  //   val pageNum = example.targetRegions.map(_._2).head
-  //   val pageId = PageID(pageNum.unwrap+1)
-  //   println(s"testExample pageNum = ${pageNum}")
-  //   val segmenter = createFilteredMultiPageIndex(pdfIns, pageNum, example.targetRegions.map(_._3))
-
-
-  //   // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
-  //   // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
-
-  //   segmenter.runLineDeterminationOnPage(pageId, pageNum)
-
-  //   val docStore = segmenter.docStore
-
-  //   println("All VisualLines")
-  //   for {
-  //     docId <- docStore.getDocument(DocumentID("dummy-id"))
-  //     _ <- Option[Unit]({ println(s"doc: ${docId}")})
-  //     pageId <- docStore.getPages(docId)
-  //     _ <- Option[Unit]({ println(s"page: ${pageId}")})
-  //     lineZone <- docStore.getPageVisualLines(pageId)
-  //     reflow <- docStore.getTextReflowForZone(lineZone.id)
-  //   }  {
-  //     println(reflow.toFormattedText())
-  //   }
-
-  //   val shapeIndex = segmenter.mshapeIndex.getPageIndex(pageNum)
-  //   val lineComponents = shapeIndex.components.getComponentsWithLabel(LB.VisualLine)
-
-  //   val tokenizedLines = lineComponents.map { lineComponent =>
-  //     lineComponent.tokenizeLine()
-  //     val reflow = toTextReflow(lineComponent).get
-  //     // val text = reflow.toText
-  //     // println(text)
-  //     reflow
-  //   }
-
-  //   // println(s"""component= ${lineComponent.chars}, ${lineComponent.id} (${lineComponent.getLabels.mkString(", ")})""")
-  //   // println(s"""expecting: ${example.expectedOutput.mkString(" \\\\  ")}""")
-  //   // println(s"""tokenized: ${tokenizedLines.mkString(" \\\\  ")}""")
-
-
-  //   example.expectedOutput.zip(tokenizedLines)
-  //     .foreach({case (expect, actual) =>
-  //       if (!expect.isEmpty && expect == actual) {
-  //         // println0(s"ok> ${actual}")
-  //       } else if (!expect.isEmpty && expect != actual) {
-  //         // println0(s"want> $expect")
-  //         // println0(s"got> ${actual}")
-  //       } else  if (expect.isEmpty) {
-  //         // println0(s"got> ${actual}")
-  //       }
-
-  //       // if (!expect.isEmpty()) {
-  //       //   assertResult(expect){ actual }
-  //       // }
-  //     })
-
-  //   // assertResult(example.expectedOutput.length)(tokenized.length)
-  // }
-
 
 }

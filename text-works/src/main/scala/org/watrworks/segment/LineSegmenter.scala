@@ -11,6 +11,16 @@ import utils.SlicingAndDicing._
 
 import TypeTags._
 
+object LineSegmentLabels {
+  val Baseline       = Label.auto
+  val SupScript      = Label.auto
+  val SubScript      = Label.auto
+  val StackedScript  = Label.auto
+  val CombiningChars = Label.auto
+  val MathsInline    = Label.auto
+  val MathsCloud     = Label.auto
+}
+
 trait LineSegmentation
   extends PageScopeSegmenter
   with LineLayout
@@ -52,7 +62,7 @@ trait LineSegmentation
         }
 
         val allAdjustedOffsets = linesForFont.map { lineShape =>
-          val line = lineShape.shape
+          val line        = lineShape.shape
           val fontOffsets = docScope.fontDefs.getScaledFontOffsets(headFontId)
           (lineShape, fontOffsets.forFontBoxBottom(line.p1.y))
         }
@@ -91,7 +101,7 @@ trait LineSegmentation
       (g, getCharsForShape(g).head)
     }
 
-    val orderedById = glyphsWithChar.sortBy { case (glyphShape@_, charItem) =>
+    val orderedById = glyphsWithChar.sortBy { case (glyphShape @ _, charItem) =>
       charItem.id
     }
 
@@ -101,25 +111,25 @@ trait LineSegmentation
 
     val indexedSets = consecutiveById.zipWithIndex
 
-    val setWithRootChar = indexedSets.filter { case (charSet, setNum@_) =>
+    val setWithRootChar = indexedSets.filter { case (charSet, setNum @ _) =>
       charSet.map(_._2.id).contains(rootChar.id)
     }
 
     if (setWithRootChar.nonEmpty) {
-      val charSetWithRootChar = setWithRootChar.flatMap(_._1.map(_._2))
-      val orderedLeftToRight = charSetWithRootChar.sortBy { _.minBBox.left }
+      val charSetWithRootChar           = setWithRootChar.flatMap(_._1.map(_._2))
+      val orderedLeftToRight            = charSetWithRootChar.sortBy { _.minBBox.left }
       val sameOrderByIdAndByLeftToRight = charSetWithRootChar
         .zip(orderedLeftToRight)
         .forall { case (char1, char2) => char1 == char2 }
 
-      val allItemsAreConsecutive = consecutiveById.length == 1
+      val allItemsAreConsecutive        = consecutiveById.length == 1
 
       if (sameOrderByIdAndByLeftToRight || allItemsAreConsecutive) {
         val rootFontOffsets = docScope.fontDefs
           .getScaledFontOffsets(rootChar.scaledFontId)
           .forFontBoxBottom(rootChar.fontBbox.bottom)
 
-        val fontIds = charSetWithRootChar.map(_.scaledFontId).toSet
+        val fontIds    = charSetWithRootChar.map(_.scaledFontId).toSet
         val charBounds = charSetWithRootChar.map(_.minBBox).reduce(_ union _)
 
         rootFontOffsets
@@ -131,8 +141,8 @@ trait LineSegmentation
               baselineMidriseSlice
             )
 
-            setWithRootChar.foreach { case (charSet, setNum@_) =>
-              charSet.foreach { case (glyphShape, charItem@_) =>
+            setWithRootChar.foreach { case (charSet, setNum @ _) =>
+              charSet.foreach { case (glyphShape, charItem @ _) =>
                 unindexShape(glyphShape)
               }
             }
