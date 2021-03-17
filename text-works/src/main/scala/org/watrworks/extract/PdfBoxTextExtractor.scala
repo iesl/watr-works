@@ -7,7 +7,6 @@ import java.awt.geom.AffineTransform
 
 import scala.collection.mutable
 
-import ammonite.{ops => fs}
 import ammonite.ops._
 import org.apache.fontbox.util.BoundingBox
 import org.apache.pdfbox.contentstream._
@@ -231,7 +230,7 @@ class PdfBoxTextExtractor(
     // val scaleX = matrix.getScaleX
     // val scaleY = matrix.getScaleY
 
-    val scalingX = matrix.getScalingFactorX
+    // val scalingX = matrix.getScalingFactorX
     val scalingY = matrix.getScalingFactorY
 
     val m01 = matrix.getValue(0, 1)
@@ -333,7 +332,7 @@ class PdfBoxTextExtractor(
                   lastGlyph.fontBbox.right == glyphProps.fontBBox.right
                 case 180 =>
                   lastGlyph.fontBbox.top == glyphProps.fontBBox.top
-                case x => false
+                case _ => false
               }
 
               sameRotation && baselinesMatch
@@ -530,7 +529,7 @@ class PdfBoxTextExtractor(
     try {
       processPage(pdPage)
     } catch {
-      case t: PageLimitExceeded =>
+      case _: PageLimitExceeded =>
 
     }
   }

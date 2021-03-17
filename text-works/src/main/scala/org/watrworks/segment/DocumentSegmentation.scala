@@ -85,13 +85,8 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
     time("computeScaledFontHeightMetrics") {
       computeScaledFontHeightMetrics(LB.CharRunFontBaseline)
-    }
-
-    time("computeScaledSymbolicFontMetrics") {
       computeScaledSymbolicFontMetrics()
     }
-
-    // outputTableData();
 
     time("findLineShapesFromFontBaselines") {
       pageSegmenters.foreach { p =>

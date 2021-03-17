@@ -124,12 +124,12 @@ trait TrapezoidAnalysis extends DocumentScopeSegmenter { self =>
   def createClusteringLabels(clustering: List[List[AnyShape]]): Unit = {}
 
   def createFeatureVectors(): Unit = {
-    val allTrapsFeatures = pageSegmenters.flatMap({ p =>
-      val pageTraps                             = p.getLabeledTraps(LB.LinePairTrapezoid)
-      val spec                                  = p.createFeatureSpec()
-      val f: FeatureExtractor[Array, TrapShape] = spec.extract(pageTraps.toArray)
-      f.featureValues[Array[Double]]
-    })
+    // val allTrapsFeatures = pageSegmenters.flatMap({ p =>
+    //   val pageTraps                             = p.getLabeledTraps(LB.LinePairTrapezoid)
+    //   val spec                                  = p.createFeatureSpec()
+    //   val f: FeatureExtractor[Array, TrapShape] = spec.extract(pageTraps.toArray)
+    //   f.featureValues[Array[Double]]
+    // })
 
     // Get all Trapezoids across pages
     val allTraps = pageSegmenters.flatMap({ p =>

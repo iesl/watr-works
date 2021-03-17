@@ -7,14 +7,8 @@ import geometry.syntax._
 import extract._
 import utils.ExactFloats._
 import utils.FunctionalHelpers._
-import utils.SlicingAndDicing._
 import watrmarks._
-import textboxing.{TextBoxing => TB}, TB._
-import utils.DoOrDieHandlers._
-import utils.SlicingAndDicing._
 
-import TypeTags._
-import utils.DisjointSet
 
 trait LineLayout extends PageScopeSegmenter
     with FontAndGlyphMetrics
@@ -35,7 +29,7 @@ trait LineLayout extends PageScopeSegmenter
     val midriseBaselineRect  = midriseBaselineBand.shape
     val reprShapeLeft = midriseBaselineRect.left
     val reprShapeRight = midriseBaselineRect.right
-    val capDescentRect  = midriseBaselineBand.shape
+    // val capDescentRect  = midriseBaselineBand.shape
 
     def clipped(slice: LTBounds): Option[LTBounds] = {
       // slice.flatMap(clipRectBetween(reprShapeLeft, reprShapeRight, _))

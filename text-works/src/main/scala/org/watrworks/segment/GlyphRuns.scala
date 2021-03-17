@@ -15,7 +15,6 @@ trait GlyphRuns extends PageScopeSegmenter with FontAndGlyphMetrics { self =>
   import SegmentationSystem._
 
   def findContiguousGlyphSpans(): Unit = {
-
     recordNatLangCharSpans(LB.CharRunFontBaseline, findNatLangBaselineRuns())
 
     indexPathRegions()
@@ -31,14 +30,15 @@ trait GlyphRuns extends PageScopeSegmenter with FontAndGlyphMetrics { self =>
       }
     }
 
-    traceLog.trace { labeledShapes(LB.NatLangGlyph) tagged "All NatLang Glyph Rects" }
-    traceLog.trace { labeledShapes(LB.SymbolicGlyph) tagged "All Symbolic Glyph Rects" }
+    // traceLog.trace { labeledShapes(LB.NatLangGlyph) tagged "All NatLang Glyph Rects" }
+    // traceLog.trace { labeledShapes(LB.SymbolicGlyph) tagged "All Symbolic Glyph Rects" }
 
     initSymbolicCharSpans(symbolicLangCharRuns)
 
+    // trace.snapshot(LB.NatLangGlyph, LB.SymbolicGlyph)
   }
 
-  private def findNatLangBaselineRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
+  protected def findNatLangBaselineRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
     pageScope.pageItems.toSeq
       .collect { case item: ExtractedItem.CharItem => item }
       .filter(_.fontProps.isNatLangFont())
@@ -47,7 +47,7 @@ trait GlyphRuns extends PageScopeSegmenter with FontAndGlyphMetrics { self =>
       }
   }
 
-  private def findSymbolicCharRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
+  protected def findSymbolicCharRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
     val charRuns = pageScope.pageItems.toSeq
       .collect { case item: ExtractedItem.CharItem => item }
       .filterNot(_.fontProps.isNatLangFont())

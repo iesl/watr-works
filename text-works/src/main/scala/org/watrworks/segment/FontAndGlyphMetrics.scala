@@ -16,8 +16,9 @@ import scala.collection.mutable
 
 import TypeTags._
 
-trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
-  private def createFontNameVariants(
+object FontAndGlyphMetrics {
+
+  def createFontNameVariants(
     scaledFontId: String @@ ScaledFontID
   ): Seq[(String, Int @@ ScalingFactor, String @@ ScaledFontID)] = {
     val (fontName, scalingFactor) = FontDefs.splitScaledFontId(scaledFontId)
@@ -36,6 +37,44 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
     }
   }
 
+  def countFontBaselineOffsetsBy(
+    offsetEvidence: Seq[FontBaselineOffsetsAccum],
+    f: FontBaselineOffsetsAccum => Seq[CharItem],
+    dist: CharItem => Int @@ FloatRep
+  ): Seq[(Int, (Int @@ FloatRep, CharItem))] = {
+
+    val offsetCountsByChar = offsetEvidence
+      .flatMap { ev =>
+        f(ev).map { charItem =>
+          (ev.fontBaseline - dist(charItem), charItem)
+        }
+      }
+      .uniqueCountBy(_._2.char)
+
+    offsetCountsByChar
+  }
+
+  def findMostCommonOffsetBy(
+    offsetEvidence: Seq[FontBaselineOffsetsAccum],
+    f: FontBaselineOffsetsAccum => Seq[CharItem],
+    dist: CharItem => Int @@ FloatRep
+  ): Int @@ FloatRep = {
+    val offsetCountsByChar = countFontBaselineOffsetsBy(offsetEvidence, f, dist)
+
+    if (offsetCountsByChar.nonEmpty) {
+      val mostCommonOffsetRec = offsetCountsByChar.maxBy(_._1)
+
+      mostCommonOffsetRec._2._1
+    } else {
+      FloatExact.zero
+    }
+  }
+
+}
+
+trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
+  import FontAndGlyphMetrics._
+
   def computeScaledSymbolicFontMetrics(): Unit = {
     val natLangFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang = true)
 
@@ -44,46 +83,53 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
     }
 
     val symbolicFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang = false)
-
+    println(s"symbolicFontIds: ${symbolicFontIds}")
 
     symbolicFontIds.foreach { scaledSymFontId =>
-      val (symFontName@_, symScalingFactor) = FontDefs.splitScaledFontId(scaledSymFontId)
+      val (symFontName @ _, symScalingFactor) = FontDefs.splitScaledFontId(scaledSymFontId)
 
       val symVariants     = createFontNameVariants(scaledSymFontId)
       val symVariantNames = symVariants.map(_._1)
 
       val matchingVariantName = natLangVariantNames.find {
-        case (name, scalingFactor@_, natScaledFontId@_) =>
+        case (name, scalingFactor @ _, natScaledFontId @ _) =>
           symVariantNames.contains(name)
       }
 
-      matchingVariantName.foreach { case (variantName, scalingFactor@_, natScaledFontId) =>
-        val matchingNatLangFont = docScope.fontDefs.getScaledFontOffsets(natScaledFontId)
-        val rescaledOffsets     = matchingNatLangFont.rescaledAs(variantName, symScalingFactor)
+      println(s"matching variants: ${matchingVariantName} matches ${scaledSymFontId}")
+      matchingVariantName.fold[Unit](() => ())({
+        case (variantName, scalingFactor @ _, natScaledFontId) =>
+          val matchingNatLangFont = docScope.fontDefs.getScaledFontOffsets(natScaledFontId)
+          val rescaledOffsets     = matchingNatLangFont.rescaledAs(variantName, symScalingFactor)
 
-        // println(s"Symbolic Font matches Nat Lang Font, rescaling Nat Lang: ")
-        // println(s"    ${matchingNatLangFont}")
-        // println(s"        To: ")
-        // println(s"    ${rescaledOffsets}")
-        docScope.fontDefs.setScaledFontOffsets(scaledSymFontId, rescaledOffsets)
-      }
+          println(s"Symbolic Font matches Nat Lang Font, rescaling Nat Lang: ")
+          println(s"    ${matchingNatLangFont}")
+          println(s"        To: ")
+          println(s"    ${rescaledOffsets}")
+          docScope.fontDefs.setScaledFontOffsets(scaledSymFontId, rescaledOffsets)
+
+      })
+
     }
 
   }
 
   def computeScaledFontHeightMetrics(lineLabel: Label): Unit = {
-    val offsetEvidence = for {
+    // Requires that lineLabel (e.g. LB.CharRunFontBaseline) has linked glyphs (getCharsForShape())
+    val offsetEvidences = for {
       pageSeg   <- pageSegmenters
       lineShape <- pageSeg.getLabeledLines(lineLabel)
     } yield {
-
       val chars        = pageSeg.getCharsForShape(lineShape)
       val scaledFontId = chars.head.scaledFontId
 
+      // isn't this the same as lineShape.bottom?
       val fontBoundsBottoms = chars.map(_.fontBbox.bottom.unwrap)
       val fontBoundsBottom  = fontBoundsBottoms.head
-      val nonMatching       = fontBoundsBottoms.filterNot(_ == fontBoundsBottom).length
+      // Why would there be non-matching chars?
+      val nonMatching = fontBoundsBottoms.filterNot(_ == fontBoundsBottom).length
 
+      // Ah...
       assume(nonMatching == 0)
 
       val midrisers  = chars.filter(charItem => CharClasses.Midrisers.contains(charItem.char))
@@ -113,31 +159,35 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
     val allFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang = true)
 
     allFontIds.foreach { scaledFontId =>
+      val offsetEvidenceForFont = offsetEvidences
+        .filter(_.scaledFontId === scaledFontId)
+
       var baselineOffset =
-        findMostCommonOffsetBy(offsetEvidence, scaledFontId, _.baselines, _.minBBox.bottom)
+        findMostCommonOffsetBy(offsetEvidenceForFont, _.baselines, _.minBBox.bottom)
 
       var midriseOffset =
-        findMostCommonOffsetBy(offsetEvidence, scaledFontId, _.midrises, _.minBBox.top)
+        findMostCommonOffsetBy(offsetEvidenceForFont, _.midrises, _.minBBox.top)
 
-      var capsOffset = findMostCommonOffsetBy(offsetEvidence, scaledFontId, _.caps, _.minBBox.top)
+      var capsOffset = findMostCommonOffsetBy(offsetEvidenceForFont, _.caps, _.minBBox.top)
 
       var ascentOffset =
-        findMostCommonOffsetBy(offsetEvidence, scaledFontId, _.ascents, _.minBBox.top)
+        findMostCommonOffsetBy(offsetEvidenceForFont, _.ascents, _.minBBox.top)
 
       val descentOffset =
-        findMostCommonOffsetBy(offsetEvidence, scaledFontId, _.descents, _.minBBox.bottom)
+        findMostCommonOffsetBy(offsetEvidenceForFont, _.descents, _.minBBox.bottom)
 
-      val topOffsets = findCountedOffsetsBy(offsetEvidence, scaledFontId, _.tops, _.minBBox.top)
+      val topOffsets = countFontBaselineOffsetsBy(offsetEvidenceForFont, _.tops, _.minBBox.top)
 
       val topOffsetDeltas = topOffsets.map(_._2._1)
       val topOffset       = if (topOffsetDeltas.nonEmpty) topOffsetDeltas.max else FloatExact.zero
 
       val bottomOffsets =
-        findCountedOffsetsBy(offsetEvidence, scaledFontId, _.bottoms, _.minBBox.bottom)
+        countFontBaselineOffsetsBy(offsetEvidenceForFont, _.bottoms, _.minBBox.bottom)
 
       val bottomOffsetDeltas = bottomOffsets.map(_._2._1)
-      val bottomOffset       =
-        if (bottomOffsetDeltas.nonEmpty) bottomOffsetDeltas.min else FloatExact.zero
+      val bottomOffset =
+        if (bottomOffsetDeltas.nonEmpty) bottomOffsetDeltas.min
+        else FloatExact.zero
 
       if (capsOffset == FloatExact.zero) {
         capsOffset = topOffset
@@ -171,43 +221,6 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
     }
   }
 
-  def findCountedOffsetsBy(
-    offsetEvidence: Seq[FontBaselineOffsetsAccum],
-    scaledFontId: String @@ ScaledFontID,
-    f: FontBaselineOffsetsAccum => Seq[CharItem],
-    dist: CharItem => Int @@ FloatRep
-  ): Seq[(Int, (Int @@ FloatRep, CharItem))] = {
-
-    val fontEvidence = offsetEvidence
-      .filter(_.scaledFontId === scaledFontId)
-
-    val offsetCountsByChar = fontEvidence
-      .flatMap { ev =>
-        f(ev).map { charItem =>
-          (ev.fontBaseline - dist(charItem), charItem)
-        }
-      }
-      .uniqueCountBy(_._2.char)
-
-    offsetCountsByChar
-  }
-
-  def findMostCommonOffsetBy(
-    offsetEvidence: Seq[FontBaselineOffsetsAccum],
-    scaledFontId: String @@ ScaledFontID,
-    f: FontBaselineOffsetsAccum => Seq[CharItem],
-    dist: CharItem => Int @@ FloatRep
-  ): Int @@ FloatRep = {
-    val offsetCountsByChar = findCountedOffsetsBy(offsetEvidence, scaledFontId, f, dist)
-
-    if (offsetCountsByChar.nonEmpty) {
-      val mostCommonOffsetRec = offsetCountsByChar.maxBy(_._1)
-
-      mostCommonOffsetRec._2._1
-    } else {
-      FloatExact.zero
-    }
-  }
 }
 
 trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { self =>
@@ -226,7 +239,7 @@ trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { se
       val counted: Seq[(Int, (Int @@ FloatRep, CharItem))] = vs.uniqueCountBy(_._1)
       val offsets                                          = counted.map(_._2._1.unwrap)
       val warning                                          = math.abs(offsets.min - offsets.max) > 1
-      val warningSign                                      = if (warning) {
+      val warningSign = if (warning) {
         "!!"
       } else "  "
 
@@ -242,7 +255,7 @@ trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { se
       }
 
       val cvs = counted
-        .map { case (count, (offset, char@_)) =>
+        .map { case (count, (offset, char @ _)) =>
           s"${warningSign}${count} x ${offset.pp()}"
         }
         .mkString(", ")
@@ -279,94 +292,4 @@ trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { se
     )
   }
 
-  protected def recordCharRunWidths(charRunBaselineShapes: Seq[LineShape]): Unit = {
-    val pagewiseLineWidthTable = docScope.getPagewiseLinewidthTable();
-
-    val leftToRightGroups = charRunBaselineShapes.groupByPairs { case (item1, item2) =>
-      val b1          = item1.shape.bounds()
-      val b2          = item2.shape.bounds()
-      val leftToRight = b1.isStrictlyLeftOf(b2)
-      val colinear    = b1.bottom == b2.bottom
-
-      leftToRight && colinear
-    }
-
-    leftToRightGroups.foreach { lineGroup =>
-      val groupBounds    = lineGroup.map(_.shape.bounds()).reduce(_ union _)
-      val extractedItems = lineGroup.flatMap { lineShape =>
-        getExtractedItemsForShape(lineShape)
-      }
-      val charItems      = extractedItems.collect { case i: ExtractedItem.CharItem => i }
-
-      val (num@_, mostCommonScaledFontId) = charItems
-        .map { item => item.scaledFontId }
-        .groupBy { x => x }
-        .toList
-        .map { case (k, v) => (v.length, k) }
-        .sortBy(l => -l._1)
-        .head
-
-      // val bottomLine = groupBounds.toLine(Dir.Bottom)
-      pagewiseLineWidthTable.modifyOrSet(
-        pageNum,
-        mostCommonScaledFontId,
-        groupBounds.width :: _,
-        List(groupBounds.width)
-      )
-    }
-
-    traceLog.trace {
-      val bottomLines = leftToRightGroups
-        .filter(_.length > 1)
-        .map { lineGroup =>
-          val groupBounds = lineGroup.map(_.shape.bounds()).reduce(_ union _)
-          groupBounds.toLine(Dir.Bottom)
-        }
-
-      figure(bottomLines) tagged "Joined Nat Lang CharRun Baselines"
-    }
-  }
-
-  /** Foreach horizontal nat-lang text line, find the 2 closest lines below
-    * it, and record the distances to each line.
-    *
-    * Finally, cluster those vertical jumps into centroids.
-    *
-    *  l0     :    --------------
-    *  dists  :           | |
-    *  l0+1   :    -------- | ---
-    *  l0+2   :    --------------
-    */
-  protected def recordNatLangVerticalLineSpacingStats(baselineShapes: Seq[LineShape]): Unit = {
-    val windowSize = 2
-
-    val contextDeltas = baselineShapes.map { baselineShape: LineShape =>
-      val Line(Point.Doubles(x1, y1@_), Point.Doubles(x2, y2@_)) = baselineShape.shape
-
-      val y1Exact = baselineShape.shape.p1.y
-
-      pageVerticalSlice(x1, x2 - x1).toSeq.flatMap { pageColumn =>
-        val (aboveLine@_, belowLine) = pageColumn.splitHorizontal(y1Exact)
-
-        val below = belowLine.map { bbox =>
-          val query = bbox.translate(x = 0, y = +1.0)
-          searchForLines(query, LB.CharRunFontBaseline)
-        } getOrElse { List() }
-
-        val winBelow = below.sortBy(_.shape.p1.y).take(windowSize)
-
-        winBelow.map { ctxLine => ctxLine.shape.p1.y - y1Exact }
-      }
-    }
-
-    val yJumps        = contextDeltas.flatten
-    val yJumpClusters = qnn(yJumps, tolerance = 0.5d)
-
-    val nonUniqueJumps = yJumpClusters.filter { bin =>
-      bin.size() > 1
-    }
-
-    println(s"recordNatLangLineSpacing: Assigned Bins")
-    println(nonUniqueJumps.mkString("\n  ", "\n  ", "\n"))
-  }
 }

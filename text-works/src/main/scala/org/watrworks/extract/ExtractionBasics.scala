@@ -504,11 +504,10 @@ class FontDefs(pageCount: Int) {
     fontProperties.find(_.name == fontName)
   }
 
-
   private val scaledFontBaselineOffsets = mutable.HashMap[String@@ScaledFontID, FontBaselineOffsets]()
 
   def setScaledFontOffsets(scaledFontId: String@@ScaledFontID, fontBaselineOffsets: FontBaselineOffsets): Unit = {
-    val _ = scaledFontBaselineOffsets.put(scaledFontId, fontBaselineOffsets)
+    scaledFontBaselineOffsets.put(scaledFontId, fontBaselineOffsets)
   }
 
   def hasScaledFontOffsets(scaledFontId: String@@ScaledFontID): Boolean = {
