@@ -13,7 +13,7 @@ import watrmarks._
 import utils.SlicingAndDicing._
 import org.watrworks.transcripts.Transcript
 
-trait TextReconstruction extends PageScopeSegmenter with LineSegmentation { self =>
+trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self =>
 
   lazy val textReconstruction = self
 

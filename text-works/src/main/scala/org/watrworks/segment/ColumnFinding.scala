@@ -13,7 +13,7 @@ import utils.FunctionalHelpers._
 import watrmarks._
 import scala.collection.mutable
 
-trait ColumnFinding extends PageScopeSegmenter with LineSegmentation { self =>
+trait ColumnFinding extends BasePageSegmenter with LineSegmentation { self =>
 
   lazy val columnFinder = self
 

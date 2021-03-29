@@ -22,12 +22,11 @@ object LineSegmentLabels {
 }
 
 trait LineSegmentation
-  extends PageScopeSegmenter
+  extends BasePageSegmenter
   with LineLayout
   with FontAndGlyphMetrics
   with TextBlockGrouping { self =>
 
-  import SegmentationSystem._
 
   def findTextLineShapesFromFontBaselines(): Unit = {
     joinFontBaselinesViaPageBands(LB.CharRunFontBaseline, LB.BaselineMidriseBand)

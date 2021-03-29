@@ -139,6 +139,7 @@ object ProcessPipelineSteps {
     }
   }
 
+
   def doSegment1(
     input: Processable,
     conf: TextWorksConfig.Config
@@ -347,7 +348,7 @@ object ProcessPipelineSteps {
   def extractText(
     documentId: String @@ DocumentID,
     inputPdf: fs.Path
-  ): DocumentSegmentation = {
+  ): DocumentSegmenter = {
 
     println(s"Extracting ${documentId}")
 

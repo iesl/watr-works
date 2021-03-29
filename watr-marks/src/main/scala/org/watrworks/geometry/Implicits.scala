@@ -96,26 +96,10 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
   }
 
 
-  // def makeFringe(fig: GeometricFigure, padding: Padding): GeometricFigure = {
-  //   val fringe = makeFringeParts(fig, padding)
-  //   val wbbox = minBoundingRect(fig)
-  //   GeometricGroup(
-  //     wbbox,
-  //     fringe
-  //   )
-  // }
-
-
   implicit class RicherPoint(val self: Point) extends AnyVal {
-    // def +(r: Double): Int@@FloatRep = self + r.toFloatExact()
-    // def -(r: Double): Int@@FloatRep = self - r.toFloatExact()
-    // def *(r: Double): Int@@FloatRep = (self.asDouble() * r).toFloatExact
-    // def /(r: Double): Int@@FloatRep = (self.asDouble() / r).toFloatExact
 
     def +(p: Point): Point = translate(p)
     def -(p: Point): Point = translate(-p)
-    // def *(r: Double): Int@@FloatRep = (self.asDouble() * r).toFloatExact
-    // def /(r: Double): Int@@FloatRep = (self.asDouble() / r).toFloatExact
 
     def unary_- : Point = {
       Point(-self.x, -self.y)
@@ -151,11 +135,6 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
       val dy = self.y - p1.y
       val dx = p1.x - self.x
       math.atan2(dy.asDouble(), dx.asDouble())
-      // if (self.x > p1.x) {
-      //   math.atan2((self.y - p1.y).asDouble(), (self.x - p1.x).asDouble())
-      // } else {
-      //   math.atan2((p1.y - self.y).asDouble(), (p1.x - self.x).asDouble())
-      // }
     }
     def prettyPrint: String = {
       s"""(${self.x.pp()}, ${self.y.pp()})"""
@@ -231,7 +210,7 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
     }
 
     def extendLeftTo(x: Int@@FloatRep): Line = {
-      val Line(Point(x1, y1), _) = self
+      val Line(Point(_, y1), _) = self
       self.copy(p1=Point(x, y1))
     }
 

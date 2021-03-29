@@ -42,7 +42,7 @@ object TraceLog {
     body: Seq[Transcript.Label]
   ) extends TraceLog {
     def withCallSite(s: String) = copy(headers = headers.withCallSite(s))
-    def tagged(s: String) = copy(headers = headers.tagged(s))
+    def tagged(s: String)       = copy(headers = headers.tagged(s))
   }
 
   case class BoxTextLog(
@@ -50,7 +50,7 @@ object TraceLog {
     body: Seq[String]
   ) extends TraceLog {
     def withCallSite(s: String) = copy(headers = headers.withCallSite(s))
-    def tagged(s: String) = copy(headers = headers.tagged(s))
+    def tagged(s: String)       = copy(headers = headers.tagged(s))
   }
 }
 
@@ -58,10 +58,10 @@ trait ScopedTracing extends VisualTracer { self =>
 
   protected val traceLogs = mutable.ArrayBuffer[TraceLog]()
 
-  implicit def Encode_TraceLog: Encoder[TraceLog] = deriveEncoder
+  implicit def Encode_TraceLog: Encoder[TraceLog]           = deriveEncoder
   implicit def Encode_LabelTraceLog: Encoder[LabelTraceLog] = deriveEncoder
-  implicit def Encode_BoxTextLog: Encoder[BoxTextLog] = deriveEncoder
-  implicit def Encode_Headers: Encoder[Headers] = deriveEncoder
+  implicit def Encode_BoxTextLog: Encoder[BoxTextLog]       = deriveEncoder
+  implicit def Encode_Headers: Encoder[Headers]             = deriveEncoder
 
   def traceAll(logs: => Seq[TraceLog])(implicit
     enclosing: sourcecode.Enclosing
@@ -75,11 +75,11 @@ trait ScopedTracing extends VisualTracer { self =>
     enclosing: sourcecode.Enclosing
   ) = ifTrace(tracemacros.VisualTraceLevel.JsonLogs) {
     val methodFqn = enclosing.value.split("\\.").toList.last
-    val rep1 = """.+[^#]#""".r
-    val rep2 = """\$anonfun""".r
-    val site0 = rep1.replaceFirstIn(methodFqn, "")
-    val site = rep2.replaceAllIn(site0, "")
-    val l2 = log.withCallSite(site.trim)
+    val rep1      = """.+[^#]#""".r
+    val rep2      = """\$anonfun""".r
+    val site0     = rep1.replaceFirstIn(methodFqn, "")
+    val site      = rep2.replaceAllIn(site0, "")
+    val l2        = log.withCallSite(site.trim)
     traceLogs.append(l2)
   }
 
@@ -115,22 +115,24 @@ trait DocumentScopeTracing extends ScopedTracing { self =>
   }
 
   def emitLoggedLabels(): Seq[Transcript.Label] = {
-    self.traceLogs.to(Seq).flatMap({
-      case l: LabelTraceLog => l.body
-      case _                => List()
-    })
+    self.traceLogs
+      .to(Seq)
+      .flatMap({
+        case l: LabelTraceLog => l.body
+        case _                => List()
+      })
   }
 }
 
 trait PageScopeTracing extends ScopedTracing { self =>
   lazy val traceLog = self
 
-  def shapeIndex: SegmentationSystem.ShapeIndex
+  def shapeIndex: ShapeIndex
   def pageNum: Int @@ PageNum
   def pageGeometry: LTBounds
 
   lazy val LTBounds.Doubles(pageL, pageT, pageW, pageH) = pageGeometry
-  lazy val LTBounds.Ints(svgL, svgT, svgW, svgH) = pageGeometry
+  lazy val LTBounds.Ints(svgL, svgT, svgW, svgH)        = pageGeometry
 
   def emitLogs(): Seq[Json] = {
     emitLogJsons().map { jsonObj =>
@@ -188,9 +190,9 @@ trait PageScopeTracing extends ScopedTracing { self =>
 
   def shape[A <: GeometricFigure](lshapes: AnyShape*): LabelTraceLog = {
     val shapes = lshapes.map { lshape: AnyShape =>
-      val id = TypeTags.LabelID(lshape.id.unwrap)
+      val id        = TypeTags.LabelID(lshape.id.unwrap)
       val labelName = lshape.labels.map(_.fqn).mkString(",")
-      val atShape = figureToTransRange(lshape.shape);
+      val atShape   = figureToTransRange(lshape.shape);
 
       Transcript.Label(
         name = labelName,

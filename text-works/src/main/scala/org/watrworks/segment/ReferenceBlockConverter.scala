@@ -38,7 +38,7 @@ object ReferenceBlockConversion {
 
 }
 
-trait ReferenceBlockConverter extends PageScopeSegmenter
+trait ReferenceBlockConverter extends BasePageSegmenter
     with FontAndGlyphMetrics
     with TextReconstruction
     with TextBlockGrouping { self =>

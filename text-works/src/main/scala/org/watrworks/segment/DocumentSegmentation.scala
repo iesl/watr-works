@@ -3,68 +3,40 @@ package segment
 
 import ammonite.{ops => fs}, fs._
 
-import extract._
+import geometry._
 import utils.Timer.time
-import utils.ExactFloats._
 import textgrid._
 import utils.QuickNearestNeighbors._
+import utils.ExactFloats._
+import extract._
+import utils._
+import utils.IdGenerator
+import rtrees._
 
 import TypeTags._
 import org.watrworks.transcripts.Transcript
 
-trait DocumentLevelFunctions
-  extends DocumentScopeSegmenter
-  with FontAndGlyphMetricsDocWide
-  with TrapezoidAnalysis
+object DocumentSegmenter {
 
-trait DocumentSegmentation extends DocumentLevelFunctions { self =>
+  def createSegmenter(
+    documentId0: String @@ DocumentID,
+    pdfPath: Path
+  ): DocumentSegmenter = {
 
-  protected def printScaledFontTableData(): Unit = {
+    val (pages, fontDefs0) = PdfBoxTextExtractor.extractPages(documentId0, pdfPath)
 
-    val allFontIds    = docScope.fontDefs.getFontIdentifiers(isNatLang = true) ++ docScope.fontDefs
-      .getFontIdentifiers(isNatLang = false)
-    val scaledFontIDs = allFontIds.sorted
-    val dbg           = scaledFontIDs.mkString("{\n  ", "\n  ", "\n}")
-    println(s" Font IDs: ${dbg}")
-
-    val pagewiseLineWidthTable = getPagewiseLinewidthTable()
-
-    val widthRangeCentroidDisplay = pagewiseLineWidthTable.map { widths =>
-      val widthClusters = qnn(widths, tolerance = 1.0)
-        .filter(_.size() > 1)
-        .sortBy(_.size())
-        .reverse
-        .headOption
-        .map { bin =>
-          bin.toCentroidRangeString()
-        } getOrElse { "-" }
-
-      widthClusters
+    val segmenter = new DocumentSegmenter {
+      override val pageAtomsAndGeometry          = pages
+      override val fontDefs                      = fontDefs0
+      override val documentId                    = documentId0
+      override val docStats: DocumentLayoutStats = new DocumentLayoutStats()
     }
 
-    println("Most Common Widths / ranges\n\n")
-    println(widthRangeCentroidDisplay.toReportBox())
-
-    val widthRangeCentroids = pagewiseLineWidthTable.map { widths =>
-      val widthClusters = qnn(widths, tolerance = 1.0)
-        .filter(_.size() > 1)
-        .sortBy(_.size())
-        .reverse
-        .headOption
-        .map { bin => bin.size() } getOrElse { 0 }
-
-      widthClusters
-    }
-
-    val marginalSizes = widthRangeCentroids.mapColumns(0) { case (acc, e) => acc + e }
-
-    val marginalSizesStr = marginalSizes.mkString("\n  ", "\n  ", "\n")
-
-    println(s"Marginal Sizes ${}")
-    println(marginalSizesStr)
-
-    println(docScope.fontDefs.report())
+    segmenter
   }
+}
+
+trait DocumentSegmenter extends FontAndGlyphMetricsDocWide with TrapezoidAnalysis { self =>
 
   def runDocumentSegmentation(): Unit = {
     // TODO pass in extraction features:
@@ -72,6 +44,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
     // TODO it would be useful to have font info written somewhere
     // docScope.docTraceLogs.trace { boxText(docScope.fontDefs.report()) }
+
 
     docScope.docStats.initTable[Int @@ PageNum, String @@ ScaledFontID, Int @@ FloatRep](
       "PagewiseLineWidths"
@@ -133,10 +106,132 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
     }
 
   }
+}
+
+trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
+
+  lazy val docScope = self
+
+  val shapeIdGenerator = IdGenerator[ShapeID]()
+  def pageAtomsAndGeometry: Seq[(Seq[ExtractedItem], PageGeometry)]
+
+  // All extracted items across all pages, indexed by id, which equals extraction order
+  lazy val extractedItemArray: Array[ExtractedItem] = {
+    val extractedItemCount = (0 +: pageAtomsAndGeometry.map(_._1.length)).sum
+    val itemArray          = new Array[ExtractedItem](extractedItemCount + 1)
+    pageAtomsAndGeometry.foreach { case (items, _) =>
+      items.foreach { item => itemArray(item.id.unwrap) = item }
+    }
+    itemArray
+  }
+
+  lazy val shapeIndexes: Map[Int @@ PageNum, ShapeIndex] = {
+    pageAtomsAndGeometry.map { case (items @ _, pageGeometry) =>
+      (
+        pageGeometry.pageNum,
+        LabeledShapeIndex.empty[GeometricFigure, Unit, DocSegShape[GeometricFigure]](
+          shapeIdGenerator
+        )
+      )
+    }.toMap
+  }
+
+  def getNumberedPages(): Seq[Int @@ PageNum] =
+    pageAtomsAndGeometry.zipWithIndex.map { case (a @ _, b) =>
+      PageNum(b)
+    }
+
+  lazy val pageSegmenters = {
+
+    def createPageSegmenters(): Seq[PageSegmenter] = for {
+      pageNum <- getNumberedPages()
+    } yield PageSegmenter(pageNum, self)
+
+    createPageSegmenters()
+  }
+
+  def getLabeledShapeIndex(pageNum: Int @@ PageNum) = shapeIndexes(pageNum)
+
+  def getPageGeometry(p: Int @@ PageNum) = pageAtomsAndGeometry(p.unwrap)._2
+
+  def fontDefs: FontDefs
+
+  def docStats: DocumentLayoutStats
+
+  def documentId: String @@ DocumentID
+
+  def getPagewiseLinewidthTable()
+    : TabularData[Int @@ PageNum, String @@ ScaledFontID, List[Int @@ FloatRep], Unit, Unit] = {
+    docScope.docStats.getTable[Int @@ PageNum, String @@ ScaledFontID, List[Int @@ FloatRep]](
+      "PagewiseLineWidths"
+    )
+  }
+
+  def getFontsWithDocwideOccurrenceCounts(): Seq[(String @@ ScaledFontID, Int)] = {
+    fontDefs.fontProperties.to(Seq).flatMap { fontProps =>
+      if (fontProps.isNatLangFont()) {
+        fontProps.getScalingFactors().map { scalingFactor =>
+          val docWideCount = fontProps.totalGlyphOccurrenceCounts
+            .computeColMarginals(0)(_ + _)
+            .getColMarginal(scalingFactor)
+            .getOrElse(0)
+
+          (fontProps.getFontIdentifier(scalingFactor), docWideCount)
+        }
+      } else List[(String @@ ScaledFontID, Int)]()
+    }
+  }
+
+  protected def printScaledFontTableData(): Unit = {
+
+    val allFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang = true) ++ docScope.fontDefs
+      .getFontIdentifiers(isNatLang = false)
+    val scaledFontIDs = allFontIds.sorted
+    val dbg           = scaledFontIDs.mkString("{\n  ", "\n  ", "\n}")
+    println(s" Font IDs: ${dbg}")
+
+    val pagewiseLineWidthTable = getPagewiseLinewidthTable()
+
+    val widthRangeCentroidDisplay = pagewiseLineWidthTable.map { widths =>
+      val widthClusters = qnn(widths, tolerance = 1.0)
+        .filter(_.size() > 1)
+        .sortBy(_.size())
+        .reverse
+        .headOption
+        .map { bin =>
+          bin.toCentroidRangeString()
+        } getOrElse { "-" }
+
+      widthClusters
+    }
+
+    println("Most Common Widths / ranges\n\n")
+    println(widthRangeCentroidDisplay.toReportBox())
+
+    val widthRangeCentroids = pagewiseLineWidthTable.map { widths =>
+      val widthClusters = qnn(widths, tolerance = 1.0)
+        .filter(_.size() > 1)
+        .sortBy(_.size())
+        .reverse
+        .headOption
+        .map { bin => bin.size() } getOrElse { 0 }
+
+      widthClusters
+    }
+
+    val marginalSizes = widthRangeCentroids.mapColumns(0) { case (acc, e) => acc + e }
+
+    val marginalSizesStr = marginalSizes.mkString("\n  ", "\n  ", "\n")
+
+    println(s"Marginal Sizes ${}")
+    println(marginalSizesStr)
+
+    println(docScope.fontDefs.report())
+  }
 
   def createTranscript(): Transcript = {
     val documentId = self.documentId
-    val pages      = self.pageAtomsAndGeometry.map {
+    val pages = self.pageAtomsAndGeometry.map {
       case (pageItems, pageBounds) => {
 
         val glyphs = pageItems.map(pageItem => {
@@ -197,25 +292,5 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       labels = docScopeLogs.to(List),
       stanzas.to(List)
     )
-  }
-}
-
-object DocumentSegmenter {
-
-  def createSegmenter(
-    documentId0: String @@ DocumentID,
-    pdfPath: Path
-  ): DocumentSegmentation = {
-
-    val (pages, fontDefs0) = PdfBoxTextExtractor.extractPages(documentId0, pdfPath)
-
-    val segmenter = new DocumentSegmentation {
-      override val pageAtomsAndGeometry          = pages
-      override val fontDefs                      = fontDefs0
-      override val documentId                    = documentId0
-      override val docStats: DocumentLayoutStats = new DocumentLayoutStats()
-    }
-
-    segmenter
   }
 }

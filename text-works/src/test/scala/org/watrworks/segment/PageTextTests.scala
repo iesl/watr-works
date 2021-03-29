@@ -9,7 +9,7 @@ class PageTextTest extends SegmentationTestUtils {
 
   it should "extract text reasonably well" in {
 
-    val pathstr   = "./latex/sample1.pdf"
+    val pathstr   = "./latex-src.d/sample1.pdf"
     val path      = strToAmmPath(pathstr)
     val docId     = DocumentID("SampleDoc")
     val segmenter = DocumentSegmenter.createSegmenter(docId, path)

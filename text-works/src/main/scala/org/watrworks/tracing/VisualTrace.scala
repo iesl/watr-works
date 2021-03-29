@@ -2,8 +2,6 @@ package org.watrworks
 package tracing
 
 import tracemacros._
-import scala.language.experimental.macros
-import geometry._
 import scala.collection.mutable
 import VisualTraceLevel._
 

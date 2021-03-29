@@ -14,7 +14,7 @@ trait ShapeFunctions extends TrapezoidFinding with LineShapeClassification { sel
   lazy val shapeFunctions = self
 }
 
-trait TrapezoidFinding extends PageScopeSegmenter { self =>
+trait TrapezoidFinding extends BasePageSegmenter { self =>
 
   def buildLinePairTrapezoids(): Unit = {
     val lineReprShapes = getLabeledRects(LB.BaselineMidriseBand)
@@ -100,7 +100,7 @@ import com.spotify.featran.{ transformers => ft }
 // import com.spotify.featran.converters._
 
 
-trait TrapezoidPagewiseAnalysis extends PageScopeSegmenter { self =>
+trait TrapezoidPagewiseAnalysis extends BasePageSegmenter { self =>
 
   def createFeatureSpec(): FeatureSpec[TrapShape] = {
     val spec = FeatureSpec
@@ -119,7 +119,8 @@ trait TrapezoidPagewiseAnalysis extends PageScopeSegmenter { self =>
     spec
   }
 }
-trait TrapezoidAnalysis extends DocumentScopeSegmenter { self =>
+
+trait TrapezoidAnalysis extends BaseDocumentSegmenter { self =>
 
   def createClusteringLabels(clustering: List[List[AnyShape]]): Unit = {}
 

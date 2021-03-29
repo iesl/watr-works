@@ -15,7 +15,7 @@ object Processable {
   case class CorpusFile(corpusEntry: CorpusEntry) extends ProcessableInput
 
   case class ExtractedFile(
-    segmentation: DocumentSegmentation,
+    segmentation: DocumentSegmenter,
     input: ProcessableInput
   ) extends ProcessedInput
 

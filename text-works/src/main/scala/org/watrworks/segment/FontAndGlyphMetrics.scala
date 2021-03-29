@@ -9,9 +9,6 @@ import scalaz.std.string._
 import textboxing.{TextBoxing => TB}, TB._
 import utils.SlicingAndDicing._
 import ExtractedItem._
-import geometry._
-import geometry.syntax._
-import utils.QuickNearestNeighbors._
 import scala.collection.mutable
 
 import TypeTags._
@@ -72,7 +69,7 @@ object FontAndGlyphMetrics {
 
 }
 
-trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
+trait FontAndGlyphMetricsDocWide extends BaseDocumentSegmenter { self =>
   import FontAndGlyphMetrics._
 
   def computeScaledSymbolicFontMetrics(): Unit = {
@@ -95,6 +92,7 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
         case (name, scalingFactor @ _, natScaledFontId @ _) =>
           symVariantNames.contains(name)
       }
+
 
       println(s"matching variants: ${matchingVariantName} matches ${scaledSymFontId}")
       matchingVariantName.fold[Unit](() => ())({
@@ -223,7 +221,7 @@ trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
 
 }
 
-trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { self =>
+trait FontAndGlyphMetrics extends BasePageSegmenter with TextBlockGrouping { self =>
 
   def debugPrintStats(allBaselines: Seq[(Int @@ FloatRep, CharItem)]): Unit = {
 

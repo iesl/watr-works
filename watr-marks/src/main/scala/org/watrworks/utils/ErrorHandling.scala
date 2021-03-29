@@ -8,7 +8,7 @@ import circe.{parser => CirceParser}
 
 object DoOrDieHandlers {
 
-  private def dieImpl(msg: String = "")(
+  private def dieImpl(msg: String)(
     srcName: sourcecode.Name,
     srcFile: sourcecode.File,
     srcLine: sourcecode.Line

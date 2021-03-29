@@ -49,20 +49,17 @@ object LabeledSequencePrinting {
     ???
   }
 
-  def formatBioLabelSequence[A <: LabelTarget](labeledSequence: LabeledSequence[A], oriention: Orientation): TB.Box = {
-    val zero1 = List[Label]()
-    val zero2 = List[TB.Box]()
-    val init = (zero1, zero2)
-
-    val bioPinBoxes = labeledSequence.labelTargets()
-      .foldLeft(init){ case ((labelStack, boxReps), labelTarget) =>
-        labelTarget.pins.reverse
-
-        (labelStack, boxReps)
-      }
-
-    ???
-  }
+  // def formatBioLabelSequence[A <: LabelTarget](labeledSequence: LabeledSequence[A], oriention: Orientation): TB.Box = {
+  //   val zero1 = List[Label]()
+  //   val zero2 = List[TB.Box]()
+  //   val init = (zero1, zero2)
+  //   val bioPinBoxes = labeledSequence.labelTargets()
+  //     .foldLeft(init){ case ((labelStack, boxReps), labelTarget) =>
+  //       labelTarget.pins.reverse
+  //       (labelStack, boxReps)
+  //     }
+  //   ???
+  // }
 
 
 

@@ -89,7 +89,7 @@ class RectangularCutTests extends WatrSpec {
 
         }
       )
-    ) foreach { case (bbox1, bbox2, expectedOutput) =>
+    ) foreach { case (bbox1, bbox2, expectedOutput@_) =>
       // val burstRegions = bbox1.withinRegion(bbox2).burstAll()
       val burstRegions = bbox1.withinRegion(bbox2).burstAllPossibleDirections()
 
@@ -153,7 +153,7 @@ class RectangularCutTests extends WatrSpec {
         .map { dir =>
           (dir, inner.withinRegion(outer).adjacentRegion(dir))
         }
-        .map { case (d, maybAdjacent) =>
+        .map { case (d@_, maybAdjacent) =>
           maybAdjacent
             .map { adjacent =>
               drawAdjacencyDiagram(adjacent)

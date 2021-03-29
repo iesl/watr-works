@@ -14,7 +14,7 @@ object TextStructure {
 }
 
 
-trait TextBlockGrouping extends PageScopeSegmenter { self =>
+trait TextBlockGrouping extends BasePageSegmenter { self =>
   lazy val textBlockGrouping = self
 
 

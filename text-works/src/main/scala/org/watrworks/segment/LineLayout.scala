@@ -10,7 +10,7 @@ import utils.FunctionalHelpers._
 import watrmarks._
 
 
-trait LineLayout extends PageScopeSegmenter
+trait LineLayout extends BasePageSegmenter
     with FontAndGlyphMetrics
     with TextBlockGrouping { self =>
 

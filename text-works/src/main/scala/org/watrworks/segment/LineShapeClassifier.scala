@@ -6,7 +6,7 @@ import geometry._
 import textgrid._
 import TypeTags._
 
-trait LineShapeClassification extends PageScopeSegmenter { self =>
+trait LineShapeClassification extends BasePageSegmenter { self =>
   lazy val lineShapes = self
 
 
