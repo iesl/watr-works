@@ -15,7 +15,7 @@ lazy val root = (project in file("."))
     watrtable
   )
 
-lazy val prelude = (project in file("watr-prelude"))
+lazy val prelude = (project in file("modules/watr-prelude"))
   .settings(SensibleProject.settings: _*)
   .settings(
     libraryDependencies ++= Seq(
@@ -23,8 +23,7 @@ lazy val prelude = (project in file("watr-prelude"))
     )
   )
 
-lazy val watrmarks = project
-  .in(file("watr-marks"))
+lazy val watrmarks = (project in file("modules/watr-marks"))
   .settings(SensibleProject.settings: _*)
   .settings(
     libraryDependencies ++=
@@ -43,7 +42,7 @@ lazy val watrmarks = project
         )
   )
 
-lazy val textworks = (project in file("text-works"))
+lazy val textworks = (project in file("modules/text-works"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(BuildInfoPlugin)
   .settings(SensibleProject.settings: _*)
@@ -84,7 +83,7 @@ lazy val watrtable = (project in file("modules/watr-table"))
           Lib.scopt,
           Lib.ammoniteOps,
           Lib.ammonite,
-          "com.lihaoyi" %% "scalatags"   % "0.8.2"
+          "com.lihaoyi" %% "scalatags"   % "0.9.4"
         )
   )
   .dependsOn(prelude, watrmarks, textworks)

@@ -97,9 +97,9 @@ trait CommonLibs extends LibVersions {
   )
 
   val consoleUtils = Seq(
-    "com.lihaoyi" %% "fansi"      % "0.2.11",
-    "com.lihaoyi" %% "sourcecode" % "0.2.4",
-    "com.lihaoyi" %% "pprint"     % "0.6.3"
+    "com.lihaoyi" %% "fansi"      % "0.2.12",
+    "com.lihaoyi" %% "sourcecode" % "0.2.5",
+    "com.lihaoyi" %% "pprint"     % "0.6.4"
   )
 
   val rtrees = Seq(
