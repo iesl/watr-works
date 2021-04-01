@@ -62,7 +62,7 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
         val glyphShape = indexShapeAndSetItems(item.minBBox, LB.Glyph, item)
         setLinkedShape(glyphShape, spanLabel, baseline)
 
-        // Change to this:
+        // TODO Change to this:
         // baselineShape.linkTo(glyphShape, {(from, to) => { intersection(from, to.leftLine()) -> (to, to.bottomLeft()) }})
         // glyphShape.attr[ExtractedItem.CharItem] = item
       }

@@ -50,7 +50,8 @@ object DatabaseLibs extends LibVersions {
 }
 
 trait CommonLibs extends LibVersions {
-  val ammoniteVersion = "2.3.8"
+  val ammoniteVersion = "2.3.8-58-aa8b2ab1"
+  // val ammoniteVersion = "2.3.8"
   val ammonite        = "com.lihaoyi"  % "ammonite"     % ammoniteVersion cross CrossVersion.full
   val ammoniteOps     = "com.lihaoyi" %% "ammonite-ops" % ammoniteVersion
 
@@ -66,7 +67,7 @@ trait CommonLibs extends LibVersions {
   val guava  = "com.google.guava" % "guava" % guavaV
 
   // val lucene4s         = "com.outr"                %% "lucene4s"         % luceneV
-  val pdfbox = "org.apache.pdfbox" % "pdfbox" % "2.0.22"
+  val pdfbox = "org.apache.pdfbox" % "pdfbox" % "2.0.23"
 
   val smile = Seq(
     "com.github.haifengl" %% "smile-scala" % "2.6.0"
@@ -98,12 +99,22 @@ trait CommonLibs extends LibVersions {
   val consoleUtils = Seq(
     "com.lihaoyi" %% "fansi"      % "0.2.11",
     "com.lihaoyi" %% "sourcecode" % "0.2.4",
-    "com.lihaoyi" %% "pprint"     % "0.6.2"
+    "com.lihaoyi" %% "pprint"     % "0.6.3"
   )
 
   val rtrees = Seq(
     "com.github.davidmoten" % "rtree"            % "0.8.7",
     "com.github.davidmoten" % "flatbuffers-java" % "1.10.0.2"
+  )
+
+  val http4sVersion = "0.21.21"
+  val http4s = Seq(
+    "org.http4s" %% "http4s-core" % http4sVersion,
+    "org.http4s" %% "http4s-dsl" % http4sVersion,
+    "org.http4s" %% "http4s-circe" % http4sVersion,
+    "org.http4s" %% "http4s-scalatags" % http4sVersion,
+    "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+    "org.http4s" %% "http4s-blaze-client" % http4sVersion
   )
 }
 
