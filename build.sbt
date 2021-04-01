@@ -6,8 +6,8 @@ Global / onChangedBuildSource := ReloadOnSourceChanges // | IgnoreSourceChanges
 
 val Lib = CommonLibs
 
+  //.settings(SensibleProject.settings: _*)
 lazy val root = (project in file("."))
-  .settings(SensibleProject.settings: _*)
   .aggregate(
     prelude,
     watrmarks,
