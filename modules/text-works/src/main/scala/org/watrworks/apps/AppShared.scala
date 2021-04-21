@@ -47,9 +47,9 @@ object ProcessPipelineSteps {
     processStream.runDrain
   }
 
-  def runTextExtractionPipeline(conf: TextWorksConfig.Config): IO[Unit, Unit] = {
+  def runTextExtractionPipeline(conf: TextWorksConfig.Config): Unit = {
 
-    for {
+    val prog = for {
       _ <- createMarkedInputStream(conf.ioConfig)
              .via(dropSkipAndRun(conf.ioConfig))
              .via(cleanFileArtifacts(conf))
@@ -61,10 +61,13 @@ object ProcessPipelineSteps {
              .via(markUnextractedProcessables(conf))
              .via(runSegmentation(conf))
              .via(writeExtractedTextFile(conf))
-             .via(cleanTraceLogArtifacts(conf))
-             .via(writeTraceLogs(conf))
+             // .via(cleanTraceLogArtifacts(conf))
+             // .via(writeTraceLogs(conf))
              .runDrain
     } yield ()
+
+    val runtime = Runtime.default
+    runtime.unsafeRun(prog)
 
   }
 
@@ -242,40 +245,40 @@ object ProcessPipelineSteps {
     }
   }
 
-  def writeTraceLogs(
-    conf: TextWorksConfig.Config
-  ): Pipe[MarkedOutput, MarkedOutput] = _.map {
-    case m @ Right(Processable.ExtractedFile(segmentation, input)) =>
-      Processable.withCorpusEntry(input) { corpusEntry =>
-        val traceLogRoot = if (conf.runTraceLogging) {
-          val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
-          Some(traceLogGroup.rootPath)
-        } else None
+  // def writeTraceLogs(
+  //   conf: TextWorksConfig.Config
+  // ): Pipe[MarkedOutput, MarkedOutput] = _.map {
+  //   case m @ Right(Processable.ExtractedFile(segmentation, input)) =>
+  //     Processable.withCorpusEntry(input) { corpusEntry =>
+  //       val traceLogRoot = if (conf.runTraceLogging) {
+  //         val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
+  //         Some(traceLogGroup.rootPath)
+  //       } else None
 
-        traceLogRoot.foreach { rootPath =>
-          log.trace(s"writing font summary")
+  //       traceLogRoot.foreach { rootPath =>
+  //         log.trace(s"writing font summary")
 
-          val docScopeLogs = segmentation.docScope.emitLogs().asJson
+  //         val docScopeLogs = segmentation.docScope.emitLogs().asJson
 
-          fs.write(
-            rootPath / "font-summary.json",
-            docScopeLogs.printWith(PrettyPrint2Spaces)
-          )
+  //         fs.write(
+  //           rootPath / "font-summary.json",
+  //           docScopeLogs.printWith(PrettyPrint2Spaces)
+  //         )
 
-          log.trace(s"writing tracelogs")
-          val pageLogs = segmentation.pageSegmenters.foldLeft(List[Json]()) {
-            case (accum, pageSegmenter) =>
-              accum ++ pageSegmenter.emitLogs()
-          }
+  //         log.trace(s"writing tracelogs")
+  //         val pageLogs = segmentation.pageSegmenters.foldLeft(List[Json]()) {
+  //           case (accum, pageSegmenter) =>
+  //             accum ++ pageSegmenter.emitLogs()
+  //         }
 
-          fs.write(rootPath / "tracelog.json", pageLogs.asJson.noSpaces)
-        }
-      }
+  //         fs.write(rootPath / "tracelog.json", pageLogs.asJson.noSpaces)
+  //       }
+  //     }
 
-      m
+  //     m
 
-    case x => x
-  }
+  //   case x => x
+  // }
 
   def cleanTraceLogArtifacts(
     conf: TextWorksConfig.Config

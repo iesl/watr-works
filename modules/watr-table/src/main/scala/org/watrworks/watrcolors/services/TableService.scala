@@ -6,26 +6,62 @@ import cats.effect._
 import cats.syntax.all._
 import io.circe.Json
 import org.http4s.circe._
+import org.http4s.scalatags._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers._
 import org.http4s.multipart.Multipart
 import org.http4s.server._
 import org.http4s.syntax.all._
-import org.http4s.server.middleware.authentication.BasicAuth
-import org.http4s.server.middleware.authentication.BasicAuth.BasicAuthenticator
 import org.http4s._
 import fs2.Stream
 import scala.concurrent.duration._
+import ammonite.{ops => fs}
+import utils.PathUtils._
+
+import html._
+import texttags._
 
 class TableService[F[_]](blocker: Blocker)(implicit F: Effect[F], cs: ContextShift[F])
-    extends Http4sDsl[F] {
+  extends Http4sDsl[F] {
   // A Router can mount multiple services to prefixes.  The request is passed to the
   // service with the longest matching prefix.
-  def routes(implicit timer: Timer[F]): HttpRoutes[F] =
+  def routes: HttpRoutes[F] =
     Router[F](
-      "" -> rootRoutes,
-      "/auth" -> authRoutes
+      "" -> watrFrontRoutes
     )
+
+  val nuxtDistPath = "../../watr-front-root/workspaces/watr-front/dist/"
+
+  def watrFrontRoutes: HttpRoutes[F] =
+    HttpRoutes.of[F] {
+      // case req @ GET -> path =>
+      //   val staticResPath = (nuxtDistPath + path.toString()).toPath().toIO
+      //   println(s"GET ${staticResPath}")
+      //   StaticFile
+      //     .fromFile(staticResPath, blocker, Some(req))
+      //     .getOrElseF(NotFound())
+
+      case req @ GET -> _ =>
+        // println(s"GET Root ${req.pathInfo}")
+
+        val path = req.uri.path
+        val staticResPath = (nuxtDistPath + path.toString()).toPath().toIO
+
+        println(s"GET ${staticResPath}")
+        StaticFile
+          .fromFile(staticResPath, blocker, Some(req))
+          .getOrElseF(NotFound())
+
+      // case req @ GET -> Root / "stories" =>
+      //   val wd = fs.pwd
+      //   println(s"get stories at ${wd}")
+      //   // val ioPath = "../../watr-front-root/workspaces/watr-front/dist/index.html".toPath().toIO
+      //   val indexHtml = (nuxtDistPath + "index.html").toPath().toIO
+      //   StaticFile
+      //     .fromFile(indexHtml, blocker, Some(req))
+      //     .getOrElseF(NotFound())
+
+    }
 
   def rootRoutes(implicit timer: Timer[F]): HttpRoutes[F] =
     HttpRoutes.of[F] {
@@ -36,6 +72,10 @@ class TableService[F[_]](blocker: Blocker)(implicit F: Effect[F], cs: ContextShi
       case _ -> Root =>
         // The default route result is NotFound. Sometimes MethodNotAllowed is more appropriate.
         MethodNotAllowed(Allow(GET))
+
+      case GET -> Root / "hello" =>
+        val helloFrame = html.Frame.withBodyContent(<.h1("Hello, World!"))
+        Ok(helloFrame)
 
       case GET -> Root / "ping" =>
         // EntityEncoder allows for easy conversion of types to a response body
@@ -174,28 +214,9 @@ class TableService[F[_]](blocker: Blocker)(implicit F: Effect[F], cs: ContextShi
     Stream.emit(s"Starting $interval stream intervals, taking $n results\n\n") ++ stream
   }
 
-  // Services can be protected using HTTP authentication.
-  val realm = "testrealm"
-
-  val authStore: BasicAuthenticator[F, String] = (creds: BasicCredentials) =>
-    if (creds.username == "username" && creds.password == "password") F.pure(Some(creds.username))
-    else F.pure(None)
-
-  // An AuthedRoutes[A, F] is a Service[F, (A, Request[F]), Response[F]] for some
-  // user type A.  `BasicAuth` is an auth middleware, which binds an
-  // AuthedRoutes to an authentication store.
-  val basicAuth: AuthMiddleware[F, String] = BasicAuth(realm, authStore)
-
-  def authRoutes: HttpRoutes[F] =
-    basicAuth(AuthedRoutes.of[String, F] {
-      // AuthedRoutes look like HttpRoutes, but the user is extracted with `as`.
-      case GET -> Root / "protected" as user =>
-        Ok(s"This page is protected using HTTP authentication; logged in as $user")
-    })
 }
 
 object TableService {
   def apply[F[_]: Effect: ContextShift](blocker: Blocker): TableService[F] =
     new TableService[F](blocker)
 }
-

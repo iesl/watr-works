@@ -39,8 +39,6 @@ protected [tracing] object VisualTraceGlobals {
     case  PrintLogs =>
       activeTraces ++= Seq(EnterExit, PrintLogs)
   }
-
-
 }
 
 trait VisualTracer extends EnableTrace { self =>

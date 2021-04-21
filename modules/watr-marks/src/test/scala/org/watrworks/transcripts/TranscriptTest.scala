@@ -90,7 +90,7 @@ class TranscriptionFormatTest extends WatrSpec {
     val examples = List(
       """{ "name": "Paragraph",
            "id": 0, "range": [ { "unit": "text:line", "at": [10, 20] } ],
-           "props": { "key": "value" } }""",
+           "props": { "key": [ "value" ] } }""",
       """{ "name": "Author",
            "range": [ { "unit": "text:line", "at": [10, 20] } ],
            "children": [
@@ -105,7 +105,7 @@ class TranscriptionFormatTest extends WatrSpec {
               { "unit": "document", "at": "d3" },
               { "unit": "page", "at": 0 }
            ],
-           "props": { "key": "value" } }""",
+           "props": { "key": [ "value" ] } }""",
     )
 
 
@@ -158,7 +158,8 @@ class TranscriptionFormatTest extends WatrSpec {
          |     "glyphs": [
          |       ["e", 1, [1, 2, 3, 4]],
          |       ["ffi", 2, [3, 2, 3, 4], { "kind": "rewrite", "gs": [["ﬃ", 3, [1, 2, 3, 4]]] } ]
-         |     ]
+         |       ],
+         |     "labels": []
          |   }],
          |   "labels": [
          |     { "name": "HasRefs", "id": 2, "range": [{ "unit": "page", "at": 7 }] },

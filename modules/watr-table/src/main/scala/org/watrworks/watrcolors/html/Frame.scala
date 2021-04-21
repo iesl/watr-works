@@ -47,7 +47,7 @@ object Frame {
       htmlHead(),
       <.body(
         content,
-        <.script("text/javascript".typ, ^.src := s"/dist/app.bundle.js")
+        // <.script("text/javascript".typ, ^.src := s"/dist/app.bundle.js")
       ),
     )
   }

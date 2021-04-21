@@ -133,17 +133,9 @@ trait TrapezoidAnalysis extends BaseDocumentSegmenter { self =>
     // })
 
     // Get all Trapezoids across pages
-    val allTraps = pageSegmenters.flatMap({ p =>
-      val pageTraps      = p.getLabeledTraps(LB.LinePairTrapezoid)
-      // TODO: Have this label creation done automatically when a shape is referenced in a clustering
-      val pageTrapLabels = pageTraps.map(trap => {
-        ShapeClustering.labeledShapeToLabel(trap)
-      })
-
-      docTraceLogs.trace(LabelTraceLog(body = pageTrapLabels))
-
-      pageTraps
-    })
+    val allTraps = pageSegmenters.flatMap(
+      _.getLabeledTraps(LB.LinePairTrapezoid)
+    )
 
     val lbAngles = HST.SparselyBin.ing(
       0.1,

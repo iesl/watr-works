@@ -15,9 +15,11 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
   def labelHomogenousFontRuns(): Unit = {
     val natLangRuns = findNatLangBaselineRuns()
     applyLabelToRun(LB.CharRunFontBaseline, findFontBaseline, natLangRuns)
+    traceLog.trace { labeledShapes(LB.CharRunFontBaseline) }
 
     val symbolCharRuns = findSymbolicCharRuns()
     applyLabelToRun(LB.SymbolicGlyphLine, findCenterLine, symbolCharRuns)
+    traceLog.trace { labeledShapes(LB.SymbolicGlyphLine) }
   }
 
   def findContiguousGlyphSpans(): Unit = {
@@ -48,7 +50,6 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
       }
   }
 
-
   private def applyLabelToRun(
     spanLabel: Label,
     makeLine: Seq[ExtractedItem.CharItem] => Line,
@@ -62,9 +63,9 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
         val glyphShape = indexShapeAndSetItems(item.minBBox, LB.Glyph, item)
         setLinkedShape(glyphShape, spanLabel, baseline)
 
-        // TODO Change to this:
-        // baselineShape.linkTo(glyphShape, {(from, to) => { intersection(from, to.leftLine()) -> (to, to.bottomLeft()) }})
-        // glyphShape.attr[ExtractedItem.CharItem] = item
+      // TODO Change to this:
+      // baselineShape.linkTo(glyphShape, {(from, to) => { intersection(from, to.leftLine()) -> (to, to.bottomLeft()) }})
+      // glyphShape.attr[ExtractedItem.CharItem] = item
       }
 
       val fontIds = charItems.map { _.scaledFontId }.toSet
@@ -76,9 +77,7 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
       baseline
     }
 
-    traceLog.trace { labeledShapes(spanLabel) tagged "Initial Font Baselines" }
   }
-
 
   private def findCenterLine(charRun: Seq[ExtractedItem.CharItem]): Line = {
     val xSorted = charRun.sortBy { _.minBBox.left }
@@ -95,12 +94,11 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
   }
 
   private def indexPathRegions(): Unit = {
-    val pathShapes =
-      pageScope.pageItems.toSeq
-        .filter { _.isInstanceOf[ExtractedItem.PathItem] }
-        .map { item => indexShape(item.minBBox, LB.PathBounds) }
+    pageScope.pageItems.toSeq
+      .filter { _.isInstanceOf[ExtractedItem.PathItem] }
+      .foreach { item => indexShape(item.minBBox, LB.PathBounds) }
 
-    traceLog.trace { shape(pathShapes: _*) tagged "Path Line Bounds" }
+    traceLog.trace { labeledShapes(LB.PathBounds) }
   }
 
   private def indexImageRegionsAndDeleteOverlaps(): Unit = {

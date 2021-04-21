@@ -48,9 +48,10 @@ object ShapeClustering {
   }
 
   def labeledShapeToLabel(shape: AnyShape): Transcript.Label = {
-    val labelId = LabelID(shape.id.unwrap)
+    val labelId   = LabelID(shape.id.unwrap)
+    val labelName = shape.labels.map(_.key).mkString("+")
     Transcript.Label(
-      shape.shapeType,
+      labelName,
       Some(labelId),
       range = List(
         Transcript.PageRange(at = shape.pageNum),
@@ -118,7 +119,7 @@ object ShapeClustering {
     label: Transcript.Label
   ): Root = {
     val clusterName = label.name.takeWhile(c => c != ':')
-    val labelMap    = transcript.labels
+    val labelMap = transcript.labels
       .filter(l => l.id.isDefined)
       .map(l => (l.id.get.unwrap, l))
       .toMap

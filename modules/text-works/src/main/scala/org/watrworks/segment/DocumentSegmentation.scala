@@ -45,7 +45,6 @@ trait DocumentSegmenter extends FontAndGlyphMetricsDocWide with TrapezoidAnalysi
     // TODO it would be useful to have font info written somewhere
     // docScope.docTraceLogs.trace { boxText(docScope.fontDefs.report()) }
 
-
     docScope.docStats.initTable[Int @@ PageNum, String @@ ScaledFontID, Int @@ FloatRep](
       "PagewiseLineWidths"
     )
@@ -231,24 +230,46 @@ trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
 
   def createTranscript(): Transcript = {
     val documentId = self.documentId
-    val pages = self.pageAtomsAndGeometry.map {
-      case (pageItems, pageBounds) => {
+    // val pages = self.pageAtomsAndGeometry.map {
+    //   case (pageItems, pageBounds) => {
 
-        val glyphs = pageItems.map(pageItem => {
-          Transcript.Glyph(
-            pageItem.strRepr(),
-            GlyphID(pageItem.id.unwrap),
-            pageItem.minBBox,
-            None
-          )
-        })
+    //     val glyphs = pageItems.map(pageItem => {
+    //       Transcript.Glyph(
+    //         pageItem.strRepr(),
+    //         GlyphID(pageItem.id.unwrap),
+    //         pageItem.minBBox,
+    //         None
+    //       )
+    //     })
 
-        Transcript.Page(
-          pageBounds.pageNum,
-          pageBounds.bounds,
-          glyphs.to(List)
+    //     Transcript.Page(
+    //       pageBounds.pageNum,
+    //       pageBounds.bounds,
+    //       glyphs.to(List)
+    //     )
+    //   }
+    // }
+
+    val pages = pageSegmenters.map { pageSegmenter =>
+      val pageItems  = pageSegmenter.pageItems
+      val pageBounds = pageSegmenter.pageGeom
+      val pageLabels = pageSegmenter.traceLog.getLogsAsLabels()
+
+      val glyphs = pageItems.map(pageItem => {
+        Transcript.Glyph(
+          pageItem.strRepr(),
+          GlyphID(pageItem.id.unwrap),
+          pageItem.minBBox,
+          None
         )
-      }
+      })
+
+      Transcript.Page(
+        pageBounds.pageNum,
+        pageBounds.bounds,
+        glyphs.to(List),
+        pageLabels.to(List)
+      )
     }
 
     val stanzas = pageSegmenters.map { pageSegmenter =>
@@ -284,7 +305,7 @@ trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
       )
     }
 
-    val docScopeLogs = docScope.emitLoggedLabels()
+    val docScopeLogs = docScope.getLogsAsLabels()
 
     Transcript(
       documentId,

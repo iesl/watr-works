@@ -9,7 +9,7 @@ trait LibVersions {
 object LibVersions extends LibVersions
 
 object TestLibs extends LibVersions {
-  val scalatestVersion = "3.2.6"
+  val scalatestVersion = "3.2.8"
   val scalatest        = Seq(
     "org.scalatest" %% "scalatest" % scalatestVersion % "test"
   )
@@ -50,14 +50,14 @@ object DatabaseLibs extends LibVersions {
 }
 
 trait CommonLibs extends LibVersions {
-  val ammoniteVersion = "2.3.8-58-aa8b2ab1"
-  // val ammoniteVersion = "2.3.8"
+  // val ammoniteVersion = "2.3.8-58-aa8b2ab1"
+  val ammoniteVersion = "2.3.8-65-0f0d597f"
   val ammonite        = "com.lihaoyi"  % "ammonite"     % ammoniteVersion cross CrossVersion.full
   val ammoniteOps     = "com.lihaoyi" %% "ammonite-ops" % ammoniteVersion
 
   val scopt = "com.github.scopt" %% "scopt" % "4.0.1"
 
-  val shapelessV = "2.3.3"
+  val shapelessV = "2.3.4"
   val shapeless  = "com.chuusai" %% "shapeless" % shapelessV
 
   val acyclicVersion = "0.1.7"
@@ -78,7 +78,7 @@ trait CommonLibs extends LibVersions {
     "com.spotify" %% "featran-core" % featranV
   )
 
-  val zioV = "1.0.5"
+  val zioV = "1.0.6"
   val zio  = Seq(
     "dev.zio" %% "zio"         % zioV,
     "dev.zio" %% "zio-streams" % zioV
@@ -98,7 +98,7 @@ trait CommonLibs extends LibVersions {
 
   val consoleUtils = Seq(
     "com.lihaoyi" %% "fansi"      % "0.2.12",
-    "com.lihaoyi" %% "sourcecode" % "0.2.5",
+    "com.lihaoyi" %% "sourcecode" % "0.2.6",
     "com.lihaoyi" %% "pprint"     % "0.6.4"
   )
 
@@ -107,7 +107,7 @@ trait CommonLibs extends LibVersions {
     "com.github.davidmoten" % "flatbuffers-java" % "1.10.0.2"
   )
 
-  val http4sVersion = "0.21.21"
+  val http4sVersion = "0.21.22"
   val http4s = Seq(
     "org.http4s" %% "http4s-core" % http4sVersion,
     "org.http4s" %% "http4s-dsl" % http4sVersion,

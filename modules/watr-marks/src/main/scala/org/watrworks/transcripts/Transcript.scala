@@ -24,7 +24,8 @@ object Transcript {
   case class Page(
     page: Int @@ PageNum,
     bounds: LTBounds,
-    glyphs: List[Glyph]
+    glyphs: List[Glyph],
+    labels: List[Transcript.Label]
   )
 
   case class Glyph(
@@ -36,8 +37,8 @@ object Transcript {
 
   implicit val Enc_Glyph: Encoder[Glyph] = new Encoder[Glyph] {
     def apply(glyph: Glyph): Json = {
-      val id = glyph.id.asJson
-      val str = glyph.str.asJson
+      val id   = glyph.id.asJson
+      val str  = glyph.str.asJson
       val rect = glyph.rect.asJson
 
       glyph.props
@@ -65,7 +66,7 @@ object Transcript {
       final def apply(c: HCursor): Decoder.Result[Rewrite] =
         for {
           kind <- c.downField("kind").as[String]
-          gs <- c.downField("gs").as[List[Glyph]]
+          gs   <- c.downField("gs").as[List[Glyph]]
         } yield Rewrite(gs)
     }
 
@@ -87,13 +88,13 @@ object Transcript {
       decodeRewrite.widen
   }
 
-  implicit val labelIdCodec = TypeTagCodecs.intCodec[LabelID]
+  implicit val labelIdCodec  = TypeTagCodecs.intCodec[LabelID]
   implicit val stanzaIdCodec = TypeTagCodecs.intCodec[StanzaID]
 
   sealed trait GlyphRef
   object GlyphRef {
     case class S(v: String) extends GlyphRef
-    case class I(v: Int) extends GlyphRef
+    case class I(v: Int)    extends GlyphRef
 
     implicit def encodeGlyphRef: Encoder[GlyphRef] = Encoder.instance {
       case r: S => r.v.asJson
@@ -123,25 +124,26 @@ object Transcript {
     name: String,
     id: Option[Int @@ LabelID],
     range: List[Range],
-    props: Option[Json],
+    // props: Option[Json],
+    props: Option[Map[String, List[String]]],
     children: Option[List[Label]]
   )
 
   implicit lazy val LabelDecoder: Decoder[Label] = deriveDecoder
-  val LabelEncoder: Encoder[Label] = deriveEncoder
+  val LabelEncoder: Encoder[Label]               = deriveEncoder
+
   implicit def LabelEncoderNonNull: Encoder[Label] = LabelEncoder.mapJson(json => {
     val hc = HCursor.fromJson(json)
 
     // TODO abstract out this null-dropping json code
     val nonNullKVs = for {
       keys <- hc.keys.toList
-      key <- keys
-      v <- hc.downField(key).focus
+      key  <- keys
+      v    <- hc.downField(key).focus
       if !v.isNull
     } yield Json.obj(key := v)
 
     nonNullKVs.foldLeft(Json.obj())(_ deepMerge _)
-
   })
 
   sealed case class Span(begin: Int, length: Int)
