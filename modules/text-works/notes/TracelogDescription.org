@@ -90,7 +90,7 @@
                {                                           //
                  "labels": "BaselineMidriseBand",          //
                  "id": 22954,                              // + Ids are unique within a single tracelog.json file, and used to specify relationships between shapes
-                 "LTBounds": [31738, 45517, 22710, 486]    // + Geometric figures can be rectangles (LTBounds), Trapezoids, Points, Lines
+                 "Rect": [31738, 45517, 22710, 486]    // + Geometric figures can be rectangles (Rect), Trapezoids, Points, Lines
                }                                           //
              ],                                            //
              "headers": {                                  // + Headers provide additional tags and timing info, which are used by the

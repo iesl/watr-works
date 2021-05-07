@@ -10,7 +10,7 @@ class RectangularCutTests extends WatrSpec {
   import textboxing.{TextBoxing => TB}, TB._
   import utils.ExactFloats._
 
-  val graphSize = LTBounds.Ints(0, 0, 14, 14)
+  val graphSize = Rect.Ints(0, 0, 14, 14)
 
   it should "burst overlapping regions into all contiguous rectangles" in {
     // Result is:
@@ -28,8 +28,8 @@ class RectangularCutTests extends WatrSpec {
 
     List(
       (
-        LTBounds.Ints(2, 2, 4, 1),
-        LTBounds.Ints(2, 2, 4, 1), {
+        Rect.Ints(2, 2, 4, 1),
+        Rect.Ints(2, 2, 4, 1), {
           """|┌────────────┐
              |│░░░░░░░░░░░░│
              |│░┣━━┫░░░░░░░│
@@ -48,8 +48,8 @@ class RectangularCutTests extends WatrSpec {
         }
       ),
       (
-        LTBounds.Ints(1, 3, 4, 1),
-        LTBounds.Ints(2, 2, 4, 4), {
+        Rect.Ints(1, 3, 4, 1),
+        Rect.Ints(2, 2, 4, 4), {
           """|┌────────────┐┌────────────┐┌────────────┐┌────────────┐┌────────────┐┌────────────┐┌────────────┐
              |│░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░│
              |│░┌──┐░░░░░░░││░┌──┐░░░░░░░││░┣━┫┐░░░░░░░││░┌──┐░░░░░░░││░┌──◻░░░░░░░││░┌──┐░░░░░░░││░┌──┐░░░░░░░│
@@ -69,8 +69,8 @@ class RectangularCutTests extends WatrSpec {
         }
       ),
       (
-        LTBounds.Ints(2, 2, 4, 1),
-        LTBounds.Ints(2, 2, 6, 1), {
+        Rect.Ints(2, 2, 4, 1),
+        Rect.Ints(2, 2, 6, 1), {
           """|┌────────────┐┌────────────┐
              |│░░░░░░░░░░░░││░░░░░░░░░░░░│
              |│░┣━━┫─┤░░░░░││░├───┣┫░░░░░│
@@ -93,7 +93,7 @@ class RectangularCutTests extends WatrSpec {
       // val burstRegions = bbox1.withinRegion(bbox2).burstAll()
       val burstRegions = bbox1.withinRegion(bbox2).burstAllPossibleDirections()
 
-      def drawAdjacencyDiagram(adjacent: LTBounds): Box = {
+      def drawAdjacencyDiagram(adjacent: Rect): Box = {
         val g = makeGraph(graphSize)
         drawBoxDouble(g, bbox1)
         drawBox(g, bbox2)
@@ -118,7 +118,7 @@ class RectangularCutTests extends WatrSpec {
   }
 
   it should "split rectangles vertically and horizontally" in {
-    val rect = LTBounds.Ints(1, 1, 10, 10)
+    val rect = Rect.Ints(1, 1, 10, 10)
 
     {
       val (lsplit, rsplit) = rect.splitHorizontal(10.toFloatExact())
@@ -136,11 +136,11 @@ class RectangularCutTests extends WatrSpec {
 
   }
   it should "find  adjacent regions when inner rect is not strictly within outer" in {
-    val graphSize = LTBounds.Ints(0, 0, 14, 14)
-    val outer     = LTBounds.Ints(3, 3, 6, 6)
-    val inner     = LTBounds.Ints(2, 2, 4, 4)
+    val graphSize = Rect.Ints(0, 0, 14, 14)
+    val outer     = Rect.Ints(3, 3, 6, 6)
+    val inner     = Rect.Ints(2, 2, 4, 4)
 
-    def drawAdjacencyDiagram(adjacent: LTBounds): Box = {
+    def drawAdjacencyDiagram(adjacent: Rect): Box = {
       val g = makeGraph(graphSize)
       drawBoxDouble(g, outer)
       drawBox(g, inner)
@@ -222,11 +222,11 @@ class RectangularCutTests extends WatrSpec {
   }
 
   it should "find regions adjacent to rectangle within enclosing region" in {
-    val graphSize = LTBounds.Ints(0, 0, 14, 14)
-    val outer     = LTBounds.Ints(1, 1, 10, 10)
-    val inner     = LTBounds.Ints(3, 4, 5, 2)
+    val graphSize = Rect.Ints(0, 0, 14, 14)
+    val outer     = Rect.Ints(1, 1, 10, 10)
+    val inner     = Rect.Ints(3, 4, 5, 2)
 
-    def drawAdjacencyDiagram(adjacent: LTBounds): Box = {
+    def drawAdjacencyDiagram(adjacent: Rect): Box = {
       // println(s"drawAdjacencyDiagram")
       // println(s"   graph: ${graphSize}")
       // println(s"   inner: ${inner}")

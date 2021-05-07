@@ -10,14 +10,15 @@ import utils.{RelativeDirection => Dir}
   */
 
 case class Octothorpe(
-  focalRect: LTBounds,
-  horizonRect: LTBounds
+  focalRect: Rect,
+  horizonRect: Rect
 ) {
 
-  val burstDirections: Map[Dir, Option[LTBounds]] =
+  val burstDirections: Map[Dir, Option[Rect]] =
     focalRect.withinRegion(horizonRect).burstAllPossibleDirections().toMap
 
 }
+
 object Octothorpe {
   val Box3x3 = GraphPaper
     .boxAt(0, 0)
@@ -28,7 +29,7 @@ object Octothorpe {
     .map(dir => (Box3x3.getCell(dir), dir))
     .toMap
 
-  case class Subregion(box: GraphPaper.Box, rect: Option[LTBounds])
+  case class Subregion(box: GraphPaper.Box, rect: Option[Rect])
 
   case class Def(bounds: List[Bounds])
 
@@ -41,11 +42,11 @@ object Octothorpe {
   def define(bounds: Bounds*): Def = {
     Def(bounds.toList)
   }
-  def focusedOn(odef: Def, rect: LTBounds): Octothorpe = {
+  def focusedOn(odef: Def, rect: Rect): Octothorpe = {
     ???
   }
 
-  implicit class RicherOctothrope(val self: Octothorpe) extends AnyVal {
+  implicit class RicherOctothorpe(val self: Octothorpe) extends AnyVal {
     //
   }
 

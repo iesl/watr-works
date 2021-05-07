@@ -23,7 +23,7 @@ object Transcript {
   @JsonCodec
   case class Page(
     page: Int @@ PageNum,
-    bounds: LTBounds,
+    bounds: Rect,
     glyphs: List[Glyph],
     labels: List[Transcript.Label]
   )
@@ -31,7 +31,7 @@ object Transcript {
   case class Glyph(
     str: String,
     id: Int @@ GlyphID,
-    rect: LTBounds,
+    rect: Rect,
     props: Option[GlyphProps]
   )
 
@@ -48,10 +48,10 @@ object Transcript {
   }
 
   def GlyphDec0: Decoder[Glyph] =
-    Decoder[(String, Int @@ GlyphID, LTBounds)].map(rp => Glyph(rp._1, rp._2, rp._3, None))
+    Decoder[(String, Int @@ GlyphID, Rect)].map(rp => Glyph(rp._1, rp._2, rp._3, None))
 
   def GlyphDec1: Decoder[Glyph] =
-    Decoder[(String, Int @@ GlyphID, LTBounds, GlyphProps)].map(rp =>
+    Decoder[(String, Int @@ GlyphID, Rect, GlyphProps)].map(rp =>
       Glyph(rp._1, rp._2, rp._3, Some(rp._4))
     )
 
@@ -154,13 +154,50 @@ object Transcript {
   implicit val SpanEncoder: Encoder[Span] =
     Encoder[(Int, Int)].contramap(span => (span.begin, span.length))
 
-  sealed trait Range {
-    def unit: String;
+  ////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////
+  sealed trait RangeUnit
+  sealed trait RangeExpr
+  object RangeExpr {
+    case class And(ranges: List[RangeUnit]) extends RangeExpr
   }
 
-  object Range {
-    // case class Uri(segments: List[Label])
-    // implicit class RicherRange(val self: Boolean) {
+  case class TextRangeUnit(at: Span) extends RangeUnit
+  case class GeometryRangeUnit(at: GeometricFigure) extends RangeUnit
+  case class PageRangeUnit(at: Int @@ PageNum) extends RangeUnit
+
+
+  val RangeDecoder2: Decoder[RangeUnit] = new Decoder[RangeUnit] {
+    def apply(c: HCursor): Decoder.Result[RangeUnit] = {
+      val asdf = for {
+        // foo <- c.downField("unit").as[String]
+        maybeKeys <- c.keys.to(List)
+        key <- maybeKeys
+        value = c.downField(key)
+        // range <- {
+        //   val d: Decoder[Range] =
+        //     if (foo.startsWith("text")) Decoder[TextRange].widen
+        //     else if (foo.startsWith("shape")) Decoder[GeometryRange].widen
+        //     else if (foo.startsWith("document")) Decoder[DocumentRange].widen
+        //     else if (foo.startsWith("page")) Decoder[PageRange].widen
+        //     else if (foo.startsWith("stanza")) Decoder[StanzaRange].widen
+        //     else Decoder[LabelRange].widen
+
+        //   d(c)
+        // }
+      } yield value
+
+      ???
+    }
+  }
+
+  ////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////
+
+  sealed trait Range {
+    def unit: String;
   }
 
   implicit val RangeDecoder: Decoder[Range] = new Decoder[Range] {

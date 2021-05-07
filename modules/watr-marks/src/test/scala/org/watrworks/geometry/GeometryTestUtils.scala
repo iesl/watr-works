@@ -12,7 +12,7 @@ object GeometryTestUtils extends WatrSpec {
   import GraphPaper._
 
   def makeGraph(
-    graphDimension: LTBounds
+    graphDimension: Rect
   ): ConsoleGraphPaper = {
     val w: Int = graphDimension.width.asInt()
     val h: Int = graphDimension.height.asInt()
@@ -21,13 +21,13 @@ object GeometryTestUtils extends WatrSpec {
     g
   }
 
-  def drawBox(graphPaper: ConsoleGraphPaper, region: LTBounds): Unit  = {
+  def drawBox(graphPaper: ConsoleGraphPaper, region: Rect): Unit  = {
     graphPaper.drawBox(ltb2box(region), BorderLineStyle.SingleWidth)
   }
-  def drawBoxBold(graphPaper: ConsoleGraphPaper, region: LTBounds): Unit  = {
+  def drawBoxBold(graphPaper: ConsoleGraphPaper, region: Rect): Unit  = {
     graphPaper.drawBox(ltb2box(region), BorderLineStyle.Bold)
   }
-  def drawBoxDouble(graphPaper: ConsoleGraphPaper, region: LTBounds): Unit  = {
+  def drawBoxDouble(graphPaper: ConsoleGraphPaper, region: Rect): Unit  = {
     graphPaper.drawBox(ltb2box(region), BorderLineStyle.DoubleWidth)
   }
 

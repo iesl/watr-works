@@ -1,5 +1,5 @@
 package org.watrworks
-package rtrees
+package rsearch
 
 import RGeometryConversions._
 import rx.Observable
@@ -13,7 +13,7 @@ import java.lang.{Boolean => JBool}
 
 import geometry._
 
-trait RTreeSearch[T <: GeometricFigure, W, Shape <: LabeledShape.Aux[T, W]] {
+trait RTreeSearch[T <: GeometricFigure, Shape <: LabeledShape.Aux[T]] {
 
   def rtreeIndex: RTree[Shape, RG.Geometry]
 
@@ -29,7 +29,7 @@ trait RTreeSearch[T <: GeometricFigure, W, Shape <: LabeledShape.Aux[T, W]] {
     }
 
     val hits0 = queryFig match {
-      case f: G.LTBounds => rtreeIndex.search(toRGRectangle(f))
+      case f: G.Rect => rtreeIndex.search(toRGRectangle(f))
       case f: G.Line     => rtreeIndex.search(toRGLine(f))
       case f: G.Point    => rtreeIndex.search(toRGPoint(f))
       case _             => sys.error("unsupported query shape")
@@ -40,11 +40,11 @@ trait RTreeSearch[T <: GeometricFigure, W, Shape <: LabeledShape.Aux[T, W]] {
     toScalaSeq(hits)
   }
 
-  def queryForIntersects(q: G.LTBounds): Seq[Shape] = {
+  def queryForIntersects(q: G.Rect): Seq[Shape] = {
     toScalaSeq(rtreeIndex.search(toRGRectangle(q)))
   }
 
-  def queryForIntersectedIDs(q: G.LTBounds): Seq[Int] = {
+  def queryForIntersectedIDs(q: G.Rect): Seq[Int] = {
     toEntrySeq(rtreeIndex.search(toRGRectangle(q)))
       .map { entry => entry.value().id.unwrap }
   }

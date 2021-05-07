@@ -5,12 +5,12 @@ import utils.{RelativeDirection => Dir}
 
 object GraphPaper {
 
-  def ltb2box(bbox: LTBounds): Box = {
-    val LTBounds.Ints(l, t, w, h) = bbox
+  def ltb2box(bbox: Rect): Box = {
+    val Rect.Ints(l, t, w, h) = bbox
     GraphPaper.Box(GridCell(l, t), w - 1, h - 1)
   }
 
-  def boundsToBox(bbox: LTBounds): Box = ltb2box(bbox)
+  def boundsToBox(bbox: Rect): Box = ltb2box(bbox)
 
   case class CellDimensions(width: Int, height: Int)
 
@@ -64,8 +64,8 @@ object GraphPaper {
       Box(GridCell(minX, minY), maxRight - minX, maxBottom - minY)
     }
 
-    def toLTBounds(): LTBounds = {
-      LTBounds.Ints(left, top, spanRight + 1, spanDown + 1)
+    def toRect(): Rect = {
+      Rect.Ints(left, top, spanRight + 1, spanDown + 1)
     }
 
     def getCell(dir: Dir): GridCell = {

@@ -34,7 +34,7 @@ trait LineSegmentation
     segmentSuperSubScripts()
   }
 
-  private def getAscentDescentPageSlice(fontOffsets: FontBaselineOffsets): Option[LTBounds] = {
+  private def getAscentDescentPageSlice(fontOffsets: FontBaselineOffsets): Option[Rect] = {
     fontOffsets.sliceBetween(
       _.ascentLine,
       _.descentLine,
@@ -90,7 +90,7 @@ trait LineSegmentation
   }
 
   private def findLineCharsInPageBand(
-    pageSlice: LTBounds,
+    pageSlice: Rect,
     rootChar: ExtractedItem.CharItem,
     outputLabel: Label
   ): Option[RectShape] = {

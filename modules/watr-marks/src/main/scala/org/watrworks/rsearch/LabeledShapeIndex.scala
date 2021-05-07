@@ -1,11 +1,10 @@
 package org.watrworks
-package rtrees
+package rsearch
 
 import scala.collection.mutable
 import watrmarks._
 import geometry._
 
-import rtrees._
 import utils.OrderedDisjointSet
 
 import textboxing.{TextBoxing => TB}
@@ -21,17 +20,18 @@ object LabeledShapeIndex {
   def qualifyRelation(l: Label): Label = { l.qualifiedAs("relation") }
   def qualifyRep(l: Label): Label = { l.qualifiedAs("rep") }
 
-  def empty[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]](idGenerator: IdGenerator[ShapeID])
-    : LabeledShapeIndex[A, W, Shape] =
-    new LabeledShapeIndex[A, W, Shape] {
-      val shapeIDGen = idGenerator
-      val shapeRIndex: RTreeIndex[A, W, Shape] = RTreeIndex.empty[A, W, Shape]()
+  def empty[A <: GeometricFigure, Shape <: LabeledShape.Aux[A]](
+    idGenerator: IdGenerator[ShapeID]
+  ): LabeledShapeIndex[A, Shape] =
+    new LabeledShapeIndex[A, Shape] {
+      val shapeIDGen                           = idGenerator
+      val shapeRIndex: RTreeIndex[A, Shape] = RTreeIndex.empty[A, Shape]()
     }
 
-  def withRTree[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]](
-    rtree: RTreeIndex[A, W, Shape]
-  ): LabeledShapeIndex[A, W, Shape] = {
-    new LabeledShapeIndex[A, W, Shape] {
+  def withRTree[A <: GeometricFigure, Shape <: LabeledShape.Aux[A]](
+    rtree: RTreeIndex[A, Shape]
+  ): LabeledShapeIndex[A, Shape] = {
+    new LabeledShapeIndex[A, Shape] {
       val shapeIDGen = utils.IdGenerator[ShapeID]()
 
       val items = rtree.getItems()
@@ -40,27 +40,26 @@ object LabeledShapeIndex {
         else {
           items.maxBy(_.id.unwrap).id.unwrap
         }
-      val shapeRIndex: RTreeIndex[A, W, Shape] = rtree
+      val shapeRIndex: RTreeIndex[A, Shape] = rtree
       shapeIDGen.setNextId(maxId + 1)
       shapeMap ++= items.map { i => (i.id.unwrap.toLong, i) }
     }
   }
 }
 
-abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]] {
-  // val shapeIDGen = utils.IdGenerator[ShapeID]()
+abstract class LabeledShapeIndex[A <: GeometricFigure, Shape <: LabeledShape.Aux[A]] {
   def shapeIDGen: utils.IdGenerator[ShapeID]
-  def shapeRIndex: RTreeIndex[A, W, Shape]
+  def shapeRIndex: RTreeIndex[A, Shape]
 
   val shapeMap: mutable.LongMap[Shape] = {
     mutable.LongMap[Shape]()
   }
 
-  type LineShape = LabeledShape[Line, W]
-  type PointShape = LabeledShape[Point, W]
-  type RectShape = LabeledShape[LTBounds, W]
-  type TrapezoidShape = LabeledShape[Trapezoid, W]
-  type AnyShape = Shape
+  type LineShape      = LabeledShape[Line]
+  type PointShape     = LabeledShape[Point]
+  type RectShape      = LabeledShape[Rect]
+  type TrapezoidShape = LabeledShape[Trapezoid]
+  type AnyShape       = Shape
 
   def getAllShapes(): Seq[Shape] = {
     shapeMap.values.toSeq
@@ -238,8 +237,8 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
       .map { l =>
         val dsets = disjointSets(l)
         val setStrs = dsets.sets().map { set =>
-          val canon = dsets.getCanonical(set.head)
-          val members = set.take(2).map(_.id).mkString(", ")
+          val canon       = dsets.getCanonical(set.head)
+          val members     = set.take(2).map(_.id).mkString(", ")
           val membersFull = set.take(8).map(_.toString().box)
 
           s"[${canon}] = (${set.length}) ${members} ..." atop indent(2, vcat(left, membersFull))
@@ -259,7 +258,7 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
     act: ClassTag[C]
   ): Unit = {
     val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
-    val _ = shapeAttributeTable.put(shapeId, typedLabel, attr)
+    val _          = shapeAttributeTable.put(shapeId, typedLabel, attr)
   }
 
   def getShapeAttribute[C](shapeId: Int @@ ShapeID, l: Label)(implicit
@@ -273,3 +272,119 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.
   }
 
 }
+
+// trait ShapeDisjointSets {
+
+//   val disjointSets: mutable.HashMap[Label, OrderedDisjointSet[AnyShape]] = mutable.HashMap()
+
+//   def ensureCluster[T <: GeometricFigure](l: Label): OrderedDisjointSet[Shape] = {
+//     disjointSets.getOrElseUpdate(l, OrderedDisjointSet.apply[Shape]())
+//   }
+
+//   def addCluster[T <: GeometricFigure](l: Label, shapes: Seq[Shape]): Shape = {
+//     assume(shapes.nonEmpty)
+//     _addCluster(l, shapes)
+//   }
+
+//   def initClustering(l: Label, f: Shape => Boolean): Seq[Shape] = {
+//     assume(!disjointSets.contains(l))
+//     val toAdd = shapeRIndex.getItems().filter(f)
+//     disjointSets.getOrElseUpdate(l, OrderedDisjointSet.apply[Shape](toAdd: _*))
+//     toAdd
+//   }
+
+//   private def _addCluster[T <: GeometricFigure, R <: GeometricFigure](
+//     l: Label,
+//     cs: Seq[Shape]
+//   ): Shape = {
+//     assume(cs.nonEmpty)
+
+//     val set = ensureCluster(l)
+
+//     val c0 = cs.head
+//     set.ensure(c0)
+//     cs.tail.foreach { cn =>
+//       set.ensure(cn)
+//       set.union(c0, cn)
+//     }
+//     val canonical = set.getCanonical(c0)
+//     canonical.asInstanceOf[Shape]
+//   }
+
+//   def unionAll(l: Label, cs: Seq[Shape]): Unit = {
+//     val _ = _addCluster(l, cs)
+//   }
+
+//   def union(l: Label, c1: Shape, c2: Shape): Unit = {
+//     val _ = _addCluster(l, Seq(c1, c2))
+//   }
+
+//   def getClusterMembers(l: Label, cc: Shape): Option[Seq[Shape]] = {
+//     _getClusterMembers(l, cc)
+//   }
+
+//   private def _getClusterMembers(l: Label, cc: Shape): Option[Seq[Shape]] = {
+//     disjointSets.get(l).map { set =>
+//       set
+//         .sets()
+//         .toSeq
+//         .map(_.toSeq)
+//         .filter(_.contains(cc))
+//         .headOption
+//     } getOrElse (None)
+//   }
+
+//   def getClusters(l: Label): Option[Seq[Seq[Shape]]] = {
+//     disjointSets
+//       .get(l)
+//       .map { set => set.sets() }
+//   }
+
+//   def getClustersWithReprID(l: Label): Seq[(Int @@ ShapeID, Seq[Shape])] = {
+//     disjointSets.get(l).map { disjointSet =>
+//       disjointSet.sets().map { cluster =>
+//         val repr = disjointSet.getCanonical(cluster.head)
+//         (repr.id, cluster)
+//       }
+//     } getOrElse (Seq())
+//   }
+
+//   def getClusterRoots(l: Label): Seq[Shape] = {
+//     disjointSets.get(l).map { set =>
+//       set.sets().map { cluster =>
+//         set.getCanonical(cluster.head)
+//       }
+//     } getOrElse (Seq())
+//   }
+
+//   def getClusterRoot(l: Label, s: Shape): Option[Shape] = {
+//     disjointSets.get(l).flatMap { set =>
+//       if (set.contains(s)) Some(set.getCanonical(s)) else None
+//     }
+//   }
+
+//   def reportClusters(): Unit = {
+//     import TB._
+
+//     val allSets = disjointSets.keys.toList
+//       .map { l =>
+//         val dsets = disjointSets(l)
+//         val setStrs = dsets.sets().map { set =>
+//           val canon       = dsets.getCanonical(set.head)
+//           val members     = set.take(2).map(_.id).mkString(", ")
+//           val membersFull = set.take(8).map(_.toString().box)
+
+//           s"[${canon}] = (${set.length}) ${members} ..." atop indent(2, vcat(left, membersFull))
+//         }
+
+//         vjoin(left, s"$l => ", indent(2, vjoinWith(left, vspace(1), setStrs)), "~" * 20)
+//       }
+
+//     val res = vjoin(indent(4, vcat(left, allSets)))
+
+//     println(res)
+//   }
+
+
+
+// }

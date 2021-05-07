@@ -31,7 +31,7 @@ trait LineLayout extends BasePageSegmenter
     val reprShapeRight = midriseBaselineRect.right
     // val capDescentRect  = midriseBaselineBand.shape
 
-    def clipped(slice: LTBounds): Option[LTBounds] = {
+    def clipped(slice: Rect): Option[Rect] = {
       // slice.flatMap(clipRectBetween(reprShapeLeft, reprShapeRight, _))
       clipRectBetween(reprShapeLeft, reprShapeRight, slice)
     }

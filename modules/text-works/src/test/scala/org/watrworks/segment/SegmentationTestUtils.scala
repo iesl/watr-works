@@ -95,8 +95,8 @@ trait SegmentationTestUtils extends SegmentationTest {
   }
 
 
-  def attrsToBounds(text: String): LTBounds = {
-    LTBounds.Doubles(
+  def attrsToBounds(text: String): Rect = {
+    Rect.Doubles(
       getAttrVal("x", text).toDouble,
       getAttrVal("y", text).toDouble,
       getAttrVal("width", text).toDouble,
@@ -153,7 +153,7 @@ trait SegmentationTestUtils extends SegmentationTest {
         .split(", ")
         .map(_.toDouble)
 
-      (foundText, PageNum(pageNumber), LTBounds.Doubles(bounds(0), bounds(1), bounds(2), bounds(3)))
+      (foundText, PageNum(pageNumber), Rect.Doubles(bounds(0), bounds(1), bounds(2), bounds(3)))
     }
 
     ParsedExample(
@@ -170,7 +170,7 @@ trait SegmentationTestUtils extends SegmentationTest {
 case class TestRegion(
   pdfUrl: URL,
   page: Int@@PageNum,
-  bbox: LTBounds
+  bbox: Rect
 )
 
 case class Example(
@@ -187,6 +187,6 @@ case class TextExample(
 
 case class ParsedExample(
   source: String,
-  targetRegions: Seq[(String, Int@@PageNum, LTBounds)],
+  targetRegions: Seq[(String, Int@@PageNum, Rect)],
   expectedOutput: Seq[String]
 )

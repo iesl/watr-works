@@ -19,9 +19,9 @@ class OctothorpeTest extends WatrSpec {
     val _ = s"""|*
                 | aaa
                 |"""
-    val graphSize = LTBounds.Ints(0, 0, 14, 14)
-    val outer = LTBounds.Ints(3, 3, 6, 6)
-    val inner = LTBounds.Ints(2, 2, 4, 4)
+    val graphSize = Rect.Ints(0, 0, 14, 14)
+    val outer = Rect.Ints(3, 3, 6, 6)
+    val inner = Rect.Ints(2, 2, 4, 4)
 
     val traverseFn = (othorpe: Octothorpe) => {
 
@@ -29,7 +29,7 @@ class OctothorpeTest extends WatrSpec {
     }
     // Octothorpe.Traversal.init()
 
-    // def drawAdjacencyDiagram(adjacent: LTBounds): Box = {
+    // def drawAdjacencyDiagram(adjacent: Rect): Box = {
     //   val g = makeGraph(graphSize)
     //   drawBoxDouble(g, outer)
     //   drawBox(g, inner)

@@ -46,7 +46,7 @@ trait ReferenceBlockConverter extends BasePageSegmenter
 
   import ReferenceBlockConversion._
 
-  protected def filterPrelabeledRegions(refBlockBounds: LTBounds, candidates: Seq[LTBounds]): Seq[LTBounds] = {
+  protected def filterPrelabeledRegions(refBlockBounds: Rect, candidates: Seq[Rect]): Seq[Rect] = {
     val refBeginZones = searchForRects(refBlockBounds, PartialRefBegin)
     val refEndZones = searchForRects(refBlockBounds, PartialRefEnd)
     val refZones = searchForRects(refBlockBounds, Reference)
@@ -63,12 +63,12 @@ trait ReferenceBlockConverter extends BasePageSegmenter
     }
   }
 
-  protected def findCandidateMinBounds(candidateBounds: LTBounds): LTBounds = {
+  protected def findCandidateMinBounds(candidateBounds: Rect): Rect = {
     val glyphs = searchForRects(candidateBounds.shave(1d), LB.Glyph)
     glyphs.map(_.shape).reduce(_ union _)
   }
 
-  protected def queryForLeftmostCharsInColumn(columnBounds: LTBounds, refBlockBounds: LTBounds): Seq[LTBounds] = {
+  protected def queryForLeftmostCharsInColumn(columnBounds: Rect, refBlockBounds: Rect): Seq[Rect] = {
     val expandedColumnBounds = columnBounds.withinRegion(refBlockBounds)
       .adjacentRegions(Dir.Top, Dir.Center, Dir.Bottom)
       .orDie("What happened here?")
@@ -88,7 +88,7 @@ trait ReferenceBlockConverter extends BasePageSegmenter
       }
       if (includedCharItems.nonEmpty) {
         val leftmostItem = includedCharItems.minBy(_.minBBox.left)
-        val LTBounds(l, _, w, _) = leftmostItem.minBBox
+        val Rect(l, _, w, _) = leftmostItem.minBBox
 
         if (docScope.fontDefs.hasScaledFontOffsets(leftmostItem.scaledFontId)) {
           val fontOffsets = docScope.fontDefs.getScaledFontOffsets(leftmostItem.scaledFontId)
@@ -99,7 +99,7 @@ trait ReferenceBlockConverter extends BasePageSegmenter
           val adjustedBbox = if (adjHeight.unwrap == 0) {
             leftmostItem.minBBox
           } else {
-            LTBounds(l, capline, w, adjHeight)
+            Rect(l, capline, w, adjHeight)
           }
 
           Some(adjustedBbox)
@@ -119,7 +119,7 @@ trait ReferenceBlockConverter extends BasePageSegmenter
     }
   }
 
-  def convertReferenceBlocks(pageZonesAndLabels: Seq[(AnnotatedLocation.Zone, Label)]): Option[Seq[(LTBounds, TextGrid, PageRegion)]] = {
+  def convertReferenceBlocks(pageZonesAndLabels: Seq[(AnnotatedLocation.Zone, Label)]): Option[Seq[(Rect, TextGrid, PageRegion)]] = {
     pageZonesAndLabels.foreach { case (zone: AnnotatedLocation.Zone, label: watrmarks.Label) =>
       assume(zone.regions.length == 1)
       val zoneRegion = zone.regions.head
@@ -153,7 +153,7 @@ trait ReferenceBlockConverter extends BasePageSegmenter
         val hangingLineTops = leftmostCharBounds.map { bbox => bbox.top }
 
         val zero = (
-          List[LTBounds](),
+          List[Rect](),
           refBlockRegion.bbox
         )
 
@@ -309,7 +309,7 @@ trait ReferenceBlockConverter extends BasePageSegmenter
     checkedBlocks.filter(_._2).map(_._1)
   }
 
-  def sanityCheckReferences(referenceTextGrids: Seq[(LTBounds, TextGrid, PageRegion)]): Boolean = {
+  def sanityCheckReferences(referenceTextGrids: Seq[(Rect, TextGrid, PageRegion)]): Boolean = {
     referenceTextGrids.zipWithIndex.foreach{ case ((bbox@_, textGrid, pageRegion), refNum) =>
       val isEmpty = textGrid.toText().replaceAll("\n", " ").trim.isEmpty()
 

@@ -31,12 +31,12 @@ protected object ExtractionImplicits {
   }
 
   implicit class RicherRectangle2D(val self: Rectangle2D) extends AnyVal {
-    def toLTBounds(): LTBounds = {
+    def toRect(): Rect = {
       val left = self.getMinX
       val top = self.getMinY
       val h = self.getHeight
       val w = self.getWidth
-      LTBounds.Doubles(left, top, w, h)
+      Rect.Doubles(left, top, w, h)
     }
   }
 
@@ -47,7 +47,7 @@ protected object ExtractionImplicits {
     //   // val bottom = self.getLowerLeftY
     //   val w = self.getWidth
     //   val h = self.getHeight
-    //   LTBounds.Floats(left, top, w, h).toLBBounds
+    //   Rect.Floats(left, top, w, h).toLBBounds
     // }
   }
 
@@ -62,7 +62,7 @@ import ExtractionImplicits._
 sealed trait ExtractedItem {
 
   def id: Int@@CharID
-  def minBBox: LTBounds
+  def minBBox: Rect
 
   lazy val location: Point = minBBox.toPoint(Dir.BottomLeft)
 
@@ -107,14 +107,14 @@ object ExtractedItem {
 
   case class ImgItem(
     id: Int@@CharID,
-    minBBox: LTBounds
+    minBBox: Rect
   ) extends ExtractedItem {
     def strRepr(): String = s"[img ${minBBox.prettyPrint}]"
   }
 
   case class PathItem(
     id: Int@@CharID,
-    minBBox: LTBounds,
+    minBBox: Rect,
     waypoints: Seq[Point]
   ) extends ExtractedItem {
     lazy val pp = waypoints.map(_.prettyPrint).take(4).mkString("->")
@@ -132,8 +132,8 @@ case class GlyphProps(
   prevSimilar: Int@@CharID
 ) {
 
-  lazy val fontBBox = finalFontBounds.getBounds2D().toLTBounds()
-  lazy val glyphBBox = finalGlyphBounds.map(_.getBounds2D().toLTBounds()).getOrElse { fontBBox }
+  lazy val fontBBox = finalFontBounds.getBounds2D().toRect()
+  lazy val glyphBBox = finalGlyphBounds.map(_.getBounds2D().toRect()).getOrElse { fontBBox }
   lazy val scalingFactor: Int@@ScalingFactor = {
     val determinant = finalAffineTrans.getDeterminant
     val normDet = determinant * 1000 * 1000
@@ -230,8 +230,8 @@ case class FontBaselineOffsets(
   def sliceBetween(
     f1: FontBaselineOffsets => Int@@FloatRep,
     f2: FontBaselineOffsets => Int@@FloatRep,
-    r: LTBounds
-  ): Option[LTBounds] = {
+    r: Rect
+  ): Option[Rect] = {
     val y1 = f1(this)
     val y2 = f2(this)
     val ytop = min(y1, y2)

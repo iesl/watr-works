@@ -11,7 +11,7 @@ import utils.ExactFloats._
 import extract._
 import utils._
 import utils.IdGenerator
-import rtrees._
+import rsearch._
 
 import TypeTags._
 import org.watrworks.transcripts.Transcript
@@ -128,7 +128,7 @@ trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
     pageAtomsAndGeometry.map { case (items @ _, pageGeometry) =>
       (
         pageGeometry.pageNum,
-        LabeledShapeIndex.empty[GeometricFigure, Unit, DocSegShape[GeometricFigure]](
+        LabeledShapeIndex.empty[GeometricFigure, DocSegShape[GeometricFigure]](
           shapeIdGenerator
         )
       )

@@ -4,7 +4,7 @@ package segment
 import geometry._
 
 import watrmarks.Label
-import rtrees._
+import rsearch._
 import scala.reflect._
 
 case class DocSegShape[+T <: GeometricFigure: ClassTag](
@@ -12,13 +12,13 @@ case class DocSegShape[+T <: GeometricFigure: ClassTag](
   pageNum: Int @@ PageNum,
   shape: T,
   labels: Set[Label]
-) extends LabeledShape[T, Unit] {
+) extends LabeledShape[T] {
   val shapeType = implicitly[ClassTag[T]].runtimeClass.getSimpleName()
   def addLabels(l: Label*): DocSegShape[T] = copy(
     labels = this.labels ++ l.toSet
   )
 
-  val attr: Unit = ()
+  // val attr: Unit = ()
 }
 
 object DocSegShape {

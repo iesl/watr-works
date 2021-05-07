@@ -27,12 +27,12 @@ object ArbitraryGeometry {
     arbInt.map(CharID(_))
   }
 
-  def Gen_LTBounds: Gen[LTBounds] = for {
+  def Gen_Rect: Gen[Rect] = for {
     d1 <- arbitrary[Double]
     d2 <- arbitrary[Double]
     d3 <- arbitrary[Double]
     d4 <- arbitrary[Double]
-  } yield LTBounds.Doubles.apply(d1, d2, d3, d4)
+  } yield Rect.Doubles.apply(d1, d2, d3, d4)
 
   def Gen_Point: Gen[Point] = for {
     d1 <- arbitrary[Double]
@@ -53,7 +53,7 @@ object ArbitraryGeometry {
     bottomW <- arbitrary[Int]
   } yield Trapezoid(topLeft, topW.toFloatExact(), bottomLeft, bottomW.toFloatExact())
 
-  implicit def Arb_LTBounds: Arbitrary[LTBounds] =  Arbitrary(Gen_LTBounds)
+  implicit def Arb_Rect: Arbitrary[Rect] =  Arbitrary(Gen_Rect)
   implicit def Arb_Point: Arbitrary[Point] = Arbitrary(Gen_Point)
   implicit def Arb_Line: Arbitrary[Line] = Arbitrary(Gen_Line)
   implicit def Arb_Trapezoid: Arbitrary[Trapezoid] = Arbitrary(Gen_Trapezoid)
@@ -63,7 +63,7 @@ object ArbitraryGeometry {
       Gen.oneOf(
         Gen_Line,
         Gen_Point,
-        Gen_LTBounds,
+        Gen_Rect,
         Gen_Trapezoid
       )
     }
@@ -75,8 +75,8 @@ object GeometryChecks extends Properties("GeometricFigures") {
   import ArbitraryGeometry._
   import GeometryCodecs._
 
-  property("json <--> LTBounds") = forAll{ (example: LTBounds) =>
-    example.asJson.decodeOrDie[LTBounds]() === example
+  property("json <--> Rect") = forAll{ (example: Rect) =>
+    example.asJson.decodeOrDie[Rect]() === example
   }
 
   property("json <--> Point") = forAll{ (example: Point) =>
@@ -118,14 +118,14 @@ object ArbitaryPageComponents {
 
   def Gen_PageRegion: Gen[PageRegion] = for {
     s <- arbitrary[StablePage]
-    b <- arbitrary[LTBounds]
+    b <- arbitrary[Rect]
   } yield PageRegion(s, b)
 
   implicit def Arb_PageRegion: Arbitrary[PageRegion] = Arbitrary(Gen_PageRegion)
 
   def Gen_PageGeometry: Gen[PageGeometry] = for {
     n <- arbitrary[Int]
-    b <- arbitrary[LTBounds]
+    b <- arbitrary[Rect]
   } yield PageGeometry(PageNum(n), b)
 
   implicit def Arb_PageGeometry: Arbitrary[PageGeometry] = Arbitrary(Gen_PageGeometry)

@@ -11,7 +11,7 @@ sealed trait GeometricFigure { self =>
   lazy val minBounds = GeometryImplicits.minBoundingRect(self)
 }
 
-case class LTBounds(
+case class Rect(
   left   : Int@@FloatRep,
   top    : Int@@FloatRep,
   width  : Int@@FloatRep,
@@ -29,14 +29,14 @@ case class LTBounds(
   val getBottom: Double = bottom.asDouble()
 }
 
-object LTBounds {
+object Rect {
   def FromInts(l: Int, t: Int, w: Int, h: Int) = Ints(l, t, w, h)
 
   object IntReps {
-    def apply(left: Int, top: Int, width: Int, height: Int): LTBounds =
-      LTBounds(FloatRep(left), FloatRep(top), FloatRep(width), FloatRep(height))
+    def apply(left: Int, top: Int, width: Int, height: Int): Rect =
+      Rect(FloatRep(left), FloatRep(top), FloatRep(width), FloatRep(height))
 
-    def unapply(bbox: LTBounds): Option[(Int, Int, Int, Int)] = Some((
+    def unapply(bbox: Rect): Option[(Int, Int, Int, Int)] = Some((
       bbox.left.unwrap,
       bbox.top.unwrap,
       bbox.width.unwrap,
@@ -46,10 +46,10 @@ object LTBounds {
 
   object Ints {
 
-    def apply(left: Int, top: Int, width: Int, height: Int): LTBounds =
-      LTBounds(left.toFloatExact(), top.toFloatExact(), width.toFloatExact(), height.toFloatExact())
+    def apply(left: Int, top: Int, width: Int, height: Int): Rect =
+      Rect(left.toFloatExact(), top.toFloatExact(), width.toFloatExact(), height.toFloatExact())
 
-    def unapply(bbox: LTBounds): Option[(Int, Int, Int, Int)] = Some((
+    def unapply(bbox: Rect): Option[(Int, Int, Int, Int)] = Some((
       bbox.left.asInt(),
       bbox.top.asInt(),
       bbox.width.asInt(),
@@ -58,10 +58,10 @@ object LTBounds {
   }
 
   object Doubles {
-    def apply(left: Double, top: Double, width: Double, height: Double): LTBounds =
-      LTBounds(left.toFloatExact(), top.toFloatExact(), width.toFloatExact(), height.toFloatExact())
+    def apply(left: Double, top: Double, width: Double, height: Double): Rect =
+      Rect(left.toFloatExact(), top.toFloatExact(), width.toFloatExact(), height.toFloatExact())
 
-    def unapply(bbox: LTBounds): Option[(Double, Double, Double, Double)] = Some((
+    def unapply(bbox: Rect): Option[(Double, Double, Double, Double)] = Some((
       bbox.left.asDouble(),
       bbox.top.asDouble(),
       bbox.width.asDouble(),
@@ -70,10 +70,10 @@ object LTBounds {
   }
 
   object Floats {
-    def apply(left: Float, top: Float, width: Float, height: Float): LTBounds =
-      LTBounds(left.toFloatExact(), top.toFloatExact(), width.toFloatExact(), height.toFloatExact())
+    def apply(left: Float, top: Float, width: Float, height: Float): Rect =
+      Rect(left.toFloatExact(), top.toFloatExact(), width.toFloatExact(), height.toFloatExact())
 
-    def unapply(bbox: LTBounds): Option[(Float, Float, Float, Float)] = Some((
+    def unapply(bbox: Rect): Option[(Float, Float, Float, Float)] = Some((
       bbox.left.asFloat(),
       bbox.top.asFloat(),
       bbox.width.asFloat(),
@@ -84,7 +84,7 @@ object LTBounds {
   val empty = IntReps.apply(0, 0, 0, 0)
   val zero = empty
 
-  implicit class RicherLTBounds(val theBbox: LTBounds) extends AnyVal {
+  implicit class RicherRect(val theBbox: Rect) extends AnyVal {
 
     def prettyPrint: String = {
       val left = theBbox.left
@@ -368,11 +368,11 @@ trait GeometricFigureCodecs extends TypeTagCodecs {
   implicit val FloatRepEncoder: Encoder[Int@@FloatRep] = Encoder.encodeInt.contramap(_.unwrap)
   implicit val FloatRepDecoder: Decoder[Int@@FloatRep] = Decoder.decodeInt.map(FloatRep(_))
 
-  implicit val LTBoundsEncoder: Encoder[LTBounds] = Encoder[FloatRep4]
+  implicit val RectEncoder: Encoder[Rect] = Encoder[FloatRep4]
     .contramap(b => (b.left, b.top, b.width, b.height))
 
-  implicit val LTBoundsDecoder: Decoder[LTBounds] = Decoder[I4]
-    .map(b => LTBounds.IntReps(b._1, b._2, b._3, b._4))
+  implicit val RectDecoder: Decoder[Rect] = Decoder[I4]
+    .map(b => Rect.IntReps(b._1, b._2, b._3, b._4))
 
   implicit val Enc_Point: Encoder[Point] =
     Encoder[FloatRep2].contramap(b => (b.x, b.y))
@@ -396,14 +396,14 @@ trait GeometricFigureCodecs extends TypeTagCodecs {
     List[Decoder[GeometricFigure]](
       Decoder[Point].widen,
       Decoder[Line].widen,
-      Decoder[LTBounds].widen,
+      Decoder[Rect].widen,
       Decoder[Trapezoid].widen,
     ).reduce(_ or _)
 
   implicit val GeometricFigureEncoder: Encoder[GeometricFigure] = Encoder.instance {
     case v: Point => v.asJson
     case v: Line => v.asJson
-    case v: LTBounds => v.asJson
+    case v: Rect => v.asJson
     case v: Trapezoid => v.asJson
   }
 

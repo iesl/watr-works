@@ -32,10 +32,11 @@ object PageSegmenter {
 
     override val docScope: BaseDocumentSegmenter = documentSegmenter0
 
-    override val pageNum: Int @@ PageNum = pageNum0
+    override val pageNum: Int @@ PageNum    = pageNum0
     override val pageStats: PageLayoutStats = new PageLayoutStats()
   }
 }
+
 
 // Trait from which other page-level segmentation trait can inherit
 trait BasePageSegmenter extends PageScopeTracing { self =>
@@ -58,11 +59,11 @@ trait BasePageSegmenter extends PageScopeTracing { self =>
 
   lazy val shapeIndex: ShapeIndex = docScope.getLabeledShapeIndex(pageNum)
 
-  protected def pageVerticalSlice(left: Double, width: Double): Option[LTBounds] = {
+  protected def pageVerticalSlice(left: Double, width: Double): Option[Rect] = {
     pageGeometry.getVerticalSlice(left.toFloatExact(), width.toFloatExact())
   }
 
-  protected def pageHorizontalSlice(top: Double, height: Double): Option[LTBounds] = {
+  protected def pageHorizontalSlice(top: Double, height: Double): Option[Rect] = {
     val texact = top.toFloatExact()
     val hexact = height.toFloatExact()
     val t      = max(texact, pageGeometry.top)
@@ -207,6 +208,8 @@ trait BasePageSegmenter extends PageScopeTracing { self =>
     shapes.map { getExtractedItemsForShape(_) }
   }
 
+  // implicit val ExItemsAttr = AttrWitnessy[Seq[ExtractedItem]](shapeIndex)
+
   def getCharsForShape(shape: DocSegShape[GeometricFigure]): Seq[ExtractedItem.CharItem] = {
     getExtractedItemsForShape(shape)
       .collect { case i: ExtractedItem.CharItem => i }
@@ -214,6 +217,7 @@ trait BasePageSegmenter extends PageScopeTracing { self =>
 
   protected def setTrapezoidForShape = setAttrForShape[Trapezoid](LB.LinePairTrapezoid)
   protected def getTrapezoidForShape = getAttrForShape[Trapezoid](LB.LinePairTrapezoid)
+  // AttrWitnessA()
 
   protected def setWeightsForShape = setAttrForShape[WeightedLabeling](LB.WeightedLabels)
   protected def getWeightsForShape = getAttrForShape[WeightedLabeling](LB.WeightedLabels)
@@ -293,17 +297,17 @@ trait BasePageSegmenter extends PageScopeTracing { self =>
     shapeIndex.getShapeAttribute[FontBaselineOffsets](shape.id, LB.FontBaselineOffsets)
   }
 
-  protected def queriesAllEmpty(queryRect: LTBounds, labels: Label*): Boolean = {
+  protected def queriesAllEmpty(queryRect: Rect, labels: Label*): Boolean = {
     labels
       .map { l => searchForRects(queryRect, l).isEmpty }
       .forall(b => b)
   }
 
-  protected def hasNoNonTextOverlaps(queryRect: LTBounds): Boolean = {
+  protected def hasNoNonTextOverlaps(queryRect: Rect): Boolean = {
     queriesAllEmpty(queryRect, LB.Image, LB.PathBounds)
   }
 
-  protected def hasNoOverlaps(queryRect: LTBounds): Boolean = {
+  protected def hasNoOverlaps(queryRect: Rect): Boolean = {
     queriesAllEmpty(queryRect, LB.Image, LB.PathBounds, LB.Glyph)
   }
 
@@ -356,8 +360,8 @@ trait BasePageSegmenter extends PageScopeTracing { self =>
   protected def clipRectBetween(
     x1: Int @@ FloatRep,
     x2: Int @@ FloatRep,
-    rect: LTBounds
-  ): Option[LTBounds] = {
+    rect: Rect
+  ): Option[Rect] = {
     for {
       rightHalf <- rect.splitVertical(x1)._2
       leftHalf  <- rightHalf.splitVertical(x2)._1
@@ -365,6 +369,15 @@ trait BasePageSegmenter extends PageScopeTracing { self =>
   }
 
   implicit class RicherShapes[+A <: GeometricFigure](val theShape: DocSegShape[A]) {
+    def linkTo[W: ClassTag](label: Label, w: W): Unit = {
+      shapeIndex.setShapeAttribute[W](theShape.id, label, w)
+    }
+    // def attr[W: ClassTag, AW <: AttrWitness[W]](label: Label, w: W): Unit = {
+    //   shapeIndex.setShapeAttribute[W](theShape.id, label, w)
+    // }
+    // def attr_=[W, AW <: AttrWitness[W]](aw: AW, w: W): Unit = {
+    //   shapeIndex.setShapeAttribute[W](theShape.id, aw.label, w)(aw.ct)
+    // }
 
     def setAttr[W: ClassTag](label: Label, w: W): Unit = {
       shapeIndex.setShapeAttribute[W](theShape.id, label, w)
@@ -374,3 +387,47 @@ trait BasePageSegmenter extends PageScopeTracing { self =>
     }
   }
 }
+
+// trait AttrWitness[W] {
+//   def label: Label
+//   def ct: ClassTag[W]
+//   // def shapeIndex: ShapeIndex
+//   def set(w: W): Unit
+//   def get(): Option[W]
+// }
+
+// case class AttrWitnessL[W: ClassTag](
+//   label: Label,
+//   shapeIndex: ShapeIndex
+// ) extends AttrWitness[W] {
+//   def ct = implicitly[ClassTag[W]]
+// }
+
+// case class AttrWitnessA[W: ClassTag](
+//   shapeIndex: ShapeIndex
+// ) extends AttrWitness[W] {
+//   val ct = implicitly[ClassTag[W]]
+//   def label = Label(ct.getClass().getSimpleName())
+
+//   def apply_=(a: W): Unit = {
+
+//     shapeIndex.setShapeAttribute[W](theShape.id, label, a)
+//   }
+// }
+
+// case class AttrWitnessFA[W: ClassTag]() extends AttrWitness[W] {
+//   val ct = implicitly[ClassTag[W]]
+//   def label = Label(ct.runtimeClass.getSimpleName())
+// }
+
+// case class AttrWitnessfa[F[_], A: ClassTag]()(implicit
+//   CTF: ClassTag[F[A]]
+// ) extends AttrWitness[F[A]] {
+//   val ct = CTF
+//   val cta = implicitly[ClassTag[A]]
+//   val ctf = CTF
+//   def label = Label(
+//     ctf.runtimeClass.getSimpleName() + " :: " +
+//     cta.runtimeClass.getSimpleName()
+//   )
+// }

@@ -51,7 +51,7 @@ trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self 
 
   // private def clipTextRow(
   //   textRow: TextGrid.Row,
-  //   clipTo: LTBounds
+  //   clipTo: Rect
   // ): TextGrid.Row = {
   //   val filtered = textRow.cells().filter { cell =>
   //     cell.pageRegion.bbox.intersects(clipTo)
@@ -61,7 +61,7 @@ trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self 
 
   private def textRowFromReprShape(
     reprShape: AnyShape,
-    maybeClipTo: Option[LTBounds]
+    maybeClipTo: Option[Rect]
   ): TextGrid.Row = {
 
     val items = getExtractedItemsForShape(reprShape).sortBy(_.minBBox.left)
@@ -178,7 +178,7 @@ trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self 
     }
   }
 
-  def getTextGrid(maybeClipTo: Option[LTBounds]): TextGrid = {
+  def getTextGrid(maybeClipTo: Option[Rect]): TextGrid = {
     val clipRegion = maybeClipTo.getOrElse { pageGeometry }
     val lines = searchForRects(clipRegion, TextLineReprShape)
 

@@ -16,7 +16,7 @@ object TestLibs extends LibVersions {
 
   val scalacheck = Seq(
     "org.scalaz"     %% "scalaz-scalacheck-binding" % "7.3.3"  % Test,
-    "org.scalacheck" %% "scalacheck"                % "1.15.3" % "test" //  force()
+    "org.scalacheck" %% "scalacheck"                % "1.15.4" % "test" //  force()
   )
 
   val testAndCheck = scalatest ++ scalacheck
@@ -57,7 +57,7 @@ trait CommonLibs extends LibVersions {
 
   val scopt = "com.github.scopt" %% "scopt" % "4.0.1"
 
-  val shapelessV = "2.3.4"
+  val shapelessV = "2.3.5"
   val shapeless  = "com.chuusai" %% "shapeless" % shapelessV
 
   val acyclicVersion = "0.1.7"
@@ -78,7 +78,7 @@ trait CommonLibs extends LibVersions {
     "com.spotify" %% "featran-core" % featranV
   )
 
-  val zioV = "1.0.6"
+  val zioV = "1.0.7"
   val zio  = Seq(
     "dev.zio" %% "zio"         % zioV,
     "dev.zio" %% "zio-streams" % zioV
@@ -97,9 +97,9 @@ trait CommonLibs extends LibVersions {
   )
 
   val consoleUtils = Seq(
-    "com.lihaoyi" %% "fansi"      % "0.2.12",
+    "com.lihaoyi" %% "fansi"      % "0.2.13",
     "com.lihaoyi" %% "sourcecode" % "0.2.6",
-    "com.lihaoyi" %% "pprint"     % "0.6.4"
+    "com.lihaoyi" %% "pprint"     % "0.6.5"
   )
 
   val rtrees = Seq(

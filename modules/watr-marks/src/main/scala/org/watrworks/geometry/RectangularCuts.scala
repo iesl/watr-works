@@ -15,20 +15,20 @@ object AngleType {
 
 trait RectangularCuts extends GeometricOps {
 
-  class RectangularCutOps(innerRect: LTBounds, enclosingRect: LTBounds) {
-    def burstAllPossibleDirections(): Seq[(Dir, Option[LTBounds])] = {
+  class RectangularCutOps(innerRect: Rect, enclosingRect: Rect) {
+    def burstAllPossibleDirections(): Seq[(Dir, Option[Rect])] = {
 
       val overlapOps = innerRect.withinRegion(enclosingRect)
 
       Dir.All.foldLeft(
-        List.empty[(Dir, Option[LTBounds])]
+        List.empty[(Dir, Option[Rect])]
       ){ case (acc, dir) => {
         (dir, overlapOps.adjacentRegion(dir)) :: acc
       }}
 
     }
 
-    def burstAllDirections(): (Option[LTBounds], Seq[(Dir, LTBounds)]) = {
+    def burstAllDirections(): (Option[Rect], Seq[(Dir, Rect)]) = {
       val intersection = innerRect.intersection(enclosingRect)
 
       val burst1 = Dir.AllAdjacent.map{ dir =>
@@ -51,7 +51,7 @@ trait RectangularCuts extends GeometricOps {
       (intersection, burstRegions)
     }
 
-    def burstAllAdjacent(): (Option[LTBounds], Seq[LTBounds]) = {
+    def burstAllAdjacent(): (Option[Rect], Seq[Rect]) = {
       val intersection = innerRect.intersection(enclosingRect)
 
       val burst1 = Dir.AllAdjacent.map{ dir =>
@@ -70,7 +70,7 @@ trait RectangularCuts extends GeometricOps {
 
     }
 
-    def burstAll(): Seq[LTBounds] = {
+    def burstAll(): Seq[Rect] = {
       val (maybeIntersect, burstRegions) =
         innerRect.withinRegion(enclosingRect).burstAllAdjacent()
 
@@ -78,7 +78,7 @@ trait RectangularCuts extends GeometricOps {
     }
 
 
-    def adjacentRegions(dirs: Dir*): Option[LTBounds] = {
+    def adjacentRegions(dirs: Dir*): Option[Rect] = {
       val adjacents = dirs.toList.map{ dir =>
         adjacentRegion(dir)
       }
@@ -88,7 +88,7 @@ trait RectangularCuts extends GeometricOps {
       } else None
     }
 
-    def adjacentRegion(dir: Dir): Option[LTBounds] = {
+    def adjacentRegion(dir: Dir): Option[Rect] = {
       dir match {
         case Dir.Center  => innerRect.intersection(enclosingRect)
         case Dir.Top  =>
@@ -151,12 +151,12 @@ trait RectangularCuts extends GeometricOps {
 
 
 
-  implicit class RectangularCuts_RicherLTBounds(val self: LTBounds) {
+  implicit class RectangularCuts_RicherRect(val self: Rect) {
 
-    def withinRegion(enclosingRect: LTBounds): RectangularCutOps =
+    def withinRegion(enclosingRect: Rect): RectangularCutOps =
       new RectangularCutOps(self, enclosingRect)
 
-    def enclosingRect(inner: LTBounds): RectangularCutOps =
+    def enclosingRect(inner: Rect): RectangularCutOps =
       new RectangularCutOps(inner, self)
 
   }

@@ -154,7 +154,6 @@ object LabeledSequenceTreeTransforms {
   def spanTreeToJson(spanTree: Tree[Attr]): Json = {
     def histo(node: Attr, children: EphemeralStream[Tree[Option[Json]]]): Option[Json]= {
       val (label, begin, len) = node
-      // val childs = children.flatMap(_.rootLabel.toStream).asJson
       // TODO take out this hacky ephemeral stream type-chasing
       val childs = children.flatMap(ch => EphemeralStream.fromStream(ch.rootLabel.toStream)).toList.asJson
       val atRootNode = begin==0 && len==0 && label.isEmpty

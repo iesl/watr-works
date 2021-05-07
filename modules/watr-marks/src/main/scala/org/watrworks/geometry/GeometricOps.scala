@@ -5,18 +5,18 @@ import utils.ExactFloats._
 import utils.{RelativeDirection => Dir}
 
 trait GeometricOps {
-  implicit class GeometricOps_RicherLTBounds(val self: LTBounds) {
+  implicit class GeometricOps_RicherRect(val self: Rect) {
 
     def area(): Double = (self.width*self.height).asDouble()
 
-    def shave(delta: Double): LTBounds = shave(delta.toFloatExact())
+    def shave(delta: Double): Rect = shave(delta.toFloatExact())
 
-    def shave(delta: Int@@FloatRep): LTBounds = {
+    def shave(delta: Int@@FloatRep): Rect = {
       shave(Dir.TopLeft, delta)
         .shave(Dir.BottomRight, delta)
     }
 
-    def shave(dir: Dir, delta: Int@@FloatRep): LTBounds = {
+    def shave(dir: Dir, delta: Int@@FloatRep): Rect = {
       dir match {
         case Dir.Top =>
           self.copy(
@@ -45,33 +45,33 @@ trait GeometricOps {
       }
     }
 
-    def translate(pvec: Point): LTBounds = {
+    def translate(pvec: Point): Rect = {
       translate(pvec.x, pvec.y)
     }
 
-    def translate(x: Int@@FloatRep, y: Int@@FloatRep): LTBounds = {
+    def translate(x: Int@@FloatRep, y: Int@@FloatRep): Rect = {
       self.copy(
         left=self.left+x,
         top=self.top+y
       )
     }
 
-    def translate(x: Double, y: Double): LTBounds = {
+    def translate(x: Double, y: Double): Rect = {
       self.copy(
         left=self.left+x,
         top=self.top+y
       )
     }
 
-    def moveTo(x: Int@@FloatRep, y: Int@@FloatRep): LTBounds = {
+    def moveTo(x: Int@@FloatRep, y: Int@@FloatRep): Rect = {
       self.copy(left=x, top=y)
     }
 
-    def moveToOrigin(): LTBounds = {
+    def moveToOrigin(): Rect = {
       moveTo(FloatRep(0), FloatRep(0))
     }
 
-    def scale(byPercent: Double@@Percent): LTBounds = {
+    def scale(byPercent: Double@@Percent): Rect = {
       val scale = byPercent.unwrap/100d
       val w = self.width + self.width*scale
       val h = self.height + self.height*scale
@@ -79,23 +79,23 @@ trait GeometricOps {
     }
 
 
-    def splitVertical(x: Int@@FloatRep): (Option[LTBounds], Option[LTBounds]) = {
-      val LTBounds(left, top, width, height) = self
+    def splitVertical(x: Int@@FloatRep): (Option[Rect], Option[Rect]) = {
+      val Rect(left, top, width, height) = self
 
       val maybeLeft = if (left < x) {
         val leftWidth = min(x-left, width)
-        Some(LTBounds(left, top, leftWidth, height))
+        Some(Rect(left, top, leftWidth, height))
       } else None
 
       val maybeRight = if (x < self.right) {
         val leftWidth = maybeLeft.map(_.width).getOrElse(0.toFloatExact())
-        Some(LTBounds(left+leftWidth, top, width-leftWidth, height))
+        Some(Rect(left+leftWidth, top, width-leftWidth, height))
       } else None
       (maybeLeft, maybeRight)
     }
 
-    def getHorizontalSlices(n: Int): Seq[LTBounds] = {
-      val LTBounds(_, top, _, height) = self
+    def getHorizontalSlices(n: Int): Seq[Rect] = {
+      val Rect(_, top, _, height) = self
       val sliceHeight: Int@@FloatRep = height / n
 
       val slices = (1 until n).map{ i =>
@@ -106,7 +106,7 @@ trait GeometricOps {
       slices.map(_._1.get) :+ slices.last._2.get
     }
 
-    def getHorizontalSlice(y: Int@@FloatRep, h: Int@@FloatRep): Option[LTBounds] = {
+    def getHorizontalSlice(y: Int@@FloatRep, h: Int@@FloatRep): Option[Rect] = {
       val (_, maybeLower) = splitHorizontal(y)
       maybeLower.flatMap { lowerRect =>
         val (maybeUpper, _) = lowerRect.splitHorizontal(y+h)
@@ -114,7 +114,7 @@ trait GeometricOps {
       }
     }
 
-    def getVerticalSlice(x: Int@@FloatRep, w: Int@@FloatRep): Option[LTBounds] = {
+    def getVerticalSlice(x: Int@@FloatRep, w: Int@@FloatRep): Option[Rect] = {
       val (_, maybeRight) = splitVertical(x)
       maybeRight.flatMap { rightRect =>
         val (maybeLeft, _) = rightRect.splitVertical(x+w)
@@ -122,19 +122,19 @@ trait GeometricOps {
       }
     }
 
-    def splitHorizontal(y: Int@@FloatRep): (Option[LTBounds], Option[LTBounds]) = {
-      val LTBounds(left, top, width, height) = self
+    def splitHorizontal(y: Int@@FloatRep): (Option[Rect], Option[Rect]) = {
+      val Rect(left, top, width, height) = self
 
 
       val maybeTop = if (top < y) {
         val topHeight = min(y-top, height)
-        Some(LTBounds(left, top, width, topHeight))
+        Some(Rect(left, top, width, topHeight))
       } else None
 
 
       val maybeBottom = if (y < self.bottom) {
         val topHeight = maybeTop.map(_.height).getOrElse(0.toFloatExact())
-        Some(LTBounds(left, top+topHeight, width, height-topHeight))
+        Some(Rect(left, top+topHeight, width, height-topHeight))
       } else None
 
       (maybeTop, maybeBottom)
@@ -153,32 +153,32 @@ trait GeometricOps {
     }
 
 
-    def union(b: LTBounds): LTBounds = {
+    def union(b: Rect): Rect = {
       val left   = min(self.left, b.left)
       val top    = min(self.top, b.top)
       val right = max(self.right, b.right)
       val bottom = max(self.bottom, b.bottom)
-      LTBounds(
+      Rect(
         left, top,
         right-left,
         bottom-top
       )
     }
 
-    def intersection(b: LTBounds): Option[LTBounds] = {
+    def intersection(b: Rect): Option[Rect] = {
       val left   = max(self.left, b.left)
       val top    = max(self.top, b.top)
       val right = min(self.right, b.right)
       val bottom = min(self.bottom, b.bottom)
       if (left < right && top < bottom) {
-        Some(LTBounds(left, top,
+        Some(Rect(left, top,
             right-left,
             bottom-top
           ))
       } else None
     }
 
-    def intersects(rhs:LTBounds):Boolean = {
+    def intersects(rhs:Rect):Boolean = {
       intersection(rhs).isDefined
     }
 
@@ -211,7 +211,7 @@ trait GeometricOps {
       case Dir.Center      => ???
     }
 
-    def centerDistanceTo(other: LTBounds): Double = {
+    def centerDistanceTo(other: Rect): Double = {
       val cx = (self.left+self.width/2).asDouble()
       val cy = (self.top+self.height/2).asDouble()
       val cx2 = (other.left+other.width/2).asDouble()
@@ -222,7 +222,7 @@ trait GeometricOps {
       )
     }
 
-    def hasOverlappingArea(other: LTBounds): Boolean = {
+    def hasOverlappingArea(other: Rect): Boolean = {
       val overlapLR = (
         self.left < other.right
           && self.right > other.left
@@ -234,7 +234,7 @@ trait GeometricOps {
       overlapLR && overlapTB
     }
 
-    def hasSharedEdge(other: LTBounds): Boolean = {
+    def hasSharedEdge(other: Rect): Boolean = {
       (self.left == other.left
         || self.right == other.right
         || self.top == other.top
@@ -242,28 +242,28 @@ trait GeometricOps {
       )
     }
 
-    def hasNoSharedEdges(other: LTBounds): Boolean = {
+    def hasNoSharedEdges(other: Rect): Boolean = {
       !hasSharedEdge(other)
     }
 
 
-    def isContainedByVProjection(other: LTBounds): Boolean = {
+    def isContainedByVProjection(other: Rect): Boolean = {
       self.left >= other.left && self.right <= other.right
     }
 
-    def isContainedByHProjection(other: LTBounds): Boolean = {
+    def isContainedByHProjection(other: Rect): Boolean = {
       self.top >= other.top && self.bottom <= other.bottom
     }
 
-    def isContainedBy(other: LTBounds): Boolean = {
+    def isContainedBy(other: Rect): Boolean = {
       isContainedByHProjection(other) && isContainedByVProjection(other)
     }
 
-    def isNeitherAboveNorBelow(other: LTBounds): Boolean = {
+    def isNeitherAboveNorBelow(other: Rect): Boolean = {
       !isStrictlyAbove(other) && !isStrictlyBelow(other)
     }
 
-    def isStrictlyAbove(other: LTBounds): Boolean = {
+    def isStrictlyAbove(other: Rect): Boolean = {
       val myBottom = self.toPoint(Dir.Bottom).y
       val otherTop = other.toPoint(Dir.Top).y
       myBottom < otherTop
@@ -279,21 +279,21 @@ trait GeometricOps {
       myTop > yVal
     }
 
-    def isStrictlyBelow(other: LTBounds): Boolean = {
+    def isStrictlyBelow(other: Rect): Boolean = {
       other.isStrictlyAbove(self)
     }
 
-    def isStrictlyLeftOf(other: LTBounds): Boolean = {
+    def isStrictlyLeftOf(other: Rect): Boolean = {
       val rightEdge = self.toPoint(Dir.BottomRight).x
       val otherLeftEdge = other.toPoint(Dir.BottomLeft).x
       rightEdge < otherLeftEdge
     }
 
-    def isStrictlyRightOf(other: LTBounds): Boolean = {
+    def isStrictlyRightOf(other: Rect): Boolean = {
       other.isStrictlyLeftOf(self)
     }
 
-    def isNeitherLeftNorRightOf(other: LTBounds): Boolean = {
+    def isNeitherLeftNorRightOf(other: Rect): Boolean = {
       !isStrictlyLeftOf(other) && !isStrictlyRightOf(other)
     }
 

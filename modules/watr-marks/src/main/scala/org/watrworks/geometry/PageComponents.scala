@@ -48,7 +48,7 @@ case class StablePage(
 @JsonCodec
 case class PageRegion(
   page: StablePage,
-  bbox: LTBounds
+  bbox: Rect
 ) extends StableIdentifier {
   def documentId: String@@DocumentID = page.documentId
 }
@@ -65,14 +65,14 @@ object PageRegion {
 @JsonCodec
 case class PageGeometry(
   pageNum: Int@@PageNum,
-  bounds: LTBounds
+  bounds: Rect
 )
 
 @JsonCodec
 sealed trait PageItem {
   def id: Int@@CharID
   def pageRegion: PageRegion
-  def bbox: LTBounds = pageRegion.bbox
+  def bbox: Rect = pageRegion.bbox
 }
 
 object PageItem {
@@ -171,7 +171,7 @@ object PageItem {
 
 
 object PageComponentImplicits extends GeometricOps {
-  def createPageRegionUri(documentId: String@@DocumentID, pageNum:Int@@PageNum, bbox: LTBounds): String = {
+  def createPageRegionUri(documentId: String@@DocumentID, pageNum:Int@@PageNum, bbox: Rect): String = {
     s"${documentId}+${pageNum}+${bbox.uriString}"
   }
 
@@ -185,7 +185,7 @@ object PageComponentImplicits extends GeometricOps {
     }
 
 
-    def intersection(b: LTBounds): Option[PageRegion] = {
+    def intersection(b: Rect): Option[PageRegion] = {
       thePageRegion.bbox
         .intersection(b)
         .map(b => thePageRegion.copy(bbox=b))

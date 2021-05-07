@@ -34,7 +34,7 @@ object RelationModel extends GeometricFigureCodecs {
     prKey      : Int@@PageID,
     document   : Int@@DocumentID,
     pagenum    : Int@@PageNum,
-    bounds     : G.LTBounds
+    bounds     : G.Rect
   )
 
   @JsonCodec

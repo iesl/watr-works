@@ -91,7 +91,7 @@ class PdfBoxTextExtractor(
     val left = x1 - pageBoundsPdfCoords.getLowerLeftX
     val top = pageBoundsPdfCoords.getUpperRightY - y2
 
-    val imgBounds = LTBounds.Doubles(left, top, width, height)
+    val imgBounds = Rect.Doubles(left, top, width, height)
 
     val item = ExtractedItem.ImgItem(
       charIdGen.nextId,
@@ -210,7 +210,7 @@ class PdfBoxTextExtractor(
 
   var pageSpaceTransform: PageSpaceTransforms = null
 
-  lazy val pageLTBounds = getPageGeometry().bounds
+  lazy val pageRect = getPageGeometry().bounds
 
   override protected def showFontGlyph(
     textRenderingMatrix: Matrix,
@@ -304,8 +304,8 @@ class PdfBoxTextExtractor(
       // dbgFonts += fontProps.name
 
       glyphProps.finalGlyphBounds.foreach { finalGlyphBounds =>
-        val glyphBounds = finalGlyphBounds.getBounds2D.toLTBounds()
-        val isContained = glyphBounds.isContainedBy(pageLTBounds) && glyphProps.fontBBox.isContainedBy(pageLTBounds)
+        val glyphBounds = finalGlyphBounds.getBounds2D.toRect()
+        val isContained = glyphBounds.isContainedBy(pageRect) && glyphProps.fontBBox.isContainedBy(pageRect)
 
         def appendCombiningMark(c: Char): Unit = {
           if (isContained) {
@@ -535,7 +535,7 @@ class PdfBoxTextExtractor(
   }
 
   def getPageGeometry(): PageGeometry = {
-    val pageBox = LTBounds.Floats(
+    val pageBox = Rect.Floats(
       0, 0,
       pageBoundsPdfCoords.getWidth,
       pageBoundsPdfCoords.getHeight

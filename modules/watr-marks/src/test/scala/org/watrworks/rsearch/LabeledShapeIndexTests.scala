@@ -1,5 +1,5 @@
 package org.watrworks
-package rtrees
+package rsearch
 
 import org.scalacheck._
 import org.scalacheck.Prop._
@@ -18,12 +18,12 @@ object LabeledShapeIndexProps extends Properties("LabeledShapeIndex") {
   import ArbitraryStuff._
 
 
-  property("json <--> LabeledShapeIndex") = forAll{ (example: List[LTBounds]) =>
+  property("json <--> LabeledShapeIndex") = forAll{ (example: List[Rect]) =>
 
     val rtreeIndex = RTreeIndex.empty[GeometricFigure, Unit, TestShape]()
 
     example.zipWithIndex.foreach{ case(bbox, i) =>
-      val shape = TestShape(bbox, "LTBounds", ShapeID(i))
+      val shape = TestShape(bbox, "Rect", ShapeID(i))
       rtreeIndex.add(shape)
     }
 

@@ -13,7 +13,7 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
     Equal.equal((a, b) =>
       (a, b) match {
 
-        case (g1: LTBounds, g2: LTBounds) => (
+        case (g1: Rect, g2: Rect) => (
           g1.left === g2.left && g1.top === g2.top &&
             g1.width === g2.width && g1.height === g2.height
         )
@@ -30,14 +30,14 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
       }
     )
 
-  implicit val EqualLTBounds: Equal[LTBounds]   = Equal.equalBy(_.asInstanceOf[GeometricFigure])
+  implicit val EqualRect: Equal[Rect]   = Equal.equalBy(_.asInstanceOf[GeometricFigure])
   implicit val EqualPoint: Equal[Point]         = Equal.equalBy(_.asInstanceOf[GeometricFigure])
   implicit val EqualLine: Equal[Line]           = Equal.equalBy(_.asInstanceOf[GeometricFigure])
   implicit val EqualTrapezoid: Equal[Trapezoid] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
 
-  def minBoundingRect(fig: GeometricFigure): LTBounds = fig match {
-    case f: LTBounds => f
-    case f: Point    => LTBounds(f.x, f.y, FloatRep(0), FloatRep(0))
+  def minBoundingRect(fig: GeometricFigure): Rect = fig match {
+    case f: Rect => f
+    case f: Point    => Rect(f.x, f.y, FloatRep(0), FloatRep(0))
     case f: Line     => f.bounds()
     case f: Trapezoid =>
       val Trapezoid(Point(tlx, tly), twidth, Point(blx, bly), bwidth) = f
@@ -47,12 +47,12 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
       val miny = min(tly, bly)
       val maxy = max(tly, bly)
 
-      LTBounds(minx, miny, maxx - minx, maxy - miny)
+      Rect(minx, miny, maxx - minx, maxy - miny)
 
     case x => sys.error(s"minBoundingRect unexpected case ${x}")
   }
 
-  def intersectionMBR(f1: GeometricFigure, f2: GeometricFigure): Option[LTBounds] = {
+  def intersectionMBR(f1: GeometricFigure, f2: GeometricFigure): Option[Rect] = {
     minBoundingRect(f1).intersection(minBoundingRect(f2))
   }
 
@@ -186,9 +186,9 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
       Line(Point(p1x, p1y), Point(p2x, p2y))
     }
 
-    def bounds(): LTBounds = {
+    def bounds(): Rect = {
       val nline = sortPointsAsc
-      LTBounds(
+      Rect(
         nline.p1.x,
         nline.p1.y,
         nline.p2.x - nline.p1.x,
@@ -196,7 +196,7 @@ object GeometryImplicits extends RectangularCuts with GeometricOps {
       )
     }
 
-    def clipTo(b: LTBounds): Line = {
+    def clipTo(b: Rect): Line = {
       val lnorm = self.sortPointsAsc
       val p1x   = max(lnorm.p1.x, b.left)
       val p2x   = min(lnorm.p2.x, b.left + b.width)

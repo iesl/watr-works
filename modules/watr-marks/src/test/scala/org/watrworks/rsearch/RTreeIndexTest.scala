@@ -1,5 +1,5 @@
 package org.watrworks
-package rtrees
+package rsearch
 
 import geometry._
 
@@ -23,7 +23,7 @@ class RTreeIndexTest extends WatrSpec {
 
   it should "index/unindex delete" in {
     val rtreeIndex = RTreeIndex.empty[GeometricFigure, Unit, TestShape]()
-    val shape = TestShape(LTBounds.Ints(0, 0, 1, 1), "LTBounds", ShapeID(0))
+    val shape = TestShape(Rect.Ints(0, 0, 1, 1), "Rect", ShapeID(0))
     rtreeIndex.add(shape)
 
     println(rtreeIndex.spatialIndex.asString())

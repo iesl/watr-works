@@ -1,5 +1,5 @@
 package org.watrworks
-package rtrees
+package rsearch
 
 import utils.DoOrDieHandlers._
 import com.github.davidmoten.rtree.{geometry => RG, _}
@@ -10,10 +10,9 @@ import geometry._
   * Supports shapes based on watrmarks geometry types, with an optional associated attribute
   * Provides JSon serialization
   **/
-
-class RTreeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]](
+class RTreeIndex[A <: GeometricFigure, Shape <: LabeledShape.Aux[A]](
   var spatialIndex: RTree[Shape, RG.Geometry]
-) extends RTreeSearch[A, W, Shape] {
+) extends RTreeSearch[A, Shape] {
   import RGeometryConversions._
 
   override def rtreeIndex: RTree[Shape, RG.Geometry] = spatialIndex
@@ -44,9 +43,9 @@ class RTreeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]](
 object RTreeIndex {
   // import RGeometryConversions._
 
-  def empty[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]](): RTreeIndex[A, W, Shape] = {
+  def empty[A <: GeometricFigure, Shape <: LabeledShape.Aux[A]](): RTreeIndex[A, Shape] = {
     val init = RTree.create[Shape, RG.Geometry]()
-    new RTreeIndex[A, W, Shape](init)
+    new RTreeIndex[A, Shape](init)
   }
 
   import _root_.io.circe
@@ -57,9 +56,9 @@ object RTreeIndex {
   implicit def RTreeEncoder[
     A <: GeometricFigure,
     W,
-    Shape <: LabeledShape.Aux[A, W] : Encoder
-  ]: Encoder[RTreeIndex[A, W, Shape]] =
-    Encoder.instance[RTreeIndex[A, W, Shape]]{ shapeIndex =>
+    Shape <: LabeledShape.Aux[A] : Encoder
+  ]: Encoder[RTreeIndex[A, Shape]] =
+    Encoder.instance[RTreeIndex[A, Shape]]{ shapeIndex =>
       val shapes = shapeIndex.getItems()
 
       Json.obj(
@@ -70,11 +69,11 @@ object RTreeIndex {
   implicit def RTreeDecoder[
     A <: GeometricFigure,
     W,
-    Shape <: LabeledShape.Aux[A, W] : Decoder
-  ]: Decoder[RTreeIndex[A, W, Shape]] =
-    Decoder.instance[RTreeIndex[A, W, Shape]]{ c =>
+    Shape <: LabeledShape.Aux[A] : Decoder
+  ]: Decoder[RTreeIndex[A, Shape]] =
+    Decoder.instance[RTreeIndex[A, Shape]]{ c =>
 
-      val rtreeIndex = RTreeIndex.empty[A, W, Shape]()
+      val rtreeIndex = RTreeIndex.empty[A, Shape]()
       val shapeJson = c.downField("shapes").focus.orDie("no shapes field found")
       val shapes = shapeJson.decodeOrDie[List[Shape]]("Invalid shape list")
       shapes.foreach { shape =>

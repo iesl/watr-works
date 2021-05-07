@@ -17,8 +17,8 @@ trait DocumentZoningApi {
   def getPageIdentifier(pageId: Int@@PageID): StablePage
   def getPageDef(pageId: Int@@PageID): Option[Rel.Page]
   def getPages(docId: Int@@DocumentID): Seq[Int@@PageID]
-  def getPageGeometry(pageId: Int@@PageID): LTBounds
-  def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit
+  def getPageGeometry(pageId: Int@@PageID): Rect
+  def setPageGeometry(pageId: Int@@PageID, geom: Rect): Unit
 
 }
 

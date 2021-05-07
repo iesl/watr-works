@@ -23,17 +23,17 @@ trait TextGridConstruction extends GeometricOps {
       })
   }
 
-  def getRegionBoundsDbl(x: Double, y: Double, w: Double, h: Double): LTBounds = {
+  def getRegionBoundsDbl(x: Double, y: Double, w: Double, h: Double): Rect = {
     val left   = x * xscale
     val top    = y * yscale
     val width  = w * xscale
     val height = h * yscale
 
-    LTBounds.Doubles(left, top, width, height)
+    Rect.Doubles(left, top, width, height)
   }
 
   // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
-  def getRegionBounds(x: Int, y: Int, w: Int, h: Int): LTBounds = {
+  def getRegionBounds(x: Int, y: Int, w: Int, h: Int): Rect = {
     getRegionBoundsDbl(x.toDouble, y.toDouble, w.toDouble, h.toDouble)
   }
 

@@ -1,5 +1,5 @@
 package org.watrworks
-package rtrees
+package rsearch
 
 import com.github.davidmoten.rtree.{geometry => RG}
 import org.watrworks.{geometry => G}
@@ -17,8 +17,8 @@ object RGeometryConversions {
     RG.Geometries.point(x1, y1)
   }
 
-  def toRGRectangle(tb: LTBounds): RG.Rectangle = {
-    val LTBounds.Floats(l, t, w, h) = tb
+  def toRGRectangle(tb: Rect): RG.Rectangle = {
+    val Rect.Floats(l, t, w, h) = tb
     rectangle(l, t, w, h)
   }
 
@@ -38,8 +38,8 @@ object RGeometryConversions {
     )
   }
 
-  def toLTBounds(r: RG.Rectangle): G.LTBounds = {
-    G.LTBounds.Doubles(
+  def toRect(r: RG.Rectangle): G.Rect = {
+    G.Rect.Doubles(
       left = r.x1,
       top =  r.y1,
       width = (r.x2 - r.x1),
@@ -49,7 +49,7 @@ object RGeometryConversions {
 
   def geometricFigureToRtreeGeometry(fig: GeometricFigure): RG.Geometry = {
     fig match {
-      case f: LTBounds => toRGRectangle(f)
+      case f: Rect => toRGRectangle(f)
       case f: Point    => toRGPoint(f)
       case f: Line     => toRGLine(f)
       case _ => ???

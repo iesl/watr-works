@@ -4,7 +4,9 @@ package segment
 import geometry._
 import watrmarks._
 
-import _root_.io.circe, circe._, circe.syntax._
+import _root_.io.circe,
+  circe._
+  // circe.syntax._
 import circe.generic.semiauto._
 import scala.reflect._
 
@@ -120,10 +122,10 @@ trait PageScopeTracing extends ScopedTracing { self =>
 
   def shapeIndex: ShapeIndex
   def pageNum: Int @@ PageNum
-  def pageGeometry: LTBounds
+  def pageGeometry: Rect
 
-  lazy val LTBounds.Doubles(pageL, pageT, pageW, pageH) = pageGeometry
-  lazy val LTBounds.Ints(svgL, svgT, svgW, svgH)        = pageGeometry
+  lazy val Rect.Doubles(pageL, pageT, pageW, pageH) = pageGeometry
+  lazy val Rect.Ints(svgL, svgT, svgW, svgH)        = pageGeometry
 
   def labeledShapes(labels: Label*): LabelTraceLog = {
     def filterf(shape: AnyShape): Boolean = {
