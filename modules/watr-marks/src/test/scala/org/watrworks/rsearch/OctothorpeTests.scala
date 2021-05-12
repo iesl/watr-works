@@ -1,54 +1,62 @@
 package org.watrworks
-package geometry
+package rsearch
 
 import utils.{RelativeDirection => Dir}
 
-case class TrapFeatureRec(
-  leftBaseAngle: Float, // quantize around modal values
-  upLeftPointCharCase: String // upper/lower
-)
+import geometry._
+import textgrid.TextGridConstruction
+import TypeTags._
+import watrmarks.Label
 
-class OctothorpeTest extends WatrSpec {
-  import GeometryTestUtils._
-  import textboxing.{TextBoxing => TB}, TB._
+class OctothorpeTest extends WatrSpec with TextGridConstruction {
+  val B = Octothorpe.Bounds
+
+  type RectShape = TestShape[Rect]
+
 
   it should "smokescreen" in {
-    // pprint.pprintln(Box3x3)
-    // pprint.pprintln(CellToDir)
 
-    val _ = s"""|*
-                | aaa
-                |"""
-    val graphSize = Rect.Ints(0, 0, 14, 14)
-    val outer = Rect.Ints(3, 3, 6, 6)
-    val inner = Rect.Ints(2, 2, 4, 4)
+    val text = """|abcde
+                  |01234
+                  |fghij
+                  |""".stripMargin
 
-    val traverseFn = (othorpe: Octothorpe) => {
+    val documentId = DocumentID("foo")
 
-      ???
-    }
-    // Octothorpe.Traversal.init()
+    val textGrid = stringToPageTextGrid(documentId, text, PageNum(1), None)
 
-    // def drawAdjacencyDiagram(adjacent: Rect): Box = {
-    //   val g = makeGraph(graphSize)
-    //   drawBoxDouble(g, outer)
-    //   drawBox(g, inner)
-    //   drawBoxBold(g, adjacent)
-    //   g.asMonocolorString().box
-    // }
-    // val octothorpe = Octothorpe(inner, outer)
-    // // val topThorpe = octothorpe.activateRegion(Dir.Right)
-    // // drawAdjacencyDiagram
-    // pprint.pprintln(topThorpe)
+    val rtreeIndex = RTreeIndex.empty[GeometricFigure, RectShape]()
+
+    textGrid
+      .indexedCells()
+      .zipWithIndex
+      .foreach({ case ((cell, row @ _, col @ _), cellIndex) =>
+        val shape = TestShape[Rect](
+          cell.pageRegion.bbox,
+          ShapeID(cellIndex),
+          Set(Label(cell.char.toString()))
+        )
+        rtreeIndex.add(shape)
+      })
+
+    val Bounds5x3 = getRegionBounds(0, 0, 5, 3)
+    val BoundsAt1_1 = getRegionBounds(1, 2, 1, 1)
+
+    val plusShaped = Octothorpe.withSearchRegions(
+      Octothorpe.cell(Dir.Top),
+      Octothorpe.cell(Dir.Bottom),
+      Octothorpe.cellspan(Dir.Left, Dir.Right)
+    )
+
+    val doSearch = (r: Rect) => rtreeIndex.search(r, _ => true)
+
+    val focused = plusShaped
+      .withHorizon(Bounds5x3)
+      .focusedOn(BoundsAt1_1)
+
+    val found = focused.runSearch(doSearch)
+    val foundLabels = found.map(_.labels.head).mkString(", ")
+    println(s"found: ${foundLabels}")
   }
 
-  it should "specify an octothorpe" in {
-    // val octodef = Octothorpe
-    //   .init(centerRect => outerRect=(Dir.Top -> centerRect.height*2))
-    //   .dirInit(Dir.Center, (r: Rect) => searchForTrapezoids)
-    //   .dirInit(Dir.Top, Dir.Bottom, (r: Rect) => searchForTrapezoids)
-    //   .dirInit(Dir.Center, Dir.Right, (r: Rect) => searchFor(Rect/LB.CharSpan))
-    //)
-    // val octo = octodef.centeredOn(trapShape0)
-  }
 }

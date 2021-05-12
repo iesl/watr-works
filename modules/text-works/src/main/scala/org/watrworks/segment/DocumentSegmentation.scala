@@ -60,6 +60,10 @@ trait DocumentSegmenter extends FontAndGlyphMetricsDocWide with TrapezoidAnalysi
       computeScaledSymbolicFontMetrics()
     }
 
+    time("buildGlyphTrees") {
+      pageSegmenters.foreach { _.buildGlyphTree() }
+    }
+
     time("findLineShapesFromFontBaselines") {
       pageSegmenters.foreach { p =>
         p.findTextLineShapesFromFontBaselines()
@@ -91,11 +95,11 @@ trait DocumentSegmenter extends FontAndGlyphMetricsDocWide with TrapezoidAnalysi
       self.createFeatureVectors()
     }
 
-    time("classifyLines") {
-      pageSegmenters.foreach { p =>
-        p.classifyLines()
-      }
-    }
+    // time("classifyLines") {
+    //   pageSegmenters.foreach { p =>
+    //     p.classifyLines()
+    //   }
+    // }
 
     time("pageStanzaConstruction") {
       // TODO pass in features for stanzas

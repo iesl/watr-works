@@ -9,7 +9,6 @@ import TypeTags._
 trait LineShapeClassification extends BasePageSegmenter { self =>
   lazy val lineShapes = self
 
-
   def classifyLines(): Unit = {
     addLineWeights()
   }
@@ -27,19 +26,20 @@ trait LineShapeClassification extends BasePageSegmenter { self =>
 
   def getTraps(reprShapes: AnyShape*): List[Option[Trapezoid]] = {
     reprShapes.toList.map(
-      getTrapezoidForShape(_)
+      _.getAttr(LinkedTrapezoid)
     )
   }
 
   def getTextRows(reprShapes: AnyShape*): List[Option[TextGrid.Row]] = {
     reprShapes.toList.map(
-      getTextForShape(_)
+      _.getAttr(LinkedTextGrid)
     )
   }
 
   def getWeights(reprShapes: AnyShape*): List[WeightedLabeling] = {
     reprShapes.toList.map(
-      getWeightsForShape(_).get
+      _.getAttr(WeightedLabels).get // TODO remove .get
+      // getWeightsForShape(_).get
     )
   }
 

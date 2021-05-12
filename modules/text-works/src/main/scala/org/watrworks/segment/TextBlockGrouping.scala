@@ -33,7 +33,7 @@ trait TextBlockGrouping extends BasePageSegmenter { self =>
     ): Seq[Seq[AnyShape]] = scaledFontIds match {
       case headFontId :: tailFontIds =>
         val markedLineSpans = collectSpanEither[AnyShape](lineShapes, { lineShape =>
-          getFontsForShape(lineShape).contains(headFontId)
+          lineShape.getAttr(Fonts).exists(_.contains(headFontId))
         })
 
         traceLog.traceAll {
@@ -128,7 +128,7 @@ trait TextBlockGrouping extends BasePageSegmenter { self =>
           noNonTextOverlaps && (glyphCountsMatch || {
 
             lazy val foundItemIds = foundGlyphs.flatMap{ g =>
-              getExtractedItemsForShape(g).map(_.id.unwrap)
+              g.getAttr(ExtractedChars).getOrElse(Nil).map(_.id.unwrap)
             }
 
             lazy val lastLineIds = lastLineItems.map(_.id.unwrap)

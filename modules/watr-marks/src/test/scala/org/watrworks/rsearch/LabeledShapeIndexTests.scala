@@ -1,49 +1,41 @@
 package org.watrworks
 package rsearch
 
-import org.scalacheck._
-import org.scalacheck.Prop._
+import TypeTags._
 
 class LabeledShapeIndexTest extends WatrSpec {
   behavior of "LabeledShapeIndex"
 
+  it should "get/set attributes" in {
+    val sa = new ShapeAttributes {}
+    val id = ShapeID(23)
+
+    val Foo: AttrWitness[String] = AttrWitness.Mk[String]()
+    val Bars = AttrWitness.Mk[List[String]]()
+
+    sa.setAttr(id, Foo, "I")
+    sa.getAttr(id, Foo)
+
+    sa.setAttr(id, Foo, "I@F")
+    sa.setAttr(id, Bars, "S[I]" :: Nil)
+
+  }
+
 }
 
-import geometry._
-import TypeTags._
+import org.scalacheck._
+import org.scalacheck.Prop._
 
 object LabeledShapeIndexProps extends Properties("LabeledShapeIndex") {
 
-  import geometry.ArbitraryGeometry._
-  import ArbitraryStuff._
+  property("attrib set/get") = forAll { (example: String) =>
+    val MyString: AttrWitness[String] = AttrWitness.Mk[String]()
+    val sa = new ShapeAttributes {}
+    val id = ShapeID(23)
+    sa.setAttr(id, MyString, example)
+    val att1 = sa.getAttr(id, MyString)
 
-
-  property("json <--> LabeledShapeIndex") = forAll{ (example: List[Rect]) =>
-
-    val rtreeIndex = RTreeIndex.empty[GeometricFigure, Unit, TestShape]()
-
-    example.zipWithIndex.foreach{ case(bbox, i) =>
-      val shape = TestShape(bbox, "Rect", ShapeID(i))
-      rtreeIndex.add(shape)
-    }
-
-    val shapeIndex = LabeledShapeIndex.withRTree[GeometricFigure, Unit, TestShape](rtreeIndex)
-
-    // val asJson = shapeIndex.asJson
-
-    // println(s"asJson: ${asJson}")
-
-    // val shapeIndexRT = asJson.decodeOrDie[LabeledShapeIndex[GeometricFigure, Unit, TestShape]]("error decoding json")
-
-
-    val allShapes = shapeIndex.getAllShapes()
-
-    allShapes == rtreeIndex.getItems()
-
-    allShapes.map(_.shape) == example
-
-    // allShapes.length == shapeIndexRT.getAllShapes().length
-
+    example == att1.get
   }
 
 }

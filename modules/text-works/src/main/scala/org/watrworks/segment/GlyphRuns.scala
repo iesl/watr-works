@@ -7,7 +7,6 @@ import extract._
 import utils.ExactFloats._
 import watrmarks._
 import utils.SlicingAndDicing._
-
 import TypeTags._
 
 trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
@@ -60,19 +59,24 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
       val baseline = indexShape(makeLine(charItems), spanLabel)
 
       charItems.foreach { item =>
-        val glyphShape = indexShapeAndSetItems(item.minBBox, LB.Glyph, item)
-        setLinkedShape(glyphShape, spanLabel, baseline)
+        // val glyphShape = indexShapeAndSetItems(item.minBBox, LB.Glyph, item)
+        val glyphShape = indexShape(item.minBBox, LB.Glyph)
+        glyphShape.setAttr(ExtractedChar)(item)
 
-      // TODO Change to this:
-      // baselineShape.linkTo(glyphShape, {(from, to) => { intersection(from, to.leftLine()) -> (to, to.bottomLeft()) }})
-      // glyphShape.attr[ExtractedItem.CharItem] = item
+        // setLinkedShape(glyphShape, spanLabel, baseline)
+        //
+
+        // TODO Change to this:
+        // baselineShape.linkTo(glyphShape, {(from, to) => { intersection(from, to.leftLine()) -> (to, to.bottomLeft()) }})
+        // glyphShape.attr[ExtractedItem.CharItem] = item
       }
 
       val fontIds = charItems.map { _.scaledFontId }.toSet
 
-      setFontsForShape(baseline, fontIds)
-
-      setExtractedItemsForShape(baseline, charItems)
+      // baseline.setAttr[Set[String@@ScaledFontID], Fonts](fontIds)
+      // baseline.setAttr[Seq[ExtractedItem.CharItem], ExtractedChars](charItems)
+      baseline.setAttr(Fonts)(fontIds)
+      baseline.setAttr(ExtractedChars)( charItems)
 
       baseline
     }

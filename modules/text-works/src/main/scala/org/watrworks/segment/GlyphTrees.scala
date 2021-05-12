@@ -37,18 +37,17 @@ trait GlyphTrees extends GlyphRuns { self =>
             val c12Rect = c1Rect union c2Rect
 
             val glyphBigram = indexShape(c12Rect, LB.GlyphBigram)
+            glyphBigram.setAttr(GlyphTreeEdges)(Nil)
 
             pos match {
               case SeqPos.First =>
-                glyphBigram.setAttr(
-                  Next / Left,
-                  NextNeighbors.ByIDOffset(-1)
+                glyphBigram.modAttr(GlyphTreeEdges)(
+                  _.get :+ NextNeighbors.ByIDOffset(-1)
                 )
 
               case SeqPos.Last(_) =>
-                glyphBigram.setAttr(
-                  Next / Right,
-                  NextNeighbors.ByIDOffset(1)
+                glyphBigram.modAttr(GlyphTreeEdges)(
+                  _.get :+ NextNeighbors.ByIDOffset(1)
                 )
 
               case _ =>
@@ -57,7 +56,9 @@ trait GlyphTrees extends GlyphRuns { self =>
             Seq(glyphBigram)
 
           case (Seq(c1), _) =>
-            Seq(indexShape(c1.minBBox, LB.Glyph1gram))
+            val glyph1Gram = indexShape(c1.minBBox, LB.Glyph1gram)
+            glyph1Gram.setAttr(GlyphTreeEdges)(Nil)
+            Seq(glyph1Gram)
 
           case _ =>
             Seq()
@@ -68,9 +69,8 @@ trait GlyphTrees extends GlyphRuns { self =>
       glyphNGrams.zipWithIndexADT
         .foreach({ case (glyphNGram, pos) =>
           // Create 'down' links via search
-          glyphNGram.setAttr(
-            Next / Down,
-            NextNeighbors.BySearch(
+          glyphNGram.modAttr(GlyphTreeEdges)(
+            _.get :+ NextNeighbors.BySearch(
               Oct.focusedOn(
                 Oct.Def(List(Oct.Bounds.Cell(Dir.Bottom))),
                 glyphNGram.minBounds
@@ -81,25 +81,22 @@ trait GlyphTrees extends GlyphRuns { self =>
 
           pos match {
             case SeqPos.First =>
-              glyphNGram.setAttr(
-                Next / Left,
-                NextNeighbors.ByIDOffset(-1)
+              glyphNGram.modAttr(GlyphTreeEdges)(
+                _.get :+ NextNeighbors.ByIDOffset(-1)
               )
 
             case SeqPos.Last(_) =>
-              glyphNGram.setAttr(
-                Next / Right,
-                NextNeighbors.ByIDOffset(1)
+              glyphNGram.modAttr(GlyphTreeEdges)(
+                _.get :+ NextNeighbors.ByIDOffset(1)
               )
 
             case SeqPos.Sole =>
-              glyphNGram.setAttr(
-                Next / Left,
-                NextNeighbors.ByIDOffset(-1)
+              glyphNGram.modAttr(GlyphTreeEdges)(
+                _.get :+ NextNeighbors.ByIDOffset(-1)
               )
-              glyphNGram.setAttr(
-                Next / Right,
-                NextNeighbors.ByIDOffset(1)
+              glyphNGram.modAttr(GlyphTreeEdges)(
+                // Next / Right,
+                _.get :+ NextNeighbors.ByIDOffset(1)
               )
 
             case _ =>
@@ -110,9 +107,8 @@ trait GlyphTrees extends GlyphRuns { self =>
       glyphNGrams
         .sliding(2)
         .foreach({ case Seq(gb1, gb2) =>
-          gb1.setAttr(
-            Next / Right,
-            NextNeighbors.ByShape(gb2)
+          gb1.modAttr(GlyphTreeEdges)(
+            _.get :+ NextNeighbors.ByShape(gb2)
           )
         })
 

@@ -10,7 +10,7 @@ import geometry._
   * Supports shapes based on watrmarks geometry types, with an optional associated attribute
   * Provides JSon serialization
   **/
-class RTreeIndex[A <: GeometricFigure, Shape <: LabeledShape.Aux[A]](
+class RTreeIndex[A <: GeometricFigure, Shape <: LabeledShape[A]](
   var spatialIndex: RTree[Shape, RG.Geometry]
 ) extends RTreeSearch[A, Shape] {
   import RGeometryConversions._
@@ -41,9 +41,8 @@ class RTreeIndex[A <: GeometricFigure, Shape <: LabeledShape.Aux[A]](
 }
 
 object RTreeIndex {
-  // import RGeometryConversions._
 
-  def empty[A <: GeometricFigure, Shape <: LabeledShape.Aux[A]](): RTreeIndex[A, Shape] = {
+  def empty[A <: GeometricFigure, Shape <: LabeledShape[A]](): RTreeIndex[A, Shape] = {
     val init = RTree.create[Shape, RG.Geometry]()
     new RTreeIndex[A, Shape](init)
   }
@@ -56,7 +55,7 @@ object RTreeIndex {
   implicit def RTreeEncoder[
     A <: GeometricFigure,
     W,
-    Shape <: LabeledShape.Aux[A] : Encoder
+    Shape <: LabeledShape[A] : Encoder
   ]: Encoder[RTreeIndex[A, Shape]] =
     Encoder.instance[RTreeIndex[A, Shape]]{ shapeIndex =>
       val shapes = shapeIndex.getItems()
@@ -69,7 +68,7 @@ object RTreeIndex {
   implicit def RTreeDecoder[
     A <: GeometricFigure,
     W,
-    Shape <: LabeledShape.Aux[A] : Decoder
+    Shape <: LabeledShape[A] : Decoder
   ]: Decoder[RTreeIndex[A, Shape]] =
     Decoder.instance[RTreeIndex[A, Shape]]{ c =>
 

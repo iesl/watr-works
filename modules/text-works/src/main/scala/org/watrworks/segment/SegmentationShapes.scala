@@ -17,8 +17,6 @@ case class DocSegShape[+T <: GeometricFigure: ClassTag](
   def addLabels(l: Label*): DocSegShape[T] = copy(
     labels = this.labels ++ l.toSet
   )
-
-  // val attr: Unit = ()
 }
 
 object DocSegShape {

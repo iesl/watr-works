@@ -71,7 +71,7 @@ trait TextGrid { self =>
 
   def pageBounds(): Seq[PageRegion] = {
 
-    val allBounds = rows().flatMap { row => row.pageBounds() }
+    val allBounds = rows().flatMap { _.pageBounds() }
 
     val regionsByPages = allBounds.groupBy(_.page.pageNum)
     regionsByPages.map { case (pageNum @ _, pageRegions) =>

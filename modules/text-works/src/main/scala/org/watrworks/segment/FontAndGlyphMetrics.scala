@@ -13,6 +13,7 @@ import scala.collection.mutable
 
 import TypeTags._
 
+
 object FontAndGlyphMetrics {
 
   def createFontNameVariants(
@@ -95,7 +96,7 @@ trait FontAndGlyphMetricsDocWide extends BaseDocumentSegmenter { self =>
 
 
       println(s"matching variants: ${matchingVariantName} matches ${scaledSymFontId}")
-      matchingVariantName.fold[Unit](() => ())({
+      matchingVariantName.fold[Unit](())({
         case (variantName, scalingFactor @ _, natScaledFontId) =>
           val matchingNatLangFont = docScope.fontDefs.getScaledFontOffsets(natScaledFontId)
           val rescaledOffsets     = matchingNatLangFont.rescaledAs(variantName, symScalingFactor)

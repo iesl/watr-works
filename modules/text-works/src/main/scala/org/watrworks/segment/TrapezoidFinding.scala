@@ -3,7 +3,6 @@ package segment
 
 import geometry._
 import geometry.syntax._
-import watrmarks._
 import TypeTags._
 import org.dianahep.{histogrammar => HST}
 import utils.Interval
@@ -19,23 +18,24 @@ trait TrapezoidFinding extends BasePageSegmenter { self =>
   def buildLinePairTrapezoids(): Unit = {
     val lineReprShapes = getLabeledRects(LB.BaselineMidriseBand)
 
+    // .map(l => (l, getCharsForShape(l)))
     val shapeAndCharsAndScaledFontId = lineReprShapes
-      .map(l => (l, getCharsForShape(l)))
+      .map(l => (l, l.getAttr(ExtractedChars).getOrElse(Seq())))
       .sortBy { case (_, baselineChars) =>
         baselineChars.head.id
       }
 
-    shapeAndCharsAndScaledFontId.foreach { case (lineReprShape, _) =>
-      setWeightsForShape(lineReprShape, WeightedLabeling())
-    }
+    // shapeAndCharsAndScaledFontId.foreach { case (lineReprShape, _) =>
+    //   setWeightsForShape(lineReprShape, WeightedLabeling())
+    // }
 
     shapeAndCharsAndScaledFontId.sliding(2).foreach {
       _ match {
         case Seq(l1, l2) =>
-          val (line1ReprShape, line1Chars) = l1
-          val (line2ReprShape, line2Chars) = l2
+          val (line1ReprShape, line1Chars@_) = l1
+          val (line2ReprShape, line2Chars@_) = l2
 
-          val areVertical              = line1ReprShape.shape.isStrictlyAbove(line2ReprShape.shape)
+          val areVertical = line1ReprShape.shape.isStrictlyAbove(line2ReprShape.shape)
           val areOverlappingHorizontal =
             line1ReprShape.shape.isNeitherLeftNorRightOf(line2ReprShape.shape)
 
@@ -48,7 +48,7 @@ trait TrapezoidFinding extends BasePageSegmenter { self =>
             pageScope.accumulateShapeStats(trapezoid)
 
             // TODO this should be more like a relation or grouping, not an attribute of line-repr-shape
-            line1ReprShape.setAttr(LB.LinePairTrapezoid, trapezoid)
+            // line1ReprShape.setAttr(LB.LinePairTrapezoid, trapezoid)
 
             val linePairTrap = indexShape(trapezoid, LB.LinePairTrapezoid)
             // // TODO these should be specified in a feature extraction method
@@ -60,8 +60,8 @@ trait TrapezoidFinding extends BasePageSegmenter { self =>
             //   .map(_.char.matches("[.]"))
             //   .getOrElse(false)
 
-            linePairTrap.setAttr(LB.UpLeftChar, line1Chars.head.char)
-            linePairTrap.setAttr(LB.LowRightChar, line2Chars.last.char)
+            // linePairTrap.setAttr(LB.UpLeftChar, line1Chars.head.char)
+            // linePairTrap.setAttr(LB.LowRightChar, line2Chars.last.char)
 
             // linePairTrap.setAttr(LB.UpLeftCharCapCase, isUpLeftCapCase)
             // linePairTrap.setAttr(LB.LowRightCharPeriod, isLowRightCharPeriod)
@@ -85,7 +85,7 @@ trait TrapezoidFinding extends BasePageSegmenter { self =>
               shape(linePairTrap)
             }
           }
-        case _           => None
+        case _ => None
       }
     }
   }
@@ -96,9 +96,10 @@ trait TrapezoidFinding extends BasePageSegmenter { self =>
 //   // XMeans
 // }
 import com.spotify.featran._
-import com.spotify.featran.{ transformers => ft }
+import com.spotify.featran.{transformers => ft}
 // import com.spotify.featran.converters._
 
+import TypeTags._
 
 trait TrapezoidPagewiseAnalysis extends BasePageSegmenter { self =>
 
@@ -109,7 +110,7 @@ trait TrapezoidPagewiseAnalysis extends BasePageSegmenter { self =>
       // .required(_.trapezoid.leftBaseAngle())(Identity("1em-Height"))
       // .required(_.trapezoid.leftBaseAngle())(Identity("1em-Height-TopLine"))
       .required(
-        _.getAttr[String](LB.UpLeftChar)
+        _.getAttr(UpLeftChar)
           .map(x => x.matches("[A-Z]"))
           .map(x => { if (true) 1.0d else 0.0d })
           .getOrElse(0.0)

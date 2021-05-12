@@ -35,8 +35,8 @@ trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self 
         charWidths.max
       } else if (charSpacings.length > 1) {
         val mostCommonSpacingBin = charSpacings.head
-        val mostCommonSpacing = mostCommonSpacingBin.maxValue()
-        val largerSpacings = charSpacings.filter(b => b.centroid.value > mostCommonSpacing * 2)
+        val mostCommonSpacing    = mostCommonSpacingBin.maxValue()
+        val largerSpacings       = charSpacings.filter(b => b.centroid.value > mostCommonSpacing * 2)
         if (largerSpacings.nonEmpty) {
           val nextCommonSpacing = largerSpacings.head.centroid.value
           (mostCommonSpacing + nextCommonSpacing) / 2
@@ -64,7 +64,7 @@ trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self 
     maybeClipTo: Option[Rect]
   ): TextGrid.Row = {
 
-    val items = getExtractedItemsForShape(reprShape).sortBy(_.minBBox.left)
+    val items = reprShape.getAttr(ExtractedChars).getOrElse(Nil).sortBy(_.minBBox.left)
 
     val extractedItems = maybeClipTo
       .map { clipTo =>
@@ -99,7 +99,7 @@ trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self 
           }
           cells.getOrElse(Seq())
 
-        case item@_ =>
+        case item @ _ =>
           // TODO this is skipping over text represented as paths (but I have to figure out sup/sub script handling to make it work)
           Seq()
       }
@@ -116,7 +116,7 @@ trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self 
     labeledIntervals.foreach { interval =>
       val label = interval.attr
       val start = interval.start.get
-      val end = interval.end.get - 1
+      val end   = interval.end.get - 1
       label match {
         case LB.Sub =>
           cells(start).prepend('{')
@@ -137,7 +137,7 @@ trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self 
     // TODO make use of page/document wide font information to infer spacing thresholds, not just local line spacing
 
     val lineCCs =
-      textRow.cells().collect { case TextGrid.PageItemCell(headItem, tailItems@_, char@_, _) =>
+      textRow.cells().collect { case TextGrid.PageItemCell(headItem, tailItems @ _, char @ _, _) =>
         headItem
       }
 
@@ -173,14 +173,14 @@ trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self 
 
         val textRow = textRowFromReprShape(reprShape, None)
         insertSpacesInRow(textRow)
-        setTextForShape(reprShape, textRow)
+        reprShape.getAttr(LinkedTextGrid)
       }
     }
   }
 
   def getTextGrid(maybeClipTo: Option[Rect]): TextGrid = {
     val clipRegion = maybeClipTo.getOrElse { pageGeometry }
-    val lines = searchForRects(clipRegion, TextLineReprShape)
+    val lines      = searchForRects(clipRegion, TextLineReprShape)
 
     val rows1 = lines.flatMap { reprShape =>
       val shapeChars = getCharsForShape(reprShape)
@@ -192,11 +192,13 @@ trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self 
         val textRow = textRowFromReprShape(reprShape, maybeClipTo)
 
         // Put super/sub escapes into text (TODO make this configurable in cli args)
-        getLabeledIntervalsForShape(reprShape)
+        reprShape
+          .getAttr(LabeledIntervals)
           .map { labeledIntervals => insertEscapeCodesInRow(textRow, labeledIntervals) }
 
         insertSpacesInRow(textRow)
 
+        // ???
         // val clippedRow = maybeClipTo
         //   .map { clipTo => clipTextRow(textRow, clipTo) }
         //   .getOrElse(textRow)

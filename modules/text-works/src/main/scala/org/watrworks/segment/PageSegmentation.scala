@@ -7,11 +7,12 @@ import watrmarks.Label
 import utils.ExactFloats._
 import extract._
 import TypeTags._
-import watrmarks._
-import utils.intervals.Interval
-import textgrid._
 
 import scala.reflect._
+import rsearch.AttrWitness
+import utils.intervals.Interval
+import textgrid.TextGrid
+import org.watrworks.watrmarks.WeightedLabeling
 
 trait PageSegmenter
   extends ColumnFinding
@@ -38,8 +39,25 @@ object PageSegmenter {
 }
 
 
+trait AttributeTags {
+
+  implicit val UpLeftChar       = AttrWitness.Mk[String]()
+  implicit val ExtractedChars   = AttrWitness.Mk[Seq[ExtractedItem.CharItem]]()
+  implicit val ExtractedChar    = AttrWitness.Mk[ExtractedItem.CharItem]()
+  // implicit val ExtractedItems   = AttrWitness.Mk[Seq[ExtractedItem]]()
+  implicit val Fonts            = AttrWitness.Mk[Set[String @@ ScaledFontID]]()
+  implicit val GlyphTreeEdges   = AttrWitness.Mk[List[NextNeighbors]]()
+  implicit val PrimaryFont      = AttrWitness.Mk[String @@ ScaledFontID]()
+  implicit val FontOffsets      = AttrWitness.Mk[FontBaselineOffsets]()
+  implicit val LabeledIntervals = AttrWitness.Mk[Seq[Interval[Int, Label]]]()
+  implicit val LinkedTrapezoid  = AttrWitness.Mk[Trapezoid]()
+  implicit val LinkedTextGrid   = AttrWitness.Mk[TextGrid.Row]()
+  implicit val WeightedLabels   = AttrWitness.Mk[WeightedLabeling]()
+
+}
+
 // Trait from which other page-level segmentation trait can inherit
-trait BasePageSegmenter extends PageScopeTracing { self =>
+trait BasePageSegmenter extends PageScopeTracing with AttributeTags { self =>
 
   lazy val pageScope = self
 
@@ -89,8 +107,7 @@ trait BasePageSegmenter extends PageScopeTracing { self =>
       .map { _.asRectShape }
   }
 
-  def getLabeledShapes(l: Label): Seq[AnyShape] = shapeIndex.getShapesWithLabel(l)
-
+  def getLabeledShapes(l: Label): Seq[AnyShape]   = shapeIndex.getShapesWithLabel(l)
   def getLabeledRects(l: Label): Seq[RectShape]   = getLabeledShapes(l).map(_.asRectShape)
   def getLabeledTraps(l: Label): Seq[TrapShape]   = getLabeledShapes(l).map(_.asTrapShape)
   def getLabeledLines(l: Label): Seq[LineShape]   = getLabeledShapes(l).map(_.asLineShape)
@@ -119,18 +136,6 @@ trait BasePageSegmenter extends PageScopeTracing { self =>
     shapeIndex.indexShape { id =>
       DocSegShape.create(id, pageNum, shape, l)
     }
-  }
-
-  protected def indexShapeAndSetItems[T <: GeometricFigure: ClassTag](
-    shape: T,
-    l: Label,
-    items: ExtractedItem*
-  ): DocSegShape[GeometricFigure] = {
-    val s = shapeIndex.indexShape { id =>
-      DocSegShape.create(id, pageNum, shape, l)
-    }
-    setExtractedItemsForShape(s, items.toSeq)
-    s
   }
 
   protected def deleteShape[T <: GeometricFigure](shape: DocSegShape[T]): Unit = {
@@ -181,120 +186,20 @@ trait BasePageSegmenter extends PageScopeTracing { self =>
     val _ = shapeIndex.addCluster(l, shapes)
   }
 
-  protected def setAttrForShape[A: ClassTag](label: Label): (AnyShape, A) => Unit = { (shape, a) =>
-    shapeIndex.setShapeAttribute[A](shape.id, label, a)
-  }
+  // protected def getExtractedItemsForShape(
+  //   shape: DocSegShape[GeometricFigure]
+  // ): Seq[ExtractedItem] = {
+  //   shapeIndex.getAttr(shape.id, ExtractedItems).getOrElse(List.empty)
+  // }
 
-  protected def getAttrForShape[A: ClassTag](label: Label): (AnyShape) => Option[A] = { (shape) =>
-    shapeIndex.getShapeAttribute[A](shape.id, label)
-  }
-
-  protected def setExtractedItemsForShape(
-    shape: DocSegShape[GeometricFigure],
-    items: Seq[ExtractedItem]
-  ): Unit = {
-    shapeIndex.setShapeAttribute[Seq[ExtractedItem]](shape.id, LB.ExtractedItems, items)
-  }
-
-  protected def getExtractedItemsForShape(
-    shape: DocSegShape[GeometricFigure]
-  ): Seq[ExtractedItem] = {
-    shapeIndex.getShapeAttribute[Seq[ExtractedItem]](shape.id, LB.ExtractedItems).get
-  }
-
-  protected def getExtractedItemsForShapes(
-    shapes: Seq[DocSegShape[GeometricFigure]]
-  ): Seq[Seq[ExtractedItem]] = {
-    shapes.map { getExtractedItemsForShape(_) }
-  }
-
-  // implicit val ExItemsAttr = AttrWitnessy[Seq[ExtractedItem]](shapeIndex)
+  // protected def getExtractedItemsForShapes(
+  //   shapes: Seq[DocSegShape[GeometricFigure]]
+  // ): Seq[Seq[ExtractedItem]] = {
+  //   shapes.map { getExtractedItemsForShape(_) }
+  // }
 
   def getCharsForShape(shape: DocSegShape[GeometricFigure]): Seq[ExtractedItem.CharItem] = {
-    getExtractedItemsForShape(shape)
-      .collect { case i: ExtractedItem.CharItem => i }
-  }
-
-  protected def setTrapezoidForShape = setAttrForShape[Trapezoid](LB.LinePairTrapezoid)
-  protected def getTrapezoidForShape = getAttrForShape[Trapezoid](LB.LinePairTrapezoid)
-  // AttrWitnessA()
-
-  protected def setWeightsForShape = setAttrForShape[WeightedLabeling](LB.WeightedLabels)
-  protected def getWeightsForShape = getAttrForShape[WeightedLabeling](LB.WeightedLabels)
-
-  protected def setTextForShape = setAttrForShape[TextGrid.Row](LB.TextGridRow)
-  protected def getTextForShape = getAttrForShape[TextGrid.Row](LB.TextGridRow)
-
-  protected def setLabeledIntervalsForShape(
-    shape: DocSegShape[GeometricFigure],
-    intervals: Seq[Interval[Int, Label]]
-  ): Unit = {
-    shapeIndex
-      .setShapeAttribute[Seq[Interval[Int, Label]]](shape.id, LB.LabeledIntervals, intervals)
-  }
-
-  protected def getLabeledIntervalsForShape(
-    shape: DocSegShape[GeometricFigure]
-  ): Option[Seq[Interval[Int, Label]]] = {
-    shapeIndex.getShapeAttribute[Seq[Interval[Int, Label]]](shape.id, LB.LabeledIntervals)
-  }
-
-  protected def setFontIndexForShape(shape: DocSegShape[GeometricFigure], i: Int): Unit = {
-    shapeIndex.setShapeAttribute[Int](shape.id, LB.FontIndex, i)
-  }
-
-  protected def getFontIndexForShape(shape: DocSegShape[GeometricFigure]): Int = {
-    shapeIndex.getShapeAttribute[Int](shape.id, LB.FontIndex).get
-  }
-
-  protected def setFontsForShape(
-    shape: AnyShape,
-    fontIds: Set[String @@ ScaledFontID]
-  ): Unit = {
-    shapeIndex.setShapeAttribute[Set[String @@ ScaledFontID]](shape.id, LB.Fonts, fontIds)
-  }
-
-  protected def getFontsForShape(
-    shape: DocSegShape[GeometricFigure]
-  ): Set[String @@ ScaledFontID] = {
-    shapeIndex.getShapeAttribute[Set[String @@ ScaledFontID]](shape.id, LB.Fonts).get
-  }
-
-  protected def setLinkedShape(shape1: AnyShape, linkage: Label, shape2: AnyShape): Unit = {
-    shapeIndex.setShapeAttribute[AnyShape](shape1.id, linkage, shape2)
-  }
-
-  protected def getLinkedShape(shape1: AnyShape, linkage: Label): Option[AnyShape] = {
-    shapeIndex.getShapeAttribute[AnyShape](shape1.id, linkage)
-  }
-
-  protected def setPrimaryFontForShape(
-    shape: DocSegShape[GeometricFigure],
-    fontId: String @@ ScaledFontID
-  ): Unit = {
-    val someId = Some(fontId)
-    shapeIndex.setShapeAttribute[Option[String @@ ScaledFontID]](shape.id, LB.PrimaryFont, someId)
-  }
-
-  protected def getPrimaryFontForShape(
-    shape: DocSegShape[GeometricFigure]
-  ): Option[String @@ ScaledFontID] = {
-    val someId =
-      shapeIndex.getShapeAttribute[Option[String @@ ScaledFontID]](shape.id, LB.PrimaryFont)
-    someId.flatten
-  }
-
-  protected def setFontOffsetsForShape(
-    shape: DocSegShape[GeometricFigure],
-    offsets: FontBaselineOffsets
-  ): Unit = {
-    shapeIndex.setShapeAttribute[FontBaselineOffsets](shape.id, LB.FontBaselineOffsets, offsets)
-  }
-
-  protected def getFontOffsetsForShape(
-    shape: DocSegShape[GeometricFigure]
-  ): Option[FontBaselineOffsets] = {
-    shapeIndex.getShapeAttribute[FontBaselineOffsets](shape.id, LB.FontBaselineOffsets)
+    shape.getAttr(ExtractedChars).getOrElse(Nil)
   }
 
   protected def queriesAllEmpty(queryRect: Rect, labels: Label*): Boolean = {
@@ -369,65 +274,18 @@ trait BasePageSegmenter extends PageScopeTracing { self =>
   }
 
   implicit class RicherShapes[+A <: GeometricFigure](val theShape: DocSegShape[A]) {
-    def linkTo[W: ClassTag](label: Label, w: W): Unit = {
-      shapeIndex.setShapeAttribute[W](theShape.id, label, w)
-    }
-    // def attr[W: ClassTag, AW <: AttrWitness[W]](label: Label, w: W): Unit = {
-    //   shapeIndex.setShapeAttribute[W](theShape.id, label, w)
-    // }
-    // def attr_=[W, AW <: AttrWitness[W]](aw: AW, w: W): Unit = {
-    //   shapeIndex.setShapeAttribute[W](theShape.id, aw.label, w)(aw.ct)
-    // }
 
-    def setAttr[W: ClassTag](label: Label, w: W): Unit = {
-      shapeIndex.setShapeAttribute[W](theShape.id, label, w)
+    def setAttr[V](witness: AttrWitness[V])(attr: witness.AttrT): Unit = {
+      shapeIndex.setAttr[witness.AttrT](theShape.id, witness, attr)
     }
-    def getAttr[W: ClassTag](label: Label): Option[W] = {
-      shapeIndex.getShapeAttribute[W](theShape.id, label)
+
+    def modAttr[V](witness: AttrWitness[V])(mod: (Option[witness.AttrT]) => witness.AttrT): Unit = {
+      val prev = shapeIndex.getAttr[V](theShape.id, witness)
+      shapeIndex.setAttr[witness.AttrT](theShape.id, witness, mod(prev))
+    }
+
+    def getAttr[V](witness: AttrWitness[V]): Option[witness.AttrT] = {
+      shapeIndex.getAttr[witness.AttrT](theShape.id, witness)
     }
   }
 }
-
-// trait AttrWitness[W] {
-//   def label: Label
-//   def ct: ClassTag[W]
-//   // def shapeIndex: ShapeIndex
-//   def set(w: W): Unit
-//   def get(): Option[W]
-// }
-
-// case class AttrWitnessL[W: ClassTag](
-//   label: Label,
-//   shapeIndex: ShapeIndex
-// ) extends AttrWitness[W] {
-//   def ct = implicitly[ClassTag[W]]
-// }
-
-// case class AttrWitnessA[W: ClassTag](
-//   shapeIndex: ShapeIndex
-// ) extends AttrWitness[W] {
-//   val ct = implicitly[ClassTag[W]]
-//   def label = Label(ct.getClass().getSimpleName())
-
-//   def apply_=(a: W): Unit = {
-
-//     shapeIndex.setShapeAttribute[W](theShape.id, label, a)
-//   }
-// }
-
-// case class AttrWitnessFA[W: ClassTag]() extends AttrWitness[W] {
-//   val ct = implicitly[ClassTag[W]]
-//   def label = Label(ct.runtimeClass.getSimpleName())
-// }
-
-// case class AttrWitnessfa[F[_], A: ClassTag]()(implicit
-//   CTF: ClassTag[F[A]]
-// ) extends AttrWitness[F[A]] {
-//   val ct = CTF
-//   val cta = implicitly[ClassTag[A]]
-//   val ctf = CTF
-//   def label = Label(
-//     ctf.runtimeClass.getSimpleName() + " :: " +
-//     cta.runtimeClass.getSimpleName()
-//   )
-// }

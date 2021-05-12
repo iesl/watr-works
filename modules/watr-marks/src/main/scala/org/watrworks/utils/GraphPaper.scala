@@ -8,27 +8,23 @@ import utils.{RelativeDirection => Dir}
 import GraphPaper._
 
 case class Color(
- red: Int, green: Int, blue: Int
+  red: Int,
+  green: Int,
+  blue: Int
 )
-
 
 abstract class DrawableGraphPaper {
 
   def drawChar(cell: GridCell, char: Char): Unit
-  def drawBox(
-    box: Box,
-    borderChars: BorderChars = BorderLineStyle.SingleWidth
-  ): Unit
+
+  def drawBox(box: Box, borderChars: BorderChars = BorderLineStyle.SingleWidth): Unit
+
   def applyBgColor(box: Box, color: Color): Unit
   def applyFgColor(box: Box, color: Color): Unit
   def gradientHorizontal(gridbox: Box): Unit
   def cellDimensions(): CellDimensions
 
-  def drawString(
-    x: Int,
-    y: Int,
-    str: String
-  ): Unit = {
+  def drawString(x: Int, y: Int, str: String): Unit = {
     str.zipWithIndex.foreach { case (ch, i) =>
       drawChar(GraphPaper.GridCell(x + i, y), ch)
     }
@@ -72,7 +68,7 @@ abstract class DrawableGraphPaper {
 }
 
 case class BorderChars(str: String) {
-  val chars             = str.toCharArray()
+  val chars = str.toCharArray()
   def charFor(dir: Dir) = dir match {
     case Dir.Top         => chars(0)
     case Dir.Bottom      => chars(1)
@@ -108,10 +104,12 @@ object BorderLineStyle {
   val Bold        = BorderChars("━━┃┃┏┓┗┛◻┳┻┣┫")
 }
 
-class ConsoleGraphPaper(val initWidth: Int, val initHeight: Int, useColor: Boolean = true)
-  extends DrawableGraphPaper {
+class ConsoleGraphPaper(
+  val initWidth: Int,
+  val initHeight: Int,
+  useColor: Boolean = true
+) extends DrawableGraphPaper {
 
-  // Only .
   var width: Int  = initWidth
   var height: Int = initHeight
 
@@ -143,7 +141,6 @@ class ConsoleGraphPaper(val initWidth: Int, val initHeight: Int, useColor: Boole
 
   }
 
-  // Same .
   val charBuffer: mutable.ArrayBuffer[
     mutable.ArrayBuffer[Char]
   ] = mutable.ArrayBuffer.tabulate(height, width) { case _ =>

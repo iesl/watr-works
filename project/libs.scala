@@ -57,7 +57,7 @@ trait CommonLibs extends LibVersions {
 
   val scopt = "com.github.scopt" %% "scopt" % "4.0.1"
 
-  val shapelessV = "2.3.5"
+  val shapelessV = "2.3.6"
   val shapeless  = "com.chuusai" %% "shapeless" % shapelessV
 
   val acyclicVersion = "0.1.7"

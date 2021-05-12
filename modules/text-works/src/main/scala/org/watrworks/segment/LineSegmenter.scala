@@ -27,7 +27,6 @@ trait LineSegmentation
   with FontAndGlyphMetrics
   with TextBlockGrouping { self =>
 
-
   def findTextLineShapesFromFontBaselines(): Unit = {
     joinFontBaselinesViaPageBands(LB.CharRunFontBaseline, LB.BaselineMidriseBand)
     reindexShapes(LB.Glyph)
@@ -57,7 +56,7 @@ trait LineSegmentation
 
       case headFontId :: tailFontIds =>
         val (linesForFont, others) = lineShapes.partition { lineShape =>
-          getFontsForShape(lineShape).contains(headFontId)
+          lineShape.getAttr(Fonts).exists(_.contains(headFontId))
         }
 
         val allAdjustedOffsets = linesForFont.map { lineShape =>
@@ -97,7 +96,8 @@ trait LineSegmentation
     val glyphsInBand = searchForRects(pageSlice, LB.Glyph)
 
     val glyphsWithChar = glyphsInBand.map { g =>
-      (g, getCharsForShape(g).head)
+      // (g, getCharsForShape(g).head)
+      (g, g.getAttr(ExtractedChar).get)
     }
 
     val orderedById = glyphsWithChar.sortBy { case (glyphShape @ _, charItem) =>
@@ -115,13 +115,13 @@ trait LineSegmentation
     }
 
     if (setWithRootChar.nonEmpty) {
-      val charSetWithRootChar           = setWithRootChar.flatMap(_._1.map(_._2))
-      val orderedLeftToRight            = charSetWithRootChar.sortBy { _.minBBox.left }
+      val charSetWithRootChar = setWithRootChar.flatMap(_._1.map(_._2))
+      val orderedLeftToRight  = charSetWithRootChar.sortBy { _.minBBox.left }
       val sameOrderByIdAndByLeftToRight = charSetWithRootChar
         .zip(orderedLeftToRight)
         .forall { case (char1, char2) => char1 == char2 }
 
-      val allItemsAreConsecutive        = consecutiveById.length == 1
+      val allItemsAreConsecutive = consecutiveById.length == 1
 
       if (sameOrderByIdAndByLeftToRight || allItemsAreConsecutive) {
         val rootFontOffsets = docScope.fontDefs
@@ -153,10 +153,11 @@ trait LineSegmentation
                 shape(pageBand)
               }
 
-              setExtractedItemsForShape(pageBand, charSetWithRootChar)
-              setFontsForShape(pageBand, fontIds)
-              setPrimaryFontForShape(pageBand, rootChar.scaledFontId)
-              setFontOffsetsForShape(pageBand, rootFontOffsets)
+              pageBand.setAttr(ExtractedChars)(charSetWithRootChar)
+              pageBand.setAttr(Fonts)(fontIds)
+              pageBand.setAttr(PrimaryFont)(rootChar.scaledFontId)
+              pageBand.setAttr(FontOffsets)(rootFontOffsets)
+
               pageBand
             }
           }

@@ -13,7 +13,7 @@ import java.lang.{Boolean => JBool}
 
 import geometry._
 
-trait RTreeSearch[T <: GeometricFigure, Shape <: LabeledShape.Aux[T]] {
+trait RTreeSearch[T <: GeometricFigure, Shape <: LabeledShape[T]] {
 
   def rtreeIndex: RTree[Shape, RG.Geometry]
 
@@ -40,14 +40,14 @@ trait RTreeSearch[T <: GeometricFigure, Shape <: LabeledShape.Aux[T]] {
     toScalaSeq(hits)
   }
 
-  def queryForIntersects(q: G.Rect): Seq[Shape] = {
-    toScalaSeq(rtreeIndex.search(toRGRectangle(q)))
-  }
+  // def queryForIntersects(q: G.Rect): Seq[Shape] = {
+  //   toScalaSeq(rtreeIndex.search(toRGRectangle(q)))
+  // }
 
-  def queryForIntersectedIDs(q: G.Rect): Seq[Int] = {
-    toEntrySeq(rtreeIndex.search(toRGRectangle(q)))
-      .map { entry => entry.value().id.unwrap }
-  }
+  // def queryForIntersectedIDs(q: G.Rect): Seq[Int] = {
+  //   toEntrySeq(rtreeIndex.search(toRGRectangle(q)))
+  //     .map { entry => entry.value().id.unwrap }
+  // }
 
   protected def toScalaSeq(obs: Observable[Entry[Shape, RG.Geometry]]): Seq[Shape] = {
     toEntrySeq(obs).toSeq.map { _.value() }

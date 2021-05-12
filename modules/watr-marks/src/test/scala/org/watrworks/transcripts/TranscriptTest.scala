@@ -49,7 +49,7 @@ class TranscriptionFormatTest extends WatrSpec {
     }
   }
 
-  val verbose = true
+  val verbose = false
 
   it should "ser/desr glyphs" in {
 
@@ -71,44 +71,43 @@ class TranscriptionFormatTest extends WatrSpec {
 
 
   it should "ser/desr ranges" in {
-    // val examples = List(
-    //   """{ "unit": "text:line", "at": [10, 20] }""",
-    //   """{ "unit": "text:char", "at": [1, 2] }""",
-    //   """{ "unit": "shape", "at": [123, 234, 345, 456] }""",
-    //   """{ "unit": "document", "at": "docId#32" }""",
-    //   """{ "unit": "page", "at": 0 }""",
-    //   """{ "unit": "label", "at": 23 }""",
-    //   """{ "unit": "stanza", "at": 32 }""",
-    // )
     val examples = List(
-      """{ "text:line": [10, 20] }""",
-      // """{ "unit": "text:char", "at": [1, 2] }""",
-      """{ "shape": [123, 234, 345, 456] }""",
-      """
-{ "$and": [
-    { "document": "qwerty0.d" },
-    { "page": 3 },
-    { "shape": [123, 234, 345, 456] }
-  ]
-},
-
-""",
-      """
-{ "and": {
-    "l": { "and": {
-       "l": {"document": "qwerty0.d"},
-       "r": {"page": 3}
-    } }
-    "r": { "shape": [123, 234, 345, 456] },
-    }
-}
-""",
-
-      // """{ "unit": "document", "at": "docId#32" }""",
-      // """{ "unit": "page", "at": 0 }""",
-      // """{ "unit": "label", "at": 23 }""",
-      // """{ "unit": "stanza", "at": 32 }""",
+      """{ "unit": "text:line", "at": [10, 20] }""",
+      """{ "unit": "text:char", "at": [1, 2] }""",
+      """{ "unit": "shape", "at": [123, 234, 345, 456] }""",
+      """{ "unit": "document", "at": "docId#32" }""",
+      """{ "unit": "page", "at": 0 }""",
+      """{ "unit": "label", "at": 23 }""",
+      """{ "unit": "stanza", "at": 32 }""",
     )
+      //     val examples = List(
+      //       """{ "text:line": [10, 20] }""",
+      //       // """{ "unit": "text:char", "at": [1, 2] }""",
+      //       """{ "shape": [123, 234, 345, 456] }""",
+      //       """
+      // { "$and": [
+      //     { "document": "qwerty0.d" },
+      //     { "page": 3 },
+      //     { "shape": [123, 234, 345, 456] }
+      //   ]
+      // },
+      // """,
+      //       """
+      // { "and": {
+      //     "l": { "and": {
+      //        "l": {"document": "qwerty0.d"},
+      //        "r": {"page": 3}
+      //     } }
+      //     "r": { "shape": [123, 234, 345, 456] },
+      //     }
+      // }
+      // """,
+
+    // """{ "unit": "document", "at": "docId#32" }""",
+    // """{ "unit": "page", "at": 0 }""",
+    // """{ "unit": "label", "at": 23 }""",
+    // """{ "unit": "stanza", "at": 32 }""",
+    // )
 
     examples.foreach(example => {
       assert(isIsomorphic[Transcript.Range](example, verbose))
