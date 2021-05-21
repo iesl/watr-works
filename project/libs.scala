@@ -9,7 +9,7 @@ trait LibVersions {
 object LibVersions extends LibVersions
 
 object TestLibs extends LibVersions {
-  val scalatestVersion = "3.2.8"
+  val scalatestVersion = "3.2.9"
   val scalatest        = Seq(
     "org.scalatest" %% "scalatest" % scalatestVersion % "test"
   )
@@ -25,7 +25,7 @@ object TestLibs extends LibVersions {
 object LogLibs extends LibVersions {
   val logbackVersion = "1.7.30"
   val logback        = Seq(
-    "org.log4s"     %% "log4s"           % "1.9.0",
+    "org.log4s"     %% "log4s"           % "1.10.0",
     "ch.qos.logback" % "logback-classic" % "1.2.3",
     "org.slf4j"      % "slf4j-api"       % logbackVersion,
     "org.slf4j"      % "jul-to-slf4j"    % logbackVersion,
@@ -51,19 +51,21 @@ object DatabaseLibs extends LibVersions {
 
 trait CommonLibs extends LibVersions {
   // val ammoniteVersion = "2.3.8-58-aa8b2ab1"
-  val ammoniteVersion = "2.3.8-65-0f0d597f"
+  //val ammoniteVersion = "2.3.8-65-0f0d597f"
+  val ammoniteVersion = "2.3.8-122-9be39deb"
   val ammonite        = "com.lihaoyi"  % "ammonite"     % ammoniteVersion cross CrossVersion.full
   val ammoniteOps     = "com.lihaoyi" %% "ammonite-ops" % ammoniteVersion
 
   val scopt = "com.github.scopt" %% "scopt" % "4.0.1"
 
-  val shapelessV = "2.3.6"
+  val shapelessV = "2.3.7"
   val shapeless  = "com.chuusai" %% "shapeless" % shapelessV
 
   val acyclicVersion = "0.1.7"
   val acyclic        = "com.lihaoyi" %% "acyclic" % acyclicVersion % "provided"
 
-  val guavaV = "23.0"
+  // val guavaV = "23.0"
+  val guavaV = "30.1.1-jre"
   val guava  = "com.google.guava" % "guava" % guavaV
 
   // val lucene4s         = "com.outr"                %% "lucene4s"         % luceneV
@@ -78,7 +80,7 @@ trait CommonLibs extends LibVersions {
     "com.spotify" %% "featran-core" % featranV
   )
 
-  val zioV = "1.0.7"
+  val zioV = "1.0.8"
   val zio  = Seq(
     "dev.zio" %% "zio"         % zioV,
     "dev.zio" %% "zio-streams" % zioV
@@ -97,9 +99,9 @@ trait CommonLibs extends LibVersions {
   )
 
   val consoleUtils = Seq(
-    "com.lihaoyi" %% "fansi"      % "0.2.13",
-    "com.lihaoyi" %% "sourcecode" % "0.2.6",
-    "com.lihaoyi" %% "pprint"     % "0.6.5"
+    "com.lihaoyi" %% "fansi"      % "0.2.14",
+    "com.lihaoyi" %% "sourcecode" % "0.2.7",
+    "com.lihaoyi" %% "pprint"     % "0.6.6"
   )
 
   val rtrees = Seq(
@@ -107,7 +109,7 @@ trait CommonLibs extends LibVersions {
     "com.github.davidmoten" % "flatbuffers-java" % "1.10.0.2"
   )
 
-  val http4sVersion = "0.21.22"
+  val http4sVersion = "0.21.23"
   val http4s = Seq(
     "org.http4s" %% "http4s-core" % http4sVersion,
     "org.http4s" %% "http4s-dsl" % http4sVersion,

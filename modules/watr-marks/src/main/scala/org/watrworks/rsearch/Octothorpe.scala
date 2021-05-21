@@ -2,7 +2,9 @@ package org.watrworks
 package rsearch
 
 import geometry._
-import GeometryImplicits._
+import geometry.syntax._
+import utils.ExactFloats._
+
 import utils.{RelativeDirection => Dir}
 
 /** An octothorpe is a 2D-plane search primitive.
@@ -11,7 +13,6 @@ import utils.{RelativeDirection => Dir}
   *  the regions in the cardinal directions.
   */
 
-// case class Octothorpe[A <: GeometricFigure, Shape <: LabeledShape[A]] (
 case class Octothorpe(
   focalRect: Rect,
   horizonRect: Rect,
@@ -21,8 +22,26 @@ case class Octothorpe(
   import Octothorpe._
   import Bounds._
 
-  val burstDirections: Map[Dir, Option[Rect]] =
-    focalRect.withinRegion(horizonRect).burstAllPossibleDirections().toMap
+  val burstDirections: Map[Dir, Option[Rect]] = focalRect
+    .withinRegion(horizonRect)
+    .burstAllPossibleDirections()
+    .map({ case (dir, maybeRect) =>
+      // dir match {
+      //   case Dir.Top         =>
+      //   case Dir.Bottom      => // shave bottom
+      //   case Dir.Right       =>
+      //   case Dir.Left        =>
+      //   case Dir.TopLeft     =>
+      //   case Dir.BottomLeft  =>
+      //   case Dir.TopRight    =>
+      //   case Dir.BottomRight =>
+      //   case Dir.Center      =>
+      // }
+
+      // TODO this should shave off parts of the regions based on Dir, not just uniformly
+      (dir, maybeRect.map(_.shave(FloatRep(1))))
+    })
+    .toMap
 
   def runSearch[Shape <: LabeledShape[GeometricFigure]](
     searchFunc: (Rect) => Seq[Shape]
@@ -33,7 +52,9 @@ case class Octothorpe(
           for {
             cellRectOpt <- burstDirections.get(dir)
             cellRect    <- cellRectOpt
-          } yield searchFunc(cellRect)
+          } yield {
+            searchFunc(cellRect)
+          }
 
         case CellSpan(d1, d2) =>
           for {
@@ -74,7 +95,7 @@ object Octothorpe {
     regionDefs: RegionDefs
   ) {
 
-    def focusedOn(rect: Rect): Octothorpe = {
+    def centeredOn(rect: Rect): Octothorpe = {
       Octothorpe(rect, horizon, regionDefs.bounds)
     }
   }
@@ -89,72 +110,3 @@ object Octothorpe {
   def cellspan(d1: Dir, d2: Dir) = Bounds.CellSpan(d1, d2)
 
 }
-
-// case class Def(bounds: List[Bounds])
-// def define(bounds: Bounds*): Def = {
-//   Def(bounds.toList)
-// }
-
-// def focusedOn(odef: Def, rect: Rect): Octothorpe = {
-//   ???
-// }
-
-// import scalaz.TreeLoc
-// import scalaz.syntax.tree._
-// // import scalaz.Tree
-
-// case class Traversal(
-//   nextfn: Traversal.NextFn,
-//   loc: TreeLoc[Octothorpe]
-// )
-
-// object Traversal {
-//   type NextFn = Octothorpe => List[Octothorpe]
-
-//   def init(nextFn: NextFn, o: Octothorpe): Traversal = {
-//     Traversal(
-//       nextFn,
-//       o.leaf.loc
-//     )
-//   }
-// }
-
-// val Box3x3 = GraphPaper
-//   .boxAt(0, 0)
-//   .setWidth(3)
-//   .setHeight(3)
-// val CellToDir = Dir.All
-//   .map(dir => (Box3x3.getCell(dir), dir))
-//   .toMap
-// case class Subregion(box: GraphPaper.Box, rect: Option[Rect])
-// activeRegions: List[Subregion] = List()
-// def activateRegion(dir: Dir): Octothorpe = {
-//   val box = Box3x3.getCell(dir).toBox()
-//   activateBox(box)
-// }
-
-// def activateRegion(
-//   dir1: Dir,
-//   dir2: Dir
-// ): Octothorpe = {
-//   val box = Box3x3
-//     .getCell(dir1)
-//     .toBox()
-//     .union(Box3x3.getCell(dir2).toBox())
-
-//   activateBox(box)
-// }
-
-// protected def activateBox(box: GraphPaper.Box): Octothorpe = {
-//   val regionBounds = box
-//     .getCells()
-//     .flatMap(cell => {
-//       val cellDir = CellToDir(cell)
-//       burstDirections(cellDir)
-//     })
-
-//   val totalBounds = regionBounds.headOption.map(r0 => regionBounds.tail.foldLeft(r0)(_.union(_)))
-//   this.copy(
-//     activeRegions = Subregion(box, totalBounds) :: this.activeRegions
-//   )
-// }

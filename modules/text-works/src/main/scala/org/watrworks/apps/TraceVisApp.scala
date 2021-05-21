@@ -58,6 +58,7 @@ object TraceVis {
                    .fromEffect(ZIO.fromEither(maybeIn))
                    .map(_ match {
                      case Processable.CorpusFile(corpusEntry) => corpusEntry
+                     case _ => ???
                    })
     } yield pinput
   }
@@ -76,7 +77,7 @@ object TraceVis {
   ): ZIO[Console, Any, RC] = {
 
     val res: ZIO[Console, Throwable, RC] = for {
-      _            <- putLn(s"Choose Clustering")
+      _            <- putStrLn(s"Choose Clustering")
       askUserStr   <- clusterRoots.zipWithIndex
                         .map({
                           case (root, rootIndex) => {
@@ -86,13 +87,13 @@ object TraceVis {
                           }
                         })
                         .runCollect
-      _            <- putLn(askUserStr.toList.flatten.mkString("\n"))
+      _            <- putStrLn(askUserStr.toList.flatten.mkString("\n"))
       userResponse <- userPrompt("Choose Clustering, Cluster#")
-      _            <- putLn(s"${userResponse}")
+      _            <- putStrLn(s"${userResponse}")
       Array(s1, s2) = userResponse.split("[, ][ ]*").map(_.trim())
       i1            = s1.toLong
       i2            = s2.toInt
-      _       <- putLn(s"Clustering ${i1}, cluster ${i2} ")
+      _       <- putStrLn(s"Clustering ${i1}, cluster ${i2} ")
       maybeRC <- clusterRoots
                    .drop(i1)
                    .runHead
@@ -175,12 +176,6 @@ object TraceVis {
     } yield filter
   }
 
-  val putLn: String => ZIO[Console, Nothing, Unit] = (msg: String) => {
-    for {
-      _ <- putStrLn(msg)
-    } yield ()
-  }
-
   val transcriptForEntry: CorpusEntry => Either[Throwable, Transcript] = (corpusEntry) => {
     val transcriptArtifact = corpusEntry.resolveArtifact("transcript.json", None)
     for {
@@ -190,16 +185,16 @@ object TraceVis {
   }
 
   val appLogic: ZIO[Console, Any, Any] = for {
-    _           <- putLn(s"___ TraceVis ___")
+    _           <- putStrLn(s"___ TraceVis ___")
     entries     <- corpusEntryStream(config(".*")).runCollect
                      .absorbWith(_ => new IOException(""))
-    _           <- putLn(s"Entries:")
-    _           <- putLn(entries.map(e => e.entryDescriptor.split("/").last).mkString("\n"))
+    _           <- putStrLn(s"Entries:")
+    _           <- putStrLn(entries.map(e => e.entryDescriptor.split("/").last).mkString("\n"))
     filter      <- userPrompt("Filter Regex")
-    _           <- putLn(s"Running with Filter ${filter}")
+    _           <- putStrLn(s"Running with Filter ${filter}")
     chosenEntry <- ZIO.fromOption(entries.filter(e => e.entryDescriptor.matches(s".*${filter}.*")).headOption)
     transcript  <- ZIO.fromEither(transcriptForEntry(chosenEntry))
-    _           <- putLn(s"Transcript:   ${transcript.documentId}")
+    _           <- putStrLn(s"Transcript:   ${transcript.documentId}")
     clusterings = listClusterings(transcript)
     (root, cluster) <- chooseClustering(clusterings)
     _ = visualizeShapeClusters(transcript, root, cluster)

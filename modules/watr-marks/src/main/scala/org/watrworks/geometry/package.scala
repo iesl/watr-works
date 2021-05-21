@@ -5,10 +5,8 @@ object `package` {
 
   import utils.ExactFloats
 
-  val syntax = GeometryImplicits
+  object syntax extends RectangularCuts with GeometricOps
 
   type FloatExact = ExactFloats.FloatExact
 
-
 }
-

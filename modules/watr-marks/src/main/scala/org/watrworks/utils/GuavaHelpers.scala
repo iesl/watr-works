@@ -7,109 +7,15 @@ import textboxing.{TextBoxing => TB}, TB._
 import scalaz.{@@ => _, Ordering => _, _}, Scalaz._
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
+import scala.annotation.tailrec
 
 case class AxisLabels(
   rowLabel: String,
-  colLabel: String,
+  colLabel: String
 )
 
 object GuavaHelpers {
 
-  def guavaTableToLabeledBox[A: Ordering, B: Ordering, C <: Any](
-    table: gcol.Table[A, B, C], zero: C,
-    topLabel: String,
-    leftLabel: String,
-    rightMarginalFunc: (C, C) => C,
-    bottomMarginalFunc: (C, C) => C
-  ): TB.Box = {
-    guavaTableToBox(table, zero,
-      Some(topLabel), Some(leftLabel),
-      Some(rightMarginalFunc), Some(bottomMarginalFunc)
-    )
-  }
-
-  def guavaTableToBox[A: Ordering, B: Ordering, C <: Any](
-    table: gcol.Table[A, B, C], zero: C,
-    topLabel: Option[String] = None,
-    leftLabel: Option[String] = None,
-    rightMarginalFunc: Option[(C, C) => C] = None,
-    bottomMarginalFunc: Option[(C, C) => C] = None,
-  ): TB.Box = {
-    val rowKeys = table.rowKeySet().asScala.toList.sorted
-    val columnKeys = table.columnKeySet().asScala.toList.sorted
-    val rows = (0 until rowKeys.length).map{ r =>
-      mutable.ArrayBuffer.fill[C](columnKeys.length)(zero)
-    }
-
-    for {
-      (rowk, rown) <- rowKeys.zipWithIndex
-      (colk, coln) <- columnKeys.zipWithIndex
-    }  {
-      val c = table.get(rowk, colk)
-      if (c!=null) {
-        rows(rown)(coln) = c
-      }
-    }
-
-    var boxedTable = rows.map{ row =>
-      row.map(_.toString().box).toList.intersperse(" ┆ ")
-    }
-
-    boxedTable = rightMarginalFunc.map{ f =>
-      val sums = rowKeys.map{ k =>
-        val row = table.row(k).asScala.values.toList
-        List(" |= ".box, row.reduce(f).toString.box)
-      }
-      boxedTable.zip(sums).map { case (r, s) => r ++ s }
-    } getOrElse { boxedTable }
-
-    boxedTable = bottomMarginalFunc.map{ f =>
-      val sums = columnKeys.map{ k =>
-        val col = table.column(k).asScala.values.toList
-        col.reduce(f).toString.box
-      }
-      boxedTable :+ (List(hspace(1), hspace(1)))
-      boxedTable :+ sums.intersperse(" = ") // .map(x => TB.borderTB("=")(x))
-    } getOrElse { boxedTable }
-
-
-    val rowLabels = vspace(1) atop vjoins(right, rowKeys.map(_.toString().box))
-    val colLabels  = columnKeys.map(_.toString().takeRight(8).mkString.box).intersperse(" ║ ")
-
-    boxedTable = colLabels +: boxedTable
-
-
-    // val grid = Grid.withCols(rowKeys.length, TB.AlignRight)
-    //   .addRow(colLabels:_*)
-
-    // val filledGrid =
-    //   rows.zip(rowLabels).zip(rightMarginals)
-    //     .foldLeft(grid){ case (accGrid, ((row, rowLabel), rightMarginal)) =>
-    //       val colBoxes = row.map(c => c.toString().box).toList.intersperse(" ┆ ".box)
-    //       accGrid.addRow((rowLabel:: " ┃ ".box :: (colBoxes :+ rightMarginal)):_*)
-    //     }
-
-    // filledGrid.addRow(bottomMarginals:_*).toBox()
-    // val rowBoxes = boxedTable.map{ row =>
-    //   hjoins(top, row)
-    // }
-
-    val colWise = switchRowsToCols(boxedTable, emptyBox(1, 1))
-
-    val cols = hjoins(top,
-      colWise.map{ col =>
-        vjoins(left, col)
-      }
-    )
-
-    hjoin(
-      borderLeftRight("", " ┃ ")(rowLabels),
-      cols
-    )
-
-  }
-
-  import scala.annotation.tailrec
   import scalaz.syntax.std.list._
 
   def switchRowsToCols[A](in: Seq[Seq[A]], pad: A): List[List[A]] = {
@@ -117,7 +23,7 @@ object GuavaHelpers {
     @tailrec
     def loop(bs: List[List[A]], acc: List[List[A]]): List[List[A]] = {
       if (bs.exists(_.nonEmpty)) {
-        val h = bs.map(_.headOption.getOrElse(pad))
+        val h  = bs.map(_.headOption.getOrElse(pad))
         val ts = bs.map(_.tailOption.getOrElse(Nil))
         loop(ts, h :: acc)
       } else acc.reverse
@@ -126,96 +32,113 @@ object GuavaHelpers {
     loop(in.toList.map(_.toList), List[List[A]]())
   }
 
-
-  def initTable[RowT: Ordering, ColT: Ordering, A <: Any](): TabularData[RowT, ColT, A, Unit, Unit] = {
-    new TabularData[RowT, ColT, A, Unit, Unit](
-      gcol.HashBasedTable.create[RowT, ColT, Any](),
-      None, None, None
+  def initTable[RowT: Ordering, ColT: Ordering, A <: Any]()
+    : TabularData[RowT, ColT, A, Unit, Unit] = {
+    TabularData[RowT, ColT, A, Unit, Unit](
+      gcol.HashBasedTable.create[RowT, ColT, Any]()
     )
   }
 
   def initTableFromGuava[RowT: Ordering, ColT: Ordering, A <: Any](
     table: gcol.Table[RowT, ColT, Any]
   ): TabularData[RowT, ColT, A, Unit, Unit] = {
-    new TabularData[RowT, ColT, A, Unit, Unit](table,
-      None, None, None
-    )
+    TabularData[RowT, ColT, A, Unit, Unit](table, None, None, None)
   }
 
   implicit val StringShow = Show.shows[String](s => s)
+
+  implicit def ShowGuavaMultiSet[A](implicit ShowA: Show[A]): Show[gcol.TreeMultiset[A]] = {
+
+    Show.shows[gcol.TreeMultiset[A]](ms => {
+      ms.entrySet()
+        .asScala
+        .to(List)
+        .map(entry => {
+          val count = entry.getCount()
+          val elem  = entry.getElement()
+          (count, elem)
+        })
+        .sortBy(_._1)
+        .reverse
+        .map({ case (count, elem) =>
+          val shElem = ShowA.show(elem)
+          s"${count}▸$shElem"
+        })
+        .mkString(",")
+
+    })
+  }
+
+}
+object TabularData {
+
+  type MarginalAccFunc[A, B] = (B, A) => B
+  type MarginalAcc[A, B]     = (B, MarginalAccFunc[A, B])
 }
 
-
-class TabularData[RowT: Ordering, ColT: Ordering, A, RM, CM](
+case class TabularData[RowT: Ordering, ColT: Ordering, A, RowMarginT, ColMarginT](
   table: gcol.Table[RowT, ColT, Any],
-  rowMarginals: Option[Seq[(RowT, RM)]],
-  colMarginals: Option[Seq[(ColT, CM)]],
-  axisLabels: Option[AxisLabels]
+  rowMarginals: Option[Map[RowT, RowMarginT]] = None,
+  colMarginals: Option[Map[ColT, ColMarginT]] = None,
+  topLabel: Option[String] = None,
+  leftLabel: Option[String] = None
 ) {
 
-  def getRowMarginal(rowk: RowT): Option[RM] = {
-    rowMarginals.flatMap{ rm =>
-      rm.filter(_._1==rowk).headOption.map(_._2)
-    }
+  type TabularDataT          = TabularData[RowT, ColT, A, RowMarginT, ColMarginT]
+  type TabularDataMapA[U]    = TabularData[RowT, ColT, U, RowMarginT, ColMarginT]
+  type TabularDataMapRowM[U] = TabularData[RowT, ColT, A, U, ColMarginT]
+  type TabularDataMapColM[U] = TabularData[RowT, ColT, A, RowMarginT, U]
+
+  def getRowMarginal(rowk: RowT): Option[RowMarginT] = {
+    rowMarginals.flatMap { _.get(rowk) }
   }
 
-  def getColMarginal(colk: ColT): Option[CM] = {
-    colMarginals.flatMap{ rm =>
-      rm.filter(_._1==colk).headOption.map(_._2)
-    }
+  def getColMarginal(colk: ColT): Option[ColMarginT] = {
+    colMarginals.flatMap { _.get(colk) }
   }
 
-  def addLabels(rowLabel: String, colLabel: String): TabularData[RowT, ColT, A, RM, CM] = {
-    new TabularData(
-      table,
-      rowMarginals,
-      colMarginals,
-      Some(AxisLabels(rowLabel, colLabel))
-    )
+  def addLeftLabel(l: String): TabularDataT = {
+    copy(leftLabel = Some(l))
+  }
+  def addTopLabel(l: String): TabularDataT = {
+    copy(topLabel = Some(l))
   }
 
-  def computeRowMarginals[B](z: => B)(f: (B, A) => B): TabularData[RowT, ColT, A, B, CM] = {
-    val rms = mapRows(z)(f)
-    new TabularData(
-      table,
-      Some(rms),
-      colMarginals,
-      axisLabels
-    )
+  def computeRowMarginals[RowMarginU](z: => RowMarginU)(
+    f: (RowMarginU, A) => RowMarginU
+  ): TabularDataMapRowM[RowMarginU] = {
+    val rms = foldLeftRows(z)(f).toMap
+    copy(rowMarginals = Some(rms))
   }
 
-  def computeColMarginals[B](z: => B)(f: (B, A) => B): TabularData[RowT, ColT, A, RM, B] = {
-    val cms = mapColumns(z)(f)
-    new TabularData(
-      table,
-      rowMarginals,
-      Some(cms),
-      axisLabels
-    )
+  def computeColMarginals[ColMarginU](z: => ColMarginU)(
+    f: (ColMarginU, A) => ColMarginU
+  ): TabularDataMapColM[ColMarginU] = {
+    val cms = foldLeftColumns(z)(f).toMap
+    copy(colMarginals = Some(cms))
   }
 
-  def rowKeys: Set[RowT] = table.rowKeySet().asScala.toSet
-  def columnKeys: Set[ColT] = table.columnKeySet().asScala.toSet
+  def rowKeys    = table.rowKeySet().asScala.toList.sorted
+  def columnKeys = table.columnKeySet().asScala.toList.sorted
 
   def getColumn(c: ColT): Seq[(RowT, A)] = {
-    table.column(c).entrySet().asScala.toList.map{ e =>
+    table.column(c).entrySet().asScala.toList.map { e =>
       (e.getKey, e.getValue.asInstanceOf[A])
     }
   }
 
+  def getColumns(): Seq[(ColT, Seq[(RowT, A)])] = {
+    columnKeys.toList.sorted.map(c => (c, getColumn(c)))
+  }
 
   def getRow(r: RowT): Seq[(ColT, A)] = {
-    table.row(r).entrySet().asScala.toList.map{ e =>
+    table.row(r).entrySet().asScala.toList.map { e =>
       (e.getKey, e.getValue.asInstanceOf[A])
     }
   }
 
   def getRows(): Seq[(RowT, Seq[(ColT, A)])] = {
     rowKeys.toList.sorted.map(r => (r, getRow(r)))
-  }
-
-  def getColumns(): Seq[(ColT, Seq[(RowT, A)])] = {
-    columnKeys.toList.sorted.map(c => (c, getColumn(c)))
   }
 
   def set(r: RowT, c: ColT, a: A): Unit = {
@@ -233,47 +156,41 @@ class TabularData[RowT: Ordering, ColT: Ordering, A, RM, CM](
 
   def modify(r: RowT, c: ColT, fa: A => A): Unit = {
     get(r, c) match {
-      case Some(a0) =>
-        table.put(r, c, fa(a0))
-      case None =>
+      case Some(a) => table.put(r, c, fa(a))
+      case None    =>
     }
   }
 
   def modifyOrSet(r: RowT, c: ColT, fa: A => A, z: => A): Unit = {
     get(r, c) match {
-      case Some(a0) =>
-        table.put(r, c, fa(a0))
-      case None =>
-        table.put(r, c, z)
+      case Some(a) => table.put(r, c, fa(a))
+      case None    => table.put(r, c, z)
     }
   }
 
-  def foreach(f: A => Unit): Unit = {
-    for {
-      rowk <- rowKeys
-      colk <- columnKeys
-    } {
-      get(rowk, colk).foreach(f)
+  def useOrSet(r: RowT, c: ColT, fa: A => Unit, z: => A): Unit = {
+    get(r, c) match {
+      case Some(a) => fa(a)
+      case None    => table.put(r, c, z)
     }
   }
 
-  def foreachLocation(f: (A, Int, Int) => Unit): Unit = {
-    for {
-      (rowk, rowi) <- rowKeys.zipWithIndex
-      (colk, coli) <- columnKeys.zipWithIndex
-    } get(rowk, colk).foreach(a => f(a, rowi, coli))
-  }
+  def foreach(f: A => Unit): Unit = for {
+    rowk <- rowKeys
+    colk <- columnKeys
+  } get(rowk, colk).foreach(f)
 
-  def modEach(f: A => A): Unit = {
-    for {
-      rowk <- rowKeys
-      colk <- columnKeys
-    } {
-      modify(rowk, colk, f)
-    }
-  }
+  def foreachLocation(f: (A, Int, Int) => Unit): Unit = for {
+    (rowk, rowi) <- rowKeys.zipWithIndex
+    (colk, coli) <- columnKeys.zipWithIndex
+  } get(rowk, colk).foreach(a => f(a, rowi, coli))
 
-  def map[B](f: A => B): TabularData[RowT, ColT, B, RM, CM] = {
+  def modEach(f: A => A): Unit = for {
+    rowk <- rowKeys
+    colk <- columnKeys
+  } modify(rowk, colk, f)
+
+  def map[B](f: A => B): TabularDataMapA[B] = {
     val table2 = gcol.HashBasedTable.create[RowT, ColT, Any]()
 
     for {
@@ -285,112 +202,125 @@ class TabularData[RowT: Ordering, ColT: Ordering, A, RM, CM](
       }
     }
 
-    new TabularData[RowT, ColT, B, RM, CM](table2, rowMarginals, colMarginals, axisLabels)
+    copy(table = table2)
   }
 
-  def mapColumns[B](z: => B)(f: (B, A) => B): Seq[(ColT, B)] = {
+  def foldLeftColumns[B](z: => B)(f: (B, A) => B): Seq[(ColT, B)] = {
     for {
       colk <- columnKeys.toList.sorted
     } yield {
       val column = table.column(colk)
-      val total = column.asScala.toSeq.foldLeft(z){ case  (acc, (rowk@_, a)) =>
+      val total = column.asScala.toSeq.foldLeft(z) { case (acc, (rowk @ _, a)) =>
         f(acc, a.asInstanceOf[A])
       }
       (colk, total)
     }
   }
 
-  def mapRows[B](z: => B)(f: (B, A) => B): Seq[(RowT, B)] = {
+  def foldLeftRows[B](z: => B)(f: (B, A) => B): Seq[(RowT, B)] = {
     for {
       rowk <- rowKeys.toList.sorted
     } yield {
       val row = table.row(rowk)
-      val total = row.asScala.toSeq.foldLeft(z){ case  (acc, (colk@_, a)) =>
+      val total = row.asScala.toSeq.foldLeft(z) { case (acc, (colk @ _, a)) =>
         f(acc, a.asInstanceOf[A])
       }
       (rowk, total)
     }
   }
 
-  def toReportBox(): TB.Box = {
-    GuavaHelpers.guavaTableToBox(
-      table, 0
-    )
-  }
-
   import GuavaHelpers._
 
-
-  def showBox(zero: String="")(implicit
-    ShowA: Show[A],
+  def showBox(zero: String = "∅")(implicit
+    ShowA: Show[A]
   ): TB.Box = {
 
-    val rowKeys = table.rowKeySet().asScala.toList.sorted
+    val rowKeys    = table.rowKeySet().asScala.toList.sorted
     val columnKeys = table.columnKeySet().asScala.toList.sorted
 
-    val rows = (0 until rowKeys.length).map{ r =>
+    val rows = (0 until rowKeys.length).map { r =>
       mutable.ArrayBuffer.fill[String](columnKeys.length)(zero)
     }
 
-    foreachLocation{ case (a, rown, coln) =>
+    foreachLocation { case (a, rown, coln) =>
       rows(rown)(coln) = ShowA.shows(a)
     }
 
-    val cellBoxes = rows.map{ row =>
-      row.map(_.box).toList.intersperse(" ┆ ")
+    val cellBoxes = rows.map { row =>
+      val (r, g, b)  = (20, 30, 128)
+      val fa = fansi.Color.True(r, g, b)
+      row.to(List).map(s => {
+        s.box
+      }).intersperse(" ┆ ")
+
     }
 
+    // ====
     val withRowMarginals = rowMarginals.map { rms =>
-      cellBoxes.zip(
-        rms.map{ case (rowk@_, rm) =>
-          hjoin(" ┃ ", rm.toString().box)
-        }
-      ).map{ case (rowCells, rm) => rowCells :+ rm }
-    } getOrElse{ cellBoxes }
-
+      cellBoxes
+        .zip(
+          rms.map { case (rowk @ _, rm) =>
+            hjoin(" ▐ ", rm.toString().box)
+          }
+        )
+        .map { case (rowCells, rm) => rowCells :+ rm }
+    } getOrElse { cellBoxes }
 
     val withRowAndColMarginals: Seq[Seq[Box]] = colMarginals.map { cms =>
-      val cmBoxes = cms.map(_._2.toString().box).toList.intersperse(" | ")
+      val cmBoxes = cms.map(_._2.toString().box).toList.intersperse(" ▒ ")
 
-      withRowMarginals :+  cmBoxes
-    } getOrElse{ withRowMarginals }
-
+      withRowMarginals :+ cmBoxes
+    } getOrElse { withRowMarginals }
 
     val rowLabels = vspace(1) atop vjoins(right, rowKeys.map(_.toString().box))
-    val colLabels  = columnKeys.map(_.toString().takeRight(8).mkString.box).intersperse(" ║ ") ++ List(" ┃ ".box, hspace(1))
+    val colLabels =
+      columnKeys.map(_.toString().mkString.box).intersperse(" ▒ ") ++ List(
+        " ▜ ".box,
+        hspace(1)
+      )
 
     val colWise = switchRowsToCols(
       withRowAndColMarginals,
       emptyBox(1, 1)
     )
 
-    val withColLabels = colLabels.zipAll(colWise, hspace(1), List()).map{ case (l, col) => l :: col }
+    val withColLabels =
+      colLabels.zipAll(colWise, hspace(1), List()).map { case (l, col) => l :: col }
 
-    val cols = hjoins(top,
-      withColLabels.map{ col =>
+    val cols = hjoins(
+      top,
+      withColLabels.map { col =>
         vjoins(left, col)
       }
     )
+    val tLabel = topLabel.map("  ".box + _.box).getOrElse(emptyBox(0, 0))
+    val lLabel = leftLabel
+      .map(l => {
+        vjoins(left, l.toList.map(_.toString().box))
+      })
+      .getOrElse(emptyBox(0, 0))
 
-    val (rowLabel, colLabel) = axisLabels.map{ axisLabel =>
-      val leftLabel = vjoins(left, axisLabel.rowLabel.toList.map(_.toString().box))
-      (leftLabel, axisLabel.colLabel.box)
-    } getOrElse { (emptyBox(0, 0), emptyBox(0, 0)) }
-
-    vjoinWith(left, vspace(1), List(
-      colLabel,
-      hjoinWith(top, nullBox, List(
-        borderLeftRight("", " ┇ ")(rowLabel),
-        hspace(1),
-        hjoin(
-          borderLeftRight("", " ┃ ")(rowLabels),
-          cols
+    vjoinWith(
+      left,
+      // vspace(1),
+      nullBox,
+      List(
+        tLabel,
+        hjoinWith(
+          top,
+          nullBox,
+          List(
+            borderLeftRight("", " ┇ ")(lLabel),
+            hspace(1),
+            hjoin(
+              borderLeftRight("", " ▌ ")(rowLabels),
+              cols
+            )
+          )
         )
-      ))
-    ))
-
+      )
+    )
 
   }
-
 
 }

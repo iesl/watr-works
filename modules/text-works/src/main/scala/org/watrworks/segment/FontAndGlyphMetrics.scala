@@ -13,7 +13,6 @@ import scala.collection.mutable
 
 import TypeTags._
 
-
 object FontAndGlyphMetrics {
 
   def createFontNameVariants(
@@ -81,7 +80,6 @@ trait FontAndGlyphMetricsDocWide extends BaseDocumentSegmenter { self =>
     }
 
     val symbolicFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang = false)
-    println(s"symbolicFontIds: ${symbolicFontIds}")
 
     symbolicFontIds.foreach { scaledSymFontId =>
       val (symFontName @ _, symScalingFactor) = FontDefs.splitScaledFontId(scaledSymFontId)
@@ -94,23 +92,18 @@ trait FontAndGlyphMetricsDocWide extends BaseDocumentSegmenter { self =>
           symVariantNames.contains(name)
       }
 
+      matchingVariantName.fold[Unit](())({ case (variantName, scalingFactor @ _, natScaledFontId) =>
+        val matchingNatLangFont = docScope.fontDefs.getScaledFontOffsets(natScaledFontId)
+        val rescaledOffsets     = matchingNatLangFont.rescaledAs(variantName, symScalingFactor)
 
-      println(s"matching variants: ${matchingVariantName} matches ${scaledSymFontId}")
-      matchingVariantName.fold[Unit](())({
-        case (variantName, scalingFactor @ _, natScaledFontId) =>
-          val matchingNatLangFont = docScope.fontDefs.getScaledFontOffsets(natScaledFontId)
-          val rescaledOffsets     = matchingNatLangFont.rescaledAs(variantName, symScalingFactor)
-
-          println(s"Symbolic Font matches Nat Lang Font, rescaling Nat Lang: ")
-          println(s"    ${matchingNatLangFont}")
-          println(s"        To: ")
-          println(s"    ${rescaledOffsets}")
-          docScope.fontDefs.setScaledFontOffsets(scaledSymFontId, rescaledOffsets)
+        println(s"Symbolic Font matches Nat Lang Font, rescaling Nat Lang: ")
+        println(s"    ${matchingNatLangFont}")
+        println(s"        To: ")
+        println(s"    ${rescaledOffsets}")
+        docScope.fontDefs.setScaledFontOffsets(scaledSymFontId, rescaledOffsets)
 
       })
-
     }
-
   }
 
   def computeScaledFontHeightMetrics(lineLabel: Label): Unit = {

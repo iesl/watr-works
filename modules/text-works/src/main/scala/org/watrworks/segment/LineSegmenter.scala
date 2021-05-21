@@ -11,16 +11,6 @@ import utils.SlicingAndDicing._
 
 import TypeTags._
 
-object LineSegmentLabels {
-  val Baseline       = Label.auto
-  val SupScript      = Label.auto
-  val SubScript      = Label.auto
-  val StackedScript  = Label.auto
-  val CombiningChars = Label.auto
-  val MathsInline    = Label.auto
-  val MathsCloud     = Label.auto
-}
-
 trait LineSegmentation
   extends BasePageSegmenter
   with LineLayout
@@ -33,59 +23,27 @@ trait LineSegmentation
     segmentSuperSubScripts()
   }
 
-  private def getAscentDescentPageSlice(fontOffsets: FontBaselineOffsets): Option[Rect] = {
-    fontOffsets.sliceBetween(
-      _.ascentLine,
-      _.descentLine,
-      pageGeometry
-    )
-    val sliceHeight = fontOffsets.descentLine - fontOffsets.ascentLine
-    pageHorizontalSlice(
-      fontOffsets.ascentLine.asDouble(),
-      sliceHeight.asDouble()
-    )
-  }
-
   private def joinFontBaselinesViaPageBands(startingShapeLabel: Label, outputLabel: Label): Unit = {
-
-    def _loop(
-      scaledFontIds: List[String @@ ScaledFontID],
-      lineShapes: Seq[LineShape],
-      depth: Int = 0
-    ): Unit = scaledFontIds match {
-
-      case headFontId :: tailFontIds =>
-        val (linesForFont, others) = lineShapes.partition { lineShape =>
-          lineShape.getAttr(Fonts).exists(_.contains(headFontId))
-        }
-
-        val allAdjustedOffsets = linesForFont.map { lineShape =>
-          val line        = lineShape.shape
-          val fontOffsets = docScope.fontDefs.getScaledFontOffsets(headFontId)
-          (lineShape, fontOffsets.forFontBoxBottom(line.p1.y))
-        }
-
-        val linesAndOffsetsAndHeadChar = allAdjustedOffsets.map { case (lineShape, offsetsAtLine) =>
-          val lineChars = getCharsForShape(lineShape)
-          (lineShape, offsetsAtLine, lineChars.head)
-        }
-
-        linesAndOffsetsAndHeadChar.foreach { case (_, offsetsAtLine, headChar) =>
-          getAscentDescentPageSlice(offsetsAtLine).foreach { slice =>
-            findLineCharsInPageBand(slice, headChar, outputLabel)
-          }
-        }
-
-        _loop(tailFontIds, others, depth + 1)
-
-      case Nil =>
-    }
-
     val startingLines = getLabeledLines(startingShapeLabel)
+    val sorted        = sortShapesByFontOccurrence(startingLines)
+    sorted.foreach({ case (linesForFont, fontId) =>
+      val allAdjustedOffsets = linesForFont.map { lineShape =>
+        val line        = lineShape.asLineShape.shape
+        val fontOffsets = docScope.fontDefs.getScaledFontOffsets(fontId)
+        (lineShape, fontOffsets.forFontBoxBottom(line.p1.y))
+      }
 
-    val fontsByMostOccuring = getFontsSortedByHighestOccurrenceCount()
+      val linesAndOffsetsAndHeadChar = allAdjustedOffsets.map { case (lineShape, offsetsAtLine) =>
+        val lineChars = getCharsForShape(lineShape)
+        (lineShape, offsetsAtLine, lineChars.head)
+      }
 
-    _loop(fontsByMostOccuring.toList, startingLines)
+      linesAndOffsetsAndHeadChar.foreach { case (_, offsetsAtLine, headChar) =>
+        getAscentDescentPageSlice(offsetsAtLine).foreach { slice =>
+          findLineCharsInPageBand(slice, headChar, outputLabel)
+        }
+      }
+    })
   }
 
   private def findLineCharsInPageBand(
@@ -164,5 +122,19 @@ trait LineSegmentation
       } else None
     } else None
   }
+
+  protected def getAscentDescentPageSlice(fontOffsets: FontBaselineOffsets): Option[Rect] = {
+    fontOffsets.sliceBetween(
+      _.ascentLine,
+      _.descentLine,
+      pageGeometry
+    )
+    val sliceHeight = fontOffsets.descentLine - fontOffsets.ascentLine
+    pageHorizontalSlice(
+      fontOffsets.ascentLine.asDouble(),
+      sliceHeight.asDouble()
+    )
+  }
+
 
 }

@@ -30,9 +30,10 @@ trait ColumnFinding extends BasePageSegmenter with LineSegmentation { self =>
 
   def createColumnClusters(): Unit = {
 
-    val charRunBaselineShapes =
-      getLabeledRects(clusterableShapeLabel).map(_.shape.toLine(Dir.Bottom))
-    val leftmostPoints = charRunBaselineShapes.map { _.p1 }
+    val charRunBaselineShapes = getLabeledRects(clusterableShapeLabel)
+      .map(_.shape.toLine(Dir.Bottom))
+
+    val leftmostPoints  = charRunBaselineShapes.map { _.p1 }
     val rightmostPoints = charRunBaselineShapes.map { _.p2 }
     clusterColumnPoints(leftmostPoints, LB.LeftAlignedCharCol, leftAlignedPoints = true)
     clusterColumnPoints(rightmostPoints, LB.RightAlignedCharCol, leftAlignedPoints = false)
@@ -43,9 +44,9 @@ trait ColumnFinding extends BasePageSegmenter with LineSegmentation { self =>
     asColumnLabel: Label,
     leftAlignedPoints: Boolean
   ): Unit = {
-    val pointHist = HST.SparselyBin.ing(1.4, { p: Point => p.x.asDouble() })
-    val pageRight = pageGeometry.right
-    val clusterLabel = asColumnLabel qualifiedAs Cluster
+    val pointHist     = HST.SparselyBin.ing(1.4, { p: Point => p.x.asDouble() })
+    val pageRight     = pageGeometry.right
+    val clusterLabel  = asColumnLabel qualifiedAs Cluster
     val evidenceLabel = asColumnLabel qualifiedAs Evidence
 
     points.foreach { point =>
@@ -64,10 +65,10 @@ trait ColumnFinding extends BasePageSegmenter with LineSegmentation { self =>
         counting.entries > 1 && binRight.toFloatExact() < pageRight
       }
       .foreach { case (bin, _) =>
-        val binWidth = pointHist.binWidth
-        val binLeft = bin * binWidth
+        val binWidth   = pointHist.binWidth
+        val binLeft    = bin * binWidth
         val pageColumn = pageVerticalSlice(binLeft, binWidth).get
-        val hitPoints = searchForPoints(pageColumn, evidenceLabel)
+        val hitPoints  = searchForPoints(pageColumn, evidenceLabel)
 
         deleteShapes(hitPoints)
 
@@ -76,9 +77,9 @@ trait ColumnFinding extends BasePageSegmenter with LineSegmentation { self =>
         val uniqYHits = hitPoints.uniqueBy(_.shape.y)
 
         if (uniqYHits.length > 1) {
-          val yvals = uniqYHits.map(_.shape.y)
+          val yvals        = uniqYHits.map(_.shape.y)
           val (maxy, miny) = (yvals.max, yvals.min)
-          val height = maxy - miny
+          val height       = maxy - miny
 
           val colActual = pageColumn.getHorizontalSlice(miny, height).get
           traceLog.trace {

@@ -2,12 +2,11 @@ package org.watrworks
 package segment
 
 import geometry._
-import geometry.syntax._
-
+import TypeTags._
+import utils.DoOrDieHandlers._
 import utils.ExactFloats._
 import utils._
 
-import utils.DoOrDieHandlers._
 import org.dianahep.{histogrammar => HST}
 import scala.collection.mutable
 
@@ -58,6 +57,56 @@ class LayoutStats {
   }
 }
 
-class PageLayoutStats extends LayoutStats {}
+import com.google.{common => guava}
+import guava.{collect => gcol}
 
-class DocumentLayoutStats extends LayoutStats {}
+class PageLayoutStats extends LayoutStats {
+  type IntMultiset = gcol.TreeMultiset[Int @@ FloatRep]
+
+  private def mkSet(): IntMultiset = gcol.TreeMultiset.create[Int @@ FloatRep](null)
+
+  val vjumps: TabularData[String @@ ScaledFontID,String @@ ScaledFontID,IntMultiset, Unit, Unit] = GuavaHelpers.initTable[String @@ ScaledFontID, String @@ ScaledFontID, IntMultiset]()
+
+  def addFontVJump(
+    f1: String @@ ScaledFontID,
+    y1: Int @@ FloatRep,
+    f2: String @@ ScaledFontID,
+    y2: Int @@ FloatRep
+  ): Unit = {
+    val vdist = FloatRep(math.abs(y2.unwrap - y1.unwrap))
+
+    vjumps.useOrSet(
+      f1,
+      f2,
+      mset => mset.add(vdist),
+      mkSet()
+    )
+  }
+
+}
+
+
+class DocumentLayoutStats extends LayoutStats {
+
+  // type IntMultiset = gcol.TreeMultiset[Int @@ FloatRep]
+
+  // private def mkSet(): IntMultiset = gcol.TreeMultiset.create[Int @@ FloatRep](null)
+
+  // val vjumps: TabularData[String @@ ScaledFontID,String @@ ScaledFontID,IntMultiset, Unit, Unit] = GuavaHelpers.initTable[String @@ ScaledFontID, String @@ ScaledFontID, IntMultiset]()
+
+  // def addFontVJump(
+  //   f1: String @@ ScaledFontID,
+  //   y1: Int @@ FloatRep,
+  //   f2: String @@ ScaledFontID,
+  //   y2: Int @@ FloatRep
+  // ): Unit = {
+  //   val vdist = FloatRep(math.abs(y2.unwrap - y1.unwrap))
+
+  //   vjumps.useOrSet(
+  //     f1,
+  //     f2,
+  //     mset => mset.add(vdist),
+  //     mkSet()
+  //   )
+  // }
+}

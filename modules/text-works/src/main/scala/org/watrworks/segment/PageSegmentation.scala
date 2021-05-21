@@ -38,15 +38,13 @@ object PageSegmenter {
   }
 }
 
-
 trait AttributeTags {
 
   implicit val UpLeftChar       = AttrWitness.Mk[String]()
   implicit val ExtractedChars   = AttrWitness.Mk[Seq[ExtractedItem.CharItem]]()
   implicit val ExtractedChar    = AttrWitness.Mk[ExtractedItem.CharItem]()
-  // implicit val ExtractedItems   = AttrWitness.Mk[Seq[ExtractedItem]]()
   implicit val Fonts            = AttrWitness.Mk[Set[String @@ ScaledFontID]]()
-  implicit val GlyphTreeEdges   = AttrWitness.Mk[List[NextNeighbors]]()
+  implicit val GlyphTreeEdges   = AttrWitness.Mk[List[Neighbor]]()
   implicit val PrimaryFont      = AttrWitness.Mk[String @@ ScaledFontID]()
   implicit val FontOffsets      = AttrWitness.Mk[FontBaselineOffsets]()
   implicit val LabeledIntervals = AttrWitness.Mk[Seq[Interval[Int, Label]]]()
@@ -186,18 +184,6 @@ trait BasePageSegmenter extends PageScopeTracing with AttributeTags { self =>
     val _ = shapeIndex.addCluster(l, shapes)
   }
 
-  // protected def getExtractedItemsForShape(
-  //   shape: DocSegShape[GeometricFigure]
-  // ): Seq[ExtractedItem] = {
-  //   shapeIndex.getAttr(shape.id, ExtractedItems).getOrElse(List.empty)
-  // }
-
-  // protected def getExtractedItemsForShapes(
-  //   shapes: Seq[DocSegShape[GeometricFigure]]
-  // ): Seq[Seq[ExtractedItem]] = {
-  //   shapes.map { getExtractedItemsForShape(_) }
-  // }
-
   def getCharsForShape(shape: DocSegShape[GeometricFigure]): Seq[ExtractedItem.CharItem] = {
     shape.getAttr(ExtractedChars).getOrElse(Nil)
   }
@@ -271,6 +257,30 @@ trait BasePageSegmenter extends PageScopeTracing with AttributeTags { self =>
       rightHalf <- rect.splitVertical(x1)._2
       leftHalf  <- rightHalf.splitVertical(x2)._1
     } yield leftHalf
+  }
+
+  def sortShapesByFontOccurrence(
+    shapes: Seq[AnyShape]
+  ): Seq[(List[AnyShape], String @@ ScaledFontID)] = {
+
+    def _loop(
+      scaledFontIds: List[String @@ ScaledFontID],
+      lineShapes: Seq[AnyShape]
+    ): List[(List[AnyShape], String @@ ScaledFontID)] = scaledFontIds match {
+
+      case headFontId :: tailFontIds =>
+        val (linesForFont, others) = lineShapes.partition { lineShape =>
+          lineShape.getAttr(Fonts).exists(_.contains(headFontId))
+        }
+
+        (linesForFont.to(List), headFontId) :: _loop(tailFontIds, others)
+
+      case Nil => Nil
+    }
+
+    val fontsByMostOccuring = getFontsSortedByHighestOccurrenceCount()
+
+    _loop(fontsByMostOccuring.toList, shapes)
   }
 
   implicit class RicherShapes[+A <: GeometricFigure](val theShape: DocSegShape[A]) {

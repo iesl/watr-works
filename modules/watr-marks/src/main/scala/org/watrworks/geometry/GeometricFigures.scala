@@ -4,11 +4,11 @@ package geometry
 import TypeTags._
 
 import utils.ExactFloats._
-import GeometryImplicits._
+import syntax._
 import utils.{RelativeDirection => Dir}
 
 sealed trait GeometricFigure { self =>
-  lazy val minBounds = GeometryImplicits.minBoundingRect(self)
+  lazy val minBounds = minBoundingRect(self)
 }
 
 case class Rect(

@@ -40,7 +40,7 @@ class OctothorpeTest extends WatrSpec with TextGridConstruction {
       })
 
     val Bounds5x3 = getRegionBounds(0, 0, 5, 3)
-    val BoundsAt1_1 = getRegionBounds(1, 2, 1, 1)
+    val BoundsAt1_1 = getRegionBounds(1, 1, 1, 1)
 
     val plusShaped = Octothorpe.withSearchRegions(
       Octothorpe.cell(Dir.Top),
@@ -52,7 +52,7 @@ class OctothorpeTest extends WatrSpec with TextGridConstruction {
 
     val focused = plusShaped
       .withHorizon(Bounds5x3)
-      .focusedOn(BoundsAt1_1)
+      .centeredOn(BoundsAt1_1)
 
     val found = focused.runSearch(doSearch)
     val foundLabels = found.map(_.labels.head).mkString(", ")

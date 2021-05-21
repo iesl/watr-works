@@ -59,6 +59,8 @@ object SensibleProject extends CommonLibs {
     "-language:higherKinds",             // Allow higher-kinded types
     "-language:implicitConversions",     // Allow definition of implicit functions called views
     "-unchecked",                       // Generated code depends on assumptions.
+    // "-Vimplicits",         // splain plugin for scalav < 2.13.6
+    // "-Vtype-diffs",        // splain plugin for scalav < 2.13.6
   )
 
   // "-Xfatal-warnings", // Fail the compilation if there are any warnings.
@@ -100,8 +102,9 @@ object SensibleProject extends CommonLibs {
   lazy val settings = Seq(
     autoCompilerPlugins  := true,
 
-    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full),
+    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.13.0" cross CrossVersion.full),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
+    addCompilerPlugin("io.tryp" % "splain" % "0.5.8" cross CrossVersion.patch),
 
     scalaVersion := scalaV,
     organization := "org.watrworks",

@@ -185,6 +185,9 @@ trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
     }
   }
 
+
+  import scalaz.Scalaz.stringInstance
+
   protected def printScaledFontTableData(): Unit = {
 
     val allFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang = true) ++ docScope.fontDefs
@@ -209,7 +212,7 @@ trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
     }
 
     println("Most Common Widths / ranges\n\n")
-    println(widthRangeCentroidDisplay.toReportBox())
+    println(widthRangeCentroidDisplay.showBox())
 
     val widthRangeCentroids = pagewiseLineWidthTable.map { widths =>
       val widthClusters = qnn(widths, tolerance = 1.0)
@@ -222,11 +225,15 @@ trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
       widthClusters
     }
 
-    val marginalSizes = widthRangeCentroids.mapColumns(0) { case (acc, e) => acc + e }
+
+
+    val marginalSizes = widthRangeCentroids.foldLeftColumns(List[Int]()) { case (acc, e) =>
+      acc :+ e
+    }
 
     val marginalSizesStr = marginalSizes.mkString("\n  ", "\n  ", "\n")
 
-    println(s"Marginal Sizes ${}")
+    println("Marginal Sizes")
     println(marginalSizesStr)
 
     println(docScope.fontDefs.report())

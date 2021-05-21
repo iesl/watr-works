@@ -3,6 +3,7 @@ package utils
 
 object ExactFloats {
   import scalaz.Tag
+  import scalaz.Show
 
   sealed trait FloatRep
 
@@ -14,6 +15,8 @@ object ExactFloats {
     val zero = FloatRep(0)
     val epsilon = FloatRep(1)
   }
+
+  implicit val ShowFloatExact = Show.shows[Int @@ FloatRep](_.dblFormat())
 
   def max(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = FloatRep(math.max(d1.unwrap, d2.unwrap))
   def min(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = FloatRep(math.min(d1.unwrap, d2.unwrap))
