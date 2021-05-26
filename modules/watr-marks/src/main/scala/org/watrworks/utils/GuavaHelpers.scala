@@ -45,7 +45,8 @@ object GuavaHelpers {
     TabularData[RowT, ColT, A, Unit, Unit](table, None, None, None)
   }
 
-  implicit val StringShow = Show.shows[String](s => s)
+  implicit val StringShow           = Show.shows[String](s => s)
+  implicit val scalazDoubleInstance = scalaz.Scalaz.doubleInstance
 
   implicit def ShowGuavaMultiSet[A](implicit ShowA: Show[A]): Show[gcol.TreeMultiset[A]] = {
 
@@ -64,16 +65,16 @@ object GuavaHelpers {
           val shElem = ShowA.show(elem)
           s"${count}▸$shElem"
         })
-        .mkString(",")
+        .mkString("[", ",", "]")
 
     })
   }
-
 }
+
 object TabularData {
 
-  type MarginalAccFunc[A, B] = (B, A) => B
-  type MarginalAcc[A, B]     = (B, MarginalAccFunc[A, B])
+  type Init[RowT, ColT, A] = TabularData[RowT, ColT, A, Unit, Unit]
+
 }
 
 case class TabularData[RowT: Ordering, ColT: Ordering, A, RowMarginT, ColMarginT](
@@ -139,6 +140,11 @@ case class TabularData[RowT: Ordering, ColT: Ordering, A, RowMarginT, ColMarginT
 
   def getRows(): Seq[(RowT, Seq[(ColT, A)])] = {
     rowKeys.toList.sorted.map(r => (r, getRow(r)))
+  }
+
+  def getEntries(): Seq[(RowT, Seq[(ColT, A)])] = {
+
+    ???
   }
 
   def set(r: RowT, c: ColT, a: A): Unit = {
@@ -247,11 +253,12 @@ case class TabularData[RowT: Ordering, ColT: Ordering, A, RowMarginT, ColMarginT
     }
 
     val cellBoxes = rows.map { row =>
-      val (r, g, b)  = (20, 30, 128)
-      val fa = fansi.Color.True(r, g, b)
-      row.to(List).map(s => {
-        s.box
-      }).intersperse(" ┆ ")
+      row
+        .to(List)
+        .map(s => {
+          s.box
+        })
+        .intersperse(" ┆ ")
 
     }
 
@@ -321,6 +328,22 @@ case class TabularData[RowT: Ordering, ColT: Ordering, A, RowMarginT, ColMarginT
       )
     )
 
+  }
+
+  def showAsList(zero: String = "∅")(implicit
+    ShowA: Show[A]
+  ): TB.Box = {
+    val entries = for {
+      (rowk, cols)    <- getRows()
+      (colk, cellval) <- cols
+    } yield {
+      vjoin(
+        hjoin("[ row: ", rowk.toString(),",  col:", colk.toString(), " ]"),
+        (hspace(3) beside ShowA.show(cellval).toString())
+      )
+    }
+
+    vjoinWith(left, vspace(1), entries)
   }
 
 }

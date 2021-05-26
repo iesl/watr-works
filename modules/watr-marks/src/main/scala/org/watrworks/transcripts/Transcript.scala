@@ -124,7 +124,6 @@ object Transcript {
     name: String,
     id: Option[Int @@ LabelID],
     range: List[Range],
-    // props: Option[Json],
     props: Option[Map[String, List[String]]],
     children: Option[List[Label]]
   )
@@ -157,40 +156,40 @@ object Transcript {
   ////////////////////////////////////////////////////
   ////////////////////////////////////////////////////
   ////////////////////////////////////////////////////
-  sealed trait RangeUnit
-  sealed trait RangeExpr
-  object RangeExpr {
-    case class And(ranges: List[RangeUnit]) extends RangeExpr
-  }
+  // sealed trait RangeUnit
+  // sealed trait RangeExpr
+  // object RangeExpr {
+  //   case class And(ranges: List[RangeUnit]) extends RangeExpr
+  // }
 
-  case class TextRangeUnit(at: Span) extends RangeUnit
-  case class GeometryRangeUnit(at: GeometricFigure) extends RangeUnit
-  case class PageRangeUnit(at: Int @@ PageNum) extends RangeUnit
+  // case class TextRangeUnit(at: Span) extends RangeUnit
+  // case class GeometryRangeUnit(at: GeometricFigure) extends RangeUnit
+  // case class PageRangeUnit(at: Int @@ PageNum) extends RangeUnit
 
 
-  val RangeDecoder2: Decoder[RangeUnit] = new Decoder[RangeUnit] {
-    def apply(c: HCursor): Decoder.Result[RangeUnit] = {
-      val asdf = for {
-        // foo <- c.downField("unit").as[String]
-        maybeKeys <- c.keys.to(List)
-        key <- maybeKeys
-        value = c.downField(key)
-        // range <- {
-        //   val d: Decoder[Range] =
-        //     if (foo.startsWith("text")) Decoder[TextRange].widen
-        //     else if (foo.startsWith("shape")) Decoder[GeometryRange].widen
-        //     else if (foo.startsWith("document")) Decoder[DocumentRange].widen
-        //     else if (foo.startsWith("page")) Decoder[PageRange].widen
-        //     else if (foo.startsWith("stanza")) Decoder[StanzaRange].widen
-        //     else Decoder[LabelRange].widen
+  // val RangeDecoder2: Decoder[RangeUnit] = new Decoder[RangeUnit] {
+  //   def apply(c: HCursor): Decoder.Result[RangeUnit] = {
+  //     val asdf = for {
+  //       // foo <- c.downField("unit").as[String]
+  //       maybeKeys <- c.keys.to(List)
+  //       key <- maybeKeys
+  //       value = c.downField(key)
+  //       // range <- {
+  //       //   val d: Decoder[Range] =
+  //       //     if (foo.startsWith("text")) Decoder[TextRange].widen
+  //       //     else if (foo.startsWith("shape")) Decoder[GeometryRange].widen
+  //       //     else if (foo.startsWith("document")) Decoder[DocumentRange].widen
+  //       //     else if (foo.startsWith("page")) Decoder[PageRange].widen
+  //       //     else if (foo.startsWith("stanza")) Decoder[StanzaRange].widen
+  //       //     else Decoder[LabelRange].widen
 
-        //   d(c)
-        // }
-      } yield value
+  //       //   d(c)
+  //       // }
+  //     } yield value
 
-      ???
-    }
-  }
+  //     ???
+  //   }
+  // }
 
   ////////////////////////////////////////////////////
   ////////////////////////////////////////////////////

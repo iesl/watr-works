@@ -461,7 +461,7 @@ trait GeometricOps {
 
   def minBoundingRect(fig: GeometricFigure): Rect = fig match {
     case f: Rect  => f
-    case f: Point => Rect(f.x, f.y, FloatRep(0), FloatRep(0))
+    case f: Point => Rect(f.x, f.y, FloatExact.epsilon, FloatExact.epsilon)
     case f: Line  => f.bounds()
     case f: Trapezoid =>
       val Trapezoid(Point(tlx, tly), twidth, Point(blx, bly), bwidth) = f

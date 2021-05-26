@@ -61,52 +61,45 @@ import com.google.{common => guava}
 import guava.{collect => gcol}
 
 class PageLayoutStats extends LayoutStats {
-  type IntMultiset = gcol.TreeMultiset[Int @@ FloatRep]
 
-  private def mkSet(): IntMultiset = gcol.TreeMultiset.create[Int @@ FloatRep](null)
+  object fontVJump {
+    type RowT   = String @@ ScaledFontID
+    type ColT   = String @@ ScaledFontID
+    type ValueT = gcol.TreeMultiset[Int @@ FloatRep]
+    type TableT = TabularData.Init[RowT, ColT, ValueT]
 
-  val vjumps: TabularData[String @@ ScaledFontID,String @@ ScaledFontID,IntMultiset, Unit, Unit] = GuavaHelpers.initTable[String @@ ScaledFontID, String @@ ScaledFontID, IntMultiset]()
+    private def initValue(): ValueT = gcol.TreeMultiset.create(null)
 
-  def addFontVJump(
-    f1: String @@ ScaledFontID,
-    y1: Int @@ FloatRep,
-    f2: String @@ ScaledFontID,
-    y2: Int @@ FloatRep
-  ): Unit = {
-    val vdist = FloatRep(math.abs(y2.unwrap - y1.unwrap))
+    val table: TableT = GuavaHelpers.initTable()
 
-    vjumps.useOrSet(
-      f1,
-      f2,
-      mset => mset.add(vdist),
-      mkSet()
-    )
+    def add(
+      f1: RowT,
+      y1: Int @@ FloatRep,
+      f2: ColT,
+      y2: Int @@ FloatRep
+    ): Unit = {
+      val vdist = FloatRep(math.abs(y2.unwrap - y1.unwrap))
+
+      table.useOrSet(f1, f2, _.add(vdist), initValue())
+    }
+  }
+
+  object fontBackslashAngle {
+    type RowT = String @@ ScaledFontID
+    type ColT = String @@ ScaledFontID
+    // type ValueT = gcol.TreeMultiset[Double]
+    type ValueT = gcol.TreeMultiset[Int @@ FloatRep]
+    type TableT = TabularData.Init[RowT, ColT, ValueT]
+
+    private def initValue(): ValueT = gcol.TreeMultiset.create(null)
+
+    val table: TableT = GuavaHelpers.initTable()
+
+    def add(f1: RowT, f2: ColT, angle: Int @@ FloatRep): Unit =
+      table.useOrSet(f1, f2, _.add(angle), initValue())
+
   }
 
 }
 
-
-class DocumentLayoutStats extends LayoutStats {
-
-  // type IntMultiset = gcol.TreeMultiset[Int @@ FloatRep]
-
-  // private def mkSet(): IntMultiset = gcol.TreeMultiset.create[Int @@ FloatRep](null)
-
-  // val vjumps: TabularData[String @@ ScaledFontID,String @@ ScaledFontID,IntMultiset, Unit, Unit] = GuavaHelpers.initTable[String @@ ScaledFontID, String @@ ScaledFontID, IntMultiset]()
-
-  // def addFontVJump(
-  //   f1: String @@ ScaledFontID,
-  //   y1: Int @@ FloatRep,
-  //   f2: String @@ ScaledFontID,
-  //   y2: Int @@ FloatRep
-  // ): Unit = {
-  //   val vdist = FloatRep(math.abs(y2.unwrap - y1.unwrap))
-
-  //   vjumps.useOrSet(
-  //     f1,
-  //     f2,
-  //     mset => mset.add(vdist),
-  //     mkSet()
-  //   )
-  // }
-}
+class DocumentLayoutStats extends LayoutStats {}

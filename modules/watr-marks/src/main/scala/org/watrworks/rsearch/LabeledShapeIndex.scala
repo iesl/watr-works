@@ -144,9 +144,7 @@ abstract class LabeledShapeIndex[A <: GeometricFigure, Shape <: LabeledShape[A]]
   ): Seq[Shape] = {
     shapeRIndex.search(
       query,
-      { lshape =>
-        labels.forall(lshape.hasLabel(_))
-      }
+      lshape => labels.forall(lshape.hasLabel(_))
     )
   }
 
@@ -160,7 +158,7 @@ trait AttrWitness[ValueT] {
 trait MkAttrWitness[ValueT] {
   def apply()(implicit name: sourcecode.Name): AttrWitness[ValueT] = {
     new AttrWitness[ValueT] {
-      def key: String = name.value
+      def key: String         = name.value
       override def toString() = s"<AttrWitness:${key}>"
     }
   }
@@ -188,7 +186,7 @@ trait ShapeAttributes {
 
   def getAttr[A](
     shapeId: Int @@ ShapeID,
-    witness: AttrWitness[A],
+    witness: AttrWitness[A]
   ): Option[A] = {
     val key = witness.key
 

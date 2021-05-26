@@ -1,6 +1,8 @@
 package org.watrworks
 package utils
 
+import _root_.io.circe, circe._
+
 sealed trait RelativeDirection
 
 sealed trait Orientation
@@ -14,23 +16,50 @@ object RelativeDirection {
   case object BottomRight extends RelativeDirection
   case object Center      extends RelativeDirection
 
-  case object Left        extends RelativeDirection with Orientation
-  case object Right       extends RelativeDirection with Orientation
+  case object Left  extends RelativeDirection with Orientation
+  case object Right extends RelativeDirection with Orientation
 
-  case object Up          extends Orientation
-  case object Down        extends Orientation
+  case object Up   extends Orientation
+  case object Down extends Orientation
 
   val AllAdjacent: List[RelativeDirection] = List(
-    Left        ,
-    Right       ,
-    Top         ,
-    Bottom      ,
-    TopLeft     ,
-    TopRight    ,
-    BottomLeft  ,
+    Left,
+    Right,
+    Top,
+    Bottom,
+    TopLeft,
+    TopRight,
+    BottomLeft,
     BottomRight
   )
 
   val All: List[RelativeDirection] = Center :: AllAdjacent
-}
 
+  implicit val DirEncoder: Encoder[RelativeDirection] =
+    Encoder.encodeString.contramap((dir: RelativeDirection) =>
+      dir match {
+        case Top         => "Top"
+        case Bottom      => "Bottom"
+        case TopLeft     => "TopLeft"
+        case TopRight    => "TopRight"
+        case BottomLeft  => "BottomLeft"
+        case BottomRight => "BottomRight"
+        case Center      => "Center"
+        case Left        => "Left"
+        case Right       => "Right"
+      }
+    )
+
+  implicit val DirDecoder: Decoder[RelativeDirection] =
+    Decoder.decodeString.map(_ match {
+      case "Top"         => Top
+      case "Bottom"      => Bottom
+      case "TopLeft"     => TopLeft
+      case "TopRight"    => TopRight
+      case "BottomLeft"  => BottomLeft
+      case "BottomRight" => BottomRight
+      case "Center"      => Center
+      case "Left"        => Left
+      case "Right"       => Right
+    })
+}

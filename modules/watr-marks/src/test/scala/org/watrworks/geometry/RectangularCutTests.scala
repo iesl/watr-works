@@ -4,13 +4,57 @@ package geometry
 class RectangularCutTests extends WatrSpec {
   behavior of "Geometric Figures"
 
-  import GeometryImplicits._
+  import syntax._
   import GeometryTestUtils._
   import utils.{RelativeDirection => Dir}
   import textboxing.{TextBoxing => TB}, TB._
   import utils.ExactFloats._
 
   val graphSize = Rect.Ints(0, 0, 14, 14)
+
+  it should "bug fix this example" in {
+    //  runSearch: BottomLeft (l:0.00, t:55.83, w:187.73, h:738.17)
+    //  focus: (l:187.73, t:55.82, w:0.01, h:0.01) horizon: (l:0.00, t:0.00, w:595.00, h:794.00)
+    //
+    //  TopRight: Some((l:187.74, t:0.00, w:407.26, h:55.82))
+    //  Center: Some((l:187.73, t:55.82, w:0.01, h:0.01))
+    //  Left: Some((l:0.00, t:55.82, w:187.73, h:0.01))
+    //  BottomLeft: Some((l:0.00, t:55.83, w:187.73, h:738.17))
+    //  Bottom: Some((l:187.73, t:55.83, w:0.01, h:738.17))
+    //  Top: Some((l:187.73, t:0.00, w:0.01, h:55.82))
+    //  BottomRight: Some((l:187.74, t:55.83, w:407.26, h:738.17))
+    //  TopLeft: Some((l:0.00, t:0.00, w:187.73, h:55.82))
+    //  Right: Some((l:187.74, t:55.82, w:407.26, h:0.01))
+    //
+    //
+    //
+    // @ A: within area=(l:0.00, t:55.83, w:187.73, h:738.17), focus=(l:187.73, t:55.82, w:0.01, h:0.01) from p=(187.73, 55.82)
+    val focus        = Rect.IntReps(18773, 5582, 1, 1)
+    val horizon      = Rect.IntReps(0, 0, 59500, 79400)
+    val burstRegions = focus.withinRegion(horizon).burstAllPossibleDirections()
+    val asdf         = s"""${burstRegions.map({ case (k, v) => s"$k: $v" }).mkString("  ", "\n  ", "")}"""
+    println(asdf)
+
+    // Bottom: Some((l:187.73, t:55.83, w:0.01, h:738.17))
+    // Bottom: Some((l:187.73, t:55.83, w:0.01, h:738.17))
+    // BottomLeft: Some((l:0.00, t:55.83, w:187.73, h:738.17))
+    // BottomLeft: Some((l:0.00, t:55.83, w:187.73, h:738.17))
+    // BottomRight: Some((l:187.74, t:55.83, w:407.26, h:738.17))
+    // BottomRight: Some((l:187.74, t:55.83, w:407.26, h:738.17))
+    // Center: Some((l:187.73, t:55.82, w:0.01, h:0.01))
+    // Center: Some((l:187.73, t:55.82, w:0.01, h:0.01))
+    // Left: Some((l:0.00, t:55.82, w:187.73, h:0.01))
+    // Left: Some((l:0.00, t:55.82, w:187.73, h:0.01))
+    // Right: Some((l:187.74, t:55.82, w:407.26, h:0.01))
+    // Right: Some((l:187.74, t:55.82, w:407.26, h:0.01))
+    // Top: Some((l:187.73, t:0.00, w:0.01, h:55.82))
+    // Top: Some((l:187.73, t:0.00, w:0.01, h:55.82))
+    // TopLeft: Some((l:0.00, t:0.00, w:187.73, h:55.82))
+    // TopLeft: Some((l:0.00, t:0.00, w:187.73, h:55.82))
+    // TopRight: Some((l:187.74, t:0.00, w:407.26, h:55.82))
+    // TopRight: Some((l:187.74, t:0.00, w:407.26, h:55.82))
+
+  }
 
   it should "burst overlapping regions into all contiguous rectangles" in {
     // Result is:
@@ -89,7 +133,7 @@ class RectangularCutTests extends WatrSpec {
 
         }
       )
-    ) foreach { case (bbox1, bbox2, expectedOutput@_) =>
+    ) foreach { case (bbox1, bbox2, expectedOutput @ _) =>
       // val burstRegions = bbox1.withinRegion(bbox2).burstAll()
       val burstRegions = bbox1.withinRegion(bbox2).burstAllPossibleDirections()
 
@@ -113,7 +157,7 @@ class RectangularCutTests extends WatrSpec {
 
       val actualOutput = hcat(TB.top, adjs ++ List(emptyDirs))
       println(actualOutput)
-      // assertExpectedText(expectedOutput, actualOutput.toString())
+    // assertExpectedText(expectedOutput, actualOutput.toString())
     }
   }
 
@@ -149,11 +193,11 @@ class RectangularCutTests extends WatrSpec {
     }
 
     {
-      val boxes        = List(Dir.Left, Dir.Center, Dir.Right, Dir.Top, Dir.Bottom)
+      val boxes = List(Dir.Left, Dir.Center, Dir.Right, Dir.Top, Dir.Bottom)
         .map { dir =>
           (dir, inner.withinRegion(outer).adjacentRegion(dir))
         }
-        .map { case (d@_, maybAdjacent) =>
+        .map { case (d @ _, maybAdjacent) =>
           maybAdjacent
             .map { adjacent =>
               drawAdjacencyDiagram(adjacent)

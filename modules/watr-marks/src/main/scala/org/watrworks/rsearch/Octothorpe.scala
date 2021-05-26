@@ -7,12 +7,23 @@ import utils.ExactFloats._
 
 import utils.{RelativeDirection => Dir}
 
+import io.circe
+import _root_.io.circe, circe.syntax._, circe._
+import io.circe.generic._
+import cats.data.Writer
+import cats.instances._
+
 /** An octothorpe is a 2D-plane search primitive.
   *  It consists of a focal region (the center
   *  of the grid), and a set of search and/or geometric definitions to define
   *  the regions in the cardinal directions.
   */
 
+import GeometryCodecs._
+import cats.data.WriterT
+import cats.Id
+
+@JsonCodec
 case class Octothorpe(
   focalRect: Rect,
   horizonRect: Rect,
@@ -26,50 +37,49 @@ case class Octothorpe(
     .withinRegion(horizonRect)
     .burstAllPossibleDirections()
     .map({ case (dir, maybeRect) =>
-      // dir match {
-      //   case Dir.Top         =>
-      //   case Dir.Bottom      => // shave bottom
-      //   case Dir.Right       =>
-      //   case Dir.Left        =>
-      //   case Dir.TopLeft     =>
-      //   case Dir.BottomLeft  =>
-      //   case Dir.TopRight    =>
-      //   case Dir.BottomRight =>
-      //   case Dir.Center      =>
-      // }
+      val shavedRect = maybeRect.map(r => {
+        dir match {
+          case Dir.Top         => r.shave(Dir.Bottom, FloatExact.epsilon)
+          case Dir.Bottom      => r.shave(Dir.Top, FloatExact.epsilon)
+          case Dir.Right       => r.shave(Dir.Left, FloatExact.epsilon)
+          case Dir.Left        => r.shave(Dir.Right, FloatExact.epsilon)
+          case Dir.TopLeft     => r.shave(Dir.BottomRight, FloatExact.epsilon)
+          case Dir.BottomLeft  => r.shave(Dir.TopRight, FloatExact.epsilon)
+          case Dir.TopRight    => r.shave(Dir.BottomLeft, FloatExact.epsilon)
+          case Dir.BottomRight => r.shave(Dir.TopLeft, FloatExact.epsilon)
+          case Dir.Center      => r
+        }
+      })
 
-      // TODO this should shave off parts of the regions based on Dir, not just uniformly
-      (dir, maybeRect.map(_.shave(FloatRep(1))))
+      (dir, shavedRect)
     })
     .toMap
 
   def runSearch[Shape <: LabeledShape[GeometricFigure]](
     searchFunc: (Rect) => Seq[Shape]
-  ): Seq[Shape] = {
-    val f2: List[Seq[Shape]] = searchBounds.map(sbound => {
-      val found = sbound match {
-        case Cell(dir) =>
-          for {
-            cellRectOpt <- burstDirections.get(dir)
-            cellRect    <- cellRectOpt
-          } yield {
-            searchFunc(cellRect)
-          }
+  ): Seq[Shape] = (for {
+    sbound <- searchBounds
+    found <- sbound match {
+               case Cell(dir) =>
+                 for {
+                   cellRectOpt <- burstDirections.get(dir)
+                   // _ <- log("look ${dir}")
+                   cellRect <- cellRectOpt
+                   // _ <- log("area ${cellRect}")
+                 } yield searchFunc(cellRect)
 
-        case CellSpan(d1, d2) =>
-          for {
-            cellRectOpt1 <- burstDirections.get(d1)
-            cellRectOpt2 <- burstDirections.get(d2)
-            cellRect1    <- cellRectOpt1
-            cellRect2    <- cellRectOpt2
-            searchRect = cellRect1.union(cellRect2)
-          } yield searchFunc(searchRect)
-      }
-      found.getOrElse(List.empty)
-    })
+               case CellSpan(d1, d2) =>
+                 for {
+                   cellRectOpt1 <- burstDirections.get(d1)
+                   cellRectOpt2 <- burstDirections.get(d2)
+                   cellRect1    <- cellRectOpt1
+                   cellRect2    <- cellRectOpt2
+                   searchRect = cellRect1.union(cellRect2)
+                 } yield searchFunc(searchRect)
+             }
+    // _ <- log("found ${found}")
+  } yield found).flatten
 
-    f2.flatten
-  }
 }
 
 object Octothorpe {
@@ -102,8 +112,22 @@ object Octothorpe {
 
   sealed trait Bounds
   object Bounds {
+
+    @JsonCodec
     case class CellSpan(cell1: Dir, cell2: Dir) extends Bounds
-    case class Cell(cell: Dir)                  extends Bounds
+    @JsonCodec
+    case class Cell(cell: Dir) extends Bounds
+
+    implicit val BoundsEncoder: Encoder[Bounds] = Encoder.instance {
+      case v: Bounds.CellSpan => v.asJson
+      case v: Bounds.Cell     => v.asJson
+    }
+
+    implicit val BoundsDecoder: Decoder[Bounds] = new Decoder[Bounds] {
+      def apply(c: HCursor): Decoder.Result[Bounds] = {
+        ???
+      }
+    }
   }
 
   def cell(d: Dir): Bounds.Cell  = Bounds.Cell(d)

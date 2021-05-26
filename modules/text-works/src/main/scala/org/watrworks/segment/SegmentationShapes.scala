@@ -11,12 +11,17 @@ case class DocSegShape[+T <: GeometricFigure: ClassTag](
   id: Int @@ ShapeID,
   pageNum: Int @@ PageNum,
   shape: T,
-  labels: Set[Label]
+  _init: Set[Label]
 ) extends LabeledShape[T] {
   val shapeType = implicitly[ClassTag[T]].runtimeClass.getSimpleName()
-  def addLabels(l: Label*): DocSegShape[T] = copy(
-    labels = this.labels ++ l.toSet
-  )
+  var _labels: Set[Label] = _init
+  override def labels = _labels
+
+
+  def addLabels(ls: Label*): DocSegShape[T] = {
+    _labels = _labels ++ ls
+    this
+  }
 }
 
 object DocSegShape {

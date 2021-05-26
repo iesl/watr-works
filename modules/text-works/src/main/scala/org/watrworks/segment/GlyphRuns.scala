@@ -59,24 +59,22 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
       val baseline = indexShape(makeLine(charItems), spanLabel)
 
       charItems.foreach { item =>
-        // val glyphShape = indexShapeAndSetItems(item.minBBox, LB.Glyph, item)
         val glyphShape = indexShape(item.minBBox, LB.Glyph)
         glyphShape.setAttr(ExtractedChar)(item)
-
-        // setLinkedShape(glyphShape, spanLabel, baseline)
-        //
-
-        // TODO Change to this:
-        // baselineShape.linkTo(glyphShape, {(from, to) => { intersection(from, to.leftLine()) -> (to, to.bottomLeft()) }})
-        // glyphShape.attr[ExtractedItem.CharItem] = item
       }
 
       val fontIds = charItems.map { _.scaledFontId }.toSet
 
-      // baseline.setAttr[Set[String@@ScaledFontID], Fonts](fontIds)
-      // baseline.setAttr[Seq[ExtractedItem.CharItem], ExtractedChars](charItems)
+      if (fontIds.size != 1) {
+        println("Warning: Run has multiple fonts")
+      }
+
+      fontIds.headOption.foreach(primaryFontId => {
+        baseline.setAttr(PrimaryFont)(primaryFontId)
+      })
+
       baseline.setAttr(Fonts)(fontIds)
-      baseline.setAttr(ExtractedChars)( charItems)
+      baseline.setAttr(ExtractedChars)(charItems)
 
       baseline
     }

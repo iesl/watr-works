@@ -4,9 +4,8 @@ package segment
 import geometry._
 import watrmarks._
 
-import _root_.io.circe,
-  circe._
-  // circe.syntax._
+import _root_.io.circe, circe._
+
 import circe.generic.semiauto._
 import scala.reflect._
 
@@ -20,14 +19,6 @@ sealed trait TraceLog {
 }
 
 object TraceLog {
-
-  case class Headers(
-    tags: List[String] = List()
-  ) {
-    def tagged(s: String) = copy(
-      tags = s :: tags
-    )
-  }
 
   case class LabelTraceLog(
     tags: List[String] = List(),
@@ -45,7 +36,6 @@ trait ScopedTracing extends VisualTracer { self =>
 
   implicit def Encode_TraceLog: Encoder[TraceLog]           = deriveEncoder
   implicit def Encode_LabelTraceLog: Encoder[LabelTraceLog] = deriveEncoder
-  implicit def Encode_Headers: Encoder[Headers]             = deriveEncoder
 
   def traceAll(logs: => Seq[TraceLog])(implicit
     enclosing: sourcecode.Enclosing
@@ -150,9 +140,9 @@ trait PageScopeTracing extends ScopedTracing { self =>
     )
   }
 
-  private def figureToTransLabel[T <: GeometricFigure : ClassTag](figure: T): Transcript.Label = {
-    val range = figureToTransRange(figure);
-    val className = implicitly[ClassTag[T]] .runtimeClass.getSimpleName
+  private def figureToTransLabel[T <: GeometricFigure: ClassTag](figure: T): Transcript.Label = {
+    val range     = figureToTransRange(figure);
+    val className = implicitly[ClassTag[T]].runtimeClass.getSimpleName
 
     Transcript.Label(
       className,

@@ -87,6 +87,15 @@ trait BasePageSegmenter extends PageScopeTracing with AttributeTags { self =>
     pageGeometry.getHorizontalSlice(t, b - t)
   }
 
+  protected def searchForShapes[F <: GeometricFigure](
+    query: GeometricFigure,
+    labels: Label*
+  ): Seq[DocSegShape[F]] = {
+    shapeIndex
+      .searchShapes(query, labels: _*)
+      .map { _.asInstanceOf[DocSegShape[F]] }
+  }
+
   protected def searchForPoints(query: GeometricFigure, l: Label): Seq[PointShape] = {
     shapeIndex
       .searchShapes(query, l)
@@ -122,15 +131,16 @@ trait BasePageSegmenter extends PageScopeTracing with AttributeTags { self =>
   protected def initShape[T <: GeometricFigure: ClassTag](
     shape: T,
     l: Label
-  ): DocSegShape[GeometricFigure] = {
+  ): DocSegShape[T] = {
     shapeIndex.initShape { id =>
       DocSegShape.create(id, pageNum, shape, l)
     }
   }
+
   protected def indexShape[T <: GeometricFigure: ClassTag](
     shape: T,
     l: Label
-  ): DocSegShape[GeometricFigure] = {
+  ): DocSegShape[T] = {
     shapeIndex.indexShape { id =>
       DocSegShape.create(id, pageNum, shape, l)
     }
