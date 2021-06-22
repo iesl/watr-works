@@ -110,21 +110,6 @@ trait GeometricOps {
       slices.map(_._1.get) :+ slices.last._2.get
     }
 
-    def getHorizontalSlice(y: Int @@ FloatRep, h: Int @@ FloatRep): Option[Rect] = {
-      val (_, maybeLower) = splitHorizontal(y)
-      maybeLower.flatMap { lowerRect =>
-        val (maybeUpper, _) = lowerRect.splitHorizontal(y + h)
-        maybeUpper
-      }
-    }
-
-    def getVerticalSlice(x: Int @@ FloatRep, w: Int @@ FloatRep): Option[Rect] = {
-      val (_, maybeRight) = splitVertical(x)
-      maybeRight.flatMap { rightRect =>
-        val (maybeLeft, _) = rightRect.splitVertical(x + w)
-        maybeLeft
-      }
-    }
 
     def splitHorizontal(y: Int @@ FloatRep): (Option[Rect], Option[Rect]) = {
       val Rect(left, top, width, height) = self
@@ -141,6 +126,24 @@ trait GeometricOps {
 
       (maybeTop, maybeBottom)
     }
+
+    def clipLeftRight(x1: Int @@ FloatRep, x2: Int @@ FloatRep): Option[Rect] =
+      for {
+        rightHalf <- self.splitVertical(x1)._2
+        leftHalf  <- rightHalf.splitVertical(x2)._1
+      } yield leftHalf
+
+    def clipLeftWidth(x: Int @@ FloatRep, width: Int @@ FloatRep): Option[Rect] =
+      clipLeftRight(x, x + width)
+
+    def clipTopBottom(y1: Int @@ FloatRep, y2: Int @@ FloatRep): Option[Rect] =
+      for {
+        bottomHalf <- self.splitHorizontal(y1)._2
+        topHalf    <- bottomHalf.splitHorizontal(y2)._1
+      } yield topHalf
+
+    def clipTopHeight(y: Int @@ FloatRep, height: Int @@ FloatRep): Option[Rect] =
+      clipTopBottom(y, y + height)
 
     def overlapsX(x: Int @@ FloatRep): Boolean = {
       self.left <= x && x <= self.right

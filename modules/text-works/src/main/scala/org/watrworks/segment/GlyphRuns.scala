@@ -12,6 +12,7 @@ import TypeTags._
 trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
 
   def labelHomogenousFontRuns(): Unit = {
+
     val natLangRuns = findNatLangBaselineRuns()
     applyLabelToRun(LB.CharRunFontBaseline, findFontBaseline, natLangRuns)
     traceLog.trace { labeledShapes(LB.CharRunFontBaseline) }
@@ -32,7 +33,10 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
       .collect { case item: ExtractedItem.CharItem => item }
       .filter(_.fontProps.isNatLangFont())
       .groupByPairs { case (item1, item2) =>
-        item2.glyphProps.prevSimilar == item1.id
+        val sameScaledFont = item1.scaledFontId == item2.scaledFontId
+        val sameFontBaseline = item1.fontBbox.bottom == item2.fontBbox.bottom
+        sameScaledFont && sameFontBaseline
+
       }
   }
 
@@ -41,11 +45,12 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
       .collect { case item: ExtractedItem.CharItem => item }
       .filterNot(_.fontProps.isNatLangFont())
       .groupByPairs { case (item1, item2) =>
+        val sameScaledFont = item1.scaledFontId == item2.scaledFontId
         lazy val consecutive = itemsAreConsecutive(item1, item2)
         lazy val leftToRight = item1.minBBox.left < item2.minBBox.left
         lazy val colinear    = item1.minBBox.isNeitherAboveNorBelow(item2.minBBox)
 
-        consecutive && leftToRight && colinear
+        sameScaledFont && consecutive && leftToRight && colinear
       }
   }
 
@@ -66,7 +71,7 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
       val fontIds = charItems.map { _.scaledFontId }.toSet
 
       if (fontIds.size != 1) {
-        println("Warning: Run has multiple fonts")
+        println(s"""Warning: Run has multiple fonts (${fontIds.size}) = ${fontIds.mkString(", ")}""")
       }
 
       fontIds.headOption.foreach(primaryFontId => {

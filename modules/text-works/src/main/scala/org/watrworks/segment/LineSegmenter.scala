@@ -4,7 +4,6 @@ package segment
 import geometry._
 import geometry.syntax._
 import extract._
-import utils.ExactFloats._
 import watrmarks._
 
 import utils.SlicingAndDicing._
@@ -18,12 +17,56 @@ trait LineSegmentation
   with TextBlockGrouping { self =>
 
   def findTextLineShapesFromFontBaselines(): Unit = {
-    joinFontBaselinesViaPageBands(LB.CharRunFontBaseline, LB.BaselineMidriseBand)
-    reindexShapes(LB.Glyph)
-    segmentSuperSubScripts()
+    // joinFontBaselinesViaPageBands(LB.CharRunFontBaseline, LB.BaselineMidriseBand)
+    // reindexShapes(LB.Glyph)
+    // segmentSuperSubScripts()
+    createCharRunBands(LB.CharRunFontBaseline)
   }
 
-  private def joinFontBaselinesViaPageBands(startingShapeLabel: Label, outputLabel: Label): Unit = {
+  protected def createCharRunBands(startingShapeLabel: Label): Unit = {
+    val startingLines = getLabeledLines(startingShapeLabel)
+    val sorted        = sortShapesByFontOccurrence(startingLines)
+
+    for {
+      (linesForFont, fontId) <- sorted
+      lineShape              <- linesForFont
+      lineY        = lineShape.asLineShape.shape.p1.y
+      _fontOffsets = docScope.fontDefs.getScaledFontOffsets(fontId)
+      fontOffsets  = _fontOffsets.forFontBoxBottom(lineY)
+      lineChars    = getCharsForShape(lineShape)
+      charMinX     = lineChars.minBy(_.minBBox.left).minBBox.left
+      charMaxX     = lineChars.maxBy(_.minBBox.right).minBBox.right
+
+      ascentDescentBand <- fontOffsets.sliceBetween(_.ascentLine, _.descentLine, pageGeometry)
+      ascentDescentRect <- ascentDescentBand.clipLeftRight(charMinX, charMaxX)
+
+      baselineMidriseBand <- fontOffsets.sliceBetween(_.baseLine, _.midriseLine, pageGeometry)
+      baselineMidriseRect <- baselineMidriseBand.clipLeftRight(charMinX, charMaxX)
+
+    } {
+
+      def indexAndInit(rect: Rect, label: Label): RectShape = {
+        val shape = indexShape(rect, label)
+        shape.setAttr(ExtractedChars)(lineChars)
+        shape.setAttr(Fonts)(Set(fontId))
+        shape.setAttr(PrimaryFont)(fontId)
+        shape.setAttr(FontOffsets)(fontOffsets)
+        shape
+      }
+      val ascentDescentShape   = indexAndInit(ascentDescentRect, LB.AscentDescentBand)
+      val baselineMidriseShape = indexAndInit(baselineMidriseRect, LB.BaselineMidriseBand)
+
+      traceLog.traceAll {
+        List(shape(ascentDescentShape), shape(baselineMidriseShape))
+      }
+    }
+
+  }
+
+  protected def joinFontBaselinesViaPageBands(
+    startingShapeLabel: Label,
+    outputLabel: Label
+  ): Unit = {
     val startingLines = getLabeledLines(startingShapeLabel)
     val sorted        = sortShapesByFontOccurrence(startingLines)
     sorted.foreach({ case (linesForFont, fontId) =>
@@ -92,10 +135,9 @@ trait LineSegmentation
         rootFontOffsets
           .sliceBetween(_.baseLine, _.midriseLine, pageGeometry)
           .flatMap { baselineMidriseSlice =>
-            val baselineMidriseRect = clipRectBetween(
+            val baselineMidriseRect = baselineMidriseSlice.clipLeftRight(
               charBounds.left,
-              charBounds.right,
-              baselineMidriseSlice
+              charBounds.right
             )
 
             setWithRootChar.foreach { case (charSet, setNum @ _) =>
@@ -123,18 +165,13 @@ trait LineSegmentation
     } else None
   }
 
-  protected def getAscentDescentPageSlice(fontOffsets: FontBaselineOffsets): Option[Rect] = {
-    fontOffsets.sliceBetween(
-      _.ascentLine,
-      _.descentLine,
-      pageGeometry
-    )
-    val sliceHeight = fontOffsets.descentLine - fontOffsets.ascentLine
-    pageHorizontalSlice(
-      fontOffsets.ascentLine.asDouble(),
-      sliceHeight.asDouble()
+  protected def getAscentDescentPageSlice(
+    fontOffsets: FontBaselineOffsets
+  ): Option[Rect] = {
+    pageGeometry.clipTopBottom(
+      fontOffsets.ascentLine,
+      fontOffsets.descentLine
     )
   }
-
 
 }

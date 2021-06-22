@@ -229,7 +229,7 @@ case class FontBaselineOffsets(
     val ybot = max(y1, y2)
     val t = max(ytop, r.top)
     val b = min(ybot, r.bottom)
-    r.getHorizontalSlice(t, b - t)
+    r.clipTopBottom(t, b)
   }
 
 }

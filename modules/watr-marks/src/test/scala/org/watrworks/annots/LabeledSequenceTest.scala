@@ -5,13 +5,11 @@ import LabeledSequencePrinting._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-
 trait LabeledSequenceTestBasics
-    extends AnyFlatSpec
-    with Matchers
-    with LabeledSequenceThings
-    with TextGridTestExamples
-
+  extends AnyFlatSpec
+  with Matchers
+  with LabeledSequenceThings
+  with TextGridTestExamples
 
 class LabeledSequenceTest extends TextGridSpec {
 
@@ -45,7 +43,6 @@ class LabeledSequenceTest extends TextGridSpec {
     println(labeledSequenceBoxFormat(things))
   }
 
-
   it should "find the span of cells that have a particular label" in {
     val thingCount = 10
 
@@ -65,13 +62,11 @@ class LabeledSequenceTest extends TextGridSpec {
     }
   }
 
-
-
   it should "find the span of cells that have identical labeling (including unlabeled spans)" in {
     val thingCount = 10
-    val things = unlabeledThings(thingCount)
+    val things     = unlabeledThings(thingCount)
 
-    things.findIdenticallyLabeledSiblings(3).foreach{ case (offset, seq) =>
+    things.findIdenticallyLabeledSiblings(3).foreach { case (offset, seq) =>
       assert(offset == 0)
       assert(seq.length == 10)
     }
@@ -80,12 +75,12 @@ class LabeledSequenceTest extends TextGridSpec {
     things.addBioLabel(Author)
     things.addBioLabel(FirstName, 0, 3)
 
-    things.findIdenticallyLabeledSiblings(1).foreach{ case (offset, seq) =>
+    things.findIdenticallyLabeledSiblings(1).foreach { case (offset, seq) =>
       assert(offset == 0)
       assert(seq.length == 3)
     }
 
-    things.findIdenticallyLabeledSiblings(4).foreach{ case (offset, seq) =>
+    things.findIdenticallyLabeledSiblings(4).foreach { case (offset, seq) =>
       assert(offset == 0)
       assert(seq.length == 10)
     }

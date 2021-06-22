@@ -30,13 +30,17 @@ object DocumentSegmenter {
       override val fontDefs                      = fontDefs0
       override val documentId                    = documentId0
       override val docStats: DocumentLayoutStats = new DocumentLayoutStats()
+      override def scopeTags                     = Nil
     }
 
     segmenter
   }
 }
 
-trait DocumentSegmenter extends FontAndGlyphMetricsDocWide with TrapezoidAnalysis { self =>
+trait DocumentSegmenter
+  extends FontAndGlyphMetricsDocWide
+  with TrapezoidAnalysis
+  with GlyphTreeDocScope { self =>
 
   def runDocumentSegmentation(): Unit = {
     // TODO pass in extraction features:
@@ -48,65 +52,58 @@ trait DocumentSegmenter extends FontAndGlyphMetricsDocWide with TrapezoidAnalysi
     docScope.docStats.initTable[Int @@ PageNum, String @@ ScaledFontID, Int @@ FloatRep](
       "PagewiseLineWidths"
     )
+    var stepNum = 0
+    def stepTag(msg: String): String = {
+      stepNum += 1
+      s"step:${stepNum}. ${msg}"
+    }
 
-    time("findContiguousGlyphSpans") {
-      pageSegmenters.foreach { p =>
-        p.findContiguousGlyphSpans()
+    def withPageSegmenters(stepName: String, f: PageSegmenter => Unit): Unit = {
+      val tags = stepTag(stepName)
+      time(stepName) {
+        pageSegmenters.foreach { p =>
+          p.traceLog.pushTag(tags)
+          f(p)
+          p.traceLog.popTag()
+        }
       }
     }
 
-    time("computeScaledFontHeightMetrics") {
-      computeScaledFontHeightMetrics(LB.CharRunFontBaseline)
-      computeScaledSymbolicFontMetrics()
-    }
-
-    time("buildGlyphTrees") {
-      pageSegmenters.foreach { _.buildGlyphTree() }
-    }
-
-    time("findLineShapesFromFontBaselines") {
-      pageSegmenters.foreach { p =>
-        p.findTextLineShapesFromFontBaselines()
+    def withDocumentSegmenter(stepName: String, f: => Unit): Unit = {
+      val tags = stepTag(stepName)
+      time(stepName) {
+        self.pushTag(tags)
+        val _ = f
+        self.popTag()
       }
     }
 
-    time("createColumnClusters") {
-      pageSegmenters.foreach { p =>
-        p.createColumnClusters()
-      }
-    }
+    withPageSegmenters("findContiguousGlyphSpans", _.findContiguousGlyphSpans())
 
-    time("findContiguousBlocks") {
-      pageSegmenters.foreach { p =>
-        p.findContiguousBlocks(LB.BaselineMidriseBand)
+    withDocumentSegmenter(
+      "computeFontMetrics", {
+        computeScaledFontHeightMetrics(LB.CharRunFontBaseline)
+        computeScaledSymbolicFontMetrics()
       }
-    }
+    )
 
-    time("setTextForReprShapes") {
-      pageSegmenters.foreach { p =>
-        p.setTextForReprShapes()
-      }
-    }
+    withPageSegmenters(
+      "findTextLineShapesFromFontBaselines",
+      _.findTextLineShapesFromFontBaselines()
+    )
 
-    time("buildLinePairTrapezoids") {
-      pageSegmenters.foreach { p =>
-        p.buildLinePairTrapezoids()
-      }
-      self.createFeatureVectors()
-    }
+    withPageSegmenters("buildGlyphTrees", _.buildGlyphTree())
 
-    // time("classifyLines") {
-    //   pageSegmenters.foreach { p =>
-    //     p.classifyLines()
-    //   }
-    // }
+    withDocumentSegmenter("analyzeVJumps", { self.analyzeVJumps() })
 
-    time("pageStanzaConstruction") {
-      // TODO pass in features for stanzas
-      pageSegmenters.foreach { p =>
-        p.createPageStanzas()
-      }
-    }
+    // withPageSegmenters("createColumnClusters", _.createColumnClusters())
+    // withPageSegmenters("findContiguousBlocks", _.findContiguousBlocks(LB.BaselineMidriseBand))
+    // withPageSegmenters("setTextForReprShapes", _.setTextForReprShapes())
+    // withPageSegmenters("buildLinePairTrapezoids", _.buildLinePairTrapezoids())
+    // withDocumentSegmenter("createFeatureVectors", { self.createFeatureVectors() })
+    // withPageSegmenters("classifyLines", _.classifyLines())
+
+    withPageSegmenters("pageStanzaConstruction", _.createPageStanzas())
 
   }
 }
@@ -185,7 +182,6 @@ trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
     }
   }
 
-
   import scalaz.Scalaz.stringInstance
 
   protected def printScaledFontTableData(): Unit = {
@@ -224,8 +220,6 @@ trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
 
       widthClusters
     }
-
-
 
     val marginalSizes = widthRangeCentroids.foldLeftColumns(List[Int]()) { case (acc, e) =>
       acc :+ e

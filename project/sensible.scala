@@ -18,7 +18,7 @@ object SensibleProject extends CommonLibs {
     libraryDependencies ++= Seq(acyclic)
   )
 
-  lazy val scalaV = "2.13.5"
+  lazy val scalaV = "2.13.6"
 
   val scala_2_13_RecommendedOptionList = Seq(
     "-Xcheckinit",                      // Wrap field accessors to throw an exception on uninitialized access.
@@ -104,25 +104,25 @@ object SensibleProject extends CommonLibs {
 
     addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.13.0" cross CrossVersion.full),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
-    addCompilerPlugin("io.tryp" % "splain" % "0.5.8" cross CrossVersion.patch),
+    // addCompilerPlugin("io.tryp" % "splain" % "0.5.8" cross CrossVersion.patch),
 
     scalaVersion := scalaV,
     organization := "org.watrworks",
     scalacOptions ++=  scala_2_13_RecommendedOptionList,
 
-    scalacOptions in (Compile, console) --= Seq(
+     Compile / console / scalacOptions --= Seq(
       "-Ywarn-unused:imports",
       "-Xfatal-warnings"
     ),
 
-    resolvers in ThisBuild ++= List(
+     ThisBuild / resolvers ++= List(
       // Resolver.sonatypeRepo("snapshots"),
       Resolver.sonatypeRepo("releases"),
       Resolver.jcenterRepo,
       Resolver.bintrayRepo("jmcardon", "tsec")
     ),
 
-    shellPrompt in ThisBuild := colorPrompt,
+     ThisBuild / shellPrompt := colorPrompt,
 
     // The matryoshka dependency uses the org.typelevel version of scala, so without this exclusion 2 vers of the scala library get loaded
     excludeDependencies ++= Seq("org.typelevel" % "scala-library"),

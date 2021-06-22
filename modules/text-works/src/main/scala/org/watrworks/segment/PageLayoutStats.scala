@@ -61,6 +61,36 @@ import com.google.{common => guava}
 import guava.{collect => gcol}
 
 class PageLayoutStats extends LayoutStats {
+  import scalax.collection.Graph
+  import scalax.collection.{ mutable => mutgraph }
+  import scalax.collection.edge.LDiEdge
+  import scalax.collection.edge.Implicits._
+
+
+  object charrunGraph {
+    val graph = mutgraph.Graph()
+
+  }
+
+
+  object monofontVJump {
+    type RowT   = String @@ ScaledFontID
+    type ValueT = Int @@ FloatRep
+    type TableT = mutable.Map[RowT, List[ValueT]]
+
+    val table: TableT = mutable.Map()
+
+    def add(
+      fontId: RowT,
+      y1: Int @@ FloatRep,
+      y2: Int @@ FloatRep
+    ): Unit = {
+      val vdist = FloatRep(math.abs(y2.unwrap - y1.unwrap))
+      table.updateWith(fontId)((v: Option[List[ValueT]]) =>
+        v.map(vdist :: _).orElse(Some(List(vdist)))
+      )
+    }
+  }
 
   object fontVJump {
     type RowT   = String @@ ScaledFontID
@@ -102,4 +132,27 @@ class PageLayoutStats extends LayoutStats {
 
 }
 
-class DocumentLayoutStats extends LayoutStats {}
+class DocumentLayoutStats extends LayoutStats {
+
+  object fontVJumpByPage {
+    type RowT   = Int @@ PageNum
+    type ColT   = String @@ ScaledFontID
+    type ValueT = gcol.TreeMultiset[Int @@ FloatRep]
+    type TableT = TabularData.Init[RowT, ColT, ValueT]
+
+    private def initValue(): ValueT = gcol.TreeMultiset.create(null)
+
+    val table: TableT = GuavaHelpers.initTable()
+
+    def add(
+      pageNum: RowT,
+      fontId: ColT,
+      y1: Int @@ FloatRep,
+      y2: Int @@ FloatRep
+    ): Unit = {
+      val vdist = FloatRep(math.abs(y2.unwrap - y1.unwrap))
+
+      table.useOrSet(pageNum, fontId, _.add(vdist), initValue())
+    }
+  }
+}

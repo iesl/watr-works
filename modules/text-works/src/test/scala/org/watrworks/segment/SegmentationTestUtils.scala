@@ -3,13 +3,14 @@ package segment
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.diagrams.Diagrams
 
 import geometry._
 
 import java.net.URL
 import TypeTags._
 
-trait SegmentationTest extends AnyFlatSpec with Matchers
+trait SegmentationTest extends AnyFlatSpec with Matchers with Diagrams
 
 trait SegmentationTestUtils extends SegmentationTest {
 

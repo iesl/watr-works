@@ -11,14 +11,13 @@ import scalaz._
 
 object LabelTarget {
   type SetType[A] = mutable.Stack[A]
-  type PinSet = SetType[BioPin]
+  type PinSet     = SetType[BioPin]
   def PinSet() = mutable.Stack[BioPin]()
 
-  def apply[A](a: A): LabelTarget = new LabelTarget {
-  }
+  def apply[A](a: A): LabelTarget = new LabelTarget {}
 
   case class LabelAttr[A](a: A) extends LabelTarget
-  case class Thing[A](a: A) extends LabelTarget
+  case class Thing[A](a: A)     extends LabelTarget
 }
 
 trait LabelTarget {
@@ -32,7 +31,7 @@ trait LabelTarget {
   def addLabel(l: Label): Unit = addPin(l.U)
 
   def removeLabel(l: Label): Unit = {
-    while(hasLabel(l)) {
+    while (hasLabel(l)) {
       pins.pop()
     }
   }
@@ -60,24 +59,26 @@ trait LabelTarget {
 
   def findPin(l: Label): Option[(BioPin, Int)] = {
     val pinIndex = pins.indexWhere(_.label == l)
-    if (pinIndex > -1) Some( (pins(pinIndex), pinIndex) )
+    if (pinIndex > -1) Some((pins(pinIndex), pinIndex))
     else None
   }
 
 }
 
-
 object LabeledSequence {
 
   def addBioLabel(label: Label, cells: Seq[LabelTarget]): Unit = {
-    if (cells.length==1) {
+    if (cells.length == 1) {
       cells.foreach(_.addPin(label.U))
     } else if (cells.length > 1) {
       cells.head.addPin(label.B)
       cells.last.addPin(label.L)
-      cells.drop(1).dropRight(1).foreach(
-        _.addPin(label.I)
-      )
+      cells
+        .drop(1)
+        .dropRight(1)
+        .foreach(
+          _.addPin(label.I)
+        )
     }
   }
 
@@ -87,7 +88,7 @@ object LabeledSequence {
 
   def findPin[A <: LabelTarget](c: A, l: Label): Option[(BioPin, Int)] = {
     val pinIndex = c.pins.indexWhere(_.label == l)
-    if (pinIndex > -1) Some( (c.pins(pinIndex), pinIndex) )
+    if (pinIndex > -1) Some((c.pins(pinIndex), pinIndex))
     else None
   }
 }
@@ -101,18 +102,18 @@ trait LabeledSequence[A <: LabelTarget] {
     Cursor.init(labelTargets().toList.toZipper)
   }
 
-  def addBioLabel(label: Label, begin: Int=0, len: Int = Int.MaxValue): Unit = {
+  def addBioLabel(label: Label, begin: Int = 0, len: Int = Int.MaxValue): Unit = {
     for {
-      cinit <- toCursor()
+      cinit  <- toCursor()
       cbegin <- cinit.move(begin)
     } {
-      val win = cbegin.toWindow()
+      val win = cbegin
+        .toWindow()
         .slurpRight { case (wincurr, _) => wincurr.length < len }
 
       LabeledSequence.addBioLabel(label, win.cells)
     }
   }
-
 
   def get(offset: Int): Option[A] = {
     if (0 <= offset && offset < labelTargets().length) {
@@ -122,22 +123,22 @@ trait LabeledSequence[A <: LabelTarget] {
 
   def findIdenticallyLabeledSiblings(offset: Int): Option[(Int, Seq[A])] = {
     for {
-      cell    <- get(offset)
+      cell <- get(offset)
       extents <- cell.labels.headOption match {
-        case Some(label) => findLabelExtents(offset, label)
-        case None        => findUnlabeledExtents(offset)
-      }
+                   case Some(label) => findLabelExtents(offset, label)
+                   case None        => findUnlabeledExtents(offset)
+                 }
     } yield extents
   }
 
   def findUnlabeledExtents(offset: Int): Option[(Int, Seq[A])] = {
     (for {
-      zip                  <- labelTargets().toList.toZipper
-      atRowColZ            <- zip.move(offset)
+      zip       <- labelTargets().toList.toZipper
+      atRowColZ <- zip.move(offset)
     } yield {
       val focusCell = atRowColZ.focus
-      val rights = atRowColZ.rights.takeWhile(_.pins.isEmpty)
-      val lefts = atRowColZ.lefts.takeWhile(_.pins.isEmpty)
+      val rights    = atRowColZ.rights.takeWhile(_.pins.isEmpty)
+      val lefts     = atRowColZ.lefts.takeWhile(_.pins.isEmpty)
 
       val start = offset - lefts.length
       // val labelEnd = offset + rights.length
@@ -146,19 +147,18 @@ trait LabeledSequence[A <: LabelTarget] {
     }).toOption
   }
 
-
   // Find the range of cells that overlap with cell at offset and that have the given label
   def findLabelExtents(offset: Int, label: Label): Option[(Int, Seq[A])] = {
 
     def findLabelEnd(zip: Zipper[A]): Zipper[A] = {
-      zip.findNext{ cell =>
+      zip.findNext { cell =>
         findPin(cell, label).exists(_._1.isLast)
       } getOrElse {
         sys.error("could not find label end")
       }
     }
     def findLabelBegin(zip: Zipper[A]): Zipper[A] = {
-      zip.findPrevious{ cell =>
+      zip.findPrevious { cell =>
         findPin(cell, label).exists(_._1.isBegin)
       } getOrElse {
         sys.error("could not find label begin")
@@ -166,18 +166,18 @@ trait LabeledSequence[A <: LabelTarget] {
     }
 
     (for {
-      zip                  <- labelTargets().toList.toZipper.toOption
-      atRowColZ            <- zip.move(offset).toOption
+      zip       <- labelTargets().toList.toZipper.toOption
+      atRowColZ <- zip.move(offset).toOption
 
-      focusCell             = atRowColZ.focus
+      focusCell = atRowColZ.focus
       (focusPin, pinIndex) <- findPin(focusCell, label)
 
       (beginZ, endZ) = {
-        if (focusPin.isBegin)        (atRowColZ, findLabelEnd(atRowColZ))
-        else if (focusPin.isInside)  (findLabelBegin(atRowColZ), findLabelEnd(atRowColZ))
-        else if (focusPin.isLast)    (findLabelBegin(atRowColZ), atRowColZ)
-        else if (focusPin.isUnit)    (atRowColZ, atRowColZ)
-        else                         sys.error(s"findLabelExtents: unknown pin type: ${focusPin}")
+        if (focusPin.isBegin) (atRowColZ, findLabelEnd(atRowColZ))
+        else if (focusPin.isInside) (findLabelBegin(atRowColZ), findLabelEnd(atRowColZ))
+        else if (focusPin.isLast) (findLabelBegin(atRowColZ), atRowColZ)
+        else if (focusPin.isUnit) (atRowColZ, atRowColZ)
+        else sys.error(s"findLabelExtents: unknown pin type: ${focusPin}")
       }
     } yield {
       val labelStart = beginZ.lefts.length
@@ -190,8 +190,8 @@ trait LabeledSequence[A <: LabelTarget] {
   }
 
   def unlabelNear(offset: Int, label: Label): Unit = {
-    findLabelExtents(offset, label).foreach{ case (offset@_, indexedSeq) =>
-      indexedSeq.foreach{ case cell =>
+    findLabelExtents(offset, label).foreach { case (offset @ _, indexedSeq) =>
+      indexedSeq.foreach { case cell =>
         cell.removeLabel(label)
       }
     }

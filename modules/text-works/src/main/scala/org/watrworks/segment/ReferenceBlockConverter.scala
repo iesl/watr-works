@@ -168,14 +168,14 @@ trait ReferenceBlockConverter extends BasePageSegmenter
 
         val referenceCandidates = (finalBounds :: finalSlices).reverse
 
-        traceLog.trace { figure(finalSlices).tagged(s"Hanging Indent Slices: ${finalSlices.length}") }
+        traceLog.trace { figures(finalSlices).tagged(s"Hanging Indent Slices: ${finalSlices.length}") }
         traceLog.trace { figure(finalBounds).tagged(s"Hanging Indent Final Bounds") }
 
 
         val nonIntersectingCandidates = filterPrelabeledRegions(refBlockRegion.bbox, referenceCandidates)
 
         traceLog.trace {
-          figure(nonIntersectingCandidates).tagged(s"Non intersecting Reference Candidates (${nonIntersectingCandidates.length})")
+          figures(nonIntersectingCandidates).tagged(s"Non intersecting Reference Candidates (${nonIntersectingCandidates.length})")
         }
 
         val referenceMinBounds = nonIntersectingCandidates.map{ candidateBounds =>
@@ -187,7 +187,7 @@ trait ReferenceBlockConverter extends BasePageSegmenter
         }
 
         traceLog.trace {
-          figure(referenceMinBounds).tagged(s"Final Hanging Reference Min Bounds (${referenceMinBounds.length})" )
+          figures(referenceMinBounds).tagged(s"Final Hanging Reference Min Bounds (${referenceMinBounds.length})" )
         }
 
       } else if (leftJustifiedColumnShapes.nonEmpty) {
@@ -256,7 +256,7 @@ trait ReferenceBlockConverter extends BasePageSegmenter
 
             val nonIntersectingCandidates = filterPrelabeledRegions(refBlockRegion.bbox, candidateBounds)
 
-            traceLog.trace { figure(nonIntersectingCandidates).tagged(s"Left-Justified Reference Candidate Bounds") }
+            traceLog.trace { figures(nonIntersectingCandidates).tagged(s"Left-Justified Reference Candidate Bounds") }
 
             val referenceMinBounds = nonIntersectingCandidates.map{ bounds =>
               findCandidateMinBounds(bounds)
@@ -267,7 +267,7 @@ trait ReferenceBlockConverter extends BasePageSegmenter
             }
 
             traceLog.trace {
-              figure(referenceMinBounds).tagged(s"Final Justified Reference Min Bounds (${referenceMinBounds.length})" )
+              figures(referenceMinBounds).tagged(s"Final Justified Reference Min Bounds (${referenceMinBounds.length})" )
             }
           }
         }

@@ -113,9 +113,9 @@ trait TextBlockGrouping extends BasePageSegmenter { self =>
 
       lazy val noLateralOverlaps = noLeftOverlaps && noRightOverlaps
 
-      lazy val glyphAndLineCountsMatch = expansionBounds.withinRegion(combinedWindowBounds)
+      lazy val glyphAndLineCountsMatch  = expansionBounds.withinRegion(combinedWindowBounds)
         .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
-        .map{ expansionRect =>
+        .map { expansionRect =>
 
           val queryRect = expansionRect.shave(Dir.Top, FloatExact.epsilon * 5)
 
@@ -138,7 +138,7 @@ trait TextBlockGrouping extends BasePageSegmenter { self =>
             traceLog.trace {
               val commonItems = lastLineItems.filter(item => commonIds.contains(item.id.unwrap))
               val commonItemBounds = commonItems.map(_.minBBox)
-              figure(commonItemBounds) tagged s"Common Glyphs ${currLineText}"
+              figures(commonItemBounds) tagged s"Common Glyphs ${currLineText}"
             }
 
             currLineItems.length == adjustedFoundGlyphCount
@@ -150,7 +150,6 @@ trait TextBlockGrouping extends BasePageSegmenter { self =>
     }
 
     traceLog.traceAll {
-
       lineGroups.flatMap { group =>
         val groupBounds = group.map(_.shape.minBounds).reduce(_ union _)
         val groupBoundsShape = initShape(groupBounds, LB.TextLineGroup)
@@ -159,7 +158,6 @@ trait TextBlockGrouping extends BasePageSegmenter { self =>
           // relation("TextLineGroups").field(groupBoundsShape).field(group)
         )
       }
-
     }
 
     lineGroups

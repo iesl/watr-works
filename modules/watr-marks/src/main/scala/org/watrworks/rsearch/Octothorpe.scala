@@ -10,8 +10,6 @@ import utils.{RelativeDirection => Dir}
 import io.circe
 import _root_.io.circe, circe.syntax._, circe._
 import io.circe.generic._
-import cats.data.Writer
-import cats.instances._
 
 /** An octothorpe is a 2D-plane search primitive.
   *  It consists of a focal region (the center
@@ -20,8 +18,6 @@ import cats.instances._
   */
 
 import GeometryCodecs._
-import cats.data.WriterT
-import cats.Id
 
 @JsonCodec
 case class Octothorpe(
@@ -55,30 +51,32 @@ case class Octothorpe(
     })
     .toMap
 
+  def searchAreas[Shape <: LabeledShape[GeometricFigure]](): Seq[(Bounds, Rect)] =
+    for {
+      sbound <- searchBounds
+      found <- sbound match {
+                 case Cell(dir) =>
+                   for {
+                     cellRectOpt <- burstDirections.get(dir)
+                     cellRect    <- cellRectOpt
+                   } yield (sbound, cellRect)
+
+                 case CellSpan(d1, d2) =>
+                   for {
+                     cellRectOpt1 <- burstDirections.get(d1)
+                     cellRectOpt2 <- burstDirections.get(d2)
+                     cellRect1    <- cellRectOpt1
+                     cellRect2    <- cellRectOpt2
+                     searchRect = cellRect1.union(cellRect2)
+                   } yield (sbound, searchRect)
+               }
+    } yield found
+
   def runSearch[Shape <: LabeledShape[GeometricFigure]](
     searchFunc: (Rect) => Seq[Shape]
   ): Seq[Shape] = (for {
-    sbound <- searchBounds
-    found <- sbound match {
-               case Cell(dir) =>
-                 for {
-                   cellRectOpt <- burstDirections.get(dir)
-                   // _ <- log("look ${dir}")
-                   cellRect <- cellRectOpt
-                   // _ <- log("area ${cellRect}")
-                 } yield searchFunc(cellRect)
-
-               case CellSpan(d1, d2) =>
-                 for {
-                   cellRectOpt1 <- burstDirections.get(d1)
-                   cellRectOpt2 <- burstDirections.get(d2)
-                   cellRect1    <- cellRectOpt1
-                   cellRect2    <- cellRectOpt2
-                   searchRect = cellRect1.union(cellRect2)
-                 } yield searchFunc(searchRect)
-             }
-    // _ <- log("found ${found}")
-  } yield found).flatten
+    (sbound, searchArea) <- searchAreas()
+  } yield searchFunc(searchArea)).flatten
 
 }
 
@@ -115,6 +113,7 @@ object Octothorpe {
 
     @JsonCodec
     case class CellSpan(cell1: Dir, cell2: Dir) extends Bounds
+
     @JsonCodec
     case class Cell(cell: Dir) extends Bounds
 

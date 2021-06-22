@@ -61,6 +61,7 @@ lazy val textworks = (project in file("modules/text-works"))
           Lib.guava,
           Lib.scopt,
           Lib.ammoniteOps,
+          Lib.scalaGraph,
           Lib.shapeless
         )
   )

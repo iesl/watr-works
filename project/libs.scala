@@ -23,7 +23,7 @@ object TestLibs extends LibVersions {
 }
 
 object LogLibs extends LibVersions {
-  val logbackVersion = "1.7.30"
+  val logbackVersion = "1.7.31"
   val logback        = Seq(
     "org.log4s"     %% "log4s"           % "1.10.0",
     "ch.qos.logback" % "logback-classic" % "1.2.3",
@@ -51,10 +51,11 @@ object DatabaseLibs extends LibVersions {
 
 trait CommonLibs extends LibVersions {
   // val ammoniteVersion = "2.3.8-58-aa8b2ab1"
-  //val ammoniteVersion = "2.3.8-65-0f0d597f"
-  val ammoniteVersion = "2.3.8-122-9be39deb"
+  // vl ammoniteVersion = "2.3.8-122-9be39deb"
+  val ammoniteVersion = "2.4.0"
   val ammonite        = "com.lihaoyi"  % "ammonite"     % ammoniteVersion cross CrossVersion.full
   val ammoniteOps     = "com.lihaoyi" %% "ammonite-ops" % ammoniteVersion
+  val scalaGraph      = "org.scala-graph" %% "graph-core" % "1.13.2"
 
   val scopt = "com.github.scopt" %% "scopt" % "4.0.1"
 
@@ -69,7 +70,7 @@ trait CommonLibs extends LibVersions {
   val guava  = "com.google.guava" % "guava" % guavaV
 
   // val lucene4s         = "com.outr"                %% "lucene4s"         % luceneV
-  val pdfbox = "org.apache.pdfbox" % "pdfbox" % "2.0.23"
+  val pdfbox = "org.apache.pdfbox" % "pdfbox" % "2.0.24"
 
   val smile = Seq(
     "com.github.haifengl" %% "smile-scala" % "2.6.0"
@@ -80,7 +81,7 @@ trait CommonLibs extends LibVersions {
     "com.spotify" %% "featran-core" % featranV
   )
 
-  val zioV = "1.0.8"
+  val zioV = "1.0.9"
   val zio  = Seq(
     "dev.zio" %% "zio"         % zioV,
     "dev.zio" %% "zio-streams" % zioV
@@ -91,7 +92,7 @@ trait CommonLibs extends LibVersions {
     "org.scalaz" %% "scalaz-core" % scalazVersion
   )
 
-  val circeJsonVersion = "0.13.0"
+  val circeJsonVersion = "0.14.1"
   val circeJson        = Seq(
     "io.circe" %% "circe-generic" % circeJsonVersion,
     "io.circe" %% "circe-parser"  % circeJsonVersion,
@@ -109,7 +110,7 @@ trait CommonLibs extends LibVersions {
     "com.github.davidmoten" % "flatbuffers-java" % "1.10.0.2"
   )
 
-  val http4sVersion = "0.21.23"
+  val http4sVersion = "0.21.24"
   val http4s = Seq(
     "org.http4s" %% "http4s-core" % http4sVersion,
     "org.http4s" %% "http4s-dsl" % http4sVersion,

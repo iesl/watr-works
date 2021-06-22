@@ -238,11 +238,11 @@ trait FontAndGlyphMetrics extends BasePageSegmenter with TextBlockGrouping { sel
       if (warning) {
         traceLog.trace {
           val charBounds = vs.map { v => v._2.minBBox }
-          figure(charBounds) tagged "Wonky Glyph Bounds Baseline Offsets"
+          figures(charBounds) tagged "Wonky Glyph Bounds Baseline Offsets"
         }
         traceLog.trace {
           val charBounds = vs.map { v => v._2.fontBbox }
-          figure(charBounds) tagged "Wonky Font Bounds Baseline Offsets"
+          figures(charBounds) tagged "Wonky Font Bounds Baseline Offsets"
         }
       }
 

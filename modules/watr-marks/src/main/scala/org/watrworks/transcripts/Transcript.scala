@@ -145,6 +145,53 @@ object Transcript {
     nonNullKVs.foldLeft(Json.obj())(_ deepMerge _)
   })
 
+  object Label {
+    def create(name: String): Label = {
+      Transcript.Label(
+        name,
+        id = None,
+        range = List(),
+        props = None,
+        children = None
+      )
+
+    }
+  }
+
+  implicit class RicherLabel(val theLabel: Label) extends AnyVal {
+    def withChildren(cs: Label*): Label =
+      theLabel.copy(
+        children = theLabel.children
+          .map(ch => ch ++ cs.to(List))
+          .orElse(Some(cs.to(List)))
+      )
+
+    def withProp(prop: String, pvals: String*): Label = {
+      val props = List(prop -> pvals.to(List))
+
+      theLabel.copy(
+        props = theLabel.props
+          .map(ch => ch ++ props)
+          .orElse(Some(props.to(List).toMap[String, List[String]]))
+      )
+    }
+
+    def withProps(props: (String, List[String])*): Label =
+      theLabel.copy(
+        props = theLabel.props
+          .map(ch => ch ++ props)
+          .orElse(Some(props.to(List).toMap[String, List[String]]))
+      )
+
+    def withRanges(rs: Range*): Label =
+      theLabel.copy(
+        range = theLabel.range ++ rs.to(List)
+      )
+
+    def onShapes(figs: GeometricFigure*): Label =
+      withRanges(figs.map(f => Transcript.GeometryRange("shape", f)):_*)
+  }
+
   sealed case class Span(begin: Int, length: Int)
 
   implicit val SpanDecoder: Decoder[Span] =
@@ -152,48 +199,6 @@ object Transcript {
 
   implicit val SpanEncoder: Encoder[Span] =
     Encoder[(Int, Int)].contramap(span => (span.begin, span.length))
-
-  ////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////
-  // sealed trait RangeUnit
-  // sealed trait RangeExpr
-  // object RangeExpr {
-  //   case class And(ranges: List[RangeUnit]) extends RangeExpr
-  // }
-
-  // case class TextRangeUnit(at: Span) extends RangeUnit
-  // case class GeometryRangeUnit(at: GeometricFigure) extends RangeUnit
-  // case class PageRangeUnit(at: Int @@ PageNum) extends RangeUnit
-
-
-  // val RangeDecoder2: Decoder[RangeUnit] = new Decoder[RangeUnit] {
-  //   def apply(c: HCursor): Decoder.Result[RangeUnit] = {
-  //     val asdf = for {
-  //       // foo <- c.downField("unit").as[String]
-  //       maybeKeys <- c.keys.to(List)
-  //       key <- maybeKeys
-  //       value = c.downField(key)
-  //       // range <- {
-  //       //   val d: Decoder[Range] =
-  //       //     if (foo.startsWith("text")) Decoder[TextRange].widen
-  //       //     else if (foo.startsWith("shape")) Decoder[GeometryRange].widen
-  //       //     else if (foo.startsWith("document")) Decoder[DocumentRange].widen
-  //       //     else if (foo.startsWith("page")) Decoder[PageRange].widen
-  //       //     else if (foo.startsWith("stanza")) Decoder[StanzaRange].widen
-  //       //     else Decoder[LabelRange].widen
-
-  //       //   d(c)
-  //       // }
-  //     } yield value
-
-  //     ???
-  //   }
-  // }
-
-  ////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////
 
   sealed trait Range {
     def unit: String;

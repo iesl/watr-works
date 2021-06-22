@@ -21,14 +21,17 @@ trait ColumnFinding extends BasePageSegmenter with LineSegmentation { self =>
 
   protected def addPageVerticalJumps(jumps: Seq[Int @@ FloatRep]): Unit = {
     pageVerticalJumps ++= jumps
-    ()
   }
 
-  import LB._
 
   val clusterableShapeLabel = LB.BaselineMidriseBand
 
   def createColumnClusters(): Unit = {
+    // val initShapes   = getLabeledShapes[Rect](LB.BaselineMidriseBand)
+    // val sortedShapes = sortShapesByFontOccurrence(initShapes)
+
+    // sortedShapes.foreach({ case (lshapes, fontId) =>
+    // })
 
     val charRunBaselineShapes = getLabeledRects(clusterableShapeLabel)
       .map(_.shape.toLine(Dir.Bottom))
@@ -46,8 +49,8 @@ trait ColumnFinding extends BasePageSegmenter with LineSegmentation { self =>
   ): Unit = {
     val pointHist     = HST.SparselyBin.ing(1.4, { p: Point => p.x.asDouble() })
     val pageRight     = pageGeometry.right
-    val clusterLabel  = asColumnLabel qualifiedAs Cluster
-    val evidenceLabel = asColumnLabel qualifiedAs Evidence
+    val clusterLabel  = asColumnLabel qualifiedAs LB.Cluster
+    val evidenceLabel = asColumnLabel qualifiedAs LB.Evidence
 
     points.foreach { point =>
       indexShape(point, evidenceLabel)
@@ -79,9 +82,7 @@ trait ColumnFinding extends BasePageSegmenter with LineSegmentation { self =>
         if (uniqYHits.length > 1) {
           val yvals        = uniqYHits.map(_.shape.y)
           val (maxy, miny) = (yvals.max, yvals.min)
-          val height       = maxy - miny
-
-          val colActual = pageColumn.getHorizontalSlice(miny, height).get
+          val colActual = pageColumn.clipTopBottom(miny, maxy).get
           traceLog.trace {
             figure(colActual) tagged s"VSlices ClippedTo YPoints min/max ${evidenceLabel}"
           }

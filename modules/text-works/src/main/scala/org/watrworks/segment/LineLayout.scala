@@ -31,7 +31,7 @@ trait LineLayout extends BasePageSegmenter with FontAndGlyphMetrics with TextBlo
 
     def clipped(slice: Rect): Option[Rect] = {
       // slice.flatMap(clipRectBetween(reprShapeLeft, reprShapeRight, _))
-      clipRectBetween(reprShapeLeft, reprShapeRight, slice)
+      slice.clipLeftRight(reprShapeLeft, reprShapeRight)
     }
 
     for {

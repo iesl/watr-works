@@ -16,7 +16,6 @@ import org.apache.pdfbox.pdmodel.graphics.image.PDImage
 import org.apache.pdfbox.pdmodel.font._
 import org.apache.pdfbox.util.{Matrix, Vector}
 
-
 import TypeTags._
 import geometry._
 import geometry.syntax._
@@ -29,7 +28,7 @@ class PageLimitExceeded extends Error
 class PdfBoxTextExtractor(
   page: PDPage,
   charIdGen: IdGenerator[CharID],
-  pageNum: Int@@PageNum,
+  pageNum: Int @@ PageNum,
   fontDefs: FontDefs,
   pageBoundsPdfCoords: PDRectangle
 ) extends PDFGraphicsStreamEngine(page) {
@@ -48,7 +47,7 @@ class PdfBoxTextExtractor(
   def getPageItems(): Seq[ExtractedItem] = {
     // Put combining marks at the end of the list:
     val cms = combiningMarks.reverse.map { c =>
-      c.copy(id=charIdGen.nextId)
+      c.copy(id = charIdGen.nextId)
     }
     extractedItems.reverse ++ cms
   }
@@ -77,19 +76,18 @@ class PdfBoxTextExtractor(
     println(s"running ${enc.value}")
   }
 
-
   override def drawImage(image: PDImage): Unit = {
     val ctm = getGraphicsState.getCurrentTransformationMatrix()
-    val x1 = ctm.getValue(2, 0).toDouble
-    val y1 = ctm.getValue(2, 1).toDouble
-    val x2 = x1 + ctm.getValue(0, 0)
-    val y2 = y1 + ctm.getValue(1, 1)
+    val x1  = ctm.getValue(2, 0).toDouble
+    val y1  = ctm.getValue(2, 1).toDouble
+    val x2  = x1 + ctm.getValue(0, 0)
+    val y2  = y1 + ctm.getValue(1, 1)
 
-    val width = x2 - x1
+    val width  = x2 - x1
     val height = y2 - y1
 
     val left = x1 - pageBoundsPdfCoords.getLowerLeftX
-    val top = pageBoundsPdfCoords.getUpperRightY - y2
+    val top  = pageBoundsPdfCoords.getUpperRightY - y2
 
     val imgBounds = Rect.Doubles(left, top, width, height)
 
@@ -117,7 +115,7 @@ class PdfBoxTextExtractor(
     // traceFunc()
   }
 
-  override def curveTo(x1: Float,x2: Float,x3: Float,x4: Float,x5: Float,x6: Float): Unit = {
+  override def curveTo(x1: Float, x2: Float, x3: Float, x4: Float, x5: Float, x6: Float): Unit = {
     // traceFunc()
   }
 
@@ -138,17 +136,19 @@ class PdfBoxTextExtractor(
     currentPathPoint.get
   }
 
-  override def lineTo(x1: Float,x2: Float): Unit = {
-    val x = x1 - pageBoundsPdfCoords.getLowerLeftX
-    val y = pageBoundsPdfCoords.getUpperRightY - x2
+  override def lineTo(x1: Float, x2: Float): Unit = {
+    val x       = x1 - pageBoundsPdfCoords.getLowerLeftX
+    val y       = pageBoundsPdfCoords.getUpperRightY - x2
     val toPoint = new Point2D.Float(x, y)
 
     val line = Line(getCurrentPoint().toPoint(), toPoint.toPoint())
-    addItem(ExtractedItem.PathItem(
-      charIdGen.nextId,
-      line.bounds(),
-      List(getCurrentPoint().toPoint(), toPoint.toPoint())
-    ))
+    addItem(
+      ExtractedItem.PathItem(
+        charIdGen.nextId,
+        line.bounds(),
+        List(getCurrentPoint().toPoint(), toPoint.toPoint())
+      )
+    )
     currentPathPoint = Some(toPoint)
   }
 
@@ -167,11 +167,9 @@ class PdfBoxTextExtractor(
     // traceFunc()
   }
 
-
   override def showTextString(string: Array[Byte]): Unit = {
     super.showTextString(string)
   }
-
 
   def printSubs(): Unit = {
     // val hexOutput = cs.map(_.toInt.toHexString).mkString(", ")
@@ -181,20 +179,19 @@ class PdfBoxTextExtractor(
   }
 
   def isCombiningMark(c: Char): Boolean = {
-    val cint = c.toInt
-    lazy val ext1 = 0x1AB0 <= cint && cint  <= 0x1AFF
-    lazy val ext2 = 0x1DC0 <= cint && cint  <= 0x1DFF
-    lazy val ext3 = 0x20D0 <= cint && cint  <= 0x20FF
-    lazy val ext4 = 0xFE20 <= cint && cint  <= 0xFE2F
+    val cint      = c.toInt
+    lazy val ext1 = 0x1ab0 <= cint && cint <= 0x1aff
+    lazy val ext2 = 0x1dc0 <= cint && cint <= 0x1dff
+    lazy val ext3 = 0x20d0 <= cint && cint <= 0x20ff
+    lazy val ext4 = 0xfe20 <= cint && cint <= 0xfe2f
 
-    (0x300 <= cint && cint <= 0x36F
-      || ext1 || ext2 || ext3 || ext4
-    )
+    (0x300 <= cint && cint <= 0x36f
+    || ext1 || ext2 || ext3 || ext4)
   }
 
   def isSurrogateCodepoint(ch: Char): Boolean = {
     val cint = ch.toInt
-    0xD800 <= cint && cint  <= 0xDFFF
+    0xd800 <= cint && cint <= 0xdfff
   }
 
   private def getFontBounds(font: PDFont): PDRectangle = {
@@ -203,8 +200,8 @@ class PdfBoxTextExtractor(
     val ymin = bbox.getLowerLeftY
     val xmax = bbox.getUpperRightX
     val ymax = bbox.getUpperRightY
-    val w = xmax - xmin
-    val h = ymax - ymin
+    val w    = xmax - xmin
+    val h    = ymax - ymin
     new PDRectangle(xmin, ymin, w, h)
   }
 
@@ -248,11 +245,11 @@ class PdfBoxTextExtractor(
     math.round(degreeRot).toInt
   }
 
-  val priorCharWindowSize = 3
+  val priorCharWindowSize                           = 3
   var priorCharWindow: List[ExtractedItem.CharItem] = List()
 
-  val spaceChars = List[Char](' ', '\t', '\n', '\r')
-  val MacWordToPdfWeirdSpaceEncoding = List(9,13,32,160)
+  val spaceChars                     = List[Char](' ', '\t', '\n', '\r')
+  val MacWordToPdfWeirdSpaceEncoding = List(9, 13, 32, 160)
 
   var dbgI = 0
 
@@ -267,7 +264,9 @@ class PdfBoxTextExtractor(
   ): Unit = {
 
     if (totalCharCount > MAX_EXTRACTED_CHARS_PER_PAGE) {
-      log.warn(s"Truncating page ${pageNum}. Limit of ${MAX_EXTRACTED_CHARS_PER_PAGE} glyphs/page exceeded")
+      log.warn(
+        s"Truncating page ${pageNum}. Limit of ${MAX_EXTRACTED_CHARS_PER_PAGE} glyphs/page exceeded"
+      )
       throw new PageLimitExceeded()
     }
 
@@ -277,16 +276,18 @@ class PdfBoxTextExtractor(
     //   dbgI += 1
     // }
 
-    val isMacWordToPdfWeirdSpaceEncoding = if (unicodeStr !=null) {
+    val isMacWordToPdfWeirdSpaceEncoding = if (unicodeStr != null) {
       unicodeStr.toList.map { _.toInt } == MacWordToPdfWeirdSpaceEncoding
     } else false
 
-    val unicode = if (unicodeStr !=null) {
-      unicodeStr.toCharArray().filterNot { char =>
-        char <= ' '
-      }.mkString
+    val unicode = if (unicodeStr != null) {
+      unicodeStr
+        .toCharArray()
+        .filterNot { char =>
+          char <= ' '
+        }
+        .mkString
     } else ""
-
 
     val shouldExtract = !isMacWordToPdfWeirdSpaceEncoding && unicode.nonEmpty
 
@@ -305,7 +306,8 @@ class PdfBoxTextExtractor(
 
       glyphProps.finalGlyphBounds.foreach { finalGlyphBounds =>
         val glyphBounds = finalGlyphBounds.getBounds2D.toRect()
-        val isContained = glyphBounds.isContainedBy(pageRect) && glyphProps.fontBBox.isContainedBy(pageRect)
+        val isContained =
+          glyphBounds.isContainedBy(pageRect) && glyphProps.fontBBox.isContainedBy(pageRect)
 
         def appendCombiningMark(c: Char): Unit = {
           if (isContained) {
@@ -318,14 +320,17 @@ class PdfBoxTextExtractor(
         def appendChar(strRepr: String): Unit = {
           if (isContained) {
             // val nextItem = CharItem(charIdGen.nextId, strRepr, fontProps, glyphProps)
-            val sameFont = priorCharWindow.headOption.exists(_.fontProps==fontProps)
-            val sameScalingFactor = priorCharWindow.headOption.exists(_.glyphProps.scalingFactor == glyphProps.scalingFactor)
+            val sameFont = priorCharWindow.headOption.exists(_.fontProps == fontProps)
+            val sameScalingFactor = priorCharWindow.headOption.exists(
+              _.glyphProps.scalingFactor == glyphProps.scalingFactor
+            )
 
-            val sameFontBaseline = priorCharWindow.headOption.exists{lastGlyph =>
+            val sameFontBaseline = priorCharWindow.headOption.exists { lastGlyph =>
               val sameRotation = lastGlyph.glyphProps.rotation == glyphProps.rotation
               val baselinesMatch = glyphProps.rotation match {
                 case 0 =>
-                  val isLeftToRight = lastGlyph.fontBbox.left.unwrap < glyphProps.fontBBox.left.unwrap
+                  val isLeftToRight =
+                    lastGlyph.fontBbox.left.unwrap < glyphProps.fontBBox.left.unwrap
                   lastGlyph.fontBbox.bottom == glyphProps.fontBBox.bottom && isLeftToRight
 
                 case 90 =>
@@ -338,7 +343,6 @@ class PdfBoxTextExtractor(
               sameRotation && baselinesMatch
             }
 
-
             val isNotRotated = glyphProps.rotation == 0
 
             val isLigature = CharClasses.Ligatures.All.contains(unicodeStr)
@@ -347,8 +351,13 @@ class PdfBoxTextExtractor(
 
             val nextItem = if (similarGlyph) {
               val prevItem = priorCharWindow.head
-              // val updatedItem = nextItem.copy(glyphProps=nextItem.glyphProps.copy(prevSimilar=prevItem.id))
-              val nextItem = CharItem(charIdGen.nextId, strRepr, fontProps, glyphProps.copy(prevSimilar=prevItem.id), isLigature)
+              val nextItem = CharItem(
+                charIdGen.nextId,
+                strRepr,
+                fontProps,
+                glyphProps.copy(prevSimilar = prevItem.id),
+                isLigature
+              )
               priorCharWindow = nextItem :: priorCharWindow
               nextItem
             } else {
@@ -358,7 +367,11 @@ class PdfBoxTextExtractor(
             }
 
             strRepr.headOption.foreach { ch =>
-              fontProps.initGlyphEvidence(unicodeStr, ch, glyphProps, pageNum,
+              fontProps.initGlyphEvidence(
+                unicodeStr,
+                ch,
+                glyphProps,
+                pageNum,
                 priorCharWindow.take(priorCharWindowSize).reverse
               )
             }
@@ -373,20 +386,18 @@ class PdfBoxTextExtractor(
         if (unicode == null) {
           appendChar(s"¿${code};")
         } else {
-          val isSurrogate =  unicode.exists(isSurrogateCodepoint(_))
+          val isSurrogate = unicode.exists(isSurrogateCodepoint(_))
           if (isSurrogate) {
             appendChar(s"¿${code};")
           } else {
 
             unicode.foreach { ch =>
-
               UnicodeUtil.maybeSubChar(ch) match {
-                case Left(c)   =>
+                case Left(c) =>
                   if (isCombiningMark(c)) appendCombiningMark(c) else appendChar(c.toString())
 
                 case Right(cs) =>
-
-                  cs.foreach{ c =>
+                  cs.foreach { c =>
                     if (isCombiningMark(c)) appendCombiningMark(c) else appendChar(c.toString())
                   }
               }
@@ -398,8 +409,7 @@ class PdfBoxTextExtractor(
     }
   }
 
-
-  def calculateGlyphBounds(textRenderingMatrix: Matrix,  font: PDFont,  code: Int) : GlyphProps = {
+  def calculateGlyphBounds(textRenderingMatrix: Matrix, font: PDFont, code: Int): GlyphProps = {
 
     textRenderingMatrix.concatenate(font.getFontMatrix)
     val affineTr = textRenderingMatrix.createAffineTransform()
@@ -421,13 +431,12 @@ class PdfBoxTextExtractor(
 
     if (font.isInstanceOf[PDType3Font]) {
 
-      val t3Font : PDType3Font =  font.asInstanceOf[PDType3Font]
-      val charProc : PDType3CharProc = t3Font.getCharProc(code)
-
+      val t3Font: PDType3Font       = font.asInstanceOf[PDType3Font]
+      val charProc: PDType3CharProc = t3Font.getCharProc(code)
 
       if (charProc != null) {
-        val fontBBox : BoundingBox = t3Font.getBoundingBox()
-        val glyphBBox : PDRectangle = charProc.getGlyphBBox()
+        val fontBBox: BoundingBox  = t3Font.getBoundingBox()
+        val glyphBBox: PDRectangle = charProc.getGlyphBBox()
         if (glyphBBox != null) {
           // PDFBOX-3850: glyph bbox could be larger than the font bbox
           glyphBBox.setLowerLeftX(math.max(fontBBox.getLowerLeftX(), glyphBBox.getLowerLeftX()))
@@ -437,24 +446,25 @@ class PdfBoxTextExtractor(
           glyphBBox.setUpperRightY(math.min(fontBBox.getUpperRightY(), glyphBBox.getUpperRightY()))
 
           val gpath = glyphBBox.toGeneralPath() // .getBounds2D
-            initGlyphProps = initGlyphProps.copy(
-              finalGlyphBounds = Some(trans(gpath))
-            )
+          initGlyphProps = initGlyphProps.copy(
+            finalGlyphBounds = Some(trans(gpath))
+          )
         }
       }
     } else if (font.isInstanceOf[PDVectorFont]) {
 
-
       if (font.isInstanceOf[PDTrueTypeFont]) {
         val ttFont: PDTrueTypeFont = font.asInstanceOf[PDTrueTypeFont]
-        val unitsPerEm: Int= ttFont.getTrueTypeFont().getHeader().getUnitsPerEm()
+        val unitsPerEm: Int        = ttFont.getTrueTypeFont().getHeader().getUnitsPerEm()
         affineTr.scale(1000d / unitsPerEm, 1000d / unitsPerEm)
       }
 
       if (font.isInstanceOf[PDType0Font]) {
-        val t0font : PDType0Font=  font.asInstanceOf[PDType0Font]
+        val t0font: PDType0Font = font.asInstanceOf[PDType0Font]
         if (t0font.getDescendantFont().isInstanceOf[PDCIDFontType2]) {
-          val unitsPerEm: Int = t0font.getDescendantFont().asInstanceOf[PDCIDFontType2]
+          val unitsPerEm: Int = t0font
+            .getDescendantFont()
+            .asInstanceOf[PDCIDFontType2]
             .getTrueTypeFont()
             .getHeader()
             .getUnitsPerEm()
@@ -468,7 +478,7 @@ class PdfBoxTextExtractor(
         finalGlyphBounds = Some(trans(gpath))
       )
     } else if (font.isInstanceOf[PDSimpleFont]) {
-      val simpleFont : PDSimpleFont = font.asInstanceOf[PDSimpleFont]
+      val simpleFont: PDSimpleFont = font.asInstanceOf[PDSimpleFont]
 
       // these two lines do not always work, e.g. for the TT fonts in file 032431.pdf
       // which is why PDVectorFont is tried first.
@@ -485,7 +495,6 @@ class PdfBoxTextExtractor(
     initGlyphProps
   }
 
-
   private def findPageSpaceTransforms(pdPage: PDPage): PageSpaceTransforms = {
     // flip y-axis
     val flipTr = new AffineTransform()
@@ -493,8 +502,8 @@ class PdfBoxTextExtractor(
     flipTr.scale(1, -1)
 
     // page rotation
-    val rotateTr = new AffineTransform()
-    val rotation : Int = pdPage.getRotation()
+    val rotateTr      = new AffineTransform()
+    val rotation: Int = pdPage.getRotation()
     if (rotation != 0) {
       println(s"Rotated page: ${rotation}")
       rotation match {
@@ -503,7 +512,10 @@ class PdfBoxTextExtractor(
         case 270 =>
           rotateTr.translate(0, pageBoundsPdfCoords.getWidth().toDouble)
         case 180 =>
-          rotateTr.translate(pageBoundsPdfCoords.getWidth().toDouble, pageBoundsPdfCoords.getHeight().toDouble)
+          rotateTr.translate(
+            pageBoundsPdfCoords.getWidth().toDouble,
+            pageBoundsPdfCoords.getHeight().toDouble
+          )
         case rot =>
           println(s"Page rotation of ${rot} encountered")
       }
@@ -536,7 +548,8 @@ class PdfBoxTextExtractor(
 
   def getPageGeometry(): PageGeometry = {
     val pageBox = Rect.Floats(
-      0, 0,
+      0,
+      0,
       pageBoundsPdfCoords.getWidth,
       pageBoundsPdfCoords.getHeight
     )
@@ -547,8 +560,11 @@ class PdfBoxTextExtractor(
 
 object PdfBoxTextExtractor {
 
-  def extractPages(documentId: String@@DocumentID, pdfPath: Path): (List[(Seq[ExtractedItem], PageGeometry)], FontDefs) = {
-    val pages = mutable.ListBuffer[(Seq[ExtractedItem], PageGeometry)]()
+  def extractPages(
+    documentId: String @@ DocumentID,
+    pdfPath: Path
+  ): (List[(Seq[ExtractedItem], PageGeometry)], FontDefs) = {
+    val pages     = mutable.ListBuffer[(Seq[ExtractedItem], PageGeometry)]()
     val charIdGen = IdGenerator[CharID]()
 
     var currPageGeometry: PageGeometry = null
@@ -575,9 +591,7 @@ object PdfBoxTextExtractor {
         //   pdfPage.getMediaBox
         // ).map {b => (b.getUpperRightX, b.getUpperRightY) }
 
-
         val effectivePageBox = pdfPage.getBBox
-
 
         val extractor = new PdfBoxTextExtractor(
           pdfPage,

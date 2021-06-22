@@ -4,58 +4,89 @@ package segment
 import geometry._
 import geometry.syntax._
 import rsearch.{Octothorpe => Oct}
+import rsearch.{Octothorpe}
 import scala.reflect._
 import watrmarks.Label
 import utils.ExactFloats._
-import org.watrworks.transcripts.Transcript
+import transcripts.Transcript
 
 // Neighborhood search types
-sealed trait Neighbor
+sealed trait Neighbor {
+  def tags: List[String]
+}
 
 object Neighbor {
-  case class ByShape(s: AnyShape)    extends Neighbor
-  case class ByIDOffset(offset: Int) extends Neighbor
+  case class ByShape(
+    s: AnyShape,
+    tags: List[String]
+  ) extends Neighbor
 
-  trait SortBy[A] {
-    def apply[B: Ordering](a: A): B
-  }
+  case class ByIDOffset(
+    offset: Int,
+    tags: List[String]
+  ) extends Neighbor
+
+  case class SortWith[A, B: Ordering](
+    f: A => B
+  )
   case class BySearch[Figure <: GeometricFigure](
     oct: Oct,
     search: Rect => Seq[DocSegShape[Figure]],
-    // sortBy: SortBy[DocSegShape[Figure]],
-    action: Seq[DocSegShape[Figure]] => Unit
+    sortBy: SortWith[DocSegShape[Figure], Double],
+    filterResults: Seq[DocSegShape[Figure]] => Seq[DocSegShape[Figure]],
+    action: Seq[DocSegShape[Figure]] => Unit,
+    tags: List[String]
   ) extends Neighbor
+
+  implicit class RicherNeighbor(val theNeighbor: Neighbor) extends AnyVal {
+    def withTags(tags: String*): Neighbor = theNeighbor match {
+      case v: ByShape     => v.copy(tags = tags.to(List) ++ v.tags)
+      case v: ByIDOffset  => v.copy(tags = tags.to(List) ++ v.tags)
+      case v: BySearch[_] => v.copy(tags = tags.to(List) ++ v.tags)
+    }
+  }
 
 }
 
 trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
+  def searchDownFor[Figure <: GeometricFigure](
+    r: Rect,
+    maxDistance: Int @@ FloatRep
+  ): Octothorpe = {
+    val r2      = r.translate(FloatExact.zero, maxDistance)
+    val horizon = r union r2
 
-  def lookDown = Oct
-    .withSearchRegions(Oct.cell(Dir.Bottom))
-    .withHorizon(pageGeometry)
+    Oct
+      .withSearchRegions(Oct.cell(Dir.Bottom))
+      .withHorizon(horizon)
+      .centeredOn(r)
+  }
 
-  def lookDownFrom[Figure <: GeometricFigure](
+  def lookDownFor[Figure <: GeometricFigure](
     r: Rect,
     maxDistance: Int @@ FloatRep,
     cb: Seq[DocSegShape[Figure]] => Unit,
     forLabels: Label*
   ): Neighbor.BySearch[Figure] = {
-    val r2      = r.translate(FloatExact.zero, maxDistance)
-    val horizon = r union r2
+    val octo = searchDownFor[Figure](r, maxDistance)
 
-    val octo = Oct
-      .withSearchRegions(Oct.cell(Dir.Bottom))
-      .withHorizon(horizon)
-      .centeredOn(r)
+    val tags = s"""lookDownFor(${forLabels.map(_.fqn).mkString(" & ")})""" :: Nil
+
+    val sortWithTop = Neighbor.SortWith[DocSegShape[Figure], Double](
+      _.shape.minBounds.getTop
+    )
 
     Neighbor.BySearch[Figure](
       octo,
       (area: Rect) => searchForShapes(area, forLabels: _*),
-      cb
+      sortBy = sortWithTop,
+      filterResults = (ds: Seq[DocSegShape[Figure]]) => ds,
+      cb,
+      tags
     )
   }
 
-  def lookLeftFrom[Figure <: GeometricFigure](
+  def lookLeftFor[Figure <: GeometricFigure](
     r: Rect,
     maxDistance: Int @@ FloatRep,
     cb: Seq[DocSegShape[Figure]] => Unit,
@@ -69,24 +100,20 @@ trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
       .withHorizon(horizon)
       .centeredOn(r)
 
+    val tags = s"""oct:lookLeft(${forLabels.map(_.fqn).mkString(" & ")})""" :: Nil
+
+    val sortWithTop = Neighbor.SortWith[DocSegShape[Figure], Double](
+      _.shape.minBounds.getTop
+    )
     Neighbor.BySearch[Figure](
       octo,
       (area: Rect) => searchForShapes(area, forLabels: _*),
-      cb
+      sortBy = sortWithTop,
+      filterResults = (ds: Seq[DocSegShape[Figure]]) => ds.take(1),
+      cb,
+      tags
     )
   }
-
-  def lookRight = Oct
-    .withSearchRegions(Oct.cell(Dir.Right))
-    .withHorizon(pageGeometry)
-
-  def lookBottomRight = Oct
-    .withSearchRegions(Oct.cell(Dir.BottomRight))
-    .withHorizon(pageGeometry)
-
-  def lookBottomLeft = Oct
-    .withSearchRegions(Oct.cell(Dir.BottomLeft))
-    .withHorizon(pageGeometry)
 
   def initNodeShape[Figure <: GeometricFigure: ClassTag](
     area: Figure,
@@ -94,25 +121,16 @@ trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
     primaryFont: Option[String @@ ScaledFontID]
   ): DocSegShape[Figure] = {
     val ps = indexShape(area, label)
-    // ps.setAttr(GlyphTreeEdges)(Nil)
     primaryFont.foreach(ps.setAttr(PrimaryFont)(_))
     ps
   }
 
   def boundingRect(pageSlice: Rect, c1Rect: Rect): Option[Rect] = {
-    clipRectBetween(
-      c1Rect.left,
-      c1Rect.right,
-      pageSlice
-    )
+    pageSlice.clipLeftRight(c1Rect.left, c1Rect.right)
   }
   def boundingRect(pageSlice: Rect, c1Rect: Rect, c2Rect: Rect): Option[Rect] = {
     val c12Rect = c1Rect union c2Rect
-    clipRectBetween(
-      c12Rect.left,
-      c12Rect.right,
-      pageSlice
-    )
+    pageSlice.clipLeftRight(c12Rect.left, c12Rect.right)
   }
 
   def fontBackslashAngle = pageScope.pageStats.fontBackslashAngle
@@ -123,7 +141,7 @@ trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
     val glyphNGramTop                       = fromNGram.asRectShape.shape.top
 
     _addEdge(fromNGram)(
-      lookDownFrom(
+      lookDownFor(
         fromNGram.minBounds,
         pageGeometry.height,
         (_: Seq[RectShape]).headOption.foreach(shape => {
@@ -132,43 +150,61 @@ trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
           fontVJump.add(ngramFontId, glyphNGramTop, shapeFontId, shapeTop)
         }),
         LB.GlyphBigram
-      )
+      ).withTags("findFontVJumps")
     )
   }
 
-  def addFontBackslashEdge(
+  def findIndentationShapes(
     fromBaseline: AnyShape,
     baselineFontId: String @@ ScaledFontID
   ): Unit = {
     val fontBaselineShape = fromBaseline.asLineShape
     val fontBaseline      = fontBaselineShape.shape
 
+    val fontOffsets      = docScope.fontDefs.getScaledFontOffsets(baselineFontId)
+    val fontHeight       = fontOffsets.distanceBetween(_.topLine, _.bottomLine)
+    val lookDownDistance = fontHeight * 3
+    val minIndent        = fontHeight // TODO choose better values for these parameters
+    val maxIndent        = fontHeight * 10
+
     _addEdge(fontBaselineShape)(
-      lookDownFrom(
+      lookDownFor(
         fontBaseline.minBounds,
-        pageGeometry.height,
-        (_: Seq[LineShape]).headOption.foreach(shape => {
-          val neighborFontId  = shape.getAttr(PrimaryFont).get
+        lookDownDistance,
+        (_: Seq[LineShape]).foreach(shape => {
           val neighborShape   = shape.shape
           val neighborShapeP1 = neighborShape.p1
           val baselineP1      = fontBaseline.p1
-          val angleTo         = neighborShapeP1.angleTo(baselineP1)
-          val angleToDeg      = ((angleTo * 180) / math.Pi).toFloatExact()
 
-          traceLog.trace(
-            traceLog
-              .figure(neighborShapeP1.lineTo(baselineP1))
-              .tagged(s"Backslash Edge ${angleToDeg}")
-          )
+          val leftSideOffset = neighborShapeP1.x - baselineP1.x
+          val isIndent       = minIndent < leftSideOffset && leftSideOffset <= maxIndent
+          val isOutdent      = minIndent < -leftSideOffset && -leftSideOffset <= maxIndent
+          if (leftSideOffset != FloatExact.zero) {
+            println(s"leading traps: leftSideOffset=${leftSideOffset.pp()}, min/max = ${minIndent
+              .pp()}/${maxIndent.pp()}, isIn/Out = ${isIndent || isOutdent} ")
+          }
+          if (isIndent || isOutdent) {
+            val neighborFontId = shape.getAttr(PrimaryFont).get
+            val angleTo        = neighborShapeP1.angleTo(baselineP1)
+            val angleToDeg     = ((angleTo * 180) / math.Pi).toFloatExact()
 
-          fontBackslashAngle.add(baselineFontId, neighborFontId, angleToDeg)
+            fontBackslashAngle.add(baselineFontId, neighborFontId, angleToDeg)
+
+            val leadingTrapezoid = Trapezoid.fromHorizontals(fontBaseline, neighborShape)
+            val trapType         = if (isIndent) "Indent" else "Outdent"
+
+            traceLog.trace {
+              figure(leadingTrapezoid) tagged s"Leading ${trapType}"
+            }
+          }
+
         }),
         LB.CharRunFontLeadingBaseline
       )
     )
   }
 
-  def addFindLeftmostEdge(
+  protected def findLeadingRunBaselines(
     fromBaseline: AnyShape,
     baselineFontId: String @@ ScaledFontID
   ): Unit = {
@@ -180,16 +216,20 @@ trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
     val maxDist = chars.headOption.map(_.fontBbox.width).getOrElse(10.toFloatExact())
 
     _addEdge(fontBaselineShape)(
-      lookLeftFrom(
+      lookLeftFor(
         fontBaseline.minBounds,
         maxDist,
         (foundShapes: Seq[AnyShape]) => {
           if (foundShapes.isEmpty) {
             fontBaselineShape.addLabels(LB.CharRunFontLeadingBaseline)
-            addFontBackslashEdge(fromBaseline, baselineFontId)
+            findIndentationShapes(fromBaseline, baselineFontId)
+
+            traceLog.trace {
+              shape(fontBaselineShape)
+            }
           }
         }
-      )
+      ).withTags("findLeftmostEdge")
     )
   }
 
@@ -199,31 +239,64 @@ trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
   var openEdges: mutable.ArrayBuffer[Neighbor]    = mutable.ArrayBuffer()
   var workingEdges: mutable.ArrayBuffer[Neighbor] = mutable.ArrayBuffer()
 
-  def _addEdge(shape: AnyShape)(nn: Neighbor) = {
+  val createLabel = Transcript.Label.create(_)
+
+  def createLabelOn[Fig <: GeometricFigure](name: String, fig: Fig) =
+    Transcript.Label.create(name).onShapes(fig)
+
+
+  protected def _addEdge(shape: AnyShape)(nn: Neighbor) = {
     openEdges.append(nn)
-
-    // shape.modAttr(GlyphTreeEdges)(att =>
-    //   att match {
-    //     case Some(edges) => edges :+ nn
-    //     case None        => List(nn)
-    //   }
-    // )
-
   }
 
+  protected def runNeigborBySearch[Figure <: GeometricFigure](bySearch: BySearch[Figure]): Unit = {
+    val BySearch(oct, search, sortBy, filterResults, cb, tags) = bySearch
+
+    val res0     = oct.runSearch(search)
+    val sorted   = res0.sortBy(sortBy.f)
+    val filtered = filterResults(sorted)
+
+    traceLog.trace {
+
+      val searchAreaLabels = oct
+        .searchAreas()
+        .to(List)
+        .map({ case (sbounds, searchArea) =>
+          val name = sbounds match {
+            case Oct.Bounds.Cell(dir)        => s"Cell:${dir}"
+            case Oct.Bounds.CellSpan(d1, d2) => s"Span:${d1}-${d2}"
+          }
+          createLabel(s"Query/${name}")
+            .onShapes(searchArea)
+        })
+
+      val resLabels = traceLog.shapesToLabels(filtered: _*)
+
+      createLabel("OctSearch")
+        .withProp("class", ">lazy")
+        .withChildren(
+          createLabel("Octothorpe")
+            .withChildren(
+              createLabelOn("FocalRect", oct.focalRect)
+                .withProp("class", "=eager")
+                .withProp("tags", tags: _*),
+              createLabelOn("HorizonRect", oct.horizonRect),
+              createLabel("SearchArea")
+                .withChildren(searchAreaLabels: _*)
+            ),
+          createLabel("Found")
+            .withChildren(resLabels: _*)
+        )
+
+    }
+    cb(filtered)
+  }
   protected def expandEdges(): Unit = {
     workingEdges = openEdges
     openEdges = mutable.ArrayBuffer()
     workingEdges.foreach(_ match {
-      case BySearch(oct, search, cb) =>
-        Transcript.Label(
-          name = "Root",
-          id = None,
-          range = List(),
-          props = Some(Map()),
-          children = None
-        )
-        cb(oct.runSearch(search))
+      case bySearch: BySearch[_] =>
+        runNeigborBySearch(bySearch)
       case _ =>
     })
 
@@ -232,13 +305,4 @@ trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
     }
   }
 
-  // protected def expandShapesWithLabel(label: Label): Unit = for {
-  //   shapeNode <- getLabeledShapes(label)
-  //   edgeList  <- shapeNode.getAttr(GlyphTreeEdges).to(List)
-  //   neighbor  <- edgeList
-  // } neighbor match {
-  //   case BySearch(oct, search, cb) =>
-  //     cb(oct.runSearch(search))
-  //   case _ =>
-  // }
 }

@@ -21,13 +21,14 @@ object LabelTreeNode {
 
   case object RootNode extends LabelTreeNode[Nothing]
 
-  implicit def ShowLabelTreeNode[A <: LabelTarget](implicit ShowA: Show[A]) = Show.shows[LabelTreeNode[A]]{ treeNode =>
-    treeNode match {
-      case LabelTreeNode.CellGroup(cells, beginOffset@_) => cells.map(ShowA.shows(_)).mkString
-      case LabelTreeNode.LabelNode(l) => l.fqn
-      case LabelTreeNode.RootNode => "()"
+  implicit def ShowLabelTreeNode[A <: LabelTarget](implicit ShowA: Show[A]) =
+    Show.shows[LabelTreeNode[A]] { treeNode =>
+      treeNode match {
+        case LabelTreeNode.CellGroup(cells, beginOffset @ _) => cells.map(ShowA.shows(_)).mkString
+        case LabelTreeNode.LabelNode(l)                      => l.fqn
+        case LabelTreeNode.RootNode                          => "()"
+      }
     }
-  }
 }
 
 sealed trait LabeledRowElem {
@@ -41,7 +42,8 @@ object LabeledRowElem {
     override val labels: List[Label],
     cells: Seq[LabelTreeNode.CellGroup[A]],
     depthMod: Int = 0
-  )(implicit ShowA: Show[A]) extends LabeledRowElem {
+  )(implicit ShowA: Show[A])
+    extends LabeledRowElem {
 
     val showA = ShowA
 
@@ -60,26 +62,31 @@ object LabeledRowElem {
 
 }
 
-
 object LabeledSequenceTreeTransforms {
 
   // def gridCellsToLabelTree(gridCells: Seq[TextGrid.GridCell]): Tree[LabelTreeNode] = {
-  def labeledSequenceToLabelTree[A <: LabelTarget](labeledSequence: LabeledSequence[A]): Tree[LabelTreeNode[A]] = {
-    val init = Tree.Node[LabelTreeNode[A]](LabelTreeNode.RootNode, EphemeralStream.emptyEphemeralStream)
+  def labeledSequenceToLabelTree[A <: LabelTarget](
+    labeledSequence: LabeledSequence[A]
+  ): Tree[LabelTreeNode[A]] = {
+    val init =
+      Tree.Node[LabelTreeNode[A]](LabelTreeNode.RootNode, EphemeralStream.emptyEphemeralStream)
     var currLoc = init.loc
 
     def up(): Unit = {
       currLoc = currLoc.parent.getOrElse(sys.error("no parent found"))
     }
 
-
     for { (cell, cellIndex) <- labeledSequence.labelTargets().zipWithIndex } {
       val pinStack = cell.pins.reverse
       val basePins = pinStack.drop(currLoc.parents.length)
 
-      basePins.takeWhile(p => p.isBegin || p.isUnit)
+      basePins
+        .takeWhile(p => p.isBegin || p.isUnit)
         .foreach { pin =>
-          val n = Tree.Node[LabelTreeNode[A]](LabelTreeNode.LabelNode(pin.label), EphemeralStream.emptyEphemeralStream)
+          val n = Tree.Node[LabelTreeNode[A]](
+            LabelTreeNode.LabelNode(pin.label),
+            EphemeralStream.emptyEphemeralStream
+          )
           currLoc = currLoc.insertDownLast(n)
         }
 
@@ -87,8 +94,7 @@ object LabeledSequenceTreeTransforms {
         lastChild <- currLoc.lastChild
       } yield {
         lastChild.getLabel match {
-          case _@ LabelTreeNode.CellGroup(cells, beginIndex) =>
-
+          case _ @LabelTreeNode.CellGroup(cells, beginIndex) =>
             lastChild.modifyLabel { p =>
               LabelTreeNode.CellGroup(cell :: cells, beginIndex): LabelTreeNode[A]
             }
@@ -107,57 +113,62 @@ object LabeledSequenceTreeTransforms {
 
       up()
 
-      cell.pins.takeWhile(p => p.isLast || p.isUnit)
-        .foreach { _ => up()  }
+      cell.pins
+        .takeWhile(p => p.isLast || p.isUnit)
+        .foreach { _ => up() }
     }
 
-
-    currLoc.root.toTree.map { n => n match {
-      case LabelTreeNode.CellGroup(cells, beginIndex) => LabelTreeNode.CellGroup(cells.reverse, beginIndex)
-      case n => n
-    }}
+    currLoc.root.toTree.map { n =>
+      n match {
+        case LabelTreeNode.CellGroup(cells, beginIndex) =>
+          LabelTreeNode.CellGroup(cells.reverse, beginIndex)
+        case n => n
+      }
+    }
   }
-
 
   type LabeledLines = List[(List[Label], String)]
 
   type LabeledRows = List[LabeledRowElem]
 
   type Start = Int
-  type Len = Int
-  type Attr = (Option[Label], Start, Len)
+  type Len   = Int
+  type Attr  = (Option[Label], Start, Len)
 
-  implicit val ShowAttr = Show.shows[Attr]{ case(lbl, st, len) =>
-    s"${lbl}: (${st}-${st+len})"
+  implicit val ShowAttr = Show.shows[Attr] { case (lbl, st, len) =>
+    s"${lbl}: (${st}-${st + len})"
   }
 
   private def attrEndIndex(attr: Attr) = {
     val (_, st, len) = attr
-    st+len
+    st + len
   }
 
   private def shiftChildren(ch: EphemeralStream[Tree[Tree[Attr]]], init: Int) =
-    ch.foldLeft(EphemeralStream.emptyEphemeralStream[Tree[Attr]]){
+    ch.foldLeft(EphemeralStream.emptyEphemeralStream[Tree[Attr]]) {
       case (acc, child: Tree[Tree[Attr]]) =>
-        val offset = acc.headOption.map { h: Tree[Attr] =>
-          attrEndIndex(h.rootLabel)
-        }.getOrElse(init)
+        val offset = acc.headOption
+          .map { h: Tree[Attr] =>
+            attrEndIndex(h.rootLabel)
+          }
+          .getOrElse(init)
 
-        val adjusted = child.rootLabel.map{ case (label, begin, len) =>
-          (label, begin+offset, len)
+        val adjusted = child.rootLabel.map { case (label, begin, len) =>
+          (label, begin + offset, len)
         }
 
         adjusted ##:: acc
     }
 
-
   def spanTreeToJson(spanTree: Tree[Attr]): Json = {
-    def histo(node: Attr, children: EphemeralStream[Tree[Option[Json]]]): Option[Json]= {
+    def histo(node: Attr, children: EphemeralStream[Tree[Option[Json]]]): Option[Json] = {
       val (label, begin, len) = node
       // TODO take out this hacky ephemeral stream type-chasing
-      val childs = children.flatMap(ch => EphemeralStream.fromStream(ch.rootLabel.toStream)).toList.asJson
-      val atRootNode = begin==0 && len==0 && label.isEmpty
-      if (atRootNode) Some(childs) else {
+      val childs =
+        children.flatMap(ch => EphemeralStream.fromStream(ch.rootLabel.toStream)).toList.asJson
+      val atRootNode = begin == 0 && len == 0 && label.isEmpty
+      if (atRootNode) Some(childs)
+      else {
         label.map { l =>
           Json.arr(
             Json.arr(l.asJson, Json.fromInt(begin), Json.fromInt(len)),
@@ -175,10 +186,10 @@ object LabeledSequenceTreeTransforms {
     def histo(node: LabelTreeNode[A], children: EphemeralStream[Tree[Tree[Attr]]]): Tree[Attr] = {
 
       node match {
-        case LabelTreeNode.RootNode         => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)
+        case LabelTreeNode.RootNode            => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)
         case cells: LabelTreeNode.CellGroup[A] => Tree.Leaf((None, 0, cells.cells.length))
         case LabelTreeNode.LabelNode(label) =>
-          val shifted = shiftChildren(children, 0)
+          val shifted   = shiftChildren(children, 0)
           val endOffset = shifted.headOption.map(_.rootLabel).map(attrEndIndex).getOrElse(0)
           Tree.Node((Some(label), 0, endOffset), shifted.reverse)
       }
@@ -187,18 +198,20 @@ object LabeledSequenceTreeTransforms {
     labelTree.scanr(histo).rootLabel
   }
 
-  def labelTreeToMarginalSpanTree[A <: LabelTarget](labelTree: Tree[LabelTreeNode[A]], compactMarginals: Boolean = true): Tree[Attr] = {
+  def labelTreeToMarginalSpanTree[A <: LabelTarget](
+    labelTree: Tree[LabelTreeNode[A]],
+    compactMarginals: Boolean = true
+  ): Tree[Attr] = {
 
     def histo(node: LabelTreeNode[A], children: EphemeralStream[Tree[Tree[Attr]]]): Tree[Attr] = {
 
       node match {
-        case LabelTreeNode.RootNode         => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)
-        case _: LabelTreeNode.CellGroup[A]     => Tree.Leaf((None, 0, 1))
+        case LabelTreeNode.RootNode        => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)
+        case _: LabelTreeNode.CellGroup[A] => Tree.Leaf((None, 0, 1))
         case LabelTreeNode.LabelNode(label) =>
-
-          val initOffset: Int = if (compactMarginals || children.length==1) 0 else 1
-          val shifted = shiftChildren(children, initOffset)
-          val endOffset = shifted.headOption.map(_.rootLabel).map(attrEndIndex).getOrElse(0)
+          val initOffset: Int = if (compactMarginals || children.length == 1) 0 else 1
+          val shifted         = shiftChildren(children, initOffset)
+          val endOffset       = shifted.headOption.map(_.rootLabel).map(attrEndIndex).getOrElse(0)
           Tree.Node((Some(label), 0, endOffset), shifted.reverse)
       }
     }

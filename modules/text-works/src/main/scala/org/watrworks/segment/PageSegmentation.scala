@@ -35,22 +35,25 @@ object PageSegmenter {
 
     override val pageNum: Int @@ PageNum    = pageNum0
     override val pageStats: PageLayoutStats = new PageLayoutStats()
+    override protected def scopeTags        = s"page:${pageNum}." :: Nil
   }
 }
 
 trait AttributeTags {
 
-  implicit val UpLeftChar       = AttrWitness.Mk[String]()
-  implicit val ExtractedChars   = AttrWitness.Mk[Seq[ExtractedItem.CharItem]]()
-  implicit val ExtractedChar    = AttrWitness.Mk[ExtractedItem.CharItem]()
-  implicit val Fonts            = AttrWitness.Mk[Set[String @@ ScaledFontID]]()
-  implicit val GlyphTreeEdges   = AttrWitness.Mk[List[Neighbor]]()
-  implicit val PrimaryFont      = AttrWitness.Mk[String @@ ScaledFontID]()
-  implicit val FontOffsets      = AttrWitness.Mk[FontBaselineOffsets]()
-  implicit val LabeledIntervals = AttrWitness.Mk[Seq[Interval[Int, Label]]]()
-  implicit val LinkedTrapezoid  = AttrWitness.Mk[Trapezoid]()
-  implicit val LinkedTextGrid   = AttrWitness.Mk[TextGrid.Row]()
-  implicit val WeightedLabels   = AttrWitness.Mk[WeightedLabeling]()
+  val ParentShape      = AttrWitness.Mk[AnyShape]()
+  val ChildShapes      = AttrWitness.Mk[Seq[AnyShape]]()
+  val UpLeftChar       = AttrWitness.Mk[String]()
+  val ExtractedChars   = AttrWitness.Mk[Seq[ExtractedItem.CharItem]]()
+  val ExtractedChar    = AttrWitness.Mk[ExtractedItem.CharItem]()
+  val Fonts            = AttrWitness.Mk[Set[String @@ ScaledFontID]]()
+  val GlyphTreeEdges   = AttrWitness.Mk[List[Neighbor]]()
+  val PrimaryFont      = AttrWitness.Mk[String @@ ScaledFontID]()
+  val FontOffsets      = AttrWitness.Mk[FontBaselineOffsets]()
+  val LabeledIntervals = AttrWitness.Mk[Seq[Interval[Int, Label]]]()
+  val LinkedTrapezoid  = AttrWitness.Mk[Trapezoid]()
+  val LinkedTextGrid   = AttrWitness.Mk[TextGrid.Row]()
+  val WeightedLabels   = AttrWitness.Mk[WeightedLabeling]()
 
 }
 
@@ -76,15 +79,7 @@ trait BasePageSegmenter extends PageScopeTracing with AttributeTags { self =>
   lazy val shapeIndex: ShapeIndex = docScope.getLabeledShapeIndex(pageNum)
 
   protected def pageVerticalSlice(left: Double, width: Double): Option[Rect] = {
-    pageGeometry.getVerticalSlice(left.toFloatExact(), width.toFloatExact())
-  }
-
-  protected def pageHorizontalSlice(top: Double, height: Double): Option[Rect] = {
-    val texact = top.toFloatExact()
-    val hexact = height.toFloatExact()
-    val t      = max(texact, pageGeometry.top)
-    val b      = min(texact + hexact, pageGeometry.bottom)
-    pageGeometry.getHorizontalSlice(t, b - t)
+    pageGeometry.clipLeftWidth(left.toFloatExact(), width.toFloatExact())
   }
 
   protected def searchForShapes[F <: GeometricFigure](
@@ -114,11 +109,13 @@ trait BasePageSegmenter extends PageScopeTracing with AttributeTags { self =>
       .map { _.asRectShape }
   }
 
-  def getLabeledShapes(l: Label): Seq[AnyShape]   = shapeIndex.getShapesWithLabel(l)
-  def getLabeledRects(l: Label): Seq[RectShape]   = getLabeledShapes(l).map(_.asRectShape)
-  def getLabeledTraps(l: Label): Seq[TrapShape]   = getLabeledShapes(l).map(_.asTrapShape)
-  def getLabeledLines(l: Label): Seq[LineShape]   = getLabeledShapes(l).map(_.asLineShape)
-  def getLabeledPoints(l: Label): Seq[PointShape] = getLabeledShapes(l).map(_.asPointShape)
+  def getLabeledShapes[T <: GeometricFigure](l: Label): Seq[DocSegShape[T]] =
+    shapeIndex.getShapesWithLabel(l).map(_.asInstanceOf[DocSegShape[T]])
+
+  def getLabeledRects(l: Label): Seq[RectShape]   = getLabeledShapes[Rect](l)
+  def getLabeledTraps(l: Label): Seq[TrapShape]   = getLabeledShapes[Trapezoid](l)
+  def getLabeledLines(l: Label): Seq[LineShape]   = getLabeledShapes[Line](l)
+  def getLabeledPoints(l: Label): Seq[PointShape] = getLabeledShapes[Point](l)
 
   protected def deleteLabeledShapes(l: Label): Unit = {
     deleteShapes(shapeIndex.getShapesWithLabel(l))
@@ -258,30 +255,23 @@ trait BasePageSegmenter extends PageScopeTracing with AttributeTags { self =>
   def itemsAreConsecutive(item1: ExtractedItem, item2: ExtractedItem): Boolean =
     idsAreConsecutive(item1.id, item2.id)
 
-  protected def clipRectBetween(
-    x1: Int @@ FloatRep,
-    x2: Int @@ FloatRep,
-    rect: Rect
-  ): Option[Rect] = {
-    for {
-      rightHalf <- rect.splitVertical(x1)._2
-      leftHalf  <- rightHalf.splitVertical(x2)._1
-    } yield leftHalf
-  }
+  def hasFont(shape: AnyShape, fontId: String @@ ScaledFontID): Boolean =
+    shape.getAttr(Fonts).exists(_.contains(fontId))
 
-  def sortShapesByFontOccurrence(
-    shapes: Seq[AnyShape]
-  ): Seq[(List[AnyShape], String @@ ScaledFontID)] = {
+  def fontsExist(shape: AnyShape): Boolean =
+    shape.getAttr(Fonts).isDefined
+
+  def sortShapesByFontOccurrence[T <: GeometricFigure](
+    shapes: Seq[DocSegShape[T]]
+  ): Seq[(List[DocSegShape[T]], String @@ ScaledFontID)] = {
 
     def _loop(
       scaledFontIds: List[String @@ ScaledFontID],
-      lineShapes: Seq[AnyShape]
-    ): List[(List[AnyShape], String @@ ScaledFontID)] = scaledFontIds match {
+      lineShapes: Seq[DocSegShape[T]]
+    ): List[(List[DocSegShape[T]], String @@ ScaledFontID)] = scaledFontIds match {
 
       case headFontId :: tailFontIds =>
-        val (linesForFont, others) = lineShapes.partition { lineShape =>
-          lineShape.getAttr(Fonts).exists(_.contains(headFontId))
-        }
+        val (linesForFont, others) = lineShapes.partition(hasFont(_, headFontId))
 
         (linesForFont.to(List), headFontId) :: _loop(tailFontIds, others)
 
