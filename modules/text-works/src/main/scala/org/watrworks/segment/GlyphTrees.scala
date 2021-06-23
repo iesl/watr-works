@@ -4,21 +4,69 @@ package segment
 import extract.FontBaselineOffsets
 import geometry._
 import geometry.syntax._
-
+import utils.Interval
+import Interval._
 
 trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch { self =>
 
-  // import utils.GuavaHelpers._
-
   // TODO how many times does a run of glyphs of the same font appear *not* on the same baseline
   //    (which may indicate a font used for graph/chart data points)
+
   def buildGlyphTree(): Unit = {
     defineBaselineMidriseTrees()
     evalGlyphTrees()
+  }
 
-    // println("Font Backslash Angles \n")
-    // println(fontBackslashAngle.table.showAsList().toString())
-    // println("\n\n==================\n")
+  def buildGlyphTreeStep2(): Unit = {
+    val graph = new ShapeIDGraph()
+
+    val maxClustered = docScope.docStats.fontVJumpByPage.documentMaxClustered
+    val initShapes   = getLabeledShapes[Rect](LB.LowerSkyline)
+    for {
+      (fontId, (count, range)) <- maxClustered
+      lowerSkyline             <- initShapes
+      if hasFont(lowerSkyline, fontId)
+    } {
+      val skylineChildren    = lowerSkyline.getAttr(ChildShapes).get.asRectShapes
+      val skylineParentShape = lowerSkyline.getAttr(ParentShape).get.asRectShape
+
+      skylineChildren
+        .sortBy(_.shape.left.unwrap)
+        .sliding(2)
+        .foreach({
+          _ match {
+            case Seq(shape1, shape2) =>
+              graph.edge(shape1, shape2, "Right")
+            case _ =>
+          }
+        })
+
+      skylineChildren.foreach({ shape =>
+        graph.edge(skylineParentShape, shape, "Down")
+      })
+    }
+
+    val connected = graph.weaklyConnectedComponents()
+
+    connected.foreach({ components: graph.TopoOrdering =>
+      val compsAsShapes = components
+        .to(List)
+        .map(_.toOuter)
+        .map(shapeIndex.getById(_))
+
+      val compBounds = compsAsShapes.headOption
+        .map(headShape => {
+          compsAsShapes.tail.foldLeft(headShape.shape.minBounds) { case (acc, e) =>
+            acc union e.shape.minBounds
+          }
+        })
+
+      compBounds.foreach(bounds => {
+        traceLog.trace {
+          createLabelOn("ConnCompBounds", bounds)
+        }
+      })
+    })
   }
 
   def traceShapes(name: String, shape: GeometricFigure*): Option[Unit] = {
@@ -149,9 +197,9 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
             lowerSkyline.setAttr(ParentShape)(focalShape)
             lowerSkyline.setAttr(Fonts)(Set(fontId))
 
-
             docScope.docStats.fontVJumpByPage.add(
-              pageNum, fontId,
+              pageNum,
+              fontId,
               runion.bottom,
               focalRect.bottom
             )
@@ -241,24 +289,106 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
   }
 }
 
-
 trait GlyphTreeDocScope extends BaseDocumentSegmenter { self =>
   import utils.GuavaHelpers._
-  import scala.jdk.CollectionConverters._
+  import utils.ExactFloats._
 
+  val ClusterEpsilonWidth = 0.2.toFloatExact() // FloatRep(20)
   def analyzeVJumps(): Unit = {
     val fontVJumpByPage = docScope.docStats.fontVJumpByPage
-    val asList = fontVJumpByPage.table.showBox()
-    fontVJumpByPage.table.computeColMarginals(0)({ case (acc, e: fontVJumpByPage.ValueT) => {
-      val wer = e.iterator().asScala.to(List)
+    val asList          = fontVJumpByPage.table.showBox()
+
+    type AccT = (Int, Interval.FloatExacts)
+    val zero: List[AccT] = List.empty
+
+    implicit val AccTShow = scalaz.Show.shows[AccT]({ case (i, fes) =>
+      val shfes = FloatExacts.FloatExactsShow.show(fes)
+      s"${shfes}x${i}"
+    })
+    implicit val ListAccTShow = scalaz.Show.shows[List[AccT]]({
+      _.map(AccTShow.show(_)).mkString(", ")
+    })
+
+    val mapped = fontVJumpByPage.table.map({ countedJumps =>
+      val sorted = countedJumps
+        .toList()
+        .sortBy(_._1)
+        .reverse
+
+      val clusteredJumps = sorted.foldLeft(zero) { case (countedRanges, (ecount, edist)) =>
+        val (containsEDist, others) = countedRanges.partition({ case (_, r) =>
+          val rt0       = r.translate(ClusterEpsilonWidth)
+          val rt1       = r.translate(-ClusterEpsilonWidth)
+          val rexpanded = rt0.union(rt1)
+
+          rexpanded.contains(edist)
+        })
+        val edistRange = FloatExacts(edist, FloatExact.zero)
+
+        val expanded = containsEDist match {
+          case (count, crange) :: rest =>
+            val subsumedRange = crange.union(edistRange)
+            (count + ecount, subsumedRange) :: rest
+
+          case Nil =>
+            (ecount -> edistRange) :: Nil
+        }
+
+        (expanded ++ others).sortBy(_._1).reverse
+      }
+
+      clusteredJumps
+    })
+
+    val withColMargins = mapped.computeColMarginals(zero) { case (allRanges, pageRanges) =>
+      val acc = (allRanges ++ pageRanges).foldLeft(zero) { case (countedRanges, (ecount, erange)) =>
+        val (containsEDist, others) = countedRanges.partition({ case (_, r) =>
+          r.intersect(erange).isDefined
+        })
+
+        val expanded = containsEDist match {
+          case (count, crange) :: rest =>
+            val subsumedRange = crange.union(erange)
+            (count + ecount, subsumedRange) :: rest
+
+          case Nil =>
+            (ecount -> erange) :: Nil
+        }
+        (expanded ++ others).sortBy(_._1).reverse
+      }
 
       acc
-    } })
+    }
 
+    val perPageMax: List[(fontVJumpByPage.ColT, AccT)] = withColMargins.colMarginals
+      .map({ fontsByCount: Map[fontVJumpByPage.ColT, List[AccT]] =>
+        val docWideFontRankedByVJumpDist =
+          fontsByCount.toList.flatMap({ case (fontId, countsAndRanges) =>
+            countsAndRanges.sortBy(_._1).reverse.headOption.map(cr => (fontId, cr))
+          })
+        docWideFontRankedByVJumpDist
+      })
+      .getOrElse(List.empty)
 
+    val sortedByOverallMax: List[(fontVJumpByPage.ColT, AccT)] = perPageMax.sortBy(_._2._1).reverse
+
+    val pprintPerPageMax = sortedByOverallMax
+      .map { case (fontId, (count, range)) =>
+        val rstr = Interval.FloatExacts.FloatExactsShow.show(range).toString()
+        s"${fontId}: ${count}x${rstr}"
+      }
+      .mkString(", ")
+
+    fontVJumpByPage.documentMaxClustered = sortedByOverallMax
 
     println("Font V-Jumps per page")
     println(asList.toString())
+    println("Cluster ")
+    println(mapped.showBox())
+    println("WithColMargins")
+    println(withColMargins.showBox())
+    println("Max Per Page")
+    println(pprintPerPageMax)
     println("\n\n==================\n")
   }
 }

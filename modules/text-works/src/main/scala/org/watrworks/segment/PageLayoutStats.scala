@@ -154,5 +154,7 @@ class DocumentLayoutStats extends LayoutStats {
 
       table.useOrSet(pageNum, fontId, _.add(vdist), initValue())
     }
+
+    var documentMaxClustered: List[(String @@ ScaledFontID, (Int, Interval.FloatExacts))] = List.empty
   }
 }

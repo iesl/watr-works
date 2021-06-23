@@ -47,11 +47,12 @@ object GuavaHelpers {
 
   implicit val StringShow           = Show.shows[String](s => s)
   implicit val scalazDoubleInstance = scalaz.Scalaz.doubleInstance
+  implicit val ShowUnit             = scalaz.Show.shows[Unit](_ => "")
 
-  implicit def ShowGuavaMultiSet[A](implicit ShowA: Show[A]): Show[gcol.TreeMultiset[A]] = {
-
-    Show.shows[gcol.TreeMultiset[A]](ms => {
-      ms.entrySet()
+  implicit class RicherTreeMultiset[A](self: gcol.TreeMultiset[A]) {
+    def toList(): List[(Int, A)] = {
+      self
+        .entrySet()
         .asScala
         .to(List)
         .map(entry => {
@@ -59,6 +60,14 @@ object GuavaHelpers {
           val elem  = entry.getElement()
           (count, elem)
         })
+    }
+  }
+
+  implicit def ShowGuavaMultiSet[A](implicit ShowA: Show[A]): Show[gcol.TreeMultiset[A]] = {
+
+    Show.shows[gcol.TreeMultiset[A]](ms => {
+      ms
+        .toList()
         .sortBy(_._1)
         .reverse
         .map({ case (count, elem) =>
@@ -238,7 +247,8 @@ case class TabularData[RowT: Ordering, ColT: Ordering, A, RowMarginT, ColMarginT
   import GuavaHelpers._
 
   def showBox(zero: String = "∅")(implicit
-    ShowA: Show[A]
+    ShowA: Show[A],
+    ShowColMarginT: Show[ColMarginT]
   ): TB.Box = {
 
     val rowKeys    = table.rowKeySet().asScala.toList.sorted
@@ -274,7 +284,18 @@ case class TabularData[RowT: Ordering, ColT: Ordering, A, RowMarginT, ColMarginT
     } getOrElse { cellBoxes }
 
     val withRowAndColMarginals: Seq[Seq[Box]] = colMarginals.map { cms =>
-      val cmBoxes = cms.map(_._2.toString().box).toList.intersperse(" ▒ ")
+      val cmBoxes = columnKeys
+        .map({ colKey =>
+          cms
+            .get(colKey)
+            .map(marginal => {
+              ShowColMarginT.show(marginal).toString().box
+            })
+            .getOrElse("".box)
+        })
+        .intersperse(" ▒ ")
+
+      // val cmBoxes = cms.map(_._2.toString().box).toList.intersperse(" ▒ ")
 
       withRowMarginals :+ cmBoxes
     } getOrElse { withRowMarginals }
@@ -338,7 +359,7 @@ case class TabularData[RowT: Ordering, ColT: Ordering, A, RowMarginT, ColMarginT
       (colk, cellval) <- cols
     } yield {
       vjoin(
-        hjoin("[ row: ", rowk.toString(),",  col:", colk.toString(), " ]"),
+        hjoin("[ row: ", rowk.toString(), ",  col:", colk.toString(), " ]"),
         (hspace(3) beside ShowA.show(cellval).toString())
       )
     }

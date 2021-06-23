@@ -96,6 +96,8 @@ trait DocumentSegmenter
 
     withDocumentSegmenter("analyzeVJumps", { self.analyzeVJumps() })
 
+    withPageSegmenters("buildGlyphTreesStep2", _.buildGlyphTreeStep2())
+
     // withPageSegmenters("createColumnClusters", _.createColumnClusters())
     // withPageSegmenters("findContiguousBlocks", _.findContiguousBlocks(LB.BaselineMidriseBand))
     // withPageSegmenters("setTextForReprShapes", _.setTextForReprShapes())
@@ -207,6 +209,7 @@ trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
       widthClusters
     }
 
+    import GuavaHelpers._
     println("Most Common Widths / ranges\n\n")
     println(widthRangeCentroidDisplay.showBox())
 

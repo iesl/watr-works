@@ -6,13 +6,12 @@ import xc.{mutable => xcm}
 import xc.edge._
 import xc.edge.Implicits._
 import xc.GraphPredef._
-// import xc.GraphEdge._
+import scala.reflect._
+import cats.instances.seq
 
 case class EdgeLabel(
   name: String
 )
-
-import scala.reflect._
 
 abstract class LabeledGraph[NodeType, EdgeType[+X] <: EdgeLikeIn[X], LabelType](implicit
   CT: ClassTag[EdgeType[NodeType]]
@@ -30,14 +29,14 @@ abstract class LabeledGraph[NodeType, EdgeType[+X] <: EdgeLikeIn[X], LabelType](
   type OuterEdgeT = EdgeType[NodeType]
   type OuterNodeT = NodeType
 
-  def createEdge(n1: OuterNodeT, n2: OuterNodeT, label: LabelType): OuterEdgeT
+  protected def createOuterEdge(n1: OuterNodeT, n2: OuterNodeT, label: LabelType): OuterEdgeT
 
   def addEdge(
     n1: OuterNodeT,
     n2: OuterNodeT,
     label: LabelType
   ): Boolean = {
-    val e = createEdge(n1, n2, label)
+    val e = createOuterEdge(n1, n2, label)
     graph.add(e)
   }
 
@@ -50,32 +49,60 @@ abstract class LabeledGraph[NodeType, EdgeType[+X] <: EdgeLikeIn[X], LabelType](
 
 class IntLGraph extends LabeledGraph[Int, LkDiEdge, EdgeLabel]() {
 
-  def createEdge(n1: OuterNodeT, n2: OuterNodeT, label: EdgeLabel): OuterEdgeT = {
+  def createOuterEdge(n1: OuterNodeT, n2: OuterNodeT, label: EdgeLabel): OuterEdgeT = {
     (n1 ~+#> n2)(label)
   }
 
   def weaklyConnectedComponents() = {
     val sdf = graph.componentTraverser().topologicalSortByComponent()
     sdf.foreach({ cycleOrOrder: graph.CycleNodeOrTopologicalOrder =>
-
       cycleOrOrder match {
-	    case Left(cycleNode) =>
+        case Left(cycleNode) =>
           println(s"cycle=${cycleNode}")
         case Right(ordering) =>
+          println(s"""Ordering = ${ordering} """)
           val asLayers: graph.LayeredTopologicalOrder[graph.NodeT] = ordering.toLayered
           for {
-          (layerNum, nodes) <- asLayers
+            (layerNum, nodes) <- asLayers
           } {
-            println(s"""layer ${layerNum}=${nodes.mkString(", ")}""")
-
+            println(s"""   l ${layerNum}= ${nodes.mkString(", ")}""")
           }
       }
 
     })
+  }
 
-    val wer = sdf.to(List)
-    println(wer.mkString(" & "))
+}
 
+case class LabeledEdgeShapes(
+  name: String,
+  shape1: AnyShape,
+  shape2: AnyShape
+)
+
+class ShapeIDGraph extends LabeledGraph[Int @@ ShapeID, LkDiEdge, LabeledEdgeShapes]() {
+
+  def createOuterEdge(n1: OuterNodeT, n2: OuterNodeT, label: LabeledEdgeShapes): OuterEdgeT = {
+    (n1 ~+#> n2)(label)
+  }
+
+  def edge(n1: AnyShape, n2: AnyShape, label: String): Boolean =
+    addEdge(n1.id, n2.id, LabeledEdgeShapes(label, n1, n2))
+
+  type LayeredOrdering = graph.LayeredTopologicalOrder[graph.NodeT]
+  type TopoOrdering = graph.TopologicalOrder[graph.NodeT]
+
+  def weaklyConnectedComponents(): Seq[TopoOrdering] = {
+    val sorted = graph.componentTraverser().topologicalSortByComponent()
+    val iter = sorted.flatMap({ cycleOrOrder: graph.CycleNodeOrTopologicalOrder =>
+      cycleOrOrder match {
+        case Left(cycleNode @ _) =>
+          List()
+        case Right(ordering) =>
+          List(ordering)
+      }
+    })
+    iter.to(List)
   }
 
 }
