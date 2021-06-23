@@ -132,7 +132,6 @@ trait RectangularCuts extends GeometricOps {
       }
     }
 
-
   }
 
   implicit class RectangularCuts_RicherRect(val self: Rect) {
@@ -143,15 +142,24 @@ trait RectangularCuts extends GeometricOps {
     def enclosingRect(inner: Rect): RectangularCutOps =
       new RectangularCutOps(inner, self)
 
-    def maxSeparatingRect(rect: Rect): Option[(Rect, Dir)] = {
-      if (self.hasOverlappingArea(rect)) {
-        None
-      } else {
-        val runion = self.union(rect)
-        val cuts = self.withinRegion(runion)
+    def minSeparatingRect(rect: Rect): Option[(Rect, Dir)] = {
+      val outer = self union rect
+      val focus = self.withinRegion(outer)
+      val other = rect.withinRegion(outer)
+
+      def _check(d1: Dir, d2: Dir): Option[(Rect, Dir)] = {
+        val region1 = focus.adjacentRegion(d1)
+        val region2 = other.adjacentRegion(d2)
+        region1.zip(region2) match {
+          case Some((r1, r2)) => (r1 intersection r2).map(rx => (rx, d1))
+          case None => None
+        }
       }
 
-      ???
+      _check(Dir.Bottom, Dir.Top) orElse
+      _check(Dir.Left, Dir.Right) orElse
+      _check(Dir.Top, Dir.Bottom) orElse
+      _check(Dir.Right, Dir.Left)
     }
 
   }

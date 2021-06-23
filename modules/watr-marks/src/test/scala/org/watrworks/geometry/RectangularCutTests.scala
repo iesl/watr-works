@@ -1,8 +1,6 @@
 package org.watrworks
 package geometry
 
-import org.scalactic.TripleEqualsSupport
-
 class RectangularCutTests extends WatrSpec {
   behavior of "Geometric Figures"
 
@@ -13,52 +11,11 @@ class RectangularCutTests extends WatrSpec {
   import utils.ExactFloats._
   import ammonite.{ops => fs}
 
+  import pngDrawing._
+  import doodle.core._
+  import doodle.syntax._
+
   val graphSize = Rect.Ints(0, 0, 14, 14)
-
-  object images {
-    import cats.implicits._
-    import doodle.java2d.{Algebra => _, _}
-    import doodle.syntax.{circle => circle_, text => text_, rectangle => rectangle_, _}
-    import doodle.language.Basic
-    import doodle.algebra.{Picture, Text}
-    import doodle.effect.Writer._
-
-    type MyAlgebra[x[_]] = Basic[x] with Text[x]
-    type MyPicture       = Picture[MyAlgebra, Drawing, Unit]
-
-    def circle    = circle_[MyAlgebra, Drawing](_)
-    def text      = text_[MyAlgebra, Drawing](_)
-    def rectangle = rectangle_[MyAlgebra, Drawing](_, _)
-
-    def rectToDoodle(rect: Rect, title: Option[String]): MyPicture = {
-      val offsetOriginX = rect.getWidth / 2
-      val offsetOriginY = -rect.getHeight / 2
-      val offsetLocX    = rect.getLeft
-      val offsetLocY    = -rect.getTop
-
-      val offsetX = offsetOriginX + offsetLocX
-      val offsetY = offsetOriginY + offsetLocY
-
-      val rec = rectangle(rect.getWidth, rect.getHeight)
-
-      title
-        .map(s => {
-          text(s)
-            .scale(0.5, 0.5)
-            .on(rec)
-            .at(offsetX, offsetY)
-        })
-        .getOrElse(
-          rec.at(offsetX, offsetY)
-        )
-    }
-
-    implicit class RicherPicture(self: MyPicture) {
-      def save(fpath: String) = {
-        self.write[Png](fpath)
-      }
-    }
-  }
 
   val scratchDir = fs.pwd / "img-scratch.d"
   override protected def beforeAll(): Unit = {
@@ -68,10 +25,63 @@ class RectangularCutTests extends WatrSpec {
     fs.mkdir(scratchDir)
   }
 
-  it should "svg redux burst overlapping regions into all contiguous rectangles" in {
-    import doodle.core._
-    import doodle.syntax._
-    import images._
+  it should "find min/max separating rects between 2 rects" in {
+    val testName = "min-max-sep"
+    val centerRect = Rect.Doubles(100, 100, 100, 100)
+    val others = List(
+      // Left of
+      Rect.Doubles(10, 80, 40, 40),
+      Rect.Doubles(10, 140, 40, 40),
+      Rect.Doubles(10, 180, 40, 40),
+
+      // Above
+      Rect.Doubles(80, 10, 40, 40),
+      Rect.Doubles(140, 10, 40, 40),
+      Rect.Doubles(180, 10, 40, 40),
+
+      // Right
+      Rect.Doubles(210, 80, 40, 40),
+      Rect.Doubles(210, 140, 40, 40),
+      Rect.Doubles(210, 180, 40, 40),
+
+      // Below
+      Rect.Doubles(80, 210, 40, 40),
+      Rect.Doubles(140, 210, 40, 40),
+      Rect.Doubles(180, 210, 40, 40),
+
+      // No Intersection
+      Rect.Doubles(10, 10, 40, 40),
+
+    )
+      val ctr = drawRect(centerRect, Some("Focus"))
+        .fillColor(Color.rgba(0, 0, 128, 0.3))
+        .strokeColor(Color.black)
+        .strokeWidth(1)
+
+    for {
+      (other, exampleNum) <- others.zipWithIndex
+      (sepRect, sepDir)   <- centerRect.minSeparatingRect(other)
+    } yield {
+
+      val oth = drawRect(other, Some("Other"))
+        .fillColor(Color.rgba(128, 0, 0, 0.3))
+        .strokeColor(Color.black)
+        .strokeWidth(1)
+
+      val sep = drawRect(sepRect, Some(sepDir.toString()))
+        .fillColor(Color.rgba(0, 128, 0, 0.3))
+        .strokeColor(Color.red)
+        .strokeWidth(2)
+
+      val pngPath   = scratchDir / s"test-${testName}-${exampleNum}.png"
+      val composed = List(ctr, oth, sep).allOn
+      composed.save(pngPath.toString())
+    }
+
+  }
+
+  it should "burst overlapping regions into all contiguous rectangles" in {
+
     val testName = "burst-overlapping"
 
     List(
@@ -92,138 +102,9 @@ class RectangularCutTests extends WatrSpec {
         Rect.Doubles(100, 120, 400, 100)
       )
     ).zipWithIndex.foreach { case ((outer, inner), exampleNum) =>
-      val burstRegions = inner.withinRegion(outer).burstAllPossibleDirections()
-
-      val inner1 = rectToDoodle(inner, Some("inner"))
-        .fillColor(Color.rgba(100, 0, 0, 0.3))
-        .strokeColor(Color.blue)
-        .strokeWidth(2)
-
-      val outer1 = rectToDoodle(outer, Some("outer"))
-        .fillColor(Color.rgba(0, 0, 100, 0.1))
-        .strokeColor(Color.black)
-        .strokeWidth(3)
-
-      val adjacents = for {
-        (dir, maybeRect: Option[Rect]) <- burstRegions
-        rect                           <- maybeRect
-        // if dir != Dir.Center
-      } yield {
-        rectToDoodle(rect, Some(s"${dir.toString()}"))
-          .fillColor(Color.rgba(0, 100, 0, 0.3))
-          .strokeColor(Color.blue)
-          .strokeWidth(1)
-      }
-
-      val composed = (inner1 :: outer1 :: adjacents.to(List)).allOn
-
-      val pngPath = scratchDir / s"test-${testName}-${exampleNum}.png"
-      composed.save(pngPath.toString())
-    }
-  }
-
-  it should "burst overlapping regions into all contiguous rectangles" in {
-    // Result is:
-    //   Intersection ++
-    //   val AllAdjacent: List[RelativeDirection] = List(
-    //     Left        ,
-    //     Right       ,
-    //     Top         ,
-    //     Bottom      ,
-    //     TopLeft     ,
-    //     TopRight    ,
-    //     BottomLeft  ,
-    //     BottomRight
-    //   )
-
-    List(
-      (
-        Rect.Ints(2, 2, 4, 1),
-        Rect.Ints(2, 2, 4, 1), {
-          """|┌────────────┐
-             |│░░░░░░░░░░░░│
-             |│░┣━━┫░░░░░░░│
-             |│░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░│
-             |└────────────┘
-             |""".stripMargin
-        }
-      ),
-      (
-        Rect.Ints(1, 3, 4, 1),
-        Rect.Ints(2, 2, 4, 4), {
-          """|┌────────────┐┌────────────┐┌────────────┐┌────────────┐┌────────────┐┌────────────┐┌────────────┐
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░┌──┐░░░░░░░││░┌──┐░░░░░░░││░┣━┫┐░░░░░░░││░┌──┐░░░░░░░││░┌──◻░░░░░░░││░┌──┐░░░░░░░││░┌──┐░░░░░░░│
-             |│╠┣━┫│░░░░░░░││◻│═╣│░░░░░░░││╠│═╣│░░░░░░░││╠│═╣│░░░░░░░││╠│═╣│░░░░░░░││╠│═╣◻░░░░░░░││╠│═╣│░░░░░░░│
-             |│░│░░│░░░░░░░││░│░░│░░░░░░░││░│░░│░░░░░░░││░┏━┓│░░░░░░░││░│░░│░░░░░░░││░│░░│░░░░░░░││░│░░┳░░░░░░░│
-             |│░└──┘░░░░░░░││░└──┘░░░░░░░││░└──┘░░░░░░░││░┗━┛┘░░░░░░░││░└──┘░░░░░░░││░└──┘░░░░░░░││░└──┻░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |└────────────┘└────────────┘└────────────┘└────────────┘└────────────┘└────────────┘└────────────┘
-             |""".stripMargin
-
-        }
-      ),
-      (
-        Rect.Ints(2, 2, 4, 1),
-        Rect.Ints(2, 2, 6, 1), {
-          """|┌────────────┐┌────────────┐
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░┣━━┫─┤░░░░░││░├───┣┫░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |│░░░░░░░░░░░░││░░░░░░░░░░░░│
-             |└────────────┘└────────────┘
-             |""".stripMargin
-
-        }
-      )
-    ) foreach { case (bbox1, bbox2, expectedOutput @ _) =>
-      // val burstRegions = bbox1.withinRegion(bbox2).burstAll()
-      val burstRegions = bbox1.withinRegion(bbox2).burstAllPossibleDirections()
-
-      def drawAdjacencyDiagram(adjacent: Rect): Box = {
-        val g = makeGraph(graphSize)
-        drawBoxDouble(g, bbox1)
-        drawBox(g, bbox2)
-        drawBoxBold(g, adjacent)
-        g.asMonocolorString().box
-      }
-
-      val emptyRegions = burstRegions.filter(_._2.isEmpty).map { case (dir, _) =>
-        s"${dir}".box
-      }
-
-      val emptyDirs = vjoins(TB.AlignLeft, "<Empty>".box +: emptyRegions)
-
-      val adjs = burstRegions.filter(_._2.isDefined).map { case (dir, maybeRect) =>
-        maybeRect.map(r => vjoin(TB.AlignCenter, s"${dir}", drawAdjacencyDiagram(r))).get
-      }
-
-      val actualOutput = hcat(TB.top, adjs ++ List(emptyDirs))
-      println(actualOutput)
-    // assertExpectedText(expectedOutput, actualOutput.toString())
+      val octoImage = drawOctothorpe(outer, inner)
+      val pngPath   = scratchDir / s"test-${testName}-${exampleNum}.png"
+      octoImage.save(pngPath.toString())
     }
   }
 
