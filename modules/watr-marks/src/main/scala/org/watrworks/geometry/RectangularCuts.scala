@@ -55,29 +55,12 @@ trait RectangularCuts extends GeometricOps {
     }
 
     def burstAllAdjacent(): (Option[Rect], Seq[Rect]) = {
-      val intersection = innerRect.intersection(enclosingRect)
-
-      val burst1 = Dir.AllAdjacent.map { dir =>
-        innerRect
-          .withinRegion(enclosingRect)
-          .adjacentRegion(dir)
-      }
-
-      val burst2 = Dir.AllAdjacent.map { dir =>
-        enclosingRect
-          .withinRegion(innerRect)
-          .adjacentRegion(dir)
-      }
-
-      val burstRegions = (burst1 ++ burst2).flatten.sortBy(b => (b.left, b.top))
-
-      (intersection, burstRegions)
-
+      val (intersection, burstRegions) = burstAllDirections()
+      (intersection, burstRegions.map(_._2))
     }
 
     def burstAll(): Seq[Rect] = {
-      val (maybeIntersect, burstRegions) =
-        innerRect.withinRegion(enclosingRect).burstAllAdjacent()
+      val (maybeIntersect, burstRegions) = burstAllAdjacent()
 
       maybeIntersect.map(_ +: burstRegions).getOrElse(burstRegions)
     }
@@ -149,6 +132,7 @@ trait RectangularCuts extends GeometricOps {
       }
     }
 
+
   }
 
   implicit class RectangularCuts_RicherRect(val self: Rect) {
@@ -158,6 +142,17 @@ trait RectangularCuts extends GeometricOps {
 
     def enclosingRect(inner: Rect): RectangularCutOps =
       new RectangularCutOps(inner, self)
+
+    def maxSeparatingRect(rect: Rect): Option[(Rect, Dir)] = {
+      if (self.hasOverlappingArea(rect)) {
+        None
+      } else {
+        val runion = self.union(rect)
+        val cuts = self.withinRegion(runion)
+      }
+
+      ???
+    }
 
   }
 

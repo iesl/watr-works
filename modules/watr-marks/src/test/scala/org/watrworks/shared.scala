@@ -1,6 +1,7 @@
 package org.watrworks
 
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalacheck._
 
@@ -22,7 +23,7 @@ trait LabeledSequenceThings {
 
 }
 
-trait WatrSpec extends AnyFlatSpec with Matchers
+trait WatrSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll
 
 
 trait TextGridTestExamples extends TextGridConstruction {

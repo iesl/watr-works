@@ -38,6 +38,7 @@ lazy val watrmarks = (project in file("modules/watr-marks"))
         ++ Lib.scalaz
         ++ Seq(
           Lib.ammoniteOps,
+          Lib.doodle,
           Lib.guava
         )
   )

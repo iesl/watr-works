@@ -50,6 +50,35 @@ trait GeometricOps {
       }
     }
 
+    def expand(dir: Dir, delta: Int @@ FloatRep): Rect = {
+      dir match {
+        case Dir.Top =>
+          self.copy(
+            top = self.top - delta,
+            height = self.height + delta
+          )
+        case Dir.Bottom =>
+          self.copy(
+            height = self.height + delta
+          )
+        case Dir.Right =>
+          self.copy(
+            width = self.width + delta
+          )
+        case Dir.Left =>
+          self.copy(
+            left = self.left - delta,
+            width = self.width + delta
+          )
+
+        case Dir.TopLeft     => self.expand(Dir.Top, delta).expand(Dir.Left, delta)
+        case Dir.BottomLeft  => self.expand(Dir.Bottom, delta).expand(Dir.Left, delta)
+        case Dir.TopRight    => self.expand(Dir.Top, delta).expand(Dir.Right, delta)
+        case Dir.BottomRight => self.expand(Dir.Bottom, delta).expand(Dir.Right, delta)
+        case Dir.Center      => ???
+      }
+    }
+
     def translate(pvec: Point): Rect = {
       translate(pvec.x, pvec.y)
     }
@@ -109,7 +138,6 @@ trait GeometricOps {
 
       slices.map(_._1.get) :+ slices.last._2.get
     }
-
 
     def splitHorizontal(y: Int @@ FloatRep): (Option[Rect], Option[Rect]) = {
       val Rect(left, top, width, height) = self

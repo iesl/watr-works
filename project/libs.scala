@@ -119,6 +119,8 @@ trait CommonLibs extends LibVersions {
     "org.http4s" %% "http4s-blaze-server" % http4sVersion,
     "org.http4s" %% "http4s-blaze-client" % http4sVersion
   )
+
+  val doodle = "org.creativescala" %% "doodle" % "0.9.23"
 }
 
 object CommonLibs extends CommonLibs

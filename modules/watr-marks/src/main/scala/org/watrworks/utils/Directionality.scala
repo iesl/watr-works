@@ -3,7 +3,22 @@ package utils
 
 import _root_.io.circe, circe._
 
-sealed trait RelativeDirection
+sealed trait RelativeDirection {
+  import RelativeDirection._
+  override def toString(): String = {
+    this match {
+      case Top         => "Top"
+      case Bottom      => "Bottom"
+      case TopLeft     => "TopLeft"
+      case TopRight    => "TopRight"
+      case BottomLeft  => "BottomLeft"
+      case BottomRight => "BottomRight"
+      case Center      => "Center"
+      case Left        => "Left"
+      case Right       => "Right"
+    }
+  }
+}
 
 sealed trait Orientation
 

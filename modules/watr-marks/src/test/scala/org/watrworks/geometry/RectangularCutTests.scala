@@ -1,6 +1,8 @@
 package org.watrworks
 package geometry
 
+import org.scalactic.TripleEqualsSupport
+
 class RectangularCutTests extends WatrSpec {
   behavior of "Geometric Figures"
 
@@ -9,51 +11,115 @@ class RectangularCutTests extends WatrSpec {
   import utils.{RelativeDirection => Dir}
   import textboxing.{TextBoxing => TB}, TB._
   import utils.ExactFloats._
+  import ammonite.{ops => fs}
 
   val graphSize = Rect.Ints(0, 0, 14, 14)
 
-  it should "bug fix this example" in {
-    //  runSearch: BottomLeft (l:0.00, t:55.83, w:187.73, h:738.17)
-    //  focus: (l:187.73, t:55.82, w:0.01, h:0.01) horizon: (l:0.00, t:0.00, w:595.00, h:794.00)
-    //
-    //  TopRight: Some((l:187.74, t:0.00, w:407.26, h:55.82))
-    //  Center: Some((l:187.73, t:55.82, w:0.01, h:0.01))
-    //  Left: Some((l:0.00, t:55.82, w:187.73, h:0.01))
-    //  BottomLeft: Some((l:0.00, t:55.83, w:187.73, h:738.17))
-    //  Bottom: Some((l:187.73, t:55.83, w:0.01, h:738.17))
-    //  Top: Some((l:187.73, t:0.00, w:0.01, h:55.82))
-    //  BottomRight: Some((l:187.74, t:55.83, w:407.26, h:738.17))
-    //  TopLeft: Some((l:0.00, t:0.00, w:187.73, h:55.82))
-    //  Right: Some((l:187.74, t:55.82, w:407.26, h:0.01))
-    //
-    //
-    //
-    // @ A: within area=(l:0.00, t:55.83, w:187.73, h:738.17), focus=(l:187.73, t:55.82, w:0.01, h:0.01) from p=(187.73, 55.82)
-    val focus        = Rect.IntReps(18773, 5582, 1, 1)
-    val horizon      = Rect.IntReps(0, 0, 59500, 79400)
-    val burstRegions = focus.withinRegion(horizon).burstAllPossibleDirections()
-    val asdf         = s"""${burstRegions.map({ case (k, v) => s"$k: $v" }).mkString("  ", "\n  ", "")}"""
-    println(asdf)
+  object images {
+    import cats.implicits._
+    import doodle.java2d.{Algebra => _, _}
+    import doodle.syntax.{circle => circle_, text => text_, rectangle => rectangle_, _}
+    import doodle.language.Basic
+    import doodle.algebra.{Picture, Text}
+    import doodle.effect.Writer._
 
-    // Bottom: Some((l:187.73, t:55.83, w:0.01, h:738.17))
-    // Bottom: Some((l:187.73, t:55.83, w:0.01, h:738.17))
-    // BottomLeft: Some((l:0.00, t:55.83, w:187.73, h:738.17))
-    // BottomLeft: Some((l:0.00, t:55.83, w:187.73, h:738.17))
-    // BottomRight: Some((l:187.74, t:55.83, w:407.26, h:738.17))
-    // BottomRight: Some((l:187.74, t:55.83, w:407.26, h:738.17))
-    // Center: Some((l:187.73, t:55.82, w:0.01, h:0.01))
-    // Center: Some((l:187.73, t:55.82, w:0.01, h:0.01))
-    // Left: Some((l:0.00, t:55.82, w:187.73, h:0.01))
-    // Left: Some((l:0.00, t:55.82, w:187.73, h:0.01))
-    // Right: Some((l:187.74, t:55.82, w:407.26, h:0.01))
-    // Right: Some((l:187.74, t:55.82, w:407.26, h:0.01))
-    // Top: Some((l:187.73, t:0.00, w:0.01, h:55.82))
-    // Top: Some((l:187.73, t:0.00, w:0.01, h:55.82))
-    // TopLeft: Some((l:0.00, t:0.00, w:187.73, h:55.82))
-    // TopLeft: Some((l:0.00, t:0.00, w:187.73, h:55.82))
-    // TopRight: Some((l:187.74, t:0.00, w:407.26, h:55.82))
-    // TopRight: Some((l:187.74, t:0.00, w:407.26, h:55.82))
+    type MyAlgebra[x[_]] = Basic[x] with Text[x]
+    type MyPicture       = Picture[MyAlgebra, Drawing, Unit]
 
+    def circle    = circle_[MyAlgebra, Drawing](_)
+    def text      = text_[MyAlgebra, Drawing](_)
+    def rectangle = rectangle_[MyAlgebra, Drawing](_, _)
+
+    def rectToDoodle(rect: Rect, title: Option[String]): MyPicture = {
+      val offsetOriginX = rect.getWidth / 2
+      val offsetOriginY = -rect.getHeight / 2
+      val offsetLocX    = rect.getLeft
+      val offsetLocY    = -rect.getTop
+
+      val offsetX = offsetOriginX + offsetLocX
+      val offsetY = offsetOriginY + offsetLocY
+
+      val rec = rectangle(rect.getWidth, rect.getHeight)
+
+      title
+        .map(s => {
+          text(s)
+            .scale(0.5, 0.5)
+            .on(rec)
+            .at(offsetX, offsetY)
+        })
+        .getOrElse(
+          rec.at(offsetX, offsetY)
+        )
+    }
+
+    implicit class RicherPicture(self: MyPicture) {
+      def save(fpath: String) = {
+        self.write[Png](fpath)
+      }
+    }
+  }
+
+  val scratchDir = fs.pwd / "img-scratch.d"
+  override protected def beforeAll(): Unit = {
+    if (fs.exists(scratchDir)) {
+      fs.rm(scratchDir)
+    }
+    fs.mkdir(scratchDir)
+  }
+
+  it should "svg redux burst overlapping regions into all contiguous rectangles" in {
+    import doodle.core._
+    import doodle.syntax._
+    import images._
+    val testName = "burst-overlapping"
+
+    List(
+      (
+        Rect.Doubles(100, 100, 400, 400),
+        Rect.Doubles(150, 150, 100, 200)
+      ),
+      (
+        Rect.Doubles(100, 100, 400, 400),
+        Rect.Doubles(100, 100, 400, 100)
+      ),
+      (
+        Rect.Doubles(100, 100, 400, 400),
+        Rect.Doubles(100, 80, 400, 100)
+      ),
+      (
+        Rect.Doubles(100, 100, 400, 400),
+        Rect.Doubles(100, 120, 400, 100)
+      )
+    ).zipWithIndex.foreach { case ((outer, inner), exampleNum) =>
+      val burstRegions = inner.withinRegion(outer).burstAllPossibleDirections()
+
+      val inner1 = rectToDoodle(inner, Some("inner"))
+        .fillColor(Color.rgba(100, 0, 0, 0.3))
+        .strokeColor(Color.blue)
+        .strokeWidth(2)
+
+      val outer1 = rectToDoodle(outer, Some("outer"))
+        .fillColor(Color.rgba(0, 0, 100, 0.1))
+        .strokeColor(Color.black)
+        .strokeWidth(3)
+
+      val adjacents = for {
+        (dir, maybeRect: Option[Rect]) <- burstRegions
+        rect                           <- maybeRect
+        // if dir != Dir.Center
+      } yield {
+        rectToDoodle(rect, Some(s"${dir.toString()}"))
+          .fillColor(Color.rgba(0, 100, 0, 0.3))
+          .strokeColor(Color.blue)
+          .strokeWidth(1)
+      }
+
+      val composed = (inner1 :: outer1 :: adjacents.to(List)).allOn
+
+      val pngPath = scratchDir / s"test-${testName}-${exampleNum}.png"
+      composed.save(pngPath.toString())
+    }
   }
 
   it should "burst overlapping regions into all contiguous rectangles" in {
