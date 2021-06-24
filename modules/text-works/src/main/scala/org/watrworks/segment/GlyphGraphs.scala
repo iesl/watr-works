@@ -9,7 +9,8 @@ import watrmarks.Label
 import utils.ExactFloats._
 import transcripts.Transcript
 
-import utils.{RelativeDirection => Dir}
+// import utils.{M3x3Position => M3}
+import utils.{Direction => Dir}
 
 // Neighborhood search types
 sealed trait Neighbor {
@@ -56,25 +57,26 @@ trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
     maxDistance: Int @@ FloatRep
   ): Octothorpe = {
 
-    val horizon = focus.expand(dir, maxDistance)
+    val horizon = focus.expand(Dir.toPosition(dir), maxDistance)
 
+    val searchPosition = Dir.toPosition(dir)
     Oct
-      .withSearchRegions(Oct.cell(Dir.Bottom))
+      .withSearchRegions(Oct.cell(searchPosition))
       .withHorizon(horizon)
       .centeredOn(focus)
   }
 
 
   def lookAdjacentFor[Figure <: GeometricFigure](
-    dir: Dir,
+    facingDir: Dir,
     focus: Rect,
     maxDistance: Int @@ FloatRep,
     cb: Seq[DocSegShape[Figure]] => Unit,
     forLabels: Label*
   ): Neighbor.BySearch[Figure] = {
-    val octo = searchAdjacentFor[Figure](Dir.Top, focus, maxDistance)
+    val octo = searchAdjacentFor[Figure](facingDir, focus, maxDistance)
 
-    val tags = s"""look${dir}For(${forLabels.map(_.fqn).mkString(" & ")})""" :: Nil
+    val tags = s"""Searching${facingDir}For(${forLabels.map(_.fqn).mkString(" & ")})""" :: Nil
 
     val sortWithTop = Neighbor.SortWith[DocSegShape[Figure], Double](
       _.shape.minBounds.getTop
@@ -110,7 +112,7 @@ trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
   def createLabelOn[Fig <: GeometricFigure](name: String, fig: Fig) =
     Transcript.Label.create(name).onShapes(fig)
 
-  protected def runNeigborBySearch[Figure <: GeometricFigure](bySearch: BySearch[Figure]): Unit = {
+  protected def runNeighborBySearch[Figure <: GeometricFigure](bySearch: BySearch[Figure]): Unit = {
     val BySearch(oct, search, sortBy, filterResults, cb, tags) = bySearch
 
     val res0     = oct.runSearch(search)
@@ -172,7 +174,7 @@ trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
   //   _addEdge(fontBaselineShape)(
   //     // lookDownFor(
   //     lookAdjacentFor(
-  //       Dir.Bottom,
+  //       M3.Bottom,
   //       fontBaseline.minBounds,
   //       lookDownDistance,
   //       (_: Seq[LineShape]).foreach(shape => {

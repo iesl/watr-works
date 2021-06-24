@@ -3,7 +3,7 @@ package extract
 
 import geometry._
 import geometry.syntax._
-import utils.{RelativeDirection => Dir}
+import utils.{M3x3Position => M3}
 import scala.collection.mutable
 import org.apache.pdfbox.pdmodel.font._
 import utils.ExactFloats._
@@ -55,7 +55,7 @@ sealed trait ExtractedItem {
   def id: Int @@ CharID
   def minBBox: Rect
 
-  lazy val location: Point = minBBox.toPoint(Dir.BottomLeft)
+  lazy val location: Point = minBBox.toPoint(M3.BottomLeft)
 
   def strRepr(): String
 

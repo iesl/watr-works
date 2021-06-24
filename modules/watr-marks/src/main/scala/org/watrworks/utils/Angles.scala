@@ -38,7 +38,7 @@ class AndFilter(
 
 
   def matches(angle: Double): Boolean = {
-    // val nangle = n.bbox.toPoint(Dir.Center).angleTo(origin.bbox.toPoint(Dir.Center))
+    // val nangle = n.bbox.toPoint(M3.Center).angleTo(origin.bbox.toPoint(M3.Center))
     lowerAngle <= angle && angle < upperAngle
   }
 }
@@ -49,7 +49,7 @@ class OrFilter(
 ) extends AngleFilter {
 
   def matches(angle: Double): Boolean = {
-    // val nangle = n.bbox.toPoint(Dir.Center).angleTo(origin.bbox.toPoint(Dir.Center))
+    // val nangle = n.bbox.toPoint(M3.Center).angleTo(origin.bbox.toPoint(M3.Center))
     lowerAngle <= angle || angle < upperAngle
   }
 

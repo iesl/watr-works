@@ -5,7 +5,7 @@ import geometry._
 import geometry.syntax._
 import utils.ExactFloats._
 
-import utils.{RelativeDirection => Dir}
+import utils.{M3x3Position => M3}
 
 import io.circe
 import _root_.io.circe, circe.syntax._, circe._
@@ -29,21 +29,21 @@ case class Octothorpe(
   import Octothorpe._
   import Bounds._
 
-  val burstDirections: Map[Dir, Option[Rect]] = focalRect
+  val burstDirections: Map[M3, Option[Rect]] = focalRect
     .withinRegion(horizonRect)
     .burstAllPossibleDirections()
     .map({ case (dir, maybeRect) =>
       val shavedRect = maybeRect.map(r => {
         dir match {
-          case Dir.Top         => r.shave(Dir.Bottom, FloatExact.epsilon)
-          case Dir.Bottom      => r.shave(Dir.Top, FloatExact.epsilon)
-          case Dir.Right       => r.shave(Dir.Left, FloatExact.epsilon)
-          case Dir.Left        => r.shave(Dir.Right, FloatExact.epsilon)
-          case Dir.TopLeft     => r.shave(Dir.BottomRight, FloatExact.epsilon)
-          case Dir.BottomLeft  => r.shave(Dir.TopRight, FloatExact.epsilon)
-          case Dir.TopRight    => r.shave(Dir.BottomLeft, FloatExact.epsilon)
-          case Dir.BottomRight => r.shave(Dir.TopLeft, FloatExact.epsilon)
-          case Dir.Center      => r
+          case M3.Top         => r.shave(M3.Bottom, FloatExact.epsilon)
+          case M3.Bottom      => r.shave(M3.Top, FloatExact.epsilon)
+          case M3.Right       => r.shave(M3.Left, FloatExact.epsilon)
+          case M3.Left        => r.shave(M3.Right, FloatExact.epsilon)
+          case M3.TopLeft     => r.shave(M3.BottomRight, FloatExact.epsilon)
+          case M3.BottomLeft  => r.shave(M3.TopRight, FloatExact.epsilon)
+          case M3.TopRight    => r.shave(M3.BottomLeft, FloatExact.epsilon)
+          case M3.BottomRight => r.shave(M3.TopLeft, FloatExact.epsilon)
+          case M3.Center      => r
         }
       })
 
@@ -112,10 +112,10 @@ object Octothorpe {
   object Bounds {
 
     @JsonCodec
-    case class CellSpan(cell1: Dir, cell2: Dir) extends Bounds
+    case class CellSpan(cell1: M3, cell2: M3) extends Bounds
 
     @JsonCodec
-    case class Cell(cell: Dir) extends Bounds
+    case class Cell(cell: M3) extends Bounds
 
     implicit val BoundsEncoder: Encoder[Bounds] = Encoder.instance {
       case v: Bounds.CellSpan => v.asJson
@@ -129,7 +129,7 @@ object Octothorpe {
     }
   }
 
-  def cell(d: Dir): Bounds.Cell  = Bounds.Cell(d)
-  def cellspan(d1: Dir, d2: Dir) = Bounds.CellSpan(d1, d2)
+  def cell(d: M3): Bounds.Cell  = Bounds.Cell(d)
+  def cellspan(d1: M3, d2: M3) = Bounds.CellSpan(d1, d2)
 
 }

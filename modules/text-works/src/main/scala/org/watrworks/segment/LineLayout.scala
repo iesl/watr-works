@@ -88,7 +88,7 @@ trait LineLayout extends BasePageSegmenter with FontAndGlyphMetrics with TextBlo
       val eitherSuperScriptOrNot = collectSpanEither[ExtractedItem.CharItem](
         charsInBand,
         { c =>
-          val charFontMidpoint    = c.fontBbox.toPoint(Dir.Center)
+          val charFontMidpoint    = c.fontBbox.toPoint(M3.Center)
           val fontIsAboveBaseline = offsetsAtLine.baseLine > c.fontBbox.bottom
           val isRaised            = midriseBaselineCenterBand.isStrictlyBelow(charFontMidpoint.y)
           val intersects          = midriseToplineCenterBand.intersects(c.fontBbox)
@@ -118,8 +118,8 @@ trait LineLayout extends BasePageSegmenter with FontAndGlyphMetrics with TextBlo
           // val charOffsetsAtBaseline = charFontOffsets.forFontBoxBottom(c.fontBbox.bottom)
           // val charMidriseLine = charOffsetsAtBaseline.midriseLine
 
-          // val charMidpoint = c.minBBox.toPoint(Dir.Center)
-          val charMidpoint        = c.fontBbox.toPoint(Dir.Center)
+          // val charMidpoint = c.minBBox.toPoint(M3.Center)
+          val charMidpoint        = c.fontBbox.toPoint(M3.Center)
           val fontIsBelowBaseline = offsetsAtLine.baseLine < c.fontBbox.bottom
           // val isLowered = c.minBBox.isStrictlyBelow(topMidriseBand)
           val isLowered                = topMidriseBand.isStrictlyAbove(charMidpoint.y)

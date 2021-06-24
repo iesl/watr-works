@@ -61,15 +61,11 @@ import com.google.{common => guava}
 import guava.{collect => gcol}
 
 class PageLayoutStats extends LayoutStats {
-  import scalax.collection.Graph
-  import scalax.collection.{ mutable => mutgraph }
-  import scalax.collection.edge.LDiEdge
-  import scalax.collection.edge.Implicits._
 
 
-  object charrunGraph {
-    val graph = mutgraph.Graph()
-
+  object connectedRunComponents {
+    // val graph = new ShapeIDGraph()
+    val graph = new ShapeJumpGraph()
   }
 
 
@@ -143,16 +139,25 @@ class DocumentLayoutStats extends LayoutStats {
     private def initValue(): ValueT = gcol.TreeMultiset.create(null)
 
     val table: TableT = GuavaHelpers.initTable()
+    def getJumpDist(
+      y1: Int @@ FloatRep,
+      y2: Int @@ FloatRep
+    ): Int @@ FloatRep = {
+      ExactFloats.abs(y2-y1)
+    }
+
 
     def add(
       pageNum: RowT,
       fontId: ColT,
       y1: Int @@ FloatRep,
       y2: Int @@ FloatRep
-    ): Unit = {
-      val vdist = FloatRep(math.abs(y2.unwrap - y1.unwrap))
+    ): Int @@ FloatRep = {
+      val vdist = getJumpDist(y1, y2)
 
       table.useOrSet(pageNum, fontId, _.add(vdist), initValue())
+
+      vdist
     }
 
     var documentMaxClustered: List[(String @@ ScaledFontID, (Int, Interval.FloatExacts))] = List.empty

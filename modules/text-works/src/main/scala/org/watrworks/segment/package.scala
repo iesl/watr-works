@@ -13,6 +13,6 @@ object `package` {
 
   type ShapeIndex = LabeledShapeIndex[GeometricFigure, AnyShape]
 
-  val Dir = utils.RelativeDirection
+  val M3 = utils.M3x3Position
   val LB = SegmentationLabels
 }

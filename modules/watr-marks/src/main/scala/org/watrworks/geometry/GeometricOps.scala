@@ -1,7 +1,7 @@
 package org.watrworks
 package geometry
 
-import utils.{RelativeDirection => Dir}
+import utils.{M3x3Position => M3}
 import scalaz.Equal
 import scalaz.syntax.equal._
 import scalaz.std.anyVal._
@@ -17,65 +17,65 @@ trait GeometricOps {
     def shave(delta: Double): Rect = shave(delta.toFloatExact())
 
     def shave(delta: Int @@ FloatRep): Rect = {
-      shave(Dir.TopLeft, delta)
-        .shave(Dir.BottomRight, delta)
+      shave(M3.TopLeft, delta)
+        .shave(M3.BottomRight, delta)
     }
 
-    def shave(dir: Dir, delta: Int @@ FloatRep): Rect = {
+    def shave(dir: M3, delta: Int @@ FloatRep): Rect = {
       dir match {
-        case Dir.Top =>
+        case M3.Top =>
           self.copy(
             top = self.top + delta,
             height = self.height - delta
           )
-        case Dir.Bottom =>
+        case M3.Bottom =>
           self.copy(
             height = self.height - delta
           )
-        case Dir.Right =>
+        case M3.Right =>
           self.copy(
             width = self.width - delta
           )
-        case Dir.Left =>
+        case M3.Left =>
           self.copy(
             left = self.left + delta,
             width = self.width - delta
           )
 
-        case Dir.TopLeft     => self.shave(Dir.Top, delta).shave(Dir.Left, delta)
-        case Dir.BottomLeft  => self.shave(Dir.Bottom, delta).shave(Dir.Left, delta)
-        case Dir.TopRight    => self.shave(Dir.Top, delta).shave(Dir.Right, delta)
-        case Dir.BottomRight => self.shave(Dir.Bottom, delta).shave(Dir.Right, delta)
-        case Dir.Center      => ???
+        case M3.TopLeft     => self.shave(M3.Top, delta).shave(M3.Left, delta)
+        case M3.BottomLeft  => self.shave(M3.Bottom, delta).shave(M3.Left, delta)
+        case M3.TopRight    => self.shave(M3.Top, delta).shave(M3.Right, delta)
+        case M3.BottomRight => self.shave(M3.Bottom, delta).shave(M3.Right, delta)
+        case M3.Center      => ???
       }
     }
 
-    def expand(dir: Dir, delta: Int @@ FloatRep): Rect = {
+    def expand(dir: M3, delta: Int @@ FloatRep): Rect = {
       dir match {
-        case Dir.Top =>
+        case M3.Top =>
           self.copy(
             top = self.top - delta,
             height = self.height + delta
           )
-        case Dir.Bottom =>
+        case M3.Bottom =>
           self.copy(
             height = self.height + delta
           )
-        case Dir.Right =>
+        case M3.Right =>
           self.copy(
             width = self.width + delta
           )
-        case Dir.Left =>
+        case M3.Left =>
           self.copy(
             left = self.left - delta,
             width = self.width + delta
           )
 
-        case Dir.TopLeft     => self.expand(Dir.Top, delta).expand(Dir.Left, delta)
-        case Dir.BottomLeft  => self.expand(Dir.Bottom, delta).expand(Dir.Left, delta)
-        case Dir.TopRight    => self.expand(Dir.Top, delta).expand(Dir.Right, delta)
-        case Dir.BottomRight => self.expand(Dir.Bottom, delta).expand(Dir.Right, delta)
-        case Dir.Center      => ???
+        case M3.TopLeft     => self.expand(M3.Top, delta).expand(M3.Left, delta)
+        case M3.BottomLeft  => self.expand(M3.Bottom, delta).expand(M3.Left, delta)
+        case M3.TopRight    => self.expand(M3.Top, delta).expand(M3.Right, delta)
+        case M3.BottomRight => self.expand(M3.Bottom, delta).expand(M3.Right, delta)
+        case M3.Center      => ???
       }
     }
 
@@ -211,33 +211,33 @@ trait GeometricOps {
       intersection(rhs).isDefined
     }
 
-    def toPoint(dir: Dir): Point = {
+    def toPoint(dir: M3): Point = {
       def centerX = (self.left + self.width / 2)
       def centerY = (self.top + self.height / 2)
 
       dir match {
-        case Dir.Top         => Point(centerX, self.top)
-        case Dir.Bottom      => Point(centerX, self.bottom)
-        case Dir.Right       => Point(self.right, centerY)
-        case Dir.Left        => Point(self.left, centerY)
-        case Dir.TopLeft     => Point(self.left, self.top)
-        case Dir.BottomLeft  => Point(self.left, self.bottom)
-        case Dir.TopRight    => Point(self.right, self.top)
-        case Dir.BottomRight => Point(self.right, self.bottom)
-        case Dir.Center      => Point(centerX, centerY)
+        case M3.Top         => Point(centerX, self.top)
+        case M3.Bottom      => Point(centerX, self.bottom)
+        case M3.Right       => Point(self.right, centerY)
+        case M3.Left        => Point(self.left, centerY)
+        case M3.TopLeft     => Point(self.left, self.top)
+        case M3.BottomLeft  => Point(self.left, self.bottom)
+        case M3.TopRight    => Point(self.right, self.top)
+        case M3.BottomRight => Point(self.right, self.bottom)
+        case M3.Center      => Point(centerX, centerY)
       }
     }
 
-    def toLine(dir: Dir): Line = dir match {
-      case Dir.Top         => Line(toPoint(Dir.TopLeft), toPoint(Dir.TopRight))
-      case Dir.Bottom      => Line(toPoint(Dir.BottomLeft), toPoint(Dir.BottomRight))
-      case Dir.Right       => Line(toPoint(Dir.TopRight), toPoint(Dir.BottomRight))
-      case Dir.Left        => Line(toPoint(Dir.TopLeft), toPoint(Dir.BottomLeft))
-      case Dir.TopLeft     => ???
-      case Dir.BottomLeft  => ???
-      case Dir.TopRight    => ???
-      case Dir.BottomRight => ???
-      case Dir.Center      => ???
+    def toLine(dir: M3): Line = dir match {
+      case M3.Top         => Line(toPoint(M3.TopLeft), toPoint(M3.TopRight))
+      case M3.Bottom      => Line(toPoint(M3.BottomLeft), toPoint(M3.BottomRight))
+      case M3.Right       => Line(toPoint(M3.TopRight), toPoint(M3.BottomRight))
+      case M3.Left        => Line(toPoint(M3.TopLeft), toPoint(M3.BottomLeft))
+      case M3.TopLeft     => ???
+      case M3.BottomLeft  => ???
+      case M3.TopRight    => ???
+      case M3.BottomRight => ???
+      case M3.Center      => ???
     }
 
     def centerDistanceTo(other: Rect): Double = {
@@ -291,18 +291,18 @@ trait GeometricOps {
     }
 
     def isStrictlyAbove(other: Rect): Boolean = {
-      val myBottom = self.toPoint(Dir.Bottom).y
-      val otherTop = other.toPoint(Dir.Top).y
+      val myBottom = self.toPoint(M3.Bottom).y
+      val otherTop = other.toPoint(M3.Top).y
       myBottom < otherTop
     }
 
     def isStrictlyAbove(yVal: Int @@ FloatRep): Boolean = {
-      val myBottom = self.toPoint(Dir.Bottom).y
+      val myBottom = self.toPoint(M3.Bottom).y
       myBottom < yVal
     }
 
     def isStrictlyBelow(yVal: Int @@ FloatRep): Boolean = {
-      val myTop = self.toPoint(Dir.Top).y
+      val myTop = self.toPoint(M3.Top).y
       myTop > yVal
     }
 
@@ -311,8 +311,8 @@ trait GeometricOps {
     }
 
     def isStrictlyLeftOf(other: Rect): Boolean = {
-      val rightEdge     = self.toPoint(Dir.BottomRight).x
-      val otherLeftEdge = other.toPoint(Dir.BottomLeft).x
+      val rightEdge     = self.toPoint(M3.BottomRight).x
+      val otherLeftEdge = other.toPoint(M3.BottomLeft).x
       rightEdge < otherLeftEdge
     }
 

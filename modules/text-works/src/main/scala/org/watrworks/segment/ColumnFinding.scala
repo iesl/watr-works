@@ -34,7 +34,7 @@ trait ColumnFinding extends BasePageSegmenter with LineSegmentation { self =>
     // })
 
     val charRunBaselineShapes = getLabeledRects(clusterableShapeLabel)
-      .map(_.shape.toLine(Dir.Bottom))
+      .map(_.shape.toLine(M3.Bottom))
 
     val leftmostPoints  = charRunBaselineShapes.map { _.p1 }
     val rightmostPoints = charRunBaselineShapes.map { _.p2 }

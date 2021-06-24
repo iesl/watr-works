@@ -3,7 +3,7 @@ package utils
 
 import geometry._
 import scala.collection.mutable
-import utils.{RelativeDirection => Dir}
+import utils.{M3x3Position => M3}
 
 import GraphPaper._
 
@@ -69,30 +69,30 @@ abstract class DrawableGraphPaper {
 
 case class BorderChars(str: String) {
   val chars = str.toCharArray()
-  def charFor(dir: Dir) = dir match {
-    case Dir.Top         => chars(0)
-    case Dir.Bottom      => chars(1)
-    case Dir.Right       => chars(2)
-    case Dir.Left        => chars(3)
-    case Dir.TopLeft     => chars(4)
-    case Dir.TopRight    => chars(5)
-    case Dir.BottomLeft  => chars(6)
-    case Dir.BottomRight => chars(7)
-    case Dir.Center      => ' '
+  def charFor(dir: M3) = dir match {
+    case M3.Top         => chars(0)
+    case M3.Bottom      => chars(1)
+    case M3.Right       => chars(2)
+    case M3.Left        => chars(3)
+    case M3.TopLeft     => chars(4)
+    case M3.TopRight    => chars(5)
+    case M3.BottomLeft  => chars(6)
+    case M3.BottomRight => chars(7)
+    case M3.Center      => ' '
   }
 
-  def char1For(dir: Dir) = dir match {
-    case Dir.Top  => chars(0)
-    case Dir.Left => chars(2)
+  def char1For(dir: M3) = dir match {
+    case M3.Top  => chars(0)
+    case M3.Left => chars(2)
     case _        => sys.error(s"no char1 for dir ${dir}")
   }
 
-  def endcapFor(dir: Dir) = dir match {
-    case Dir.Center => chars(8)
-    case Dir.Top    => chars(9 + 0)
-    case Dir.Bottom => chars(9 + 1)
-    case Dir.Left   => chars(9 + 2)
-    case Dir.Right  => chars(9 + 3)
+  def endcapFor(dir: M3) = dir match {
+    case M3.Center => chars(8)
+    case M3.Top    => chars(9 + 0)
+    case M3.Bottom => chars(9 + 1)
+    case M3.Left   => chars(9 + 2)
+    case M3.Right  => chars(9 + 3)
     case _          => sys.error(s"no endcaps for dir ${dir}")
   }
 }
@@ -171,35 +171,35 @@ class ConsoleGraphPaper(
   def drawBox(box: Box, borderChars: BorderChars = BorderLineStyle.SingleWidth): Unit = {
 
     if (box.spanRight == 0 && box.spanDown == 0) {
-      box.getCells(Dir.Left).foreach { cell =>
-        drawChar(cell, borderChars.endcapFor(Dir.Center))
+      box.getCells(M3.Left).foreach { cell =>
+        drawChar(cell, borderChars.endcapFor(M3.Center))
       }
     } else if (box.spanRight == 0) {
-      box.getCells(Dir.Left).foreach { cell =>
-        drawChar(cell, borderChars.char1For(Dir.Left))
+      box.getCells(M3.Left).foreach { cell =>
+        drawChar(cell, borderChars.char1For(M3.Left))
       }
-      box.getCells(Dir.Top).foreach { cell =>
-        drawChar(cell, borderChars.endcapFor(Dir.Top))
+      box.getCells(M3.Top).foreach { cell =>
+        drawChar(cell, borderChars.endcapFor(M3.Top))
       }
-      box.getCells(Dir.Bottom).foreach { cell =>
-        drawChar(cell, borderChars.endcapFor(Dir.Bottom))
+      box.getCells(M3.Bottom).foreach { cell =>
+        drawChar(cell, borderChars.endcapFor(M3.Bottom))
       }
     } else if (box.spanDown == 0) {
-      box.getCells(Dir.Top).foreach { cell =>
-        drawChar(cell, borderChars.char1For(Dir.Top))
+      box.getCells(M3.Top).foreach { cell =>
+        drawChar(cell, borderChars.char1For(M3.Top))
       }
-      box.getCells(Dir.Left).foreach { cell =>
-        drawChar(cell, borderChars.endcapFor(Dir.Left))
+      box.getCells(M3.Left).foreach { cell =>
+        drawChar(cell, borderChars.endcapFor(M3.Left))
       }
-      box.getCells(Dir.Right).foreach { cell =>
-        drawChar(cell, borderChars.endcapFor(Dir.Right))
+      box.getCells(M3.Right).foreach { cell =>
+        drawChar(cell, borderChars.endcapFor(M3.Right))
       }
     } else {
-      List(Dir.Top, Dir.Bottom, Dir.Left, Dir.Right).foreach { d =>
+      List(M3.Top, M3.Bottom, M3.Left, M3.Right).foreach { d =>
         box.getCells(d).foreach(cell => drawChar(cell, borderChars.charFor(d)))
       }
 
-      List(Dir.TopLeft, Dir.TopRight, Dir.BottomLeft, Dir.BottomRight).foreach { d =>
+      List(M3.TopLeft, M3.TopRight, M3.BottomLeft, M3.BottomRight).foreach { d =>
         box
           .getCells(d)
           .foreach(cell => drawChar(cell, borderChars.charFor(d)))

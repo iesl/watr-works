@@ -5,7 +5,7 @@ import TypeTags._
 
 import utils.ExactFloats._
 import syntax._
-import utils.{RelativeDirection => Dir}
+import utils.{M3x3Position => M3}
 
 sealed trait GeometricFigure { self =>
   lazy val minBounds = minBoundingRect(self)
@@ -197,11 +197,11 @@ object Trapezoid {
   import utils.EnrichNumerics._
   implicit class RicherTrapezoid(val self: Trapezoid) {
     def leftBaseAngle(): Double = {
-      toPoint(Dir.BottomLeft).angleTo(toPoint(Dir.TopLeft))
+      toPoint(M3.BottomLeft).angleTo(toPoint(M3.TopLeft))
     }
 
     def rightBaseAngle(): Double = {
-      math.Pi - toPoint(Dir.BottomRight).angleTo(toPoint(Dir.TopRight))
+      math.Pi - toPoint(M3.BottomRight).angleTo(toPoint(M3.TopRight))
     }
 
 
@@ -231,32 +231,32 @@ object Trapezoid {
       (leftBaseAngleType(tolerance), rightBaseAngleType(tolerance))
     }
 
-    def toPoint(dir: Dir): Point = {
+    def toPoint(dir: M3): Point = {
       val Trapezoid(Point(tlx, tly), twidth, Point(blx, bly), bwidth) = self
 
       dir match {
-        case Dir.Top         => ???
-        case Dir.Bottom      => ???
-        case Dir.Right       => ???
-        case Dir.Left        => ???
-        case Dir.TopLeft     => self.topLeft
-        case Dir.BottomLeft  => self.bottomLeft
-        case Dir.TopRight    => Point(tlx+twidth, tly)
-        case Dir.BottomRight => Point(blx+bwidth, bly)
-        case Dir.Center      => ???
+        case M3.Top         => ???
+        case M3.Bottom      => ???
+        case M3.Right       => ???
+        case M3.Left        => ???
+        case M3.TopLeft     => self.topLeft
+        case M3.BottomLeft  => self.bottomLeft
+        case M3.TopRight    => Point(tlx+twidth, tly)
+        case M3.BottomRight => Point(blx+bwidth, bly)
+        case M3.Center      => ???
       }
     }
 
-    def toLine(dir: Dir): Line = dir match {
-      case Dir.Top         => Line(toPoint(Dir.TopLeft), toPoint(Dir.TopRight))
-      case Dir.Bottom      => Line(toPoint(Dir.BottomLeft), toPoint(Dir.BottomRight))
-      case Dir.Right       => Line(toPoint(Dir.TopRight), toPoint(Dir.BottomRight))
-      case Dir.Left        => Line(toPoint(Dir.TopLeft), toPoint(Dir.BottomLeft))
-      case Dir.TopLeft     => ???
-      case Dir.BottomLeft  => ???
-      case Dir.TopRight    => ???
-      case Dir.BottomRight => ???
-      case Dir.Center      => ???
+    def toLine(dir: M3): Line = dir match {
+      case M3.Top         => Line(toPoint(M3.TopLeft), toPoint(M3.TopRight))
+      case M3.Bottom      => Line(toPoint(M3.BottomLeft), toPoint(M3.BottomRight))
+      case M3.Right       => Line(toPoint(M3.TopRight), toPoint(M3.BottomRight))
+      case M3.Left        => Line(toPoint(M3.TopLeft), toPoint(M3.BottomLeft))
+      case M3.TopLeft     => ???
+      case M3.BottomLeft  => ???
+      case M3.TopRight    => ???
+      case M3.BottomRight => ???
+      case M3.Center      => ???
     }
     def prettyPrint(): String = {
 
@@ -277,8 +277,8 @@ object Trapezoid {
         case AngleType.Obtuse => s"◸"
       }
 
-      // val tline = self.toLine(Dir.Top)
-      // val bline = self.toLine(Dir.Bottom)
+      // val tline = self.toLine(M3.Top)
+      // val bline = self.toLine(M3.Bottom)
       val lldeg = (lla * 180) / math.Pi
       val lrdeg = (lra * 180) / math.Pi
 

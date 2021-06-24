@@ -5,7 +5,7 @@ import scopt.Read
 import java.nio.{file => nio}
 import tracing.VisualTracer
 import ProcessPipelineSteps._
-import utils.{RelativeDirection => Dir}
+import utils.{M3x3Position => M3}
 import scala.sys.process._
 // import cats.effect._
 import segment._
@@ -134,7 +134,7 @@ object TraceVis {
           val pageGeometry = page.bounds
           val pageImage    =
             s"./corpus.d/${doc.unwrap}/page-images/page-${pageNum.unwrap + 1}.opt.png"
-          val geom         = pageGeometry.toPoint(Dir.BottomRight)
+          val geom         = pageGeometry.toPoint(M3.BottomRight)
 
           val crop =
             s"${geom.x.pp()}x${(th + 16.toFloatExact()).pp()}+0+${(tl.y - 8.toFloatExact()).pp()}"

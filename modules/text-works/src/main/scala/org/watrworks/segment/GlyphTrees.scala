@@ -5,7 +5,9 @@ import geometry._
 import geometry.syntax._
 import utils.Interval
 import Interval._
-import utils.{RelativeDirection => Dir}
+// import utils.{M3x3Position => M3}
+import utils.{Direction => Dir}
+import org.watrworks.utils.ExactFloats
 
 trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch { self =>
 
@@ -17,10 +19,40 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
   }
 
   def buildGlyphTreeStep2(): Unit = {
+    val graph = pageScope.pageStats.connectedRunComponents.graph
+
+    val connected = graph.weaklyConnectedComponents()
+
+    connected.foreach({ components: graph.TopoOrdering =>
+      val compsAsShapes = components
+        .to(List)
+        .map(_.toOuter)
+        .map(shapeIndex.getById(_))
+
+      val compBounds = compsAsShapes.headOption
+        .map(headShape => {
+          compsAsShapes.tail.foldLeft(headShape.shape.minBounds) { case (acc, e) =>
+            acc union e.shape.minBounds
+          }
+        })
+
+      compBounds.foreach(bounds => {
+        traceLog.trace {
+          createLabelOn("ConnCompBounds", bounds)
+        }
+      })
+
+      graph
+    })
+
+  }
+
+  def buildGlyphTreeStep2OldVer(): Unit = {
     val graph = new ShapeIDGraph()
 
     val maxClustered = docScope.docStats.fontVJumpByPage.documentMaxClustered
     val initShapes   = getLabeledShapes[Rect](LB.LowerSkyline)
+
     for {
       (fontId, (count, range)) <- maxClustered
       lowerSkyline             <- initShapes
@@ -74,22 +106,24 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
     })
   }
 
-  protected def withUpperSkyline(
+  protected def withAdjacentSkyline(
+    facingDir: Dir,
     focalShape: RectShape,
     fontId: String @@ ScaledFontID,
     callback: Seq[RectShape] => Unit
   ): Neighbor.BySearch[Rect] = {
     val focalRect = focalShape.shape
     val chars     = focalShape.getAttr(ExtractedChars).getOrElse(Nil)
-    val maxDist   = chars.headOption.map(_.fontBbox.height).get * 2
+    // TODO rethink this maxDist value
+    val maxDist = chars.headOption.map(_.fontBbox.height).get * 2
     lookAdjacentFor[Rect](
-      Dir.Bottom,
+      facingDir,
       focalShape.shape,
       maxDist,
       (foundShapes: Seq[RectShape]) => {
 
         pushLabel(
-          createLabel("FindSkylinePairs")
+          createLabel(s"Facing${facingDir}FindSkyline")
             .withProp("class", ">lazy")
             .withChildren(
               createLabelOn("FocalRect", focalShape.shape)
@@ -97,7 +131,6 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
             )
         )
 
-        // filter to shapes with nothing between them and focal shape
         val lowerSkylineShapes: Seq[RectShape] = for {
           hitShape <- foundShapes
           if hasFont(hitShape, fontId)
@@ -106,75 +139,10 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
 
           hitRect = hitShape.shape
 
-          hitShapeAndFocus = hitRect.union(focalRect)
-
-          _              <- traceShapes("MidriseUnionFocusHorizon", hitShapeAndFocus)
-          belowFocus     <- focalRect.withinRegion(hitShapeAndFocus).adjacentRegion(Dir.Bottom)
-          _              <- traceShapes("BelowFocus", belowFocus)
-          aboveHit: Rect <- hitRect.withinRegion(hitShapeAndFocus).adjacentRegion(Dir.Top)
-          _              <- traceShapes("AboveHit", aboveHit)
-          checkRegion    <- belowFocus.intersection(aboveHit)
-          _              <- traceShapes("BetweenFocusAndHit", checkRegion)
-
-          occlusionHits = searchForShapes(checkRegion, LB.BaselineMidriseBand)
-          occlusionShapes = occlusionHits
-                              .filter(hit => { hit.id != focalShape.id && hit.id != hitShape.id })
-
-          _ <- traceShapes("Occlusions", occlusionShapes.map(_.minBounds): _*)
-          if occlusionShapes.isEmpty
-          _ <- traceShapes("FinalHit", hitRect)
-        } yield hitShape
-
-        popLabel()
-
-        callback(lowerSkylineShapes)
-      },
-      LB.BaselineMidriseBand
-    )
-  }
-  protected def withLowerSkyline(
-    focalShape: RectShape,
-    fontId: String @@ ScaledFontID,
-    callback: Seq[RectShape] => Unit
-  ): Neighbor.BySearch[Rect] = {
-    val focalRect = focalShape.shape
-    val chars     = focalShape.getAttr(ExtractedChars).getOrElse(Nil)
-    val maxDist   = chars.headOption.map(_.fontBbox.height).get * 2
-    lookAdjacentFor[Rect](
-      Dir.Bottom,
-      focalShape.shape,
-      maxDist,
-      (foundShapes: Seq[RectShape]) => {
-
-        pushLabel(
-          createLabel("FindSkylinePairs")
-            .withProp("class", ">lazy")
-            .withChildren(
-              createLabelOn("FocalRect", focalShape.shape)
-                .withProp("class", "=eager")
-            )
-        )
-
-        // filter to shapes with nothing between them and focal shape
-        val lowerSkylineShapes: Seq[RectShape] = for {
-          hitShape <- foundShapes
-          if hasFont(hitShape, fontId)
-          if hitShape.hasLabel(LB.BaselineMidriseBand)
-          if hitShape.id != focalShape.id
-
-          hitRect = hitShape.shape
-
-          hitShapeAndFocus = hitRect.union(focalRect)
-
-          _              <- traceShapes("MidriseUnionFocusHorizon", hitShapeAndFocus)
-          belowFocus     <- focalRect.withinRegion(hitShapeAndFocus).adjacentRegion(Dir.Bottom)
-          _              <- traceShapes("BelowFocus", belowFocus)
-          aboveHit: Rect <- hitRect.withinRegion(hitShapeAndFocus).adjacentRegion(Dir.Top)
-          _              <- traceShapes("AboveHit", aboveHit)
-          checkRegion    <- belowFocus.intersection(aboveHit)
-          _              <- traceShapes("BetweenFocusAndHit", checkRegion)
-
-          occlusionHits = searchForShapes(checkRegion, LB.BaselineMidriseBand)
+          _                   <- traceShapes("HitRect", hitRect)
+          (occlusionQuery, _) <- hitRect.minSeparatingRect(focalRect)
+          _                   <- traceShapes("OcclusionQuery", occlusionQuery)
+          occlusionHits = searchForShapes(occlusionQuery, LB.BaselineMidriseBand)
           occlusionShapes = occlusionHits
                               .filter(hit => { hit.id != focalShape.id && hit.id != hitShape.id })
 
@@ -214,8 +182,8 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
         //
         if (leftAlignment) {
           traceLog.trace {
-            val p1             = skylineUpperShape.shape.toPoint(Dir.BottomLeft)
-            val p2             = skylineRect.toPoint(Dir.BottomLeft)
+            val p1             = skylineUpperShape.shape.toPoint(M3.BottomLeft)
+            val p2             = skylineRect.toPoint(M3.BottomLeft)
             val columnEvidence = Line(p1, p2)
             createLabelOn("LeftColumnEvidence", columnEvidence)
           }
@@ -223,14 +191,87 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
         }
         if (rightAlignment) {
           traceLog.trace {
-            val p1             = skylineUpperShape.shape.toPoint(Dir.BottomRight)
-            val p2             = skylineRect.toPoint(Dir.BottomRight)
+            val p1             = skylineUpperShape.shape.toPoint(M3.BottomRight)
+            val p2             = skylineRect.toPoint(M3.BottomRight)
             val columnEvidence = Line(p1, p2)
             createLabelOn("RightColumnEvidence", columnEvidence)
           }
         }
       })
     })
+  }
+
+  protected def connectBaselineShapes(
+    focalShape: RectShape,
+    fontId: String @@ ScaledFontID
+  ): Unit = {
+    val graph           = pageScope.pageStats.connectedRunComponents.graph
+    val fontVJumpByPage = docScope.docStats.fontVJumpByPage
+
+    def connectJumps(facingDir: Dir, shapes: Seq[RectShape]) = {
+      shapes
+        .groupBy(_.shape.bottom)
+        .foreach { case (skylineGroupBottom, rects) =>
+          val sorted = rects.sortBy(_.shape.left.unwrap)
+
+          val jumpVDist = fontVJumpByPage.getJumpDist(focalShape.shape.bottom, skylineGroupBottom)
+
+          sorted
+            .sliding(2)
+            .foreach({
+              _ match {
+                case Seq(shape1, shape2) =>
+                  val evidenceDir = Dir.toReverse(facingDir)
+                  val jumpRight = graph.edgeRight(fontId, evidenceDir, jumpVDist)
+
+                  graph.edge(jumpRight, shape1, shape2)
+
+                  traceLog.trace {
+                    createLabelOn(
+                      s"Facing${facingDir}DoJumpRight",
+                      shape1.shape.union(shape2.shape)
+                    ).withProp("JumpVDist", jumpVDist.pp())
+                     .withProp("EvidenceDir", evidenceDir.toString())
+                  }
+                case _ =>
+              }
+            })
+
+          facingDir match {
+            case Dir.Down =>
+              val jumpDown  = graph.edgeDown(fontId, jumpVDist)
+              val firstRect = sorted.head
+              graph.edge(jumpDown, firstRect, focalShape)
+
+              traceLog.trace {
+                createLabelOn(
+                  s"Facing${facingDir}DoJumpDown",
+                  firstRect.shape union (focalShape.shape)
+                ).withProp("JumpVDist", jumpVDist.pp())
+              }
+              docScope.docStats.fontVJumpByPage.add(
+                pageNum,
+                fontId,
+                skylineGroupBottom,
+                focalShape.shape.bottom
+              )
+
+            case _ =>
+          }
+        }
+    }
+    def runSearch(facingDir: Dir) = {
+      runNeighborBySearch(
+        withAdjacentSkyline(
+          facingDir,
+          focalShape,
+          fontId,
+          connectJumps(facingDir, _)
+        )
+      )
+    }
+    runSearch(Dir.Down)
+    runSearch(Dir.Up)
   }
 
   protected def labelLowerSkyline(
@@ -240,7 +281,8 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
 
     val focalRect = focalShape.shape
 
-    withLowerSkyline(
+    withAdjacentSkyline(
+      Dir.Down,
       focalShape,
       fontId,
       (lowerSkylineShapes) => {
@@ -288,16 +330,11 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
 
     sortedShapes.foreach({ case (focalShapes, fontId) =>
       focalShapes.foreach(focalShape => {
-        val bySearch = labelLowerSkyline(focalShape, fontId)
-        runNeigborBySearch(bySearch)
+        connectBaselineShapes(focalShape, fontId)
       })
     })
-
-    labelAllColumnEvidence()
   }
-
 }
-
 
 trait GlyphTreeDocScope extends BaseDocumentSegmenter { self =>
   import utils.GuavaHelpers._

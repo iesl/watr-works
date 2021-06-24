@@ -70,12 +70,12 @@ trait ReferenceBlockConverter extends BasePageSegmenter
 
   protected def queryForLeftmostCharsInColumn(columnBounds: Rect, refBlockBounds: Rect): Seq[Rect] = {
     val expandedColumnBounds = columnBounds.withinRegion(refBlockBounds)
-      .adjacentRegions(Dir.Top, Dir.Center, Dir.Bottom)
+      .adjacentRegions(M3.Top, M3.Center, M3.Bottom)
       .orDie("What happened here?")
 
     val shiftedDown = expandedColumnBounds.translate(x=0, y=4d)
     val halfWidth = shiftedDown.width / 2
-    val queryRect = shiftedDown.shave(Dir.Right, halfWidth)
+    val queryRect = shiftedDown.shave(M3.Right, halfWidth)
 
     val fontBaselines = searchForRects(queryRect, LB.BaselineMidriseBand)
     val ySortedBaselines = fontBaselines.sortBy(_.shape.bottom)
@@ -248,7 +248,7 @@ trait ReferenceBlockConverter extends BasePageSegmenter
                 figure(leftCharMinBounds).tagged(s"Reference LeftChar Bounds")
               }
               val referenceCandidateBounds = leftCharMinBounds.withinRegion(refBlockRegion.bbox)
-                .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
+                .adjacentRegions(M3.Left, M3.Center, M3.Right)
                 .orDie("What happened here?")
 
               referenceCandidateBounds

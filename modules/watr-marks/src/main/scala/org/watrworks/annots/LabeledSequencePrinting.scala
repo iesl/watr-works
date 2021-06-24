@@ -3,7 +3,7 @@ package annots
 
 import watrmarks._
 import textboxing.{TextBoxing => TB}, TB._
-import utils.{RelativeDirection => Dir, Orientation}
+import utils.{Direction => Dir}
 
 /**
   * Various utilities to output string representations of BIOLU labeled sequences
@@ -29,7 +29,7 @@ object LabeledSequencePrinting {
    */
 
 
-  def formatBioPins(pins: Seq[BioPin], oriention: Orientation): TB.Box = {
+  def formatBioPins(pins: Seq[BioPin], oriention: Dir): TB.Box = {
     pins.map{ p =>
       val labelChar = p.label.fqn.head.toString()
       val pinRep = if (p.isUnit || p.isBegin) {
@@ -49,7 +49,7 @@ object LabeledSequencePrinting {
     ???
   }
 
-  // def formatBioLabelSequence[A <: LabelTarget](labeledSequence: LabeledSequence[A], oriention: Orientation): TB.Box = {
+  // def formatBioLabelSequence[A <: LabelTarget](labeledSequence: LabeledSequence[A], oriention: Dir): TB.Box = {
   //   val zero1 = List[Label]()
   //   val zero2 = List[TB.Box]()
   //   val init = (zero1, zero2)

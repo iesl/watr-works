@@ -41,8 +41,8 @@ trait TrapezoidFinding extends BasePageSegmenter { self =>
 
           if (areVertical && areOverlappingHorizontal) {
 
-            val l1Baseline = line1ReprShape.shape.toLine(Dir.Bottom)
-            val l2Baseline = line2ReprShape.shape.toLine(Dir.Bottom)
+            val l1Baseline = line1ReprShape.shape.toLine(M3.Bottom)
+            val l2Baseline = line2ReprShape.shape.toLine(M3.Bottom)
 
             val trapezoid = Trapezoid.fromHorizontals(l1Baseline, l2Baseline)
             pageScope.accumulateShapeStats(trapezoid)
@@ -75,7 +75,7 @@ trait TrapezoidFinding extends BasePageSegmenter { self =>
             // val fmt = (p: Point) => s"${p.x.pp()},${p.y.pp()}"
             // val fmtx = (p: Point) => s"${p.x.pp()}x${p.y.pp()}"
 
-            // val geom = pageGeometry.toPoint(Dir.BottomRight)
+            // val geom = pageGeometry.toPoint(M3.BottomRight)
             // val crop = s"${geom.x.pp()}x${th.pp()}+0+${tl.y.pp()}"
             // val crop = s"${geom.x.pp()}x${(th + 14.toFloatExact()).pp()}+0+${(tl.y - 7.toFloatExact()).pp()}"
 

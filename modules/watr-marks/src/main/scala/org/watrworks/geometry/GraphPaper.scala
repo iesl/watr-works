@@ -1,7 +1,7 @@
 package org.watrworks
 package geometry
 
-import utils.{RelativeDirection => Dir}
+import utils.{M3x3Position => M3}
 
 object GraphPaper {
 
@@ -68,25 +68,25 @@ object GraphPaper {
       Rect.Ints(left, top, spanRight + 1, spanDown + 1)
     }
 
-    def getCell(dir: Dir): GridCell = {
+    def getCell(dir: M3): GridCell = {
       dir match {
-        case Dir.Top         => GridCell(centerX, top)
-        case Dir.Bottom      => GridCell(centerX, bottom)
-        case Dir.Right       => GridCell(right, centerY)
-        case Dir.Left        => GridCell(left, centerY)
-        case Dir.TopLeft     => origin
-        case Dir.BottomLeft  => GridCell(left, bottom)
-        case Dir.TopRight    => GridCell(right, top)
-        case Dir.BottomRight => GridCell(right, bottom)
-        case Dir.Center      => GridCell(centerX, centerY)
+        case M3.Top         => GridCell(centerX, top)
+        case M3.Bottom      => GridCell(centerX, bottom)
+        case M3.Right       => GridCell(right, centerY)
+        case M3.Left        => GridCell(left, centerY)
+        case M3.TopLeft     => origin
+        case M3.BottomLeft  => GridCell(left, bottom)
+        case M3.TopRight    => GridCell(right, top)
+        case M3.BottomRight => GridCell(right, bottom)
+        case M3.Center      => GridCell(centerX, centerY)
       }
     }
-    def getCells(dir: Dir): Seq[GridCell] = {
+    def getCells(dir: M3): Seq[GridCell] = {
       dir match {
-        case Dir.Top    => cells(left, top, right, top)
-        case Dir.Bottom => cells(left, bottom, right, bottom)
-        case Dir.Left   => cells(left, top, left, bottom)
-        case Dir.Right  => cells(right, top, right, bottom)
+        case M3.Top    => cells(left, top, right, top)
+        case M3.Bottom => cells(left, bottom, right, bottom)
+        case M3.Left   => cells(left, top, left, bottom)
+        case M3.Right  => cells(right, top, right, bottom)
         case _          => Seq(getCell(dir))
       }
     }

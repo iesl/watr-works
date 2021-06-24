@@ -1,7 +1,7 @@
 package org.watrworks
 package geometry
 
-import utils.{RelativeDirection => Dir}
+import utils.{M3x3Position => M3}
 import TypeTags._
 
 sealed trait AngleType
@@ -16,12 +16,12 @@ trait RectangularCuts extends GeometricOps {
 
   class RectangularCutOps(innerRect: Rect, enclosingRect: Rect) {
 
-    def burstAllPossibleDirections(): Seq[(Dir, Option[Rect])] = {
+    def burstAllPossibleDirections(): Seq[(M3, Option[Rect])] = {
 
       val overlapOps = innerRect.withinRegion(enclosingRect)
 
-      Dir.All.foldLeft(
-        List.empty[(Dir, Option[Rect])]
+      M3.All.foldLeft(
+        List.empty[(M3, Option[Rect])]
       ) {
         case (acc, dir) => {
           (dir, overlapOps.adjacentRegion(dir)) :: acc
@@ -30,17 +30,17 @@ trait RectangularCuts extends GeometricOps {
 
     }
 
-    def burstAllDirections(): (Option[Rect], Seq[(Dir, Rect)]) = {
+    def burstAllDirections(): (Option[Rect], Seq[(M3, Rect)]) = {
       val intersection = innerRect.intersection(enclosingRect)
 
-      val burst1 = Dir.AllAdjacent.map { dir =>
+      val burst1 = M3.AllAdjacent.map { dir =>
         innerRect
           .withinRegion(enclosingRect)
           .adjacentRegion(dir)
           .map(r => (dir, r))
       }
 
-      val burst2 = Dir.AllAdjacent.map { dir =>
+      val burst2 = M3.AllAdjacent.map { dir =>
         enclosingRect
           .withinRegion(innerRect)
           .adjacentRegion(dir)
@@ -65,7 +65,7 @@ trait RectangularCuts extends GeometricOps {
       maybeIntersect.map(_ +: burstRegions).getOrElse(burstRegions)
     }
 
-    def adjacentRegions(dirs: Dir*): Option[Rect] = {
+    def adjacentRegions(dirs: M3*): Option[Rect] = {
       val adjacents = dirs.toList.map { dir =>
         adjacentRegion(dir)
       }
@@ -75,56 +75,56 @@ trait RectangularCuts extends GeometricOps {
       } else None
     }
 
-    def adjacentRegion(dir: Dir): Option[Rect] = {
+    def adjacentRegion(dir: M3): Option[Rect] = {
       dir match {
-        case Dir.Center => innerRect.intersection(enclosingRect)
-        case Dir.Top =>
+        case M3.Center => innerRect.intersection(enclosingRect)
+        case M3.Top =>
           for {
             right <- enclosingRect.splitVertical(innerRect.left)._2
             left  <- right.splitVertical(innerRect.right)._1
             top   <- left.splitHorizontal(innerRect.top)._1
           } yield top
 
-        case Dir.Bottom =>
+        case M3.Bottom =>
           for {
             right <- enclosingRect.splitVertical(innerRect.left)._2
             left  <- right.splitVertical(innerRect.right)._1
             bot   <- left.splitHorizontal(innerRect.bottom)._2
           } yield bot
 
-        case Dir.Right =>
+        case M3.Right =>
           for {
             bot   <- enclosingRect.splitHorizontal(innerRect.top)._2
             top   <- bot.splitHorizontal(innerRect.bottom)._1
             right <- top.splitVertical(innerRect.right)._2
           } yield right
 
-        case Dir.Left =>
+        case M3.Left =>
           for {
             bot  <- enclosingRect.splitHorizontal(innerRect.top)._2
             top  <- bot.splitHorizontal(innerRect.bottom)._1
             left <- top.splitVertical(innerRect.left)._1
           } yield left
 
-        case Dir.TopLeft =>
+        case M3.TopLeft =>
           for {
             left <- enclosingRect.splitVertical(innerRect.left)._1
             top  <- left.splitHorizontal(innerRect.top)._1
           } yield top
 
-        case Dir.BottomLeft =>
+        case M3.BottomLeft =>
           for {
             left <- enclosingRect.splitVertical(innerRect.left)._1
             bot  <- left.splitHorizontal(innerRect.bottom)._2
           } yield bot
 
-        case Dir.TopRight =>
+        case M3.TopRight =>
           for {
             right <- enclosingRect.splitVertical(innerRect.right)._2
             top   <- right.splitHorizontal(innerRect.top)._1
           } yield top
 
-        case Dir.BottomRight =>
+        case M3.BottomRight =>
           for {
             right <- enclosingRect.splitVertical(innerRect.right)._2
             bot   <- right.splitHorizontal(innerRect.bottom)._2
@@ -142,12 +142,12 @@ trait RectangularCuts extends GeometricOps {
     def enclosingRect(inner: Rect): RectangularCutOps =
       new RectangularCutOps(inner, self)
 
-    def minSeparatingRect(rect: Rect): Option[(Rect, Dir)] = {
+    def minSeparatingRect(rect: Rect): Option[(Rect, M3)] = {
       val outer = self union rect
       val focus = self.withinRegion(outer)
       val other = rect.withinRegion(outer)
 
-      def _check(d1: Dir, d2: Dir): Option[(Rect, Dir)] = {
+      def _check(d1: M3, d2: M3): Option[(Rect, M3)] = {
         val region1 = focus.adjacentRegion(d1)
         val region2 = other.adjacentRegion(d2)
         region1.zip(region2) match {
@@ -156,10 +156,10 @@ trait RectangularCuts extends GeometricOps {
         }
       }
 
-      _check(Dir.Bottom, Dir.Top) orElse
-      _check(Dir.Left, Dir.Right) orElse
-      _check(Dir.Top, Dir.Bottom) orElse
-      _check(Dir.Right, Dir.Left)
+      _check(M3.Bottom, M3.Top) orElse
+      _check(M3.Left, M3.Right) orElse
+      _check(M3.Top, M3.Bottom) orElse
+      _check(M3.Right, M3.Left)
     }
 
   }

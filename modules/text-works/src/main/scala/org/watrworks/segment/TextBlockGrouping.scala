@@ -89,23 +89,23 @@ trait TextBlockGrouping extends BasePageSegmenter { self =>
       lazy val expansionBounds = lastLine.shape.minBounds union currLine.shape.minBounds
 
       lazy val noLeftOverlaps = prevWindowBounds.withinRegion(combinedWindowBounds)
-        .adjacentRegion(Dir.Left)
+        .adjacentRegion(M3.Left)
         .map{ adjacentRegion =>
           val shavedRegion = adjacentRegion
-            .shave(Dir.Right, FloatExact.epsilon)
-            .shave(Dir.Top, FloatExact.epsilon)
-            .shave(Dir.Bottom, FloatExact.epsilon)
+            .shave(M3.Right, FloatExact.epsilon)
+            .shave(M3.Top, FloatExact.epsilon)
+            .shave(M3.Bottom, FloatExact.epsilon)
           hasNoOverlaps(shavedRegion)
         }
         .getOrElse(true)
 
       lazy val noRightOverlaps = prevWindowBounds.withinRegion(combinedWindowBounds)
-        .adjacentRegion(Dir.Right)
+        .adjacentRegion(M3.Right)
         .map{ adjacentRegion =>
           val shavedRegion = adjacentRegion
-            .shave(Dir.Left, FloatExact.epsilon)
-            .shave(Dir.Top, FloatExact.epsilon)
-            .shave(Dir.Bottom, FloatExact.epsilon)
+            .shave(M3.Left, FloatExact.epsilon)
+            .shave(M3.Top, FloatExact.epsilon)
+            .shave(M3.Bottom, FloatExact.epsilon)
 
           hasNoOverlaps(shavedRegion)
         }
@@ -114,10 +114,10 @@ trait TextBlockGrouping extends BasePageSegmenter { self =>
       lazy val noLateralOverlaps = noLeftOverlaps && noRightOverlaps
 
       lazy val glyphAndLineCountsMatch  = expansionBounds.withinRegion(combinedWindowBounds)
-        .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
+        .adjacentRegions(M3.Left, M3.Center, M3.Right)
         .map { expansionRect =>
 
-          val queryRect = expansionRect.shave(Dir.Top, FloatExact.epsilon * 5)
+          val queryRect = expansionRect.shave(M3.Top, FloatExact.epsilon * 5)
 
           val foundGlyphs: Seq[RectShape] = searchForRects(queryRect, LB.Glyph)
 

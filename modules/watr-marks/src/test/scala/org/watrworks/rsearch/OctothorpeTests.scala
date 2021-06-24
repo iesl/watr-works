@@ -1,7 +1,7 @@
 package org.watrworks
 package rsearch
 
-import utils.{RelativeDirection => Dir}
+import utils.{M3x3Position => M3}
 
 import geometry._
 import textgrid.TextGridConstruction
@@ -42,9 +42,9 @@ class OctothorpeTest extends WatrSpec with TextGridConstruction {
     val BoundsAt1_1 = getRegionBounds(1, 1, 1, 1)
 
     val plusShaped = Octothorpe.withSearchRegions(
-      Octothorpe.cell(Dir.Top),
-      Octothorpe.cell(Dir.Bottom),
-      Octothorpe.cellspan(Dir.Left, Dir.Right)
+      Octothorpe.cell(M3.Top),
+      Octothorpe.cell(M3.Bottom),
+      Octothorpe.cellspan(M3.Left, M3.Right)
     )
 
     val doSearch = (r: Rect) => rtreeIndex.search(r, _ => true)
@@ -89,9 +89,9 @@ class OctothorpeTest extends WatrSpec with TextGridConstruction {
     val BoundsAt1_1 = getRegionBounds(1, 1, 1, 1)
 
     val plusShaped = Octothorpe.withSearchRegions(
-      Octothorpe.cell(Dir.Top),
-      Octothorpe.cell(Dir.Bottom),
-      Octothorpe.cellspan(Dir.Left, Dir.Right)
+      Octothorpe.cell(M3.Top),
+      Octothorpe.cell(M3.Bottom),
+      Octothorpe.cellspan(M3.Left, M3.Right)
     )
 
     val doSearch = (r: Rect) => rtreeIndex.search(r, _ => true)

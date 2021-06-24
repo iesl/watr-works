@@ -18,7 +18,7 @@ class GraphOpTests extends SegmentationTestUtils {
 
     for {
       (n1, n2, l) <- edges
-    } graph.addEdge(n1, n2, EdgeLabel(l))
+    } graph.addEdge(EdgeLabel(l), n1, n2)
 
     println(
       graph.toString()

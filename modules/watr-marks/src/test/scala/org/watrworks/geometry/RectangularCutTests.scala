@@ -6,7 +6,7 @@ class RectangularCutTests extends WatrSpec {
 
   import syntax._
   import GeometryTestUtils._
-  import utils.{RelativeDirection => Dir}
+  import utils.{M3x3Position => M3}
   import textboxing.{TextBoxing => TB}, TB._
   import utils.ExactFloats._
   import ammonite.{ops => fs}
@@ -26,37 +26,33 @@ class RectangularCutTests extends WatrSpec {
   }
 
   it should "find min/max separating rects between 2 rects" in {
-    val testName = "min-max-sep"
+    val testName   = "min-max-sep"
     val centerRect = Rect.Doubles(100, 100, 100, 100)
     val others = List(
       // Left of
       Rect.Doubles(10, 80, 40, 40),
       Rect.Doubles(10, 140, 40, 40),
       Rect.Doubles(10, 180, 40, 40),
-
       // Above
       Rect.Doubles(80, 10, 40, 40),
       Rect.Doubles(140, 10, 40, 40),
       Rect.Doubles(180, 10, 40, 40),
-
       // Right
       Rect.Doubles(210, 80, 40, 40),
       Rect.Doubles(210, 140, 40, 40),
       Rect.Doubles(210, 180, 40, 40),
-
       // Below
       Rect.Doubles(80, 210, 40, 40),
       Rect.Doubles(140, 210, 40, 40),
       Rect.Doubles(180, 210, 40, 40),
-
       // No Intersection
-      Rect.Doubles(10, 10, 40, 40),
-
+      Rect.Doubles(10, 10, 40, 40)
     )
-      val ctr = drawRect(centerRect, Some("Focus"))
-        .fillColor(Color.rgba(0, 0, 128, 0.3))
-        .strokeColor(Color.black)
-        .strokeWidth(1)
+
+    val ctr = drawRect(centerRect, Some("Focus"))
+      .fillColor(Color.rgba(0, 0, 128, 0.3))
+      .strokeColor(Color.black)
+      .strokeWidth(1)
 
     for {
       (other, exampleNum) <- others.zipWithIndex
@@ -73,7 +69,7 @@ class RectangularCutTests extends WatrSpec {
         .strokeColor(Color.red)
         .strokeWidth(2)
 
-      val pngPath   = scratchDir / s"test-${testName}-${exampleNum}.png"
+      val pngPath  = scratchDir / s"test-${testName}-${exampleNum}.png"
       val composed = List(ctr, oth, sep).allOn
       composed.save(pngPath.toString())
     }
@@ -140,7 +136,7 @@ class RectangularCutTests extends WatrSpec {
     }
 
     {
-      val boxes = List(Dir.Left, Dir.Center, Dir.Right, Dir.Top, Dir.Bottom)
+      val boxes = List(M3.Left, M3.Center, M3.Right, M3.Top, M3.Bottom)
         .map { dir =>
           (dir, inner.withinRegion(outer).adjacentRegion(dir))
         }
@@ -175,12 +171,12 @@ class RectangularCutTests extends WatrSpec {
     }
     {
       val boxes = List(
-        List(Dir.Left, Dir.Center),
-        List(Dir.Left, Dir.Right),
-        List(Dir.Right, Dir.Center),
-        List(Dir.Left, Dir.Bottom),
-        List(Dir.Right, Dir.BottomRight),
-        List(Dir.Right, Dir.Bottom)
+        List(M3.Left, M3.Center),
+        List(M3.Left, M3.Right),
+        List(M3.Right, M3.Center),
+        List(M3.Left, M3.Bottom),
+        List(M3.Right, M3.BottomRight),
+        List(M3.Right, M3.Bottom)
       ).flatMap { dirs =>
         inner
           .withinRegion(outer)
@@ -231,7 +227,7 @@ class RectangularCutTests extends WatrSpec {
     }
 
     {
-      val boxes = List(Dir.Left, Dir.Center, Dir.Right, Dir.Top, Dir.Bottom)
+      val boxes = List(M3.Left, M3.Center, M3.Right, M3.Top, M3.Bottom)
         .flatMap { dir =>
           inner
             .withinRegion(outer)
@@ -263,7 +259,7 @@ class RectangularCutTests extends WatrSpec {
     }
 
     {
-      val boxes = List(Dir.TopLeft, Dir.TopRight, Dir.BottomLeft, Dir.BottomRight)
+      val boxes = List(M3.TopLeft, M3.TopRight, M3.BottomLeft, M3.BottomRight)
         .flatMap { dir =>
           inner
             .withinRegion(outer)
@@ -296,12 +292,12 @@ class RectangularCutTests extends WatrSpec {
 
     {
       val boxes = List(
-        List(Dir.Left, Dir.Center),
-        List(Dir.Left, Dir.Right),
-        List(Dir.Right, Dir.Center),
-        List(Dir.Left, Dir.Bottom),
-        List(Dir.Right, Dir.BottomRight),
-        List(Dir.Right, Dir.Bottom)
+        List(M3.Left, M3.Center),
+        List(M3.Left, M3.Right),
+        List(M3.Right, M3.Center),
+        List(M3.Left, M3.Bottom),
+        List(M3.Right, M3.BottomRight),
+        List(M3.Right, M3.Bottom)
       ).flatMap { dirs =>
         inner
           .withinRegion(outer)

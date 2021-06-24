@@ -88,8 +88,8 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
 
   private def findCenterLine(charRun: Seq[ExtractedItem.CharItem]): Line = {
     val xSorted = charRun.sortBy { _.minBBox.left }
-    val p1      = xSorted.head.minBBox.toPoint(Dir.Center)
-    val p2      = xSorted.last.minBBox.toPoint(Dir.Center)
+    val p1      = xSorted.head.minBBox.toPoint(M3.Center)
+    val p2      = xSorted.last.minBBox.toPoint(M3.Center)
     Line(p1, p2)
   }
 
