@@ -7,8 +7,6 @@ import rsearch.{Octothorpe => Oct}
 import rsearch.{Octothorpe}
 import watrmarks.Label
 import utils.ExactFloats._
-import transcripts.Transcript
-
 // import utils.{M3x3Position => M3}
 import utils.{Direction => Dir}
 
@@ -107,10 +105,6 @@ trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
 
   import Neighbor._
 
-  val createLabel = Transcript.Label.create(_)
-
-  def createLabelOn[Fig <: GeometricFigure](name: String, fig: Fig) =
-    Transcript.Label.create(name).onShapes(fig)
 
   protected def runNeighborBySearch[Figure <: GeometricFigure](bySearch: BySearch[Figure]): Unit = {
     val BySearch(oct, search, sortBy, filterResults, cb, tags) = bySearch

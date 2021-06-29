@@ -5,9 +5,7 @@ import geometry._
 import geometry.syntax._
 import utils.Interval
 import Interval._
-// import utils.{M3x3Position => M3}
 import utils.{Direction => Dir}
-import org.watrworks.utils.ExactFloats
 
 trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch { self =>
 
@@ -19,85 +17,41 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
   }
 
   def buildGlyphTreeStep2(): Unit = {
-    val graph = pageScope.pageStats.connectedRunComponents.graph
-
-    val connected = graph.weaklyConnectedComponents()
-
-    connected.foreach({ components: graph.TopoOrdering =>
-      val compsAsShapes = components
-        .to(List)
-        .map(_.toOuter)
-        .map(shapeIndex.getById(_))
-
-      val compBounds = compsAsShapes.headOption
-        .map(headShape => {
-          compsAsShapes.tail.foldLeft(headShape.shape.minBounds) { case (acc, e) =>
-            acc union e.shape.minBounds
-          }
-        })
-
-      compBounds.foreach(bounds => {
-        traceLog.trace {
-          createLabelOn("ConnCompBounds", bounds)
-        }
-      })
-
-      graph
-    })
-
-  }
-
-  def buildGlyphTreeStep2OldVer(): Unit = {
-    val graph = new ShapeIDGraph()
-
+    // Find shapes connected by font/maxJumps
     val maxClustered = docScope.docStats.fontVJumpByPage.documentMaxClustered
-    val initShapes   = getLabeledShapes[Rect](LB.LowerSkyline)
+
+    val graph: LabeledShapeGraph = pageScope.pageStats.connectedRunComponents.graph
+
+    // println(graph.graph.toString())
 
     for {
       (fontId, (count, range)) <- maxClustered
-      lowerSkyline             <- initShapes
-      if hasFont(lowerSkyline, fontId)
     } {
-      val skylineChildren    = lowerSkyline.getAttr(ChildShapes).get.asRectShapes
-      val skylineParentShape = lowerSkyline.getAttr(ParentShape).get.asRectShape
 
-      skylineChildren
-        .sortBy(_.shape.left.unwrap)
-        .sliding(2)
-        .foreach({
-          _ match {
-            case Seq(shape1, shape2) =>
-              graph.edge(shape1, shape2, "Right")
-            case _ =>
+      val connected = graph.getConnectedComponents(fontId, range, shapeIndex)
+
+      connected.foreach({ components: graph.TopoOrdering =>
+        val compsAsShapes = components
+          .to(List)
+          .map(_.toOuter)
+          .map(s => shapeIndex.getById(s.shapeId))
+
+        val compBounds = compsAsShapes.headOption
+          .map(headShape => {
+            compsAsShapes.tail.foldLeft(headShape.shape.minBounds) { case (acc, e) =>
+              acc union e.shape.minBounds
+            }
+          })
+
+        compBounds.foreach(bounds => {
+          traceLog.trace {
+            createLabelOn(s"Font${fontId}ConnectedComp", bounds)
           }
         })
 
-      skylineChildren.foreach({ shape =>
-        graph.edge(skylineParentShape, shape, "Down")
       })
     }
 
-    val connected = graph.weaklyConnectedComponents()
-
-    connected.foreach({ components: graph.TopoOrdering =>
-      val compsAsShapes = components
-        .to(List)
-        .map(_.toOuter)
-        .map(shapeIndex.getById(_))
-
-      val compBounds = compsAsShapes.headOption
-        .map(headShape => {
-          compsAsShapes.tail.foldLeft(headShape.shape.minBounds) { case (acc, e) =>
-            acc union e.shape.minBounds
-          }
-        })
-
-      compBounds.foreach(bounds => {
-        traceLog.trace {
-          createLabelOn("ConnCompBounds", bounds)
-        }
-      })
-    })
   }
 
   def traceShapes(name: String, shape: GeometricFigure*): Option[Unit] = {
@@ -128,10 +82,11 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
             .withChildren(
               createLabelOn("FocalRect", focalShape.shape)
                 .withProp("class", "=eager")
+                .withProp("Font", fontId.toString())
             )
         )
 
-        val lowerSkylineShapes: Seq[RectShape] = for {
+        val adjacentShapes: Seq[RectShape] = for {
           hitShape <- foundShapes
           if hasFont(hitShape, fontId)
           if hitShape.hasLabel(LB.BaselineMidriseBand)
@@ -153,7 +108,7 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
 
         popLabel()
 
-        callback(lowerSkylineShapes)
+        callback(adjacentShapes)
       },
       LB.BaselineMidriseBand
     )
@@ -207,7 +162,22 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
   ): Unit = {
     val graph           = pageScope.pageStats.connectedRunComponents.graph
     val fontVJumpByPage = docScope.docStats.fontVJumpByPage
+    val GE              = LabeledShapeGraph.JumpEdge
+    val GN              = LabeledShapeGraph.JumpNode
 
+    runSearch(Dir.Down)
+    runSearch(Dir.Up)
+
+    def runSearch(facingDir: Dir) = {
+      runNeighborBySearch(
+        withAdjacentSkyline(
+          facingDir,
+          focalShape,
+          fontId,
+          connectJumps(facingDir, _)
+        )
+      )
+    }
     def connectJumps(facingDir: Dir, shapes: Seq[RectShape]) = {
       shapes
         .groupBy(_.shape.bottom)
@@ -222,16 +192,37 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
               _ match {
                 case Seq(shape1, shape2) =>
                   val evidenceDir = Dir.toReverse(facingDir)
-                  val jumpRight = graph.edgeRight(fontId, evidenceDir, jumpVDist)
+                  // val jumpRight   = graph.edgeRight(fontId, evidenceDir, jumpVDist)
+                  val n1 = GN(shape1, shapeIndex)
+                  val n2 = GN(shape2, shapeIndex)
 
-                  graph.edge(jumpRight, shape1, shape2)
+                  graph.upsertEdge(
+                    _.map(GE.withEvidence(_, jumpVDist))
+                      .getOrElse(GE(n1, n2, Dir.Right, jumpVDist)),
+                    n1,
+                    n2
+                  )
 
                   traceLog.trace {
-                    createLabelOn(
-                      s"Facing${facingDir}DoJumpRight",
-                      shape1.shape.union(shape2.shape)
-                    ).withProp("JumpVDist", jumpVDist.pp())
-                     .withProp("EvidenceDir", evidenceDir.toString())
+                    val focalShapeFont = focalShape.getAttr(PrimaryFont).get
+                    val shape1Font     = shape1.getAttr(PrimaryFont).get
+                    val shape2Font     = shape2.getAttr(PrimaryFont).get
+
+                    createLabel(s"Facing${facingDir}DoJumpRight")
+                      .withProp("class", ">lazy")
+                      .withProp("Font", fontId.toString())
+                      .withProp("JumpVDist", jumpVDist.pp())
+                      .withChildren(
+                        createLabelOn(s"FocalShape${evidenceDir}", focalShape.shape)
+                          .withProp("Font", focalShapeFont.toString())
+                          .withProp("class", "=eager"),
+                        createLabelOn("Shape1", shape1.shape)
+                          .withProp("Font", shape1Font.toString()),
+                        createLabelOn("Shape2", shape2.shape)
+                          .withProp("Font", shape2Font.toString())
+                      )
+                      .withProp("EvidenceDir", evidenceDir.toString())
+                      .withProp("Font", fontId.toString())
                   }
                 case _ =>
               }
@@ -239,16 +230,19 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
 
           facingDir match {
             case Dir.Down =>
-              val jumpDown  = graph.edgeDown(fontId, jumpVDist)
               val firstRect = sorted.head
-              graph.edge(jumpDown, firstRect, focalShape)
 
-              traceLog.trace {
-                createLabelOn(
-                  s"Facing${facingDir}DoJumpDown",
-                  firstRect.shape union (focalShape.shape)
-                ).withProp("JumpVDist", jumpVDist.pp())
-              }
+              val n1 = GN(focalShape, shapeIndex)
+              val n2 = GN(firstRect, shapeIndex)
+              // val jumpDown  = graph.edgeDown(fontId, jumpVDist)
+              // graph.edge(jumpDown, focalShape, firstRect)
+              graph.upsertEdge(
+                _.map(GE.withEvidence(_, jumpVDist))
+                  .getOrElse(GE(n1, n2, facingDir, jumpVDist)),
+                n1,
+                n2
+              )
+
               docScope.docStats.fontVJumpByPage.add(
                 pageNum,
                 fontId,
@@ -256,72 +250,33 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
                 focalShape.shape.bottom
               )
 
+              traceLog.trace {
+                val p1  = focalShape.shape.toPoint(M3.BottomLeft)
+                val p2  = firstRect.shape.toPoint(M3.TopLeft)
+                val l12 = p1.lineTo(p2)
+
+                val focalShapeFont = focalShape.getAttr(PrimaryFont).get
+                val shape1Font     = firstRect.getAttr(PrimaryFont).get
+
+                createLabel(s"Facing${facingDir}DoJumpDown")
+                  .withProp("class", ">lazy")
+                  .withProp("Font", fontId.toString())
+                  .withProp("JumpVDist", jumpVDist.pp())
+                  .withChildren(
+                    createLabelOn(s"FocalShape", focalShape.shape)
+                      .withProp("Font", focalShapeFont.toString())
+                      .withProp("class", "=eager"),
+                    createLabelOn("FoundShape", firstRect.shape)
+                      .withProp("Font", shape1Font.toString()),
+                    createLabelOn("Jump", l12)
+                  )
+
+              }
+
             case _ =>
           }
         }
     }
-    def runSearch(facingDir: Dir) = {
-      runNeighborBySearch(
-        withAdjacentSkyline(
-          facingDir,
-          focalShape,
-          fontId,
-          connectJumps(facingDir, _)
-        )
-      )
-    }
-    runSearch(Dir.Down)
-    runSearch(Dir.Up)
-  }
-
-  protected def labelLowerSkyline(
-    focalShape: RectShape,
-    fontId: String @@ ScaledFontID
-  ): Neighbor.BySearch[Rect] = {
-
-    val focalRect = focalShape.shape
-
-    withAdjacentSkyline(
-      Dir.Down,
-      focalShape,
-      fontId,
-      (lowerSkylineShapes) => {
-        lowerSkylineShapes
-          .groupBy(_.shape.bottom.unwrap)
-          .map { case (_, rects) =>
-            val sorted       = rects.sortBy(_.shape.left.unwrap)
-            val sortedRects  = sorted.map(_.shape)
-            val runion       = sortedRects.reduce(_ union _)
-            val lowerSkyline = indexShape(runion, LB.LowerSkyline)
-            lowerSkyline.setAttr(ChildShapes)(sorted)
-            lowerSkyline.setAttr(ParentShape)(focalShape)
-            lowerSkyline.setAttr(Fonts)(Set(fontId))
-
-            docScope.docStats.fontVJumpByPage.add(
-              pageNum,
-              fontId,
-              runion.bottom,
-              focalRect.bottom
-            )
-
-            traceLog.trace {
-              val vdist = math.abs(runion.bottom.unwrap - focalRect.bottom.unwrap)
-
-              createLabel("LowerSkylineCluster")
-                .withProp("class", ">lazy")
-                .withChildren(
-                  createLabelOn("Skyline", runion),
-                  createLabel("Children")
-                    .withChildren(shapesToLabels(rects: _*): _*),
-                  createLabelOn("Parent", focalRect)
-                    .withProp("class", "=eager")
-                    .withProp("Font", s"${fontId}")
-                    .withProp("VDist", s"${vdist}")
-                )
-            }
-          }
-      }
-    )
   }
 
   protected def defineBaselineMidriseTrees(): Unit = {
@@ -333,6 +288,7 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
         connectBaselineShapes(focalShape, fontId)
       })
     })
+
   }
 }
 
@@ -368,7 +324,7 @@ trait GlyphTreeDocScope extends BaseDocumentSegmenter { self =>
           val rt1       = r.translate(-ClusterEpsilonWidth)
           val rexpanded = rt0.union(rt1)
 
-          rexpanded.contains(edist)
+          rexpanded.containsLCRC(edist)
         })
         val edistRange = FloatExacts(edist, FloatExact.zero)
 
@@ -439,3 +395,106 @@ trait GlyphTreeDocScope extends BaseDocumentSegmenter { self =>
     println("\n\n==================\n")
   }
 }
+
+// def buildGlyphTreeStep2OldVer(): Unit = {
+//   val graph = new ShapeIDGraph()
+
+//   val maxClustered = docScope.docStats.fontVJumpByPage.documentMaxClustered
+//   val initShapes   = getLabeledShapes[Rect](LB.LowerSkyline)
+
+//   for {
+//     (fontId, (count, range)) <- maxClustered
+//     lowerSkyline             <- initShapes
+//     if hasFont(lowerSkyline, fontId)
+//   } {
+//     val skylineChildren    = lowerSkyline.getAttr(ChildShapes).get.asRectShapes
+//     val skylineParentShape = lowerSkyline.getAttr(ParentShape).get.asRectShape
+
+//     skylineChildren
+//       .sortBy(_.shape.left.unwrap)
+//       .sliding(2)
+//       .foreach({
+//         _ match {
+//           case Seq(shape1, shape2) =>
+//             graph.edge(shape1, shape2, "Right")
+//           case _ =>
+//         }
+//       })
+
+//     skylineChildren.foreach({ shape =>
+//       graph.edge(skylineParentShape, shape, "Down")
+//     })
+//   }
+
+//   val connected = graph.weaklyConnectedComponents()
+
+//   connected.foreach({ components: graph.TopoOrdering =>
+//     val compsAsShapes = components
+//       .to(List)
+//       .map(_.toOuter)
+//       .map(shapeIndex.getById(_))
+
+//     val compBounds = compsAsShapes.headOption
+//       .map(headShape => {
+//         compsAsShapes.tail.foldLeft(headShape.shape.minBounds) { case (acc, e) =>
+//           acc union e.shape.minBounds
+//         }
+//       })
+
+//     compBounds.foreach(bounds => {
+//       traceLog.trace {
+//         createLabelOn("ConnCompBounds", bounds)
+//       }
+//     })
+//   })
+// }
+
+// protected def labelLowerSkyline(
+//   focalShape: RectShape,
+//   fontId: String @@ ScaledFontID
+// ): Neighbor.BySearch[Rect] = {
+
+//   val focalRect = focalShape.shape
+
+//   withAdjacentSkyline(
+//     Dir.Down,
+//     focalShape,
+//     fontId,
+//     (lowerSkylineShapes) => {
+//       lowerSkylineShapes
+//         .groupBy(_.shape.bottom.unwrap)
+//         .map { case (_, rects) =>
+//           val sorted       = rects.sortBy(_.shape.left.unwrap)
+//           val sortedRects  = sorted.map(_.shape)
+//           val runion       = sortedRects.reduce(_ union _)
+//           val lowerSkyline = indexShape(runion, LB.LowerSkyline)
+//           lowerSkyline.setAttr(ChildShapes)(sorted)
+//           lowerSkyline.setAttr(ParentShape)(focalShape)
+//           lowerSkyline.setAttr(Fonts)(Set(fontId))
+
+//           docScope.docStats.fontVJumpByPage.add(
+//             pageNum,
+//             fontId,
+//             runion.bottom,
+//             focalRect.bottom
+//           )
+
+//           traceLog.trace {
+//             val vdist = math.abs(runion.bottom.unwrap - focalRect.bottom.unwrap)
+
+//             createLabel("LowerSkylineCluster")
+//               .withProp("class", ">lazy")
+//               .withChildren(
+//                 createLabelOn("Skyline", runion),
+//                 createLabel("Children")
+//                   .withChildren(shapesToLabels(rects: _*): _*),
+//                 createLabelOn("Parent", focalRect)
+//                   .withProp("class", "=eager")
+//                   .withProp("Font", s"${fontId}")
+//                   .withProp("VDist", s"${vdist}")
+//               )
+//           }
+//         }
+//     }
+//   )
+// }

@@ -63,6 +63,7 @@ lazy val textworks = (project in file("modules/text-works"))
           Lib.scopt,
           Lib.ammoniteOps,
           Lib.scalaGraph,
+          Lib.scalaGraphConstrained,
           Lib.shapeless
         )
   )

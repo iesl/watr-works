@@ -65,7 +65,10 @@ class PageLayoutStats extends LayoutStats {
 
   object connectedRunComponents {
     // val graph = new ShapeIDGraph()
-    val graph = new ShapeJumpGraph()
+    // val graph = new ShapeJumpGraph()
+    val graph = new LabeledShapeGraph()
+
+
   }
 
 

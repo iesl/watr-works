@@ -30,7 +30,6 @@ trait LineLayout extends BasePageSegmenter with FontAndGlyphMetrics with TextBlo
     // val capDescentRect  = midriseBaselineBand.shape
 
     def clipped(slice: Rect): Option[Rect] = {
-      // slice.flatMap(clipRectBetween(reprShapeLeft, reprShapeRight, _))
       slice.clipLeftRight(reprShapeLeft, reprShapeRight)
     }
 

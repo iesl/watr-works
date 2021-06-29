@@ -51,14 +51,21 @@ trait LineSegmentation
         shape.setAttr(Fonts)(Set(fontId))
         shape.setAttr(PrimaryFont)(fontId)
         shape.setAttr(FontOffsets)(fontOffsets)
+
+        traceLog.trace {
+          createLabelOn(label.fqn, rect)
+            .withProp("Font", fontId.toString())
+            .withProp("Chars", lineChars.map(_.char).mkString)
+
+          createLabelOn(s"${label.fqn}ForFont${fontId}", rect)
+            .withProp("Font", fontId.toString())
+            .withProp("Chars", lineChars.map(_.char).mkString)
+        }
         shape
       }
-      val ascentDescentShape   = indexAndInit(ascentDescentRect, LB.AscentDescentBand)
-      val baselineMidriseShape = indexAndInit(baselineMidriseRect, LB.BaselineMidriseBand)
 
-      traceLog.traceAll {
-        List(shape(ascentDescentShape), shape(baselineMidriseShape))
-      }
+      indexAndInit(ascentDescentRect, LB.AscentDescentBand)
+      indexAndInit(baselineMidriseRect, LB.BaselineMidriseBand)
     }
 
   }

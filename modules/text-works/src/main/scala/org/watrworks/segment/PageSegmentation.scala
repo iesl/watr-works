@@ -12,7 +12,8 @@ import scala.reflect._
 import rsearch.AttrWitness
 import utils.intervals.Interval
 import textgrid.TextGrid
-import org.watrworks.watrmarks.WeightedLabeling
+import watrmarks.WeightedLabeling
+import transcripts.Transcript
 
 trait PageSegmenter
   extends ColumnFinding
@@ -282,6 +283,12 @@ trait BasePageSegmenter extends PageScopeTracing with AttributeTags { self =>
 
     _loop(fontsByMostOccuring.toList, shapes)
   }
+
+
+  val createLabel = Transcript.Label.create(_)
+
+  def createLabelOn[Fig <: GeometricFigure](name: String, fig: Fig) =
+    Transcript.Label.create(name).onShapes(fig)
 
   implicit class RicherShapes[+A <: GeometricFigure](val theShape: DocSegShape[A]) {
 

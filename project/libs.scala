@@ -55,7 +55,10 @@ trait CommonLibs extends LibVersions {
   val ammoniteVersion = "2.4.0"
   val ammonite        = "com.lihaoyi"  % "ammonite"     % ammoniteVersion cross CrossVersion.full
   val ammoniteOps     = "com.lihaoyi" %% "ammonite-ops" % ammoniteVersion
-  val scalaGraph      = "org.scala-graph" %% "graph-core" % "1.13.2"
+
+  val scalaGraphVersion = "1.13.2"
+  val scalaGraph                 = "org.scala-graph" %% "graph-core" % scalaGraphVersion
+  val scalaGraphConstrained      = "org.scala-graph" %% "graph-constrained" % scalaGraphVersion
 
   val scopt = "com.github.scopt" %% "scopt" % "4.0.1"
 

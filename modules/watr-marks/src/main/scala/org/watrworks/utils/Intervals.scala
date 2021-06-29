@@ -97,7 +97,8 @@ object Interval {
 
     def translate(x: FloatExact) = FloatExacts(min + x, len)
 
-    def contains(i: FloatExact): Boolean = min <= i && i < max
+    // def contains(i: FloatExact): Boolean = min <= i && i < max
+    def containsLCRC(i: FloatExact): Boolean = min <= i && i <= max
 
     def intersect(r2: FloatExacts): Option[FloatExacts] =
       FloatExacts.rangeIntersection(theRange, r2)

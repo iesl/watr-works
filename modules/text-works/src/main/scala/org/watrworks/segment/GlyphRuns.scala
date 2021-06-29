@@ -15,11 +15,9 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
 
     val natLangRuns = findNatLangBaselineRuns()
     applyLabelToRun(LB.CharRunFontBaseline, findFontBaseline, natLangRuns)
-    traceLog.trace { labeledShapes(LB.CharRunFontBaseline) }
 
     val symbolCharRuns = findSymbolicCharRuns()
     applyLabelToRun(LB.SymbolicGlyphLine, findCenterLine, symbolCharRuns)
-    traceLog.trace { labeledShapes(LB.SymbolicGlyphLine) }
   }
 
   def findContiguousGlyphSpans(): Unit = {
@@ -33,7 +31,7 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
       .collect { case item: ExtractedItem.CharItem => item }
       .filter(_.fontProps.isNatLangFont())
       .groupByPairs { case (item1, item2) =>
-        val sameScaledFont = item1.scaledFontId == item2.scaledFontId
+        val sameScaledFont   = item1.scaledFontId == item2.scaledFontId
         val sameFontBaseline = item1.fontBbox.bottom == item2.fontBbox.bottom
         sameScaledFont && sameFontBaseline
 
@@ -45,7 +43,7 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
       .collect { case item: ExtractedItem.CharItem => item }
       .filterNot(_.fontProps.isNatLangFont())
       .groupByPairs { case (item1, item2) =>
-        val sameScaledFont = item1.scaledFontId == item2.scaledFontId
+        val sameScaledFont   = item1.scaledFontId == item2.scaledFontId
         lazy val consecutive = itemsAreConsecutive(item1, item2)
         lazy val leftToRight = item1.minBBox.left < item2.minBBox.left
         lazy val colinear    = item1.minBBox.isNeitherAboveNorBelow(item2.minBBox)
@@ -61,7 +59,8 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
   ): Unit = {
 
     natLangCharRuns.foreach { charItems =>
-      val baseline = indexShape(makeLine(charItems), spanLabel)
+      val line     = makeLine(charItems)
+      val baseline = indexShape(line, spanLabel)
 
       charItems.foreach { item =>
         val glyphShape = indexShape(item.minBBox, LB.Glyph)
@@ -71,7 +70,9 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
       val fontIds = charItems.map { _.scaledFontId }.toSet
 
       if (fontIds.size != 1) {
-        println(s"""Warning: Run has multiple fonts (${fontIds.size}) = ${fontIds.mkString(", ")}""")
+        println(
+          s"""Warning: Run has multiple fonts (${fontIds.size}) = ${fontIds.mkString(", ")}"""
+        )
       }
 
       fontIds.headOption.foreach(primaryFontId => {
@@ -80,6 +81,14 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
 
       baseline.setAttr(Fonts)(fontIds)
       baseline.setAttr(ExtractedChars)(charItems)
+
+      traceLog.trace {
+        val fontIdStr = fontIds.mkString(";")
+        createLabelOn(
+          spanLabel.fqn,
+          line
+        ) .withProp("Fonts", fontIdStr)
+      }
 
       baseline
     }
