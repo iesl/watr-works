@@ -1,10 +1,9 @@
 package org.watrworks
 package segment
 
-import org.scalatest.diagrams.Diagrams
 import java.util.stream
 
-class LineTokenizationTest extends SegmentationTestUtils with Diagrams {
+class LineTokenizationTest extends utils.SegmentationTestUtils {
   behavior of "text line identification"
 
   import smile.sequence.{CRF, crf}

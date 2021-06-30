@@ -8,7 +8,7 @@ import com.spotify.featran.transformers._
 import com.spotify.featran.converters._
 import breeze.linalg._
 
-class SegmentationFeaturesTest extends SegmentationTestUtils {
+class SegmentationFeaturesTest extends utils.SegmentationTestUtils {
   // Input record type
   case class Record(
     b: Boolean,

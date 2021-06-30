@@ -3,7 +3,7 @@ package segment
 
 import TypeTags._
 
-class TrapezoidFindingTests extends SegmentationTest {
+class TrapezoidFindingTests extends utils.SegmentationTest {
   behavior of "Trapezoid Clustering"
 
   import ammonite.{ops => fs}

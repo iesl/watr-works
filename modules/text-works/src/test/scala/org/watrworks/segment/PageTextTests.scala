@@ -1,11 +1,9 @@
 package org.watrworks
 package segment
 
-import TypeTags._
-import utils.PathUtils._
-import utils.ExactFloats._
+// import utils.PathUtils._ import utils.ExactFloats._
 
-class PageTextTest extends SegmentationTestUtils {
+class PageTextTest extends utils.SegmentationTestUtils {
 
   // it should "extract text reasonably well" in {
 
@@ -32,16 +30,4 @@ class PageTextTest extends SegmentationTestUtils {
 
   // }
 
-  import transcripts.{Transcript => T}
-  import cats.data.State
-  import cats.Eval
-  import cats.data.IndexedStateT
-
-  it should "use state/eval properly" in {
-    val initState = State[T.Label, Unit](traceLabel => (traceLabel, ()))
-
-    initState.modify(l => l.withChildren())
-    initState
-
-  }
 }
