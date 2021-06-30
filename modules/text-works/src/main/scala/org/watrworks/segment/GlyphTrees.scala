@@ -11,45 +11,55 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
 
   // TODO how many times does a run of glyphs of the same font appear *not* on the same baseline
   //    (which may indicate a font used for graph/chart data points)
+  def findMonoFontBlocks(): Unit = {
+    val initShapes   = getLabeledShapes[Rect](LB.BaselineMidriseBand)
+    val sortedShapes = sortShapesByFontOccurrence(initShapes)
 
-  def buildGlyphTree(): Unit = {
-    defineBaselineMidriseTrees()
+    sortedShapes.foreach({ case (focalShapes, fontId) =>
+      focalShapes.foreach(focalShape => {
+        connectBaselineShapes(focalShape, fontId)
+      })
+    })
   }
 
-  def buildGlyphTreeStep2(): Unit = {
-    // Find shapes connected by font/maxJumps
-    val maxClustered = docScope.docStats.fontVJumpByPage.documentMaxClustered
-
+  def connectMonoFontBlocks(): Unit = {
+    val maxClustered             = docScope.docStats.fontVJumpByPage.documentMaxClustered
     val graph: LabeledShapeGraph = pageScope.pageStats.connectedRunComponents.graph
 
-    // println(graph.graph.toString())
+    val isValidJump: Interval.FloatExacts => graph.EdgeFilter = range =>
+      e => {
+        e.vJumpEvidence.exists(j => range.containsLCRC(j))
+      }
+
+    val isValidFont: String @@ ScaledFontID => graph.NodeFilter =
+      queryFontId => node => node.fontId == queryFontId
 
     for {
       (fontId, (count, range)) <- maxClustered
+      _ = println(s"checking page ${pageNum}; ${fontId} r=${range} ")
+      components <- graph.getComponents(isValidJump(range), isValidFont(fontId), shapeIndex)
+      // components <- graph.getConnectedComponents(fontId, range, shapeIndex)
+      if components.size > 1
     } {
+      println(s"    found page ${pageNum} ${fontId} ")
 
-      val connected = graph.getConnectedComponents(fontId, range, shapeIndex)
+      val componentShapes = components
+        .to(List)
+        .map(_.nodeShape)
 
-      connected.foreach({ components: graph.TopoOrdering =>
-        val compsAsShapes = components
-          .to(List)
-          .map(_.toOuter)
-          .map(s => shapeIndex.getById(s.shapeId))
-
-        val compBounds = compsAsShapes.headOption
-          .map(headShape => {
-            compsAsShapes.tail.foldLeft(headShape.shape.minBounds) { case (acc, e) =>
-              acc union e.shape.minBounds
-            }
-          })
-
-        compBounds.foreach(bounds => {
-          traceLog.trace {
-            createLabelOn(s"Font${fontId}ConnectedComp", bounds)
+      val componentRect = componentShapes.headOption
+        .map(headShape => {
+          componentShapes.tail.foldLeft(headShape.shape.minBounds) { case (acc, e) =>
+            acc union e.shape.minBounds
           }
         })
 
+      componentRect.foreach(bounds => {
+        traceLog.trace {
+          createLabelOn(s"Font${fontId}ConnectedComp", bounds)
+        }
       })
+
     }
 
   }
@@ -279,17 +289,6 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
     }
   }
 
-  protected def defineBaselineMidriseTrees(): Unit = {
-    val initShapes   = getLabeledShapes[Rect](LB.BaselineMidriseBand)
-    val sortedShapes = sortShapesByFontOccurrence(initShapes)
-
-    sortedShapes.foreach({ case (focalShapes, fontId) =>
-      focalShapes.foreach(focalShape => {
-        connectBaselineShapes(focalShape, fontId)
-      })
-    })
-
-  }
 }
 
 trait GlyphTreeDocScope extends BaseDocumentSegmenter { self =>
@@ -297,7 +296,8 @@ trait GlyphTreeDocScope extends BaseDocumentSegmenter { self =>
   import utils.ExactFloats._
 
   val ClusterEpsilonWidth = 0.2.toFloatExact() // FloatRep(20)
-  def analyzeVJumps(): Unit = {
+
+  def collectMonoFontFeatures(): Unit = {
     val fontVJumpByPage = docScope.docStats.fontVJumpByPage
     val asList          = fontVJumpByPage.table.showBox()
 

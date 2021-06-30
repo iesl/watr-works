@@ -87,16 +87,13 @@ trait DocumentSegmenter
       }
     )
 
-    withPageSegmenters(
-      "findTextLineShapesFromFontBaselines",
-      _.findTextLineShapesFromFontBaselines()
-    )
+    withPageSegmenters("findTextLineShapes", _.findTextLineShapesFromFontBaselines())
 
-    withPageSegmenters("buildGlyphTrees", _.buildGlyphTree())
+    withPageSegmenters("findMonoFontBlocks", _.findMonoFontBlocks())
 
-    withDocumentSegmenter("analyzeVJumps", { self.analyzeVJumps() })
+    withDocumentSegmenter("collectMonoFontFeatures", { self.collectMonoFontFeatures() })
 
-    withPageSegmenters("buildGlyphTreesStep2", _.buildGlyphTreeStep2())
+    withPageSegmenters("connectMonoFontBlocks", _.connectMonoFontBlocks())
 
     // withPageSegmenters("createColumnClusters", _.createColumnClusters())
     // withPageSegmenters("findContiguousBlocks", _.findContiguousBlocks(LB.BaselineMidriseBand))
