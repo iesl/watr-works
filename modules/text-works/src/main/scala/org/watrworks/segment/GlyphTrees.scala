@@ -8,6 +8,8 @@ import Interval._
 import utils.{Direction => Dir}
 
 trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch { self =>
+  import TypeTags._
+  import utils.IndexedSeqADT._
 
   // TODO how many times does a run of glyphs of the same font appear *not* on the same baseline
   //    (which may indicate a font used for graph/chart data points)
@@ -22,43 +24,134 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
     })
   }
 
+  private def unionAll(shapes: Seq[GeometricFigure]): Option[Rect] = {
+    if (shapes.length == 0) None
+    else {
+      val bounds = shapes.map(_.minBounds).reduce(_ union _)
+      Some(bounds)
+    }
+  }
+
   def connectMonoFontBlocks(): Unit = {
     val maxClustered             = docScope.docStats.fontVJumpByPage.documentMaxClustered
     val graph: LabeledShapeGraph = pageScope.pageStats.connectedRunComponents.graph
 
     val isValidJump: Interval.FloatExacts => graph.EdgeFilter = range =>
-      e => {
-        e.vJumpEvidence.exists(j => range.containsLCRC(j))
-      }
+      _.vJumpEvidence.exists(range.containsLCRC(_))
 
     val isValidFont: String @@ ScaledFontID => graph.NodeFilter =
       queryFontId => node => node.fontId == queryFontId
 
     for {
       (fontId, (count, range)) <- maxClustered
-      _ = println(s"checking page ${pageNum}; ${fontId} r=${range} ")
-      components <- graph.getComponents(isValidJump(range), isValidFont(fontId), shapeIndex)
-      // components <- graph.getConnectedComponents(fontId, range, shapeIndex)
+      components               <- graph.getComponents(isValidJump(range), isValidFont(fontId), shapeIndex)
       if components.size > 1
+
+      componentShapes = components.map(_.nodeShape.asRectShape)
+      componentBounds = componentShapes.map(_.shape)
+      ccBounds <- unionAll(componentBounds)
+
     } {
-      println(s"    found page ${pageNum} ${fontId} ")
+      val boundedBands = for {
+        ccbound <- componentBounds
+        boundedCC = ccbound withinRegion ccBounds
+        boundedBand <- boundedCC.adjacentRegions(M3.Left, M3.Center, M3.Right)
+      } yield boundedBand
 
-      val componentShapes = components
+      val uniqBands = boundedBands
+        .groupBy(_.bottom)
+        .values
+        .flatMap(_.headOption)
         .to(List)
-        .map(_.nodeShape)
+        .sortBy(_.bottom)
 
-      val componentRect = componentShapes.headOption
-        .map(headShape => {
-          componentShapes.tail.foldLeft(headShape.shape.minBounds) { case (acc, e) =>
-            acc union e.shape.minBounds
+      val bandedShapes = for {
+        band <- uniqBands
+        ccshapes = componentShapes
+                     .filter(_.shape.bottom == band.bottom)
+                     .sortBy(_.shape.left)
+      } yield (band, ccshapes)
+
+      val bandedWithAdjoiningShapes = for {
+        (band, shapes) <- bandedShapes
+      } yield {
+        val bandPairs = shapes.sliding(2).to(List).zipWithIndexADT.to(List)
+
+        val adjoining = bandPairs.flatMap { case (shapePairs, pos) =>
+          shapePairs match {
+            case shape1 :: shape2 :: Nil =>
+              val rect1        = shape1.shape
+              val rect2        = shape2.shape
+              val middleOf     = rect1.minSeparatingRect(rect2).map(_._1).toList
+              lazy val leftOf  = rect1.withinRegion(band).adjacentRegion(M3.Left).toList
+              lazy val rightOf = rect2.withinRegion(band).adjacentRegion(M3.Right).toList
+
+              pos match {
+                case SeqPos.First   => leftOf ++ middleOf
+                case SeqPos.Last(_) => middleOf ++ rightOf
+                case SeqPos.Sole    => leftOf ++ middleOf ++ rightOf
+                case SeqPos.Mid(_)  => middleOf
+              }
+            case shape1 :: Nil =>
+              val rect1        = shape1.shape
+              lazy val leftOf  = rect1.withinRegion(band).adjacentRegion(M3.Left).toList
+              lazy val rightOf = rect1.withinRegion(band).adjacentRegion(M3.Right).toList
+              leftOf ++ rightOf
+            case _ =>
+              List()
           }
-        })
-
-      componentRect.foreach(bounds => {
-        traceLog.trace {
-          createLabelOn(s"Font${fontId}ConnectedComp", bounds)
         }
-      })
+
+        val l1                                   = adjoining.map(a => (a, None))
+        val l2                                   = shapes.map(s => (s.shape, Some(s)))
+        val all: List[(Rect, Option[RectShape])] = l1 ++ l2
+
+        (band, all.sortBy(_._1.left))
+      }
+      traceLog.trace {
+        val bandLabels = for {
+          (band, bandShapes) <- bandedWithAdjoiningShapes
+        } yield {
+          val bls = bandShapes.map({ case (rect, maybeShape) =>
+            maybeShape match {
+              case Some(_) => createLabelOn(s"BandedShape", rect)
+              case None    => createLabelOn(s"BandedJoin", rect)
+            }
+          })
+
+          createLabelOn(s"Band", band)
+            .withChildren(bls: _*)
+        }
+
+        createLabel(s"MonoFontLattice")
+          .withProp("class", ">lazy")
+          .withProp("Font", fontId.toString())
+          .withChildren(
+            createLabelOn(s"ComponentBounds", ccBounds)
+              .withProp("class", "=eager")
+          )
+          .withChildren(bandLabels: _*)
+      }
+
+      // traceLog.trace {
+      //   val bandLabels = for {
+      //     (band, shapes) <- bandedShapes
+      //   } yield {
+      //     val bandedShapes = shapes.map(s => createLabelOn(s"BandedShape", s.shape))
+
+      //     createLabelOn(s"Band", band)
+      //       .withChildren(bandedShapes: _*)
+      //   }
+
+      //   createLabel(s"MonoFontLattice")
+      //     .withProp("class", ">lazy")
+      //     .withProp("Font", fontId.toString())
+      //     .withChildren(
+      //       createLabelOn(s"ComponentBounds", ccBounds)
+      //         .withProp("class", "=eager")
+      //     )
+      //     .withChildren(bandLabels: _*)
+      // }
 
     }
 
@@ -222,6 +315,7 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
                       .withProp("class", ">lazy")
                       .withProp("Font", fontId.toString())
                       .withProp("JumpVDist", jumpVDist.pp())
+                      .withProp("EvidenceDir", evidenceDir.toString())
                       .withChildren(
                         createLabelOn(s"FocalShape${evidenceDir}", focalShape.shape)
                           .withProp("Font", focalShapeFont.toString())
@@ -231,8 +325,6 @@ trait GlyphTrees extends GlyphRuns with LineSegmentation with GlyphGraphSearch {
                         createLabelOn("Shape2", shape2.shape)
                           .withProp("Font", shape2Font.toString())
                       )
-                      .withProp("EvidenceDir", evidenceDir.toString())
-                      .withProp("Font", fontId.toString())
                   }
                 case _ =>
               }
