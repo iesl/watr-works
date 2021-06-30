@@ -1,6 +1,5 @@
-//
 package org.watrworks
-package segment
+package graphs
 
 import scalax.{collection => xc}
 import xc.GraphPredef._
