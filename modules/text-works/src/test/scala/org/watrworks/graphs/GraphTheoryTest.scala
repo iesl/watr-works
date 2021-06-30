@@ -1,5 +1,5 @@
 package org.watrworks
-package segment
+package graph
 
 class GraphOpTests extends SegmentationTestUtils {
   behavior of "graph creation/traversal operations"

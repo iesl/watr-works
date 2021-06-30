@@ -1,5 +1,5 @@
 package org.watrworks
-package graphs
+package segment
 
 import scalax.{collection => xc}
 import xc.GraphPredef._
@@ -8,6 +8,8 @@ import xc.GraphEdge._
 import utils.ExactFloats
 import ExactFloats._
 import utils.{Direction => Dir}
+import graphs._
+
 
 object LabeledShapeGraph extends AttributeTags {
   abstract class JumpNode(val shapeId: Int @@ ShapeID) {
@@ -70,6 +72,7 @@ object LabeledShapeGraph extends AttributeTags {
 }
 
 import LabeledShapeGraph._
+
 
 class LabeledShapeGraph extends CustomGraph[JumpNode, JumpEdge]() with AttributeTags {
 
