@@ -40,7 +40,7 @@ object DocumentSegmenter {
 trait DocumentSegmenter
   extends FontAndGlyphMetricsDocWide
   with TrapezoidAnalysis
-  with GlyphTreeDocScope { self =>
+  with TextBlockGroupingDocScope { self =>
 
   def runDocumentSegmentation(): Unit = {
     // TODO pass in extraction features:
@@ -95,8 +95,8 @@ trait DocumentSegmenter
 
     withPageSegmenters("connectMonoFontBlocks", _.connectMonoFontBlocks())
 
-    // withPageSegmenters("createColumnClusters", _.createColumnClusters())
-    // withPageSegmenters("findContiguousBlocks", _.findContiguousBlocks(LB.BaselineMidriseBand))
+    withPageSegmenters("findColumnEvidence", _.findColumnEvidence())
+
     // withPageSegmenters("setTextForReprShapes", _.setTextForReprShapes())
     // withPageSegmenters("buildLinePairTrapezoids", _.buildLinePairTrapezoids())
     // withDocumentSegmenter("createFeatureVectors", { self.createFeatureVectors() })

@@ -1,166 +1,374 @@
 package org.watrworks
 package segment
 
-import watrmarks._
+import geometry._
 import geometry.syntax._
 import utils.ExactFloats._
-import utils.FunctionalHelpers._
-import utils.SlicingAndDicing._
+import utils.{Direction => Dir}
+import utils.Interval
 
-sealed trait TextStructure[A]
+trait TextBlockGrouping extends NeighborhoodSearch { self =>
+  // lazy val textBlockGrouping = self
+  //
+  // TODO how many times does a run of glyphs of the same font appear *not* on the same baseline
+  //    (which may indicate a font used for graph/chart data points)
+  def findMonoFontBlocks(): Unit = {
+    val initShapes   = getLabeledShapes[Rect](LB.BaselineMidriseBand)
+    val sortedShapes = sortShapesByFontOccurrence(initShapes)
 
-object TextStructure {
-  case class TextLine(repr: AnyShape) extends TextStructure[Nothing]
-}
+    sortedShapes.foreach({ case (focalShapes, fontId) =>
+      focalShapes.foreach(focalShape => {
+        connectBaselineShapes(focalShape, fontId)
+      })
+    })
+  }
 
+  protected def connectBaselineShapes(
+    focalShape: RectShape,
+    fontId: String @@ ScaledFontID
+  ): Unit = {
+    val graph           = pageScope.pageStats.connectedRunComponents.graph
+    val fontVJumpByPage = docScope.docStats.fontVJumpByPage
+    val GE              = LabeledShapeGraph.JumpEdge
+    val GN              = LabeledShapeGraph.JumpNode
 
-trait TextBlockGrouping extends BasePageSegmenter { self =>
-  lazy val textBlockGrouping = self
+    runSearch(Dir.Down)
+    runSearch(Dir.Up)
 
-
-  def findContiguousBlocks(label: Label): Unit = {
-
-    val fontsByMostOccuring = getFontsSortedByHighestOccurrenceCount()
-
-    val sortedLines = getLabeledShapes(label).sortBy { lineShape =>
-      getCharsForShape(lineShape).head.id.unwrap
+    def runSearch(facingDir: Dir) = {
+      runNeighborBySearch(
+        withAdjacentSkyline(
+          facingDir,
+          focalShape,
+          fontId,
+          connectJumps(facingDir, _)
+        )
+      )
     }
+    def connectJumps(facingDir: Dir, shapes: Seq[RectShape]) = {
+      shapes
+        .groupBy(_.shape.bottom)
+        .foreach { case (skylineGroupBottom, rects) =>
+          val sorted = rects.sortBy(_.shape.left.unwrap)
 
-    def groupEverything(
-      scaledFontIds: List[String@@ScaledFontID],
-      lineShapes: Seq[AnyShape],
-      depth: Int = 0
-    ): Seq[Seq[AnyShape]] = scaledFontIds match {
-      case headFontId :: tailFontIds =>
-        val markedLineSpans = collectSpanEither[AnyShape](lineShapes, { lineShape =>
-          lineShape.getAttr(Fonts).exists(_.contains(headFontId))
-        })
+          val jumpVDist = fontVJumpByPage.getJumpDist(focalShape.shape.bottom, skylineGroupBottom)
 
-        traceLog.traceAll {
-          markedLineSpans.map { _ match {
-            case Right(lines) =>
-              val groupBounds = lines.map(_.shape.minBounds).reduce(_ union _)
-              figure(groupBounds) tagged s"Shared Font#${depth}. ${headFontId}"
+          sorted
+            .sliding(2)
+            .foreach({
+              _ match {
+                case Seq(shape1, shape2) =>
+                  val evidenceDir = Dir.toReverse(facingDir)
+                  // val jumpRight   = graph.edgeRight(fontId, evidenceDir, jumpVDist)
+                  val n1 = GN(shape1, shapeIndex)
+                  val n2 = GN(shape2, shapeIndex)
 
-            case Left(lines)  =>
-              val groupBounds = lines.map(_.shape.minBounds).reduce(_ union _)
-              figure(groupBounds) tagged s"Excluded From Font#${depth}. ${headFontId}"
-          }}
+                  graph.upsertEdge(
+                    _.map(GE.withEvidence(_, jumpVDist))
+                      .getOrElse(GE(n1, n2, Dir.Right, jumpVDist)),
+                    n1,
+                    n2
+                  )
+
+                  traceLog.trace {
+                    val focalShapeFont = focalShape.getAttr(PrimaryFont).get
+                    val shape1Font     = shape1.getAttr(PrimaryFont).get
+                    val shape2Font     = shape2.getAttr(PrimaryFont).get
+
+                    createLabel(s"Facing${facingDir}DoJumpRight")
+                      .withProp("class", ">lazy")
+                      .withProp("Font", fontId.toString())
+                      .withProp("JumpVDist", jumpVDist.pp())
+                      .withProp("EvidenceDir", evidenceDir.toString())
+                      .withChildren(
+                        createLabelOn(s"FocalShape${evidenceDir}", focalShape.shape)
+                          .withProp("Font", focalShapeFont.toString())
+                          .withProp("class", "=eager"),
+                        createLabelOn("Shape1", shape1.shape)
+                          .withProp("Font", shape1Font.toString()),
+                        createLabelOn("Shape2", shape2.shape)
+                          .withProp("Font", shape2Font.toString())
+                      )
+                  }
+                case _ =>
+              }
+            })
+
+          facingDir match {
+            case Dir.Down =>
+              val firstRect = sorted.head
+
+              val n1 = GN(focalShape, shapeIndex)
+              val n2 = GN(firstRect, shapeIndex)
+              // val jumpDown  = graph.edgeDown(fontId, jumpVDist)
+              // graph.edge(jumpDown, focalShape, firstRect)
+              graph.upsertEdge(
+                _.map(GE.withEvidence(_, jumpVDist))
+                  .getOrElse(GE(n1, n2, facingDir, jumpVDist)),
+                n1,
+                n2
+              )
+
+              docScope.docStats.fontVJumpByPage.add(
+                pageNum,
+                fontId,
+                skylineGroupBottom,
+                focalShape.shape.bottom
+              )
+
+              traceLog.trace {
+                val p1  = focalShape.shape.toPoint(M3.BottomLeft)
+                val p2  = firstRect.shape.toPoint(M3.TopLeft)
+                val l12 = p1.lineTo(p2)
+
+                val focalShapeFont = focalShape.getAttr(PrimaryFont).get
+                val shape1Font     = firstRect.getAttr(PrimaryFont).get
+
+                createLabel(s"Facing${facingDir}DoJumpDown")
+                  .withProp("class", ">lazy")
+                  .withProp("Font", fontId.toString())
+                  .withProp("JumpVDist", jumpVDist.pp())
+                  .withChildren(
+                    createLabelOn(s"FocalShape", focalShape.shape)
+                      .withProp("Font", focalShapeFont.toString())
+                      .withProp("class", "=eager"),
+                    createLabelOn("FoundShape", firstRect.shape)
+                      .withProp("Font", shape1Font.toString()),
+                    createLabelOn("Jump", l12)
+                  )
+
+              }
+
+            case _ =>
+          }
         }
-
-        markedLineSpans.flatMap{ _ match {
-          case Right(lines) => doLineGrouping(lines)
-          case Left(lines)  => groupEverything(tailFontIds, lines, depth+1)
-        }}
-
-      case Nil => lineShapes.map(List(_))
     }
+  }
 
-    groupEverything(fontsByMostOccuring.toList, sortedLines)
+
+  import Interval._
+  import TypeTags._
+  import utils.IndexedSeqADT._
+  // import utils.FloatExact
+
+  private def unionAll(shapes: Seq[GeometricFigure]): Option[Rect] = {
+    if (shapes.length == 0) None
+    else {
+      val bounds = shapes.map(_.minBounds).reduce(_ union _)
+      Some(bounds)
+    }
 
   }
 
-  private def doLineGrouping(sortedLines: Seq[AnyShape]): Seq[Seq[AnyShape]] = {
-    val lineGroups = sortedLines.groupByWindow { case (prevs, currLine) =>
+  def connectMonoFontBlocks(): Unit = {
+    val maxClustered             = docScope.docStats.fontVJumpByPage.documentMaxClustered
+    val graph: LabeledShapeGraph = pageScope.pageStats.connectedRunComponents.graph
 
-      val lastLine = prevs.last
+    val isValidJump: Interval.FloatExacts => graph.EdgeFilter = range =>
+      _.vJumpEvidence.exists(range.containsLCRC(_))
 
-      val lastLineItems = getCharsForShape(lastLine)
-      val currLineItems = getCharsForShape(currLine)
+    val isValidFont: String @@ ScaledFontID => graph.NodeFilter =
+      queryFontId => node => node.fontId == queryFontId
 
-      lazy val currLineText = currLineItems.map(_.char).mkString
+    for {
+      (fontId, (count, range)) <- maxClustered
+      components               <- graph.getComponents(isValidJump(range), isValidFont(fontId), shapeIndex)
+      if components.size > 1
 
-      val item1 = lastLineItems.last
-      val item2 = currLineItems.head
-      val line1EndId = item1.id.unwrap
-      val line2StartId = item2.id.unwrap
-      val consecutive = line2StartId == line1EndId + 1
+      componentShapes = components.map(_.nodeShape.asRectShape)
+      componentBounds = componentShapes.map(_.shape)
+      ccBounds <- unionAll(componentBounds)
 
-      lazy val inOrderTopToBottom = item1.minBBox.bottom < item2.minBBox.bottom
+    } {
+      val boundedBands = for {
+        ccbound <- componentBounds
+        boundedCC = ccbound withinRegion ccBounds
+        boundedBand <- boundedCC.adjacentRegions(M3.Left, M3.Center, M3.Right)
+      } yield boundedBand
 
-      lazy val prevWindowBounds = prevs.map(_.shape.minBounds).reduce(_ union _)
+      val uniqBands = boundedBands
+        .groupBy(_.bottom)
+        .values
+        .flatMap(_.headOption)
+        .to(List)
+        .sortBy(_.bottom)
 
-      lazy val combinedWindowBounds = prevWindowBounds union currLine.shape.minBounds
+      val bandedShapes = for {
+        band <- uniqBands
+        ccshapes = componentShapes
+                     .filter(_.shape.bottom == band.bottom)
+                     .sortBy(_.shape.left)
+      } yield (band, ccshapes)
 
-      traceLog.trace {
-        figure(combinedWindowBounds) tagged s"Window Bounds"
+      val bandedWithAdjoiningShapes = for {
+        (band, shapes) <- bandedShapes
+      } yield {
+        val bandPairs = shapes.sliding(2).to(List).zipWithIndexADT.to(List)
+
+        val adjoining = bandPairs.flatMap { case (shapePairs, pos) =>
+          shapePairs match {
+            case shape1 :: shape2 :: Nil =>
+              val rect1        = shape1.shape
+              val rect2        = shape2.shape
+              val middleOf     = rect1.minSeparatingRect(rect2).map(_._1).toList
+              lazy val leftOf  = rect1.withinRegion(band).adjacentRegion(M3.Left).toList
+              lazy val rightOf = rect2.withinRegion(band).adjacentRegion(M3.Right).toList
+
+              pos match {
+                case SeqPos.First   => leftOf ++ middleOf
+                case SeqPos.Last(_) => middleOf ++ rightOf
+                case SeqPos.Sole    => leftOf ++ middleOf ++ rightOf
+                case SeqPos.Mid(_)  => middleOf
+              }
+            case shape1 :: Nil =>
+              val rect1        = shape1.shape
+              lazy val leftOf  = rect1.withinRegion(band).adjacentRegion(M3.Left).toList
+              lazy val rightOf = rect1.withinRegion(band).adjacentRegion(M3.Right).toList
+              leftOf ++ rightOf
+            case _ =>
+              List()
+          }
+        }
+
+        val l1                                   = adjoining.map(a => (a, None))
+        val l2                                   = shapes.map(s => (s.shape, Some(s)))
+        val all: List[(Rect, Option[RectShape])] = l1 ++ l2
+
+        (band, all.sortBy(_._1.left))
       }
-
-      lazy val expansionBounds = lastLine.shape.minBounds union currLine.shape.minBounds
-
-      lazy val noLeftOverlaps = prevWindowBounds.withinRegion(combinedWindowBounds)
-        .adjacentRegion(M3.Left)
-        .map{ adjacentRegion =>
-          val shavedRegion = adjacentRegion
-            .shave(M3.Right, FloatExact.epsilon)
-            .shave(M3.Top, FloatExact.epsilon)
-            .shave(M3.Bottom, FloatExact.epsilon)
-          hasNoOverlaps(shavedRegion)
-        }
-        .getOrElse(true)
-
-      lazy val noRightOverlaps = prevWindowBounds.withinRegion(combinedWindowBounds)
-        .adjacentRegion(M3.Right)
-        .map{ adjacentRegion =>
-          val shavedRegion = adjacentRegion
-            .shave(M3.Left, FloatExact.epsilon)
-            .shave(M3.Top, FloatExact.epsilon)
-            .shave(M3.Bottom, FloatExact.epsilon)
-
-          hasNoOverlaps(shavedRegion)
-        }
-        .getOrElse(true)
-
-      lazy val noLateralOverlaps = noLeftOverlaps && noRightOverlaps
-
-      lazy val glyphAndLineCountsMatch  = expansionBounds.withinRegion(combinedWindowBounds)
-        .adjacentRegions(M3.Left, M3.Center, M3.Right)
-        .map { expansionRect =>
-
-          val queryRect = expansionRect.shave(M3.Top, FloatExact.epsilon * 5)
-
-          val foundGlyphs: Seq[RectShape] = searchForRects(queryRect, LB.Glyph)
-
-          val glyphCountsMatch = currLineItems.length + lastLineItems.length == foundGlyphs.length
-
-          val noNonTextOverlaps = hasNoNonTextOverlaps(queryRect)
-
-          noNonTextOverlaps && (glyphCountsMatch || {
-
-            lazy val foundItemIds = foundGlyphs.flatMap{ g =>
-              g.getAttr(ExtractedChars).getOrElse(Nil).map(_.id.unwrap)
+      traceLog.trace {
+        val bandLabels = for {
+          (band, bandShapes) <- bandedWithAdjoiningShapes
+        } yield {
+          val bls = bandShapes.map({ case (rect, maybeShape) =>
+            maybeShape match {
+              case Some(_) => createLabelOn(s"BandedShape", rect)
+              case None    => createLabelOn(s"BandedJoin", rect)
             }
-
-            lazy val lastLineIds = lastLineItems.map(_.id.unwrap)
-            lazy val commonIds = foundItemIds.intersect(lastLineIds)
-            lazy val adjustedFoundGlyphCount = foundGlyphs.length - commonIds.length
-
-            traceLog.trace {
-              val commonItems = lastLineItems.filter(item => commonIds.contains(item.id.unwrap))
-              val commonItemBounds = commonItems.map(_.minBBox)
-              figures(commonItemBounds) tagged s"Common Glyphs ${currLineText}"
-            }
-
-            currLineItems.length == adjustedFoundGlyphCount
           })
 
-        } getOrElse { false }
+          createLabelOn(s"Band", band)
+            .withChildren(bls: _*)
+        }
 
-      consecutive && inOrderTopToBottom && glyphAndLineCountsMatch && noLateralOverlaps
-    }
-
-    traceLog.traceAll {
-      lineGroups.flatMap { group =>
-        val groupBounds = group.map(_.shape.minBounds).reduce(_ union _)
-        val groupBoundsShape = initShape(groupBounds, LB.TextLineGroup)
-        List(
-          shape(groupBoundsShape) tagged "Grouped Text Blocks",
-          // relation("TextLineGroups").field(groupBoundsShape).field(group)
-        )
+        createLabel(s"MonoFontLattice")
+          .withProp("class", ">lazy")
+          .withProp("Font", fontId.toString())
+          .withChildren(
+            createLabelOn(s"ComponentBounds", ccBounds)
+              .withProp("class", "=eager")
+          )
+          .withChildren(bandLabels: _*)
       }
     }
 
-    lineGroups
+  }
 
+
+}
+
+trait TextBlockGroupingDocScope extends BaseDocumentSegmenter { self =>
+  import utils.GuavaHelpers._
+  import utils.ExactFloats._
+  import utils.Interval._
+
+  val ClusterEpsilonWidth = 0.2.toFloatExact() // FloatRep(20)
+
+  def collectMonoFontFeatures(): Unit = {
+    val fontVJumpByPage = docScope.docStats.fontVJumpByPage
+    val asList          = fontVJumpByPage.table.showBox()
+
+    type AccT = (Int, Interval.FloatExacts)
+    val zero: List[AccT] = List.empty
+
+    implicit val AccTShow = scalaz.Show.shows[AccT]({ case (i, fes) =>
+      val shfes = Interval.FloatExacts.FloatExactsShow.show(fes)
+      s"${shfes}x${i}"
+    })
+    implicit val ListAccTShow = scalaz.Show.shows[List[AccT]]({
+      _.map(AccTShow.show(_)).mkString(", ")
+    })
+
+    val mapped = fontVJumpByPage.table.map({ countedJumps =>
+      val sorted = countedJumps
+        .toList()
+        .sortBy(_._1)
+        .reverse
+
+      val clusteredJumps = sorted.foldLeft(zero) { case (countedRanges, (ecount, edist)) =>
+        val (containsEDist, others) = countedRanges.partition({ case (_, r) =>
+          val rt0       = r.translate(ClusterEpsilonWidth)
+          val rt1       = r.translate(-ClusterEpsilonWidth)
+          val rexpanded = rt0.union(rt1)
+
+          rexpanded.containsLCRC(edist)
+        })
+        val edistRange = FloatExacts(edist, FloatExact.zero)
+
+        val expanded = containsEDist match {
+          case (count, crange) :: rest =>
+            val subsumedRange = crange.union(edistRange)
+            (count + ecount, subsumedRange) :: rest
+
+          case Nil =>
+            (ecount -> edistRange) :: Nil
+        }
+
+        (expanded ++ others).sortBy(_._1).reverse
+      }
+
+      clusteredJumps
+    })
+
+    val withColMargins = mapped.computeColMarginals(zero) { case (allRanges, pageRanges) =>
+      val acc = (allRanges ++ pageRanges).foldLeft(zero) { case (countedRanges, (ecount, erange)) =>
+        val (containsEDist, others) = countedRanges.partition({ case (_, r) =>
+          r.intersect(erange).isDefined
+        })
+
+        val expanded = containsEDist match {
+          case (count, crange) :: rest =>
+            val subsumedRange = crange.union(erange)
+            (count + ecount, subsumedRange) :: rest
+
+          case Nil =>
+            (ecount -> erange) :: Nil
+        }
+        (expanded ++ others).sortBy(_._1).reverse
+      }
+
+      acc
+    }
+
+    val perPageMax: List[(fontVJumpByPage.ColT, AccT)] = withColMargins.colMarginals
+      .map({ fontsByCount: Map[fontVJumpByPage.ColT, List[AccT]] =>
+        val docWideFontRankedByVJumpDist =
+          fontsByCount.toList.flatMap({ case (fontId, countsAndRanges) =>
+            countsAndRanges.sortBy(_._1).reverse.headOption.map(cr => (fontId, cr))
+          })
+        docWideFontRankedByVJumpDist
+      })
+      .getOrElse(List.empty)
+
+    val sortedByOverallMax: List[(fontVJumpByPage.ColT, AccT)] = perPageMax.sortBy(_._2._1).reverse
+
+    val pprintPerPageMax = sortedByOverallMax
+      .map { case (fontId, (count, range)) =>
+        val rstr = Interval.FloatExacts.FloatExactsShow.show(range).toString()
+        s"${fontId}: ${count}x${rstr}"
+      }
+      .mkString(", ")
+
+    fontVJumpByPage.documentMaxClustered = sortedByOverallMax
+
+    println("Font V-Jumps per page")
+    println(asList.toString())
+    println("Cluster ")
+    println(mapped.showBox())
+    println("WithColMargins")
+    println(withColMargins.showBox())
+    println("Max Per Page")
+    println(pprintPerPageMax)
+    println("\n\n==================\n")
   }
 }

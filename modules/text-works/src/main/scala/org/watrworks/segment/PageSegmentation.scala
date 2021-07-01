@@ -19,7 +19,6 @@ trait PageSegmenter
   extends ColumnFinding
   with TextReconstruction
   with GlyphRuns
-  with GlyphTrees
   with TextBlockGrouping
   with ShapeFunctions
   with ReferenceBlockConverter

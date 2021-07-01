@@ -215,7 +215,7 @@ trait FontAndGlyphMetricsDocWide extends BaseDocumentSegmenter { self =>
 
 }
 
-trait FontAndGlyphMetrics extends BasePageSegmenter with TextBlockGrouping { self =>
+trait FontAndGlyphMetrics extends BasePageSegmenter { self =>
 
   def debugPrintStats(allBaselines: Seq[(Int @@ FloatRep, CharItem)]): Unit = {
 

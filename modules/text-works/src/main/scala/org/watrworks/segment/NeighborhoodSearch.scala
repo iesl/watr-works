@@ -7,25 +7,13 @@ import rsearch.{Octothorpe => Oct}
 import rsearch.{Octothorpe}
 import watrmarks.Label
 import utils.ExactFloats._
-// import utils.{M3x3Position => M3}
 import utils.{Direction => Dir}
 
-// Neighborhood search types
 sealed trait Neighbor {
   def tags: List[String]
 }
 
 object Neighbor {
-  case class ByShape(
-    s: AnyShape,
-    tags: List[String]
-  ) extends Neighbor
-
-  case class ByIDOffset(
-    offset: Int,
-    tags: List[String]
-  ) extends Neighbor
-
   case class SortWith[A, B: Ordering](
     f: A => B
   )
@@ -40,15 +28,16 @@ object Neighbor {
 
   implicit class RicherNeighbor(val theNeighbor: Neighbor) extends AnyVal {
     def withTags(tags: String*): Neighbor = theNeighbor match {
-      case v: ByShape     => v.copy(tags = tags.to(List) ++ v.tags)
-      case v: ByIDOffset  => v.copy(tags = tags.to(List) ++ v.tags)
+      // case v: ByShape     => v.copy(tags = tags.to(List) ++ v.tags)
+      // case v: ByIDOffset  => v.copy(tags = tags.to(List) ++ v.tags)
       case v: BySearch[_] => v.copy(tags = tags.to(List) ++ v.tags)
     }
   }
 
 }
 
-trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
+trait NeighborhoodSearch extends BasePageSegmenter {
+
   def searchAdjacentFor[Figure <: GeometricFigure](
     dir: Dir,
     focus: Rect,
@@ -148,6 +137,71 @@ trait GlyphGraphSearch extends BasePageSegmenter with LineSegmentation {
     }
     cb(filtered)
   }
+
+  def traceShapes(name: String, shape: GeometricFigure*): Option[Unit] = {
+    Option({
+      modLabel(l => l.withChildren(createLabel(name).onShapes(shape: _*)))
+    })
+  }
+
+
+
+  protected def withAdjacentSkyline(
+    facingDir: Dir,
+    focalShape: RectShape,
+    fontId: String @@ ScaledFontID,
+    callback: Seq[RectShape] => Unit
+  ): Neighbor.BySearch[Rect] = {
+    val focalRect = focalShape.shape
+    val chars     = focalShape.getAttr(ExtractedChars).getOrElse(Nil)
+    // TODO rethink this maxDist value
+    val maxDist = chars.headOption.map(_.fontBbox.height).get * 2
+    lookAdjacentFor[Rect](
+      facingDir,
+      focalShape.shape,
+      maxDist,
+      (foundShapes: Seq[RectShape]) => {
+
+        pushLabel(
+          createLabel(s"Facing${facingDir}FindSkyline")
+            .withProp("class", ">lazy")
+            .withChildren(
+              createLabelOn("FocalRect", focalShape.shape)
+                .withProp("class", "=eager")
+                .withProp("Font", fontId.toString())
+            )
+        )
+
+        val adjacentShapes: Seq[RectShape] = for {
+          hitShape <- foundShapes
+          if hasFont(hitShape, fontId)
+          if hitShape.hasLabel(LB.BaselineMidriseBand)
+          if hitShape.id != focalShape.id
+
+          hitRect = hitShape.shape
+
+          _                   <- traceShapes("HitRect", hitRect)
+          (occlusionQuery, _) <- hitRect.minSeparatingRect(focalRect)
+          _                   <- traceShapes("OcclusionQuery", occlusionQuery)
+          occlusionHits = searchForShapes(occlusionQuery, LB.BaselineMidriseBand)
+          occlusionShapes = occlusionHits
+                              .filter(hit => { hit.id != focalShape.id && hit.id != hitShape.id })
+
+          _ <- traceShapes("Occlusions", occlusionShapes.map(_.minBounds): _*)
+          if occlusionShapes.isEmpty
+          _ <- traceShapes("FinalHit", hitRect)
+        } yield hitShape
+
+        popLabel()
+
+        callback(adjacentShapes)
+      },
+      LB.BaselineMidriseBand
+    )
+  }
+
+
+
 
 }
 

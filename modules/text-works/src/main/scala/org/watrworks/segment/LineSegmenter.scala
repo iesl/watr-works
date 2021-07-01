@@ -12,9 +12,8 @@ import TypeTags._
 
 trait LineSegmentation
   extends BasePageSegmenter
-  with LineLayout
-  with FontAndGlyphMetrics
-  with TextBlockGrouping { self =>
+  // with LineLayout
+  with FontAndGlyphMetrics { self =>
 
   def findTextLineShapesFromFontBaselines(): Unit = {
     // joinFontBaselinesViaPageBands(LB.CharRunFontBaseline, LB.BaselineMidriseBand)
