@@ -15,8 +15,6 @@ object LabeledShapeGraph extends AttributeTags {
   abstract class JumpNode(val shapeId: Int @@ ShapeID) {
     override def toString: String = {
       val str = shapeIndex.getAttr(shapeId, ExtractedChars).get.map(_.char).mkString
-      // val ls = nodeShape.labels.mkString("+")
-      // s"${ls}#${shapeId}'${str}'" // without JumpNode-prefix
       s"'${str}'@${shapeId}"
     }
     def nodeShape: AnyShape
@@ -51,14 +49,8 @@ object LabeledShapeGraph extends AttributeTags {
 
     override def copy[NN](newNodes: Product) =
       new JumpEdge[NN](newNodes, jumpDir, vJumpEvidence)
-
-    // override def equals(other: Any) = other match {
-    //   case that: JumpNode => that.shapeId == this.shapeId
-    //   case _ => false
-    // }
-
-    // override def hashCode = shapeId.unwrap.##
   }
+
   object JumpEdge {
     def apply(from: JumpNode, to: JumpNode, jumpDir: Dir, jumpDist: Int @@ FloatRep) =
       new JumpEdge[JumpNode](NodeProduct(from, to), jumpDir, List(jumpDist))
@@ -79,7 +71,7 @@ class LabeledShapeGraph extends CustomGraph[JumpNode, JumpEdge]() with Attribute
   type LayeredOrdering = graph.LayeredTopologicalOrder[graph.NodeT]
   type TopoOrdering    = graph.TopologicalOrder[graph.NodeT]
 
-  def getComponents(
+  def findConnectedComponents(
     edgeFilter: EdgeFilter,
     nodeFilter: NodeFilter,
     shapeIndex: ShapeIndex

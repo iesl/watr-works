@@ -16,9 +16,6 @@ trait LineSegmentation
   with FontAndGlyphMetrics { self =>
 
   def findTextLineShapesFromFontBaselines(): Unit = {
-    // joinFontBaselinesViaPageBands(LB.CharRunFontBaseline, LB.BaselineMidriseBand)
-    // reindexShapes(LB.Glyph)
-    // segmentSuperSubScripts()
     createCharRunBands(LB.CharRunFontBaseline)
   }
 
@@ -32,7 +29,7 @@ trait LineSegmentation
       lineY        = lineShape.asLineShape.shape.p1.y
       _fontOffsets = docScope.fontDefs.getScaledFontOffsets(fontId)
       fontOffsets  = _fontOffsets.forFontBoxBottom(lineY)
-      lineChars    = getCharsForShape(lineShape)
+      lineChars    = lineShape.getAttr(ExtractedChars).getOrElse(Nil)
       charMinX     = lineChars.minBy(_.minBBox.left).minBBox.left
       charMaxX     = lineChars.maxBy(_.minBBox.right).minBBox.right
 
@@ -52,11 +49,11 @@ trait LineSegmentation
         shape.setAttr(FontOffsets)(fontOffsets)
 
         traceLog.trace {
-          createLabelOn(label.fqn, rect)
+          createLabelOn(s"${label.fqn}/Init", rect)
             .withProp("Font", fontId.toString())
             .withProp("Chars", lineChars.map(_.char).mkString)
 
-          createLabelOn(s"${label.fqn}ForFont${fontId}", rect)
+          createLabelOn(s"${label.fqn}/Init/ForFont${fontId}", rect)
             .withProp("Font", fontId.toString())
             .withProp("Chars", lineChars.map(_.char).mkString)
         }

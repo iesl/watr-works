@@ -6,6 +6,8 @@ Global / onChangedBuildSource := ReloadOnSourceChanges // | IgnoreSourceChanges
 
 val Lib = CommonLibs
 
+fork := true
+
   //.settings(SensibleProject.settings: _*)
 lazy val root = (project in file("."))
   .aggregate(
@@ -43,6 +45,10 @@ lazy val watrmarks = (project in file("modules/watr-marks"))
         )
   )
 
+// Platform classifier for native library dependencies
+val platform = org.bytedeco.javacpp.Loader.Detector.getPlatform
+
+
 lazy val textworks = (project in file("modules/text-works"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(BuildInfoPlugin)
@@ -60,6 +66,15 @@ lazy val textworks = (project in file("modules/text-works"))
         ++ Seq(
           Lib.pdfbox,
           Lib.guava,
+          // Lib.javacv,
+    "org.bytedeco"   % "javacpp"    % "1.5.5"        withSources() withJavadoc(),
+    "org.bytedeco"   % "javacpp"    % "1.5.5"        classifier platform,
+    "org.bytedeco"   % "javacv"     % "1.5.5"        withSources() withJavadoc(),
+    "org.bytedeco"   % "opencv"     % "4.5.1-1.5.5"  withSources() withJavadoc(),
+    "org.bytedeco"   % "opencv"     % "4.5.1-1.5.5"  classifier platform,
+
+
+
           Lib.scopt,
           Lib.ammoniteOps,
           Lib.scalaGraph,

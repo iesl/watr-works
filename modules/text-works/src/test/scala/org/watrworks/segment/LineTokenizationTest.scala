@@ -3,11 +3,15 @@ package segment
 
 import java.util.stream
 
+
 class LineTokenizationTest extends utils.SegmentationTestUtils {
   behavior of "text line identification"
 
   import smile.sequence.{CRF, crf}
   import smile.data.{Tuple, DataFrame}
+  import smile.clustering.{hclust, HierarchicalClustering}
+  import smile.math.distance.Distance
+
   import scala.jdk.StreamConverters._
   import com.spotify.featran._
   import com.spotify.featran.transformers._
@@ -93,6 +97,27 @@ class LineTokenizationTest extends utils.SegmentationTestUtils {
     val prediction = theCrf.predict(tupleArray)
     pprint.pprintln(s"""Prediction ${prediction.mkString(", ")}""")
 
-  }
 
+  }
+  // import scala.collection.JavaConverters._
+
+  it should "qwer" in {
+    // val dist: Distance[Int] = new Distance[Int] {
+    //   def d(x: Int, y: Int): Double = ???
+    // }
+
+    val points = Array[Double](1, 2, 20, 30, 40, 50, 8, 22, 41).map(p => Array(p))
+
+    // val pointArray: Array[Int] = points.map(_.unwrap).toArray[Int]
+
+    val hc: HierarchicalClustering = hclust(points, "complete")
+    val tree = hc.getTree().toList.map(_.toList)
+
+    val p2 = hc.partition(2).to(List)
+    val p2d = hc.partition(2d).to(List)
+    println(s"tree ${tree}")
+    println(s"par(2) ${p2}")
+    println(s"par(2d) ${p2d}")
+
+  }
 }

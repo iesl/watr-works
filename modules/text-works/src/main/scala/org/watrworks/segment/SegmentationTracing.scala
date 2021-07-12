@@ -185,16 +185,10 @@ trait DocumentScopeTracing extends ScopedTracing { self =>
 
 }
 
-trait PageScopeTracing extends ScopedTracing { self =>
-  lazy val traceLog = self
+trait PageScopeTracing extends ScopedTracing { self: BasePageSegmenter =>
+  lazy val traceLog: PageScopeTracing = this
 
-  def shapeIndex: ShapeIndex
 
-  // def pageNum: Int @@ PageNum
-  // def pageGeometry: Rect
-
-  // lazy val Rect.Doubles(pageL, pageT, pageW, pageH) = pageGeometry
-  // lazy val Rect.Ints(svgL, svgT, svgW, svgH)        = pageGeometry
 
   def labeledShapes(labels: Label*): LabelTraceLog = {
     def filterf(shape: AnyShape): Boolean = {

@@ -7,7 +7,6 @@ import tracing.VisualTracer
 import ProcessPipelineSteps._
 import utils.{M3x3Position => M3}
 import scala.sys.process._
-// import cats.effect._
 import segment._
 import transcripts.Transcript
 import geometry._
@@ -54,15 +53,14 @@ object TraceVis {
   ): Stream[ProcessableInput, CorpusEntry] = {
     for {
       maybeIn <- createMarkedInputStream(conf.ioConfig)
-      pinput  <- Stream
-                   .fromEffect(ZIO.fromEither(maybeIn))
-                   .map(_ match {
-                     case Processable.CorpusFile(corpusEntry) => corpusEntry
-                     case _ => ???
-                   })
+      pinput <- Stream
+                  .fromEffect(ZIO.fromEither(maybeIn))
+                  .map(_ match {
+                    case Processable.CorpusFile(corpusEntry) => corpusEntry
+                    case _                                   => ???
+                  })
     } yield pinput
   }
-
 
   def listClusterings(transcript: Transcript): Stream[Nothing, ShapeClustering.Root] = for {
     label <- Stream.fromIterable(transcript.labels)
@@ -77,28 +75,28 @@ object TraceVis {
   ): ZIO[Console, Any, RC] = {
 
     val res: ZIO[Console, Throwable, RC] = for {
-      _            <- putStrLn(s"Choose Clustering")
-      askUserStr   <- clusterRoots.zipWithIndex
-                        .map({
-                          case (root, rootIndex) => {
-                            val clusterStrs = root.clusters.zipWithIndex
-                              .map({ case (c, cIndex) => s"   ${cIndex}. count=${c.instances.length}" })
-                            s"${rootIndex}. ${root.name}" :: clusterStrs
-                          }
-                        })
-                        .runCollect
+      _ <- putStrLn(s"Choose Clustering")
+      askUserStr <- clusterRoots.zipWithIndex
+                      .map({
+                        case (root, rootIndex) => {
+                          val clusterStrs = root.clusters.zipWithIndex
+                            .map({ case (c, cIndex) => s"   ${cIndex}. count=${c.instances.length}" })
+                          s"${rootIndex}. ${root.name}" :: clusterStrs
+                        }
+                      })
+                      .runCollect
       _            <- putStrLn(askUserStr.toList.flatten.mkString("\n"))
       userResponse <- userPrompt("Choose Clustering, Cluster#")
       _            <- putStrLn(s"${userResponse}")
       Array(s1, s2) = userResponse.split("[, ][ ]*").map(_.trim())
       i1            = s1.toLong
       i2            = s2.toInt
-      _       <- putStrLn(s"Clustering ${i1}, cluster ${i2} ")
+      _ <- putStrLn(s"Clustering ${i1}, cluster ${i2} ")
       maybeRC <- clusterRoots
                    .drop(i1)
                    .runHead
                    .map(_.map(root => (root, root.clusters(i2))))
-      rc      <- ZIO.fromOption(maybeRC).absorbWith(_ => new Throwable(""))
+      rc <- ZIO.fromOption(maybeRC).absorbWith(_ => new Throwable(""))
     } yield {
       rc
     }
@@ -132,9 +130,9 @@ object TraceVis {
           val path = s"${fmt(tl)} ${fmt(tr)} ${fmt(br)} ${fmt(bl)}"
 
           val pageGeometry = page.bounds
-          val pageImage    =
+          val pageImage =
             s"./corpus.d/${doc.unwrap}/page-images/page-${pageNum.unwrap + 1}.opt.png"
-          val geom         = pageGeometry.toPoint(M3.BottomRight)
+          val geom = pageGeometry.toPoint(M3.BottomRight)
 
           val crop =
             s"${geom.x.pp()}x${(th + 16.toFloatExact()).pp()}+0+${(tl.y - 8.toFloatExact()).pp()}"
@@ -185,9 +183,9 @@ object TraceVis {
   }
 
   val appLogic: ZIO[Console, Any, Any] = for {
-    _           <- putStrLn(s"___ TraceVis ___")
-    entries     <- corpusEntryStream(config(".*")).runCollect
-                     .absorbWith(_ => new IOException(""))
+    _ <- putStrLn(s"___ TraceVis ___")
+    entries <- corpusEntryStream(config(".*")).runCollect
+                 .absorbWith(_ => new IOException(""))
     _           <- putStrLn(s"Entries:")
     _           <- putStrLn(entries.map(e => e.entryDescriptor.split("/").last).mkString("\n"))
     filter      <- userPrompt("Filter Regex")

@@ -72,15 +72,6 @@ object TextWorksConfig {
       }
     } text ("root path of PDF corpus; output will be written to same dir as input")
 
-    opt[nio.Path]('f', "file") action { (v, conf) =>
-      val c1 = lens[Config].ioConfig.inputMode.modify(conf){ m =>
-        Option(Processable.SingleFile(v))
-      }
-
-      lens[Config].exec.modify(c1){ m =>
-        Option((c) => runTextExtractionOnFile(c))
-      }
-    } text("extract a single input PDF")
 
     opt[String]("filter") action { (v, conf) =>
       lens[Config].ioConfig.pathFilter.modify(conf){ m =>
@@ -144,7 +135,6 @@ object TextWorksConfig {
   }
 
   def initCorpus(conf: Config): Unit = {
-    println("initCorpus")
     conf.initCorpus.foreach { corpusRoot =>
       filesys.Corpus.initCorpus(corpusRoot.toString())
     }

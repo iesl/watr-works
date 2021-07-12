@@ -62,71 +62,8 @@ import guava.{collect => gcol}
 
 class PageLayoutStats extends LayoutStats {
 
-
   object connectedRunComponents {
-    // val graph = new ShapeIDGraph()
-    // val graph = new ShapeJumpGraph()
     val graph = new LabeledShapeGraph()
-
-
-  }
-
-
-  object monofontVJump {
-    type RowT   = String @@ ScaledFontID
-    type ValueT = Int @@ FloatRep
-    type TableT = mutable.Map[RowT, List[ValueT]]
-
-    val table: TableT = mutable.Map()
-
-    def add(
-      fontId: RowT,
-      y1: Int @@ FloatRep,
-      y2: Int @@ FloatRep
-    ): Unit = {
-      val vdist = FloatRep(math.abs(y2.unwrap - y1.unwrap))
-      table.updateWith(fontId)((v: Option[List[ValueT]]) =>
-        v.map(vdist :: _).orElse(Some(List(vdist)))
-      )
-    }
-  }
-
-  object fontVJump {
-    type RowT   = String @@ ScaledFontID
-    type ColT   = String @@ ScaledFontID
-    type ValueT = gcol.TreeMultiset[Int @@ FloatRep]
-    type TableT = TabularData.Init[RowT, ColT, ValueT]
-
-    private def initValue(): ValueT = gcol.TreeMultiset.create(null)
-
-    val table: TableT = GuavaHelpers.initTable()
-
-    def add(
-      f1: RowT,
-      y1: Int @@ FloatRep,
-      f2: ColT,
-      y2: Int @@ FloatRep
-    ): Unit = {
-      val vdist = FloatRep(math.abs(y2.unwrap - y1.unwrap))
-
-      table.useOrSet(f1, f2, _.add(vdist), initValue())
-    }
-  }
-
-  object fontBackslashAngle {
-    type RowT = String @@ ScaledFontID
-    type ColT = String @@ ScaledFontID
-    // type ValueT = gcol.TreeMultiset[Double]
-    type ValueT = gcol.TreeMultiset[Int @@ FloatRep]
-    type TableT = TabularData.Init[RowT, ColT, ValueT]
-
-    private def initValue(): ValueT = gcol.TreeMultiset.create(null)
-
-    val table: TableT = GuavaHelpers.initTable()
-
-    def add(f1: RowT, f2: ColT, angle: Int @@ FloatRep): Unit =
-      table.useOrSet(f1, f2, _.add(angle), initValue())
-
   }
 
 }
@@ -164,5 +101,12 @@ class DocumentLayoutStats extends LayoutStats {
     }
 
     var documentMaxClustered: List[(String @@ ScaledFontID, (Int, Interval.FloatExacts))] = List.empty
+  }
+
+  object columnEvidence {
+    val twoColumnEvidence =
+      mutable.ArrayBuffer[ColumnEvidence.TwoColumn]()
+
+    val twoColumnClasses = mutable.ArrayBuffer[ColumnEvidence.TwoColumnClass]()
   }
 }

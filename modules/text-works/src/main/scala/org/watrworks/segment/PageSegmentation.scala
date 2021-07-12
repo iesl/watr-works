@@ -13,7 +13,6 @@ import rsearch.AttrWitness
 import utils.intervals.Interval
 import textgrid.TextGrid
 import watrmarks.WeightedLabeling
-import transcripts.Transcript
 
 trait PageSegmenter
   extends ColumnFinding
@@ -58,7 +57,8 @@ trait AttributeTags {
 }
 
 // Trait from which other page-level segmentation trait can inherit
-trait BasePageSegmenter extends PageScopeTracing with AttributeTags { self =>
+trait BasePageSegmenter extends PageScopeTracing with AttributeTags with TranscriptLabeling {
+  self =>
 
   lazy val pageScope = self
 
@@ -282,12 +282,6 @@ trait BasePageSegmenter extends PageScopeTracing with AttributeTags { self =>
 
     _loop(fontsByMostOccuring.toList, shapes)
   }
-
-
-  val createLabel = Transcript.Label.create(_)
-
-  def createLabelOn[Fig <: GeometricFigure](name: String, fig: Fig) =
-    Transcript.Label.create(name).onShapes(fig)
 
   implicit class RicherShapes[+A <: GeometricFigure](val theShape: DocSegShape[A]) {
 

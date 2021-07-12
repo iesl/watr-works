@@ -15,7 +15,7 @@ object TestLibs extends LibVersions {
   )
 
   val scalacheck = Seq(
-    "org.scalaz"     %% "scalaz-scalacheck-binding" % "7.3.3"  % Test,
+    "org.scalaz"     %% "scalaz-scalacheck-binding" % "7.3.4"  % Test,
     "org.scalacheck" %% "scalacheck"                % "1.15.4" % "test" //  force()
   )
 
@@ -90,7 +90,7 @@ trait CommonLibs extends LibVersions {
     "dev.zio" %% "zio-streams" % zioV
   )
 
-  val scalazVersion = "7.3.3"
+  val scalazVersion = "7.3.4"
   val scalaz        = Seq(
     "org.scalaz" %% "scalaz-core" % scalazVersion
   )
@@ -124,6 +124,29 @@ trait CommonLibs extends LibVersions {
   )
 
   val doodle = "org.creativescala" %% "doodle" % "0.9.23"
+
+
+
+  lazy val javacppVersion = "1.5.5"
+  lazy val javacv        = "org.bytedeco"      % "javacv-platform"         % javacppVersion 
+
+  // // Platform classifier for native library dependencies
+  // lazy val platform = org.bytedeco.javacpp.Loader.Detector.getPlatform
+
+  // // JavaCPP-Preset libraries with native dependencies
+  // lazy val javaCvLibs = Seq(
+  //   "opencv"   -> "4.5.3"
+  //   // "ffmpeg"   -> "4.3.1",
+  //   // "openblas" -> "0.3.10"
+  // ).flatMap {
+  //   case (lib, ver) =>
+  //     Seq(
+  //       "org.bytedeco" % lib % s"$ver-$javacppVersion",
+  //       "org.bytedeco" % lib % s"$ver-$javacppVersion" classifier platform
+  //     )
+  // }
+
+
 }
 
 object CommonLibs extends CommonLibs

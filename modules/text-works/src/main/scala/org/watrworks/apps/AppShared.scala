@@ -10,6 +10,7 @@ import utils.PathUtils._
 import TypeTags._
 import utils.Timer.time
 import _root_.io.circe, circe._, circe.syntax._
+import imageseg._
 
 import zio._
 import zio.stream._
@@ -23,28 +24,8 @@ object ProcessPipelineSteps {
   type MarkedOutput = Either[String, ProcessedInput]
   type Pipe[A, B]   = Stream[Unit, A] => Stream[Unit, B]
 
-  implicit class RicherZStream[R, E, A](val self: ZStream[R, E, A]) extends AnyVal {
-    def through[B](p: Pipe[A, B]): ZStream[R, E, B] = {
-
-      ???
-    }
-  }
-
   def initMarkedInput(): Pipe[ProcessableInput, MarkedInput] = {
     _.map { Right(_) }
-  }
-
-  def runTextExtractionOnFile(conf: TextWorksConfig.Config): UIO[Unit] = {
-    if (conf.runTraceLogging) {
-      log.info(s"Visual tracing is enabled; performance will be lowered")
-    }
-
-    val processStream = createMarkedInputStream(conf.ioConfig)
-      .through(cleanFileArtifacts(conf))
-      .through(runSegmentation(conf))
-      .through(writeExtractedTextFile(conf))
-
-    processStream.runDrain
   }
 
   def runTextExtractionPipeline(conf: TextWorksConfig.Config): Unit = {
@@ -59,10 +40,9 @@ object ProcessPipelineSteps {
              .via(dropSkipAndRun(conf.ioConfig))
              .via(cleanFileArtifacts(conf))
              .via(markUnextractedProcessables(conf))
+             .via(segmentPageImages(conf))
              .via(runSegmentation(conf))
              .via(writeExtractedTextFile(conf))
-             // .via(cleanTraceLogArtifacts(conf))
-             // .via(writeTraceLogs(conf))
              .runDrain
     } yield ()
 
@@ -112,7 +92,7 @@ object ProcessPipelineSteps {
           runCount -= 1
           r
         } else Left(p)
-      case x                                                      => x
+      case x => x
     }
   }
 
@@ -120,7 +100,7 @@ object ProcessPipelineSteps {
     conf: TextWorksConfig.Config
   ): Pipe[MarkedInput, MarkedInput] = {
     _.map {
-      case Left(inputMode)  => Left(inputMode)
+      case Left(inputMode) => Left(inputMode)
       case Right(inputMode) =>
         val output = Processable.getTextgridOutputFile(inputMode, conf.ioConfig)
 
@@ -142,7 +122,35 @@ object ProcessPipelineSteps {
     }
   }
 
+  def generatePageImages(
+    conf: TextWorksConfig.Config
+  ): Pipe[MarkedInput, MarkedInput] = _.map {
+    case l @ Left(_) => l
+    case r @ Right(inputMode @ _) =>
+      r
+  }
 
+  def segmentPageImages(
+    conf: TextWorksConfig.Config
+  ): Pipe[MarkedInput, MarkedInput] = _.map {
+    case l @ Left(_) => l
+    case Right(input) =>
+      input match {
+        case m @ Processable.CorpusFile(corpusEntry) =>
+          for {
+            group     <- corpusEntry.getArtifactGroup("page-images")
+            pageImage <- group.getArtifacts()
+          } {
+            LineDetection.runLineDetection(
+              pageImage.artifactPath.toString()
+            )
+          }
+
+          Right(m)
+
+        case m => Right(m)
+      }
+  }
   def doSegment1(
     input: Processable,
     conf: TextWorksConfig.Config
@@ -150,9 +158,9 @@ object ProcessPipelineSteps {
     try {
       input match {
         case m @ Processable.SingleFile(f) =>
-          val pdfName  = f.getFileName.toString()
+          val pdfName    = f.getFileName.toString()
           val documentId = DocumentID(pdfName)
-          val input    = nioToAmm(f)
+          val input      = nioToAmm(f)
 
           val output = conf.ioConfig.outputPath.getOrElse {
             nio.Paths.get(f.getFileName().toString() + ".transcript.json")
@@ -176,9 +184,6 @@ object ProcessPipelineSteps {
             pdfEntry <- corpusEntry.getPdfArtifact().toRight(left = "Could not get PDF")
             pdfPath  <- pdfEntry.asPath.toEither.left.map(_.toString())
           } yield {
-
-            // val output = Processable.getTextgridOutputFile(m, conf.ioConfig)
-            // val ammPath = nioToAmm(output)
 
             time("extractText") {
               extractText(documentId, pdfPath)
@@ -204,10 +209,10 @@ object ProcessPipelineSteps {
   def getExecutableInfo(): Json = {
     val buildInfoMap =
       buildinfo.BuildInfo.toJson.jsonOrDie("BuildInfo produced invalid Json")
-    val now          = System.currentTimeMillis()
-    val dtf          = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+    val now = System.currentTimeMillis()
+    val dtf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
     dtf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
-    val nowStr       = dtf.format(new java.util.Date(now))
+    val nowStr = dtf.format(new java.util.Date(now))
 
     buildInfoMap.asObject.get
       .add("runAtTime", nowStr.asJson)
@@ -245,69 +250,12 @@ object ProcessPipelineSteps {
     }
   }
 
-  // def writeTraceLogs(
-  //   conf: TextWorksConfig.Config
-  // ): Pipe[MarkedOutput, MarkedOutput] = _.map {
-  //   case m @ Right(Processable.ExtractedFile(segmentation, input)) =>
-  //     Processable.withCorpusEntry(input) { corpusEntry =>
-  //       val traceLogRoot = if (conf.runTraceLogging) {
-  //         val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
-  //         Some(traceLogGroup.rootPath)
-  //       } else None
-
-  //       traceLogRoot.foreach { rootPath =>
-  //         log.trace(s"writing font summary")
-
-  //         val docScopeLogs = segmentation.docScope.emitLogs().asJson
-
-  //         fs.write(
-  //           rootPath / "font-summary.json",
-  //           docScopeLogs.printWith(PrettyPrint2Spaces)
-  //         )
-
-  //         log.trace(s"writing tracelogs")
-  //         val pageLogs = segmentation.pageSegmenters.foldLeft(List[Json]()) {
-  //           case (accum, pageSegmenter) =>
-  //             accum ++ pageSegmenter.emitLogs()
-  //         }
-
-  //         fs.write(rootPath / "tracelog.json", pageLogs.asJson.noSpaces)
-  //       }
-  //     }
-
-  //     m
-
-  //   case x => x
-  // }
-
-  def cleanTraceLogArtifacts(
-    conf: TextWorksConfig.Config
-  ): Pipe[MarkedOutput, MarkedOutput] = {
-    _.map {
-      case m @ Right(Processable.ExtractedFile(segmentation @ _, input)) =>
-        Processable.withCorpusEntry(input) { corpusEntry =>
-          if (conf.runTraceLogging) {
-            println("cleaning tracelogs")
-            val group = corpusEntry.ensureArtifactGroup("tracelogs")
-            group.deleteGroupArtifacts()
-          }
-        }
-
-        m
-
-      case x => x
-    }
-  }
-
   def runSegmentation(
     conf: TextWorksConfig.Config
-  ): Pipe[MarkedInput, MarkedOutput] =
-    inStream => {
-      inStream.map {
-        case Right(input) => doSegment1(input, conf)
-        case Left(input)  => Left(s"Skipping ${input}")
-      }
-    }
+  ): Pipe[MarkedInput, MarkedOutput] = _.map {
+    case Right(input) => doSegment1(input, conf)
+    case Left(input)  => Left(s"Skipping ${input}")
+  }
 
   def markUnextractedProcessables(
     conf: TextWorksConfig.Config
@@ -318,7 +266,7 @@ object ProcessPipelineSteps {
           case m @ Processable.CorpusFile(corpusEntry) =>
             val textGridFile =
               Processable.getTextgridOutputFile(m, conf.ioConfig)
-            val isProcessed  = fs.exists(textGridFile.toFsPath())
+            val isProcessed = fs.exists(textGridFile.toFsPath())
             if (isProcessed) {
               log.info(s"Already processed ${corpusEntry}: ${textGridFile}")
               Left(input)
@@ -328,9 +276,9 @@ object ProcessPipelineSteps {
 
           case _ @Processable.SingleFile(filePath @ _) =>
             ???
-          case _                                       => ???
+          case _ => ???
         }
-      case m            => m
+      case m => m
     }
   }
 

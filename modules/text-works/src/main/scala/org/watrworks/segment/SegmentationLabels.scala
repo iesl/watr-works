@@ -23,6 +23,7 @@ object SegmentationLabels extends DocSegLabels {
   val Glyph1gram          = Label.auto
   val NatLangGlyph        = Label.auto
   val BaselineMidriseBand = Label.auto
+  val MonoFontTextLattice = Label.auto
   val AscentDescentBand   = Label.auto
   val TextLineGroup       = Label.auto
 

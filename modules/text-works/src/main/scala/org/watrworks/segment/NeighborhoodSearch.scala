@@ -28,12 +28,9 @@ object Neighbor {
 
   implicit class RicherNeighbor(val theNeighbor: Neighbor) extends AnyVal {
     def withTags(tags: String*): Neighbor = theNeighbor match {
-      // case v: ByShape     => v.copy(tags = tags.to(List) ++ v.tags)
-      // case v: ByIDOffset  => v.copy(tags = tags.to(List) ++ v.tags)
       case v: BySearch[_] => v.copy(tags = tags.to(List) ++ v.tags)
     }
   }
-
 }
 
 trait NeighborhoodSearch extends BasePageSegmenter {
@@ -52,7 +49,6 @@ trait NeighborhoodSearch extends BasePageSegmenter {
       .withHorizon(horizon)
       .centeredOn(focus)
   }
-
 
   def lookAdjacentFor[Figure <: GeometricFigure](
     facingDir: Dir,
@@ -88,12 +84,7 @@ trait NeighborhoodSearch extends BasePageSegmenter {
     pageSlice.clipLeftRight(c12Rect.left, c12Rect.right)
   }
 
-  // def fontBackslashAngle = pageScope.pageStats.fontBackslashAngle
-  def fontVJump          = pageScope.pageStats.fontVJump
-
-
   import Neighbor._
-
 
   protected def runNeighborBySearch[Figure <: GeometricFigure](bySearch: BySearch[Figure]): Unit = {
     val BySearch(oct, search, sortBy, filterResults, cb, tags) = bySearch
@@ -103,37 +94,7 @@ trait NeighborhoodSearch extends BasePageSegmenter {
     val filtered = filterResults(sorted)
 
     traceLog.trace {
-
-      val searchAreaLabels = oct
-        .searchAreas()
-        .to(List)
-        .map({ case (sbounds, searchArea) =>
-          val name = sbounds match {
-            case Oct.Bounds.Cell(dir)        => s"Cell:${dir}"
-            case Oct.Bounds.CellSpan(d1, d2) => s"Span:${d1}-${d2}"
-          }
-          createLabel(s"Query/${name}")
-            .onShapes(searchArea)
-        })
-
-      val resLabels = traceLog.shapesToLabels(filtered: _*)
-
-      createLabel("OctSearch")
-        .withProp("class", ">lazy")
-        .withChildren(
-          createLabel("Octothorpe")
-            .withChildren(
-              createLabelOn("FocalRect", oct.focalRect)
-                .withProp("class", "=eager")
-                .withProp("tags", tags: _*),
-              createLabelOn("HorizonRect", oct.horizonRect),
-              createLabel("SearchArea")
-                .withChildren(searchAreaLabels: _*)
-            ),
-          createLabel("Found")
-            .withChildren(resLabels: _*)
-        )
-
+      createOctoSearchLabel(bySearch, filtered)
     }
     cb(filtered)
   }
@@ -144,38 +105,55 @@ trait NeighborhoodSearch extends BasePageSegmenter {
     })
   }
 
-
-
   protected def withAdjacentSkyline(
     facingDir: Dir,
     focalShape: RectShape,
     fontId: String @@ ScaledFontID,
     callback: Seq[RectShape] => Unit
-  ): Neighbor.BySearch[Rect] = {
-    val focalRect = focalShape.shape
-    val chars     = focalShape.getAttr(ExtractedChars).getOrElse(Nil)
+  ): Unit = {
+    // val focalRect = focalShape.shape
     // TODO rethink this maxDist value
+    val chars   = focalShape.getAttr(ExtractedChars).getOrElse(Nil)
     val maxDist = chars.headOption.map(_.fontBbox.height).get * 2
-    lookAdjacentFor[Rect](
+
+    withUnoccludedShapes(
       facingDir,
-      focalShape.shape,
+      focalShape,
+      LB.BaselineMidriseBand,
       maxDist,
+      (hit) => hasFont(hit, fontId),
+      callback
+    )
+  }
+
+  protected def withUnoccludedShapes(
+    facingDir: Dir,
+    focalShape: RectShape,
+    queryLabel: Label,
+    queryMaxDist: Int @@ FloatRep,
+    hitFilter: AnyShape => Boolean,
+    callback: Seq[RectShape] => Unit
+  ): Unit = {
+    val focalRect = focalShape.shape
+
+    val neighorhoodDef = lookAdjacentFor[Rect](
+      facingDir,
+      focalRect,
+      queryMaxDist,
       (foundShapes: Seq[RectShape]) => {
 
         pushLabel(
-          createLabel(s"Facing${facingDir}FindSkyline")
+          createLabel(s"Facing${facingDir}Find( ${queryLabel.fqn} )")
             .withProp("class", ">lazy")
             .withChildren(
               createLabelOn("FocalRect", focalShape.shape)
                 .withProp("class", "=eager")
-                .withProp("Font", fontId.toString())
             )
         )
 
         val adjacentShapes: Seq[RectShape] = for {
           hitShape <- foundShapes
-          if hasFont(hitShape, fontId)
-          if hitShape.hasLabel(LB.BaselineMidriseBand)
+          if hitFilter(hitShape)
           if hitShape.id != focalShape.id
 
           hitRect = hitShape.shape
@@ -183,12 +161,13 @@ trait NeighborhoodSearch extends BasePageSegmenter {
           _                   <- traceShapes("HitRect", hitRect)
           (occlusionQuery, _) <- hitRect.minSeparatingRect(focalRect)
           _                   <- traceShapes("OcclusionQuery", occlusionQuery)
-          occlusionHits = searchForShapes(occlusionQuery, LB.BaselineMidriseBand)
-          occlusionShapes = occlusionHits
-                              .filter(hit => { hit.id != focalShape.id && hit.id != hitShape.id })
+          occlusionHits = searchForShapes(occlusionQuery, queryLabel)
+                            .filter(hit => {
+                              hit.id != focalShape.id && hit.id != hitShape.id
+                            })
 
-          _ <- traceShapes("Occlusions", occlusionShapes.map(_.minBounds): _*)
-          if occlusionShapes.isEmpty
+          _ <- traceShapes("Occlusions", occlusionHits.map(_.minBounds): _*)
+          if occlusionHits.isEmpty
           _ <- traceShapes("FinalHit", hitRect)
         } yield hitShape
 
@@ -196,64 +175,9 @@ trait NeighborhoodSearch extends BasePageSegmenter {
 
         callback(adjacentShapes)
       },
-      LB.BaselineMidriseBand
+      queryLabel
     )
+    runNeighborBySearch(neighorhoodDef)
   }
 
-
-
-
 }
-
-
-  // def findIndentationShapes(
-  //   fromBaseline: AnyShape,
-  //   baselineFontId: String @@ ScaledFontID
-  // ): Unit = {
-  //   val fontBaselineShape = fromBaseline.asLineShape
-  //   val fontBaseline      = fontBaselineShape.shape
-
-  //   val fontOffsets      = docScope.fontDefs.getScaledFontOffsets(baselineFontId)
-  //   val fontHeight       = fontOffsets.distanceBetween(_.topLine, _.bottomLine)
-  //   val lookDownDistance = fontHeight * 3
-  //   val minIndent        = fontHeight // TODO choose better values for these parameters
-  //   val maxIndent        = fontHeight * 10
-
-  //   _addEdge(fontBaselineShape)(
-  //     // lookDownFor(
-  //     lookAdjacentFor(
-  //       M3.Bottom,
-  //       fontBaseline.minBounds,
-  //       lookDownDistance,
-  //       (_: Seq[LineShape]).foreach(shape => {
-  //         val neighborShape   = shape.shape
-  //         val neighborShapeP1 = neighborShape.p1
-  //         val baselineP1      = fontBaseline.p1
-
-  //         val leftSideOffset = neighborShapeP1.x - baselineP1.x
-  //         val isIndent       = minIndent < leftSideOffset && leftSideOffset <= maxIndent
-  //         val isOutdent      = minIndent < -leftSideOffset && -leftSideOffset <= maxIndent
-  //         if (leftSideOffset != FloatExact.zero) {
-  //           println(s"leading traps: leftSideOffset=${leftSideOffset.pp()}, min/max = ${minIndent
-  //             .pp()}/${maxIndent.pp()}, isIn/Out = ${isIndent || isOutdent} ")
-  //         }
-  //         if (isIndent || isOutdent) {
-  //           val neighborFontId = shape.getAttr(PrimaryFont).get
-  //           val angleTo        = neighborShapeP1.angleTo(baselineP1)
-  //           val angleToDeg     = ((angleTo * 180) / math.Pi).toFloatExact()
-
-  //           fontBackslashAngle.add(baselineFontId, neighborFontId, angleToDeg)
-
-  //           val leadingTrapezoid = Trapezoid.fromHorizontals(fontBaseline, neighborShape)
-  //           val trapType         = if (isIndent) "Indent" else "Outdent"
-
-  //           traceLog.trace {
-  //             figure(leadingTrapezoid) tagged s"Leading ${trapType}"
-  //           }
-  //         }
-
-  //       }),
-  //       LB.CharRunFontLeadingBaseline
-  //     )
-  //   )
-  // }

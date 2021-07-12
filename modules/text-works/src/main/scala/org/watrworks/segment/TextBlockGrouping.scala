@@ -8,10 +8,7 @@ import utils.{Direction => Dir}
 import utils.Interval
 
 trait TextBlockGrouping extends NeighborhoodSearch { self =>
-  // lazy val textBlockGrouping = self
-  //
-  // TODO how many times does a run of glyphs of the same font appear *not* on the same baseline
-  //    (which may indicate a font used for graph/chart data points)
+
   def findMonoFontBlocks(): Unit = {
     val initShapes   = getLabeledShapes[Rect](LB.BaselineMidriseBand)
     val sortedShapes = sortShapesByFontOccurrence(initShapes)
@@ -36,15 +33,14 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
     runSearch(Dir.Up)
 
     def runSearch(facingDir: Dir) = {
-      runNeighborBySearch(
-        withAdjacentSkyline(
-          facingDir,
-          focalShape,
-          fontId,
-          connectJumps(facingDir, _)
-        )
+      withAdjacentSkyline(
+        facingDir,
+        focalShape,
+        fontId,
+        connectJumps(facingDir, _)
       )
     }
+
     def connectJumps(facingDir: Dir, shapes: Seq[RectShape]) = {
       shapes
         .groupBy(_.shape.bottom)
@@ -100,8 +96,7 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
 
               val n1 = GN(focalShape, shapeIndex)
               val n2 = GN(firstRect, shapeIndex)
-              // val jumpDown  = graph.edgeDown(fontId, jumpVDist)
-              // graph.edge(jumpDown, focalShape, firstRect)
+
               graph.upsertEdge(
                 _.map(GE.withEvidence(_, jumpVDist))
                   .getOrElse(GE(n1, n2, facingDir, jumpVDist)),
@@ -145,11 +140,9 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
     }
   }
 
-
   import Interval._
   import TypeTags._
   import utils.IndexedSeqADT._
-  // import utils.FloatExact
 
   private def unionAll(shapes: Seq[GeometricFigure]): Option[Rect] = {
     if (shapes.length == 0) None
@@ -172,14 +165,22 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
 
     for {
       (fontId, (count, range)) <- maxClustered
-      components               <- graph.getComponents(isValidJump(range), isValidFont(fontId), shapeIndex)
+      components <-
+        graph.findConnectedComponents(isValidJump(range), isValidFont(fontId), shapeIndex)
       if components.size > 1
 
-      componentShapes = components.map(_.nodeShape.asRectShape)
+      _componentShapes = components.map(_.nodeShape.asRectShape)
+      _componentBounds = _componentShapes.map(_.shape)
+      ccBounds <- unionAll(_componentBounds)
+
+      componentShapes = searchForShapes[Rect](ccBounds, LB.BaselineMidriseBand)
+                          .filter(s => hasFont(s, fontId))
+
       componentBounds = componentShapes.map(_.shape)
       ccBounds <- unionAll(componentBounds)
 
     } {
+
       val boundedBands = for {
         ccbound <- componentBounds
         boundedCC = ccbound withinRegion ccBounds
@@ -236,6 +237,11 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
 
         (band, all.sortBy(_._1.left))
       }
+
+      val monofontLattice = indexShape[Rect](ccBounds, LB.MonoFontTextLattice)
+      monofontLattice.setAttr(Fonts)(Set(fontId))
+      monofontLattice.setAttr(PrimaryFont)(fontId)
+
       traceLog.trace {
         val bandLabels = for {
           (band, bandShapes) <- bandedWithAdjoiningShapes
@@ -264,13 +270,14 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
 
   }
 
-
 }
 
 trait TextBlockGroupingDocScope extends BaseDocumentSegmenter { self =>
   import utils.GuavaHelpers._
   import utils.ExactFloats._
   import utils.Interval._
+
+
 
   val ClusterEpsilonWidth = 0.2.toFloatExact() // FloatRep(20)
 

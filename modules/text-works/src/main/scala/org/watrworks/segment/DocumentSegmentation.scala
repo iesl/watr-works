@@ -40,6 +40,7 @@ object DocumentSegmenter {
 trait DocumentSegmenter
   extends FontAndGlyphMetricsDocWide
   with TrapezoidAnalysis
+  with ColumnFindingDocScope
   with TextBlockGroupingDocScope { self =>
 
   def runDocumentSegmentation(): Unit = {
@@ -96,6 +97,8 @@ trait DocumentSegmenter
     withPageSegmenters("connectMonoFontBlocks", _.connectMonoFontBlocks())
 
     withPageSegmenters("findColumnEvidence", _.findColumnEvidence())
+
+    withDocumentSegmenter("findColumnClusters", { self.columnClustering() })
 
     // withPageSegmenters("setTextForReprShapes", _.setTextForReprShapes())
     // withPageSegmenters("buildLinePairTrapezoids", _.buildLinePairTrapezoids())
