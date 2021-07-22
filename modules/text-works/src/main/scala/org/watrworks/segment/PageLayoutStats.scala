@@ -103,10 +103,8 @@ class DocumentLayoutStats extends LayoutStats {
     var documentMaxClustered: List[(String @@ ScaledFontID, (Int, Interval.FloatExacts))] = List.empty
   }
 
-  object columnEvidence {
-    val twoColumnEvidence =
-      mutable.ArrayBuffer[ColumnEvidence.TwoColumn]()
-
-    val twoColumnClasses = mutable.ArrayBuffer[ColumnEvidence.TwoColumnClass]()
+  object columns {
+    val evidence = mutable.ArrayBuffer[ColumnInst]()
+    val clusters = mutable.ArrayBuffer[Cluster[ColumnInst, ColumnClass]]()
   }
 }

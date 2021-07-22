@@ -21,6 +21,7 @@ trait GeometricOps {
         .shave(M3.BottomRight, delta)
     }
 
+    // TODO this should return Option[Rect]
     def shave(dir: M3, delta: Int @@ FloatRep): Rect = {
       dir match {
         case M3.Top =>

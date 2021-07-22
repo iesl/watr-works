@@ -1,4 +1,4 @@
-<configuration scan="true" debug="true">
+<configuration scan="true" debug="false">
 
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
     <file>watrshed-run.log</file>
@@ -28,7 +28,7 @@
   <logger name="com.zaxxer.hikari" level="INFO" />
   <logger name="io.netty" level="INFO" />
 
-  <logger name="org.bytedeco" level="DEBUG" />
+  <logger name="org.bytedeco" level="INFO" />
   <logger name="org.apache" level="INFO" />
   <logger name="org.apache.pdfbox" level="INFO" />
   <logger name="org.apache.pdfbox.pdmodel.font" level="OFF" />

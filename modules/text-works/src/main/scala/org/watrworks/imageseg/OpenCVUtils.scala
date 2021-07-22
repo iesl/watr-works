@@ -16,7 +16,12 @@ import java.nio.IntBuffer
 import javax.swing.WindowConstants
 import scala.math.round
 import scala.util.Using
+import java.awt.event.KeyEvent
 
+
+trait Closeable {
+  def close(): Unit
+}
 
 /** Helper methods that simplify use of OpenCV API. */
 object OpenCVUtils {
@@ -64,17 +69,32 @@ object OpenCVUtils {
     image
   }
 
+
+
   /** Show image in a window. Closing the window will exit the application. */
-  def show(mat: Mat, title: String): Unit = {
+  def show(mat: Mat, title: String): Closeable = {
     val bi = toBufferedImage(mat)
     show(bi, title)
   }
 
   /** Show image in a window. Closing the window will exit the application. */
-  def show(image: Image, title: String): Unit = {
+  def show(image: Image, title: String): Closeable = {
     val canvas = new CanvasFrame(title, 1)
     canvas.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
     canvas.showImage(image)
+    new Closeable {
+      def close() = canvas.dispose()
+    }
+  }
+
+  /** Show image in a window. Closing the window will exit the application. */
+  def showUntilKeypress(mat: Mat, title: String): Unit = {
+    val bi = toBufferedImage(mat)
+    val canvas = new CanvasFrame(title, 1)
+    canvas.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+    canvas.showImage(bi)
+    canvas.waitKey()
+    canvas.dispose()
   }
 
 

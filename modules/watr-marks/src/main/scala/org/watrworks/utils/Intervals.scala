@@ -3,6 +3,7 @@ package utils
 
 import TypeTags._
 import ExactFloats._
+import scalaz.Show
 
 sealed trait IntervalT
 
@@ -64,7 +65,7 @@ object Interval {
       fromInts(Ints.rangeUnion(toInts(r1), toInts(r2)))
     }
 
-    implicit val FloatExactsShow = scalaz.Show.shows[FloatExacts](fes => {
+    implicit val FloatExactsShow: Show[FloatExacts] = scalaz.Show.shows[FloatExacts](fes => {
       val min = ExactFloats.ShowFloatExact.show(fes.min)
       val max = ExactFloats.ShowFloatExact.show(fes.max)
 
@@ -106,6 +107,7 @@ object Interval {
     def union(r2: FloatExacts): FloatExacts =
       FloatExacts.rangeUnion(theRange, r2)
 
+    def show = FloatExacts.FloatExactsShow.show(theRange).toString()
   }
 
   implicit class RicherDoubles(val theRange: Doubles) extends AnyVal {

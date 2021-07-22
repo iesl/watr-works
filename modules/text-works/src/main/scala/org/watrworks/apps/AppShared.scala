@@ -40,9 +40,21 @@ object ProcessPipelineSteps {
              .via(dropSkipAndRun(conf.ioConfig))
              .via(cleanFileArtifacts(conf))
              .via(markUnextractedProcessables(conf))
-             .via(segmentPageImages(conf))
+             // .via(segmentPageImages(conf))
              .via(runSegmentation(conf))
              .via(writeExtractedTextFile(conf))
+             .runDrain
+    } yield ()
+
+    val runtime = Runtime.default
+    runtime.unsafeRun(prog)
+  }
+
+  def runImageSegPipeline(conf: TextWorksConfig.Config): Unit = {
+    val prog = for {
+      _ <- createMarkedInputStream(conf.ioConfig)
+             .via(dropSkipAndRun(conf.ioConfig))
+             .via(segmentPageImages(conf))
              .runDrain
     } yield ()
 
@@ -312,6 +324,39 @@ object ProcessPipelineSteps {
     }
 
     segmenter
+  }
+
+  def config(filter: String): IOConfig = {
+    IOConfig(
+      inputMode = Option(
+        Processable.CorpusRoot(
+          nio.Paths.get("corpus.d").toAbsolutePath().normalize()
+        )
+      ),
+      pathFilter = Some(filter)
+    )
+  }
+
+  def corpusEntryStream(implicit
+    conf: IOConfig
+  ): Stream[ProcessableInput, CorpusEntry] = {
+    for {
+      maybeIn <- createMarkedInputStream(conf)
+      pinput <- Stream
+                  .fromEffect(ZIO.fromEither(maybeIn))
+                  .map(_ match {
+                    case Processable.CorpusFile(corpusEntry) => corpusEntry
+                    case _                                   => ???
+                  })
+    } yield pinput
+  }
+
+  def pageImageStream(
+    corpusEntry: CorpusEntry
+  ): Option[Seq[CorpusArtifact]] = {
+    corpusEntry
+      .getArtifactGroup("page-images")
+      .map(_.getArtifacts())
   }
 
 }

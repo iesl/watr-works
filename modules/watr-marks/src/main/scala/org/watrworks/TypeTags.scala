@@ -69,6 +69,16 @@ trait TypeTagUtils {
     Need { sh }
   }
 
+  // implicit def ClassTagForT[T](t: Int @@ T)(implicit
+  //   CTAT: ClassTag[@@[_, _]],
+  //   CTT: ClassTag[T],
+  // ): ClassTag[Int @@ T] = {
+  //   val cti = classTag[Int]
+  //   // implicitly[ClassTag[Int @@ T]]
+
+  //   ???
+  // }
+
   implicit def ShowBoxInt[T: ClassTag](tt: Int @@ T): ShowBox[Int @@ T] = {
 
     ShowBox.show { t =>

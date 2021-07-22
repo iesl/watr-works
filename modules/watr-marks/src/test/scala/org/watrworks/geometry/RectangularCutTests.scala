@@ -7,6 +7,7 @@ class RectangularCutTests extends WatrSpec {
   import syntax._
   import GeometryTestUtils._
   import utils.{M3x3Position => M3}
+  import utils.{Direction => Dir}
   import textboxing.{TextBoxing => TB}, TB._
   import utils.ExactFloats._
   import ammonite.{ops => fs}
@@ -73,6 +74,31 @@ class RectangularCutTests extends WatrSpec {
       val composed = List(ctr, oth, sep).allOn
       composed.save(pngPath.toString())
     }
+
+  }
+
+  // TODO finish test cases..
+  it should "generate sliding rect windows" in {
+    val testName    = "sliding-rects"
+    val horizonRect = Rect.Doubles(10, 10, 400, 400)
+    val innerRect   = Rect.Doubles(20, 40, 40, 40)
+
+    val nested        = innerRect.withinRegion(horizonRect)
+    val slidingRights = nested.slidingRects(Dir.Down, 30.toFloatExact())
+    val slidingRightRects = slidingRights.zipWithIndex.map { case (r, i) =>
+      drawRect(r, Some(i.toString()))
+        .fillColor(Color.rgba((i+1)*10, (i+1)*12, (i+1)*20, 0.2))
+        .strokeColor(Color.black)
+        .strokeWidth(1)
+
+    }
+    val horizon = drawRect(horizonRect, None)
+        .strokeColor(Color.yellow)
+        .strokeWidth(1)
+    println(s"slidingRights = ${slidingRights}")
+    val composed = (horizon +: slidingRightRects).allOn
+    val pngPath  = scratchDir / s"test-${testName}-0.png"
+    composed.save(pngPath.toString())
 
   }
 

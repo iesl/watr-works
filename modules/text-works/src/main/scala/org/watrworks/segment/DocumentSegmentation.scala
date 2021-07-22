@@ -97,8 +97,8 @@ trait DocumentSegmenter
     withPageSegmenters("connectMonoFontBlocks", _.connectMonoFontBlocks())
 
     withPageSegmenters("findColumnEvidence", _.findColumnEvidence())
-
     withDocumentSegmenter("findColumnClusters", { self.columnClustering() })
+    withPageSegmenters("applyColumnEvidence", _.applyColumnEvidence())
 
     // withPageSegmenters("setTextForReprShapes", _.setTextForReprShapes())
     // withPageSegmenters("buildLinePairTrapezoids", _.buildLinePairTrapezoids())
@@ -162,8 +162,7 @@ trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
 
   def documentId: String @@ DocumentID
 
-  def getPagewiseLinewidthTable()
-    : TabularData[Int @@ PageNum, String @@ ScaledFontID, List[Int @@ FloatRep], Unit, Unit] = {
+  def getPagewiseLinewidthTable(): TabularData[Int @@ PageNum, String @@ ScaledFontID, List[Int @@ FloatRep], Unit, Unit] = {
     docScope.docStats.getTable[Int @@ PageNum, String @@ ScaledFontID, List[Int @@ FloatRep]](
       "PagewiseLineWidths"
     )

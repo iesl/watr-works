@@ -23,7 +23,7 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
   def findContiguousGlyphSpans(): Unit = {
     labelHomogenousFontRuns()
     indexPathRegions()
-    indexImageRegionsAndDeleteOverlaps()
+    indexImageRegions()
   }
 
   protected def findNatLangBaselineRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
@@ -117,18 +117,20 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
     traceLog.trace { labeledShapes(LB.PathBounds) }
   }
 
-  private def indexImageRegionsAndDeleteOverlaps(): Unit = {
-    val deletedShapes = pageScope.pageItems.toSeq
+  // private def indexImageRegionsAndDeleteOverlaps(): Unit = {
+  private def indexImageRegions(): Unit = {
+    // val deletedShapes =
+      pageScope.pageItems.toSeq
       .filter { _.isInstanceOf[ExtractedItem.ImgItem] }
-      .flatMap { imageItem =>
+      .foreach { imageItem =>
         indexShape(imageItem.minBBox, LB.Image)
-        val baseLines: Seq[LineShape] = searchForLines(imageItem.minBBox, LB.CharRunFontBaseline)
-        deleteShapes(baseLines)
-        baseLines
+        // val baseLines: Seq[LineShape] = searchForLines(imageItem.minBBox, LB.CharRunFontBaseline)
+        // deleteShapes(baseLines)
+        // baseLines
       }
 
-    traceLog.trace { shape(deletedShapes: _*) tagged "Deleted Intersect Image Bounds" }
-    traceLog.trace { labeledShapes(LB.Image) tagged "Image Regions" }
+    // traceLog.trace { shape(deletedShapes: _*) tagged "Deleted Intersect Image Bounds" }
+    // traceLog.trace { labeledShapes(LB.Image) tagged "Image Regions" }
   }
 
 }

@@ -23,10 +23,10 @@ object TestLibs extends LibVersions {
 }
 
 object LogLibs extends LibVersions {
-  val logbackVersion = "1.7.31"
+  val logbackVersion = "1.7.32"
   val logback        = Seq(
     "org.log4s"     %% "log4s"           % "1.10.0",
-    "ch.qos.logback" % "logback-classic" % "1.2.3",
+    "ch.qos.logback" % "logback-classic" % "1.2.4",
     "org.slf4j"      % "slf4j-api"       % logbackVersion,
     "org.slf4j"      % "jul-to-slf4j"    % logbackVersion,
     "org.slf4j"      % "jcl-over-slf4j"  % logbackVersion
@@ -50,8 +50,6 @@ object DatabaseLibs extends LibVersions {
 }
 
 trait CommonLibs extends LibVersions {
-  // val ammoniteVersion = "2.3.8-58-aa8b2ab1"
-  // vl ammoniteVersion = "2.3.8-122-9be39deb"
   val ammoniteVersion = "2.4.0"
   val ammonite        = "com.lihaoyi"  % "ammonite"     % ammoniteVersion cross CrossVersion.full
   val ammoniteOps     = "com.lihaoyi" %% "ammonite-ops" % ammoniteVersion
@@ -113,7 +111,7 @@ trait CommonLibs extends LibVersions {
     "com.github.davidmoten" % "flatbuffers-java" % "1.10.0.2"
   )
 
-  val http4sVersion = "0.21.24"
+  val http4sVersion = "0.22.0"
   val http4s = Seq(
     "org.http4s" %% "http4s-core" % http4sVersion,
     "org.http4s" %% "http4s-dsl" % http4sVersion,
@@ -126,25 +124,8 @@ trait CommonLibs extends LibVersions {
   val doodle = "org.creativescala" %% "doodle" % "0.9.23"
 
 
-
   lazy val javacppVersion = "1.5.5"
   lazy val javacv        = "org.bytedeco"      % "javacv-platform"         % javacppVersion 
-
-  // // Platform classifier for native library dependencies
-  // lazy val platform = org.bytedeco.javacpp.Loader.Detector.getPlatform
-
-  // // JavaCPP-Preset libraries with native dependencies
-  // lazy val javaCvLibs = Seq(
-  //   "opencv"   -> "4.5.3"
-  //   // "ffmpeg"   -> "4.3.1",
-  //   // "openblas" -> "0.3.10"
-  // ).flatMap {
-  //   case (lib, ver) =>
-  //     Seq(
-  //       "org.bytedeco" % lib % s"$ver-$javacppVersion",
-  //       "org.bytedeco" % lib % s"$ver-$javacppVersion" classifier platform
-  //     )
-  // }
 
 
 }

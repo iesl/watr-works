@@ -368,14 +368,14 @@ trait TextBlockGroupingDocScope extends BaseDocumentSegmenter { self =>
 
     fontVJumpByPage.documentMaxClustered = sortedByOverallMax
 
-    println("Font V-Jumps per page")
-    println(asList.toString())
-    println("Cluster ")
-    println(mapped.showBox())
-    println("WithColMargins")
-    println(withColMargins.showBox())
-    println("Max Per Page")
-    println(pprintPerPageMax)
-    println("\n\n==================\n")
+    // println("Font V-Jumps per page")
+    // println(asList.toString())
+    // println("Cluster ")
+    // println(mapped.showBox())
+    // println("WithColMargins")
+    // println(withColMargins.showBox())
+    // println("Max Per Page")
+    // println(pprintPerPageMax)
+    // println("\n\n==================\n")
   }
 }

@@ -102,6 +102,10 @@ object TextWorksConfig {
       }
     } text ("force overwrite of existing output artifacts")
 
+    opt[Unit]("image-seg") action { (v, conf) =>
+      setAction(conf, runImageSegPipeline(_))
+    } text ("run image-based segmentation")
+
     note("\nOutput text layout options: \n")
 
     checkConfig{ c =>

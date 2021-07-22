@@ -8,29 +8,26 @@ import utils.{Direction => Dir}
 import utils.{M3x3Position => M3}
 import utils.ExactFloats._
 import utils.Interval
+import Interval._
+import cats.implicits._
+import utils.SlicingAndDicing._
 
-sealed trait ColumnEvidence
+case class ColumnInst(
+  pageBand: Rect,
+  pageNum: Int @@ PageNum,
+  points: List[Int @@ FloatRep],
+  fontIds: List[String @@ ScaledFontID]
+)
 
-object ColumnEvidence {
-  case class TwoColumn(
-    pageBand: Rect,
-    pageNum: Int @@ PageNum,
-    c1FontId: String @@ ScaledFontID,
-    c1Left: Int @@ FloatRep,
-    c1Right: Int @@ FloatRep,
-    c2FontId: String @@ ScaledFontID,
-    c2Left: Int @@ FloatRep,
-    c2Right: Int @@ FloatRep
-  ) extends ColumnEvidence
+case class ColumnClass(
+  ranges: List[Interval.FloatExacts]
+)
 
-  case class TwoColumnClass(
-    range1: Interval.FloatExacts,
-    range2: Interval.FloatExacts,
-    range3: Interval.FloatExacts,
-    range4: Interval.FloatExacts
-  ) extends ColumnEvidence
-
-}
+case class ColumnProps(
+  guttersEmpty: Boolean,
+  col1Empty: Boolean,
+  col2Empty: Boolean
+)
 
 trait ColumnFinding extends NeighborhoodSearch { self =>
 
@@ -80,18 +77,22 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
 
               val leftRightGuttersEmpty = leftGutterEmpty && rightGutterEmpty
 
-              val colEvidence = ColumnEvidence.TwoColumn(
+              val colEvidence = ColumnInst(
                 pageBand,
                 pageNum,
-                c1FontId = fontId,
-                c1Left = leftGutterQueryRect.right,
-                c1Right = sepRect.left,
-                c2FontId = fontId,
-                c2Left = sepRect.right,
-                c2Right = rightGutterQueryRect.left
+                points = List(
+                  leftGutterQueryRect.right,
+                  sepRect.left,
+                  sepRect.right,
+                  rightGutterQueryRect.left
+                ),
+                fontIds = List(
+                  fontId,
+                  fontId
+                )
               )
 
-              docScope.docStats.columnEvidence.twoColumnEvidence.append(colEvidence)
+              docScope.docStats.columns.evidence.append(colEvidence)
 
               traceLog.trace {
                 createLabel(s"ColumnEvidence: ${leftRightGuttersEmpty}")
@@ -120,6 +121,76 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
   }
 
   def applyColumnEvidence(): Unit = {
+    val columnClusters    = docScope.docStats.columns.clusters
+    val pageRight         = pageGeometry.right
+    val pageLeftRange     = Interval.FloatExacts(0.toFloatExact(), 0.toFloatExact())
+    val pageRightRange    = Interval.FloatExacts(pageRight, pageRight)
+    val queryRectHeight   = 10.toFloatExact() // TODO 10 is approximate glyph height
+    val queryLRSlopFactor = 1.toFloatExact()
+
+    val queries: Seq[Option[Seq[Rect]]] = for {
+      cluster <- columnClusters.toSeq
+    } yield {
+      val ranges                   = cluster.rep.ranges
+      val rangesWithPageBoundaries = pageLeftRange :: (ranges :+ pageRightRange)
+
+      val maybeQueries = rangesWithPageBoundaries
+        .sliding(2)
+        .toSeq
+        .map {
+          case Seq(a, b) =>
+            for {
+              vslice <- pageGeometry.clipLeftRight(a.max + queryLRSlopFactor, b.min - queryLRSlopFactor)
+              hslice <- vslice.clipTopHeight(0.toFloatExact(), queryRectHeight)
+            } yield hslice
+          case _ => None
+        }
+
+      val qband: Option[Seq[Rect]] = maybeQueries.sequence
+      qband
+    }
+
+    for { query <- queries } {
+      query match {
+        case Some(queryRects) =>
+          val queryCols: Seq[Seq[Rect]] = queryRects.map(r => {
+            r.withinRegion(pageGeometry).slidingRects(Dir.Down)
+          })
+          val queryRows = queryCols.transpose
+          val rowProps: Seq[ColumnProps] = queryRows.map {
+            _ match {
+              case List(gutterL, col1, gutterC, col2, gutterR) =>
+                val gutterLEmpty  = hasNoOverlaps(gutterL)
+                val gutterCEmpty  = hasNoOverlaps(gutterC)
+                val gutterREmpty  = hasNoOverlaps(gutterR)
+                val col1Empty     = hasNoOverlaps(col1)
+                val col2Empty     = hasNoOverlaps(col2)
+                val guttersEmpty  = gutterLEmpty && gutterREmpty && gutterCEmpty
+                val colsEmpty     = col1Empty && col2Empty
+                val blankStrip    = guttersEmpty && colsEmpty
+                val leftColStrip  = guttersEmpty && !col1Empty && col2Empty
+                val rightColStrip = guttersEmpty && col1Empty && !col2Empty
+                val lrColStrip    = guttersEmpty && !col1Empty && !col2Empty
+
+                // traceLog.trace {
+                // val hitStr     = if (emptyQuery) "Empty" else "Nonempty"
+                // val gutterStr  = if (isGutter) "Gutter" else "Text"
+                //   createLabelOn(s"ColSlice${hitStr}${gutterStr}", queryRect)
+                //     .withProp("coord", s"[${rowNum}, ${colNum}]")
+                // }
+                ColumnProps(guttersEmpty, col1Empty, col2Empty)
+
+              case _ => ???
+            }
+          }
+          rowProps.groupByWindow((window, elem) => {
+
+          })
+
+
+        case None =>
+      }
+    }
 
   }
 
@@ -128,32 +199,30 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
 trait ColumnFindingDocScope extends BaseDocumentSegmenter { self =>
 
   def columnClustering(): Unit = {
-    val twoColumnEvidence = docScope.docStats.columnEvidence.twoColumnEvidence.toSeq
+    val columnEvidence = docScope.docStats.columns.evidence.toSeq
+    val cclusters      = docScope.docStats.columns.clusters
 
-    clusterColumn(twoColumnEvidence, _.c1Left)
-    clusterColumn(twoColumnEvidence, _.c1Right)
-    clusterColumn(twoColumnEvidence, _.c2Left)
-    clusterColumn(twoColumnEvidence, _.c2Right)
+    val columnClusters = clusteringUtils.clusterDataX[ColumnInst](
+      columnEvidence,
+      _.points.map(_.asDouble()).toArray,
+      4d
+    )
+    val columnClustersWithRanges: Seq[Cluster[ColumnInst, ColumnClass]] =
+      columnClusters.map { case Cluster(_, instances) =>
+        val trans = instances.map(_.vec).transpose
+        val rep: List[Interval.FloatExacts] = trans.toSeq.map(ps => {
+          val min = ps.min.toFloatExact()
+          val max = ps.max.toFloatExact()
+          Interval.FloatExacts(min, max - min)
+        })
+        Cluster(
+          ColumnClass(rep),
+          instances
+        )
+      }
 
-  }
+    cclusters.appendAll(columnClustersWithRanges)
 
-  private def clusterColumn(
-    evidence: Seq[ColumnEvidence.TwoColumn],
-    f: (ColumnEvidence.TwoColumn) => Int @@ FloatRep
-  ) = {
-    val ColumnRangeWidth = 1.toFloatExact() // FloatRep(20)
-    val colPoints        = evidence.map(f(_)).toSeq
-
-    val colClusters = clusteringUtils.clusterPoints(colPoints, ColumnRangeWidth)
-    val shown = colClusters
-      .map({ clusterRange =>
-        Interval.FloatExacts.FloatExactsShow.show(clusterRange).toString()
-      })
-      .mkString("; ")
-
-    println(s"${shown}")
-
-    colClusters
   }
 
 }

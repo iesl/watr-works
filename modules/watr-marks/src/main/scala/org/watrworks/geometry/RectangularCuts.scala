@@ -3,6 +3,8 @@ package geometry
 
 import utils.{M3x3Position => M3}
 import TypeTags._
+import utils.ExactFloats._
+import utils.{Direction => Dir}
 
 sealed trait AngleType
 
@@ -132,6 +134,51 @@ trait RectangularCuts extends GeometricOps {
       }
     }
 
+    def slidingRects(
+      dir: Dir,
+      stepSize: Int @@ FloatRep = innerRect.height
+    ): Seq[Rect] = {
+      val (clipHead, clipTail, initSlice) = dir match {
+        case Dir.Down =>
+          val headF = (r: Rect) => {
+            val (rTop, _) = r.splitHorizontal(r.top + innerRect.height)
+            rTop
+          }
+          val tailF = (r: Rect) => {
+            val rs = r.shave(M3.Top, stepSize)
+            if (rs.area() > 0) Some(rs) else None
+          }
+          val slice = adjacentRegions(M3.Center, M3.Bottom)
+          (headF, tailF, slice)
+        case Dir.Right =>
+          val headF = (r: Rect) => {
+            val (rLeft, _) = r.splitVertical(r.left + innerRect.width)
+            rLeft
+          }
+          val tailF = (r: Rect) => {
+            val rs = r.shave(M3.Left, stepSize)
+            if (rs.area() > 0) Some(rs) else None
+          }
+          val slice = adjacentRegions(M3.Center, M3.Right)
+          (headF, tailF, slice)
+        case _ =>
+          ???
+      }
+
+      def _run(currSlice: Option[Rect]): List[Rect] = {
+        currSlice match {
+          case Some(rect) =>
+            val head    = clipHead(rect)
+            val tail    = clipTail(rect)
+            val newtail = _run(tail)
+            head.map(_ :: newtail).getOrElse(newtail)
+          case None => Nil
+        }
+      }
+
+      _run(initSlice)
+    }
+
   }
 
   implicit class RectangularCuts_RicherRect(val self: Rect) {
@@ -152,14 +199,14 @@ trait RectangularCuts extends GeometricOps {
         val region2 = other.adjacentRegion(d2)
         region1.zip(region2) match {
           case Some((r1, r2)) => (r1 intersection r2).map(rx => (rx, d1))
-          case None => None
+          case None           => None
         }
       }
 
       _check(M3.Bottom, M3.Top) orElse
-      _check(M3.Left, M3.Right) orElse
-      _check(M3.Top, M3.Bottom) orElse
-      _check(M3.Right, M3.Left)
+        _check(M3.Left, M3.Right) orElse
+        _check(M3.Top, M3.Bottom) orElse
+        _check(M3.Right, M3.Left)
     }
 
   }

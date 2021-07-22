@@ -1,43 +1,245 @@
 package org.watrworks
 package imageseg
 
-import java.awt.Color
-import java.awt.image.BufferedImage
-
-import OpenCVUtils.{wrapInIntPointer, wrapInMatVector, show}
-import org.bytedeco.javacpp._
-import org.bytedeco.javacpp.indexer.FloatRawIndexer
-// import org.bytedeco.javacpp.indexer._
-// import org.bytedeco.javacpp.{FloatPointer, IntPointer}
-// import org.bytedeco.javacv._
-// import org.bytedeco.javacv.{CanvasFrame, OpenCVFrameConverter}
-// import org.bytedeco.opencv.global.opencv_calib3d._
-// import org.bytedeco.opencv.global.opencv_objdetect._
-// import org.bytedeco.opencv.opencv_calib3d._
-// import org.bytedeco.opencv.opencv_imgproc._
-// import org.bytedeco.opencv.opencv_objdetect._
-// import org.opencv.core.MatOfRect
-// import org.opencv.core.Point
-// import org.opencv.core.Scalar
-// import org.opencv.imgcodecs.Imgcodecs
-// import org.opencv.imgproc.Imgproc
-// import org.opencv.objdetect.CascadeClassifier
-// import reflect._
-import org.bytedeco.javacpp.indexer.UByteIndexer
 import org.bytedeco.opencv.global.opencv_core._
 import org.bytedeco.opencv.global.opencv_imgcodecs._
-import org.bytedeco.opencv.global.opencv_imgproc._
 import org.bytedeco.opencv.global.{opencv_imgproc => ImgProc}
 import org.bytedeco.opencv.opencv_core._
-// import org.opencv.core.Core
+import org.bytedeco.opencv.opencv_imgproc.Vec2fVector
+import org.bytedeco.javacpp.indexer.UByteIndexer
 
-// import scala.Ordering.Float.IeeeOrdering
+import OpenCVUtils._
+import zio._
+import zio.console._
+import ImgProc._
+import math._
+import org.bytedeco.opencv.opencv_dnn._
+import org.bytedeco.opencv.opencv_text._
+import org.bytedeco.opencv.global.opencv_text._
 
 object LineDetection {
-// We must load the native library before using any OpenCV functions.
-  // You must load this library _exactly once_ per Java invocation.
-  // If you load it more than once, you will get a java.lang.UnsatisfiedLinkError.
-  // System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
+
+  def readImage(imgPath: String): Task[Mat] = Task {
+    val r        = imread(imgPath, IMREAD_GRAYSCALE)
+    val channels = r.channels()
+    println(s"Image Channels = ${channels}")
+    r
+  }
+  def readImageColor(imgPath: String): Task[Mat] = Task {
+    val r        = imread(imgPath)
+    val channels = r.channels()
+    println(s"Image Channels = ${channels}")
+    r
+  }
+  def writeImage(mat: Mat, imgPath: String): Task[Unit] = Task {
+    imwrite(imgPath, mat)
+  }
+
+  def showImage(mat: Mat, caption: String): Task[Closeable] = Task {
+    show(mat, caption)
+  }
+  def showImageUntilKeypress(mat: Mat, caption: String): Task[Unit] = Task {
+    showUntilKeypress(mat, caption)
+  }
+
+  def runThreshold(in: Mat): Task[Mat] = Task {
+    val out = new Mat()
+    // ImgProc.threshold(in, out, 128, 255, ImgProc.THRESH_BINARY_INV)
+    ImgProc.threshold(in, out, 128, 255, ImgProc.THRESH_OTSU)
+    out
+  }
+
+  def runTextDetectionUsingSWT(in: Mat): Task[Mat] = Task {
+    // detectTextSWT
+
+    ???
+  }
+
+  def runTextDetectionUsingTextBoxesCNN(in: Mat): Task[Mat] = Task {
+    // Load model weights
+    val detector = TextDetectorCNN.create(
+      "./models.d/textbox.prototxt",
+      "./models.d/TextBoxes_icdar13.caffemodel"
+    )
+
+    val rectVec  = new RectVector();
+    val floatVec = new FloatVector();
+    detector.detect(in, rectVec, floatVec)
+
+    val detected = rectVec.size()
+    println(s"detected ${detected} rects ")
+    val out = in.clone()
+    for (i <- 0L until detected) {
+      val r = rectVec.get(i)
+      ImgProc.rectangle(out, r, new Scalar(128, 0, 200, 0))
+    }
+
+    out
+
+  }
+
+  def runCanny(in: Mat): Task[Mat] = Task {
+    val canny        = new Mat()
+    val threshold1   = 125d
+    val threshold2   = 350d
+    val apertureSize = 3
+    ImgProc.Canny(in, canny, threshold1, threshold2, apertureSize, false /*L2 gradient*/ )
+    canny
+  }
+
+  def runHough(in: Mat): Task[Mat] = Task {
+    // Hough transform for line detection
+    // val storage                    = cvCreateMemStorage(0)
+    // val method                     = HOUGH_STANDARD
+    val lines                      = new Vec2fVector()
+    val distanceResolutionInPixels = 1
+    val angleResolutionInRadians   = math.Pi / 180
+    val minimumVotes               = 80
+    val srn                        = 0.0
+    val stn                        = 0.0
+    val min_theta                  = 0.0
+    val max_theta                  = CV_PI
+    HoughLines(in, lines, distanceResolutionInPixels, angleResolutionInRadians, minimumVotes, srn, stn, min_theta, max_theta)
+
+    // Draw lines on the canny contour image
+    // val result = new Mat()
+    val result = in.clone()
+    // in.copyTo(result)
+    cvtColor(in, result, COLOR_GRAY2BGR)
+    println(s"Hough found ${lines.size()} lines")
+    for (i <- 0L until lines.size().toLong) {
+      val rho           = lines.get(i).get(0)
+      val theta: Double = lines.get(i).get(1).toDouble
+
+      val (pt1, pt2) = if (theta < Pi / 4.0 || theta > 3.0 * Pi / 4.0) {
+        // ~vertical line
+        // point of intersection of the line with first row
+        val p1 = new Point(round(rho / cos(theta)).toInt, 0)
+        // point of intersection of the line with last row
+        val p2 = new Point(round((rho - result.rows * sin(theta)) / cos(theta)).toInt, result.rows)
+        (p1, p2)
+      } else {
+        // ~horizontal line
+        // point of intersection of the line with first column
+        val p1 = new Point(0, round(rho / sin(theta)).toInt)
+        // point of intersection of the line with last column
+        val p2 = new Point(result.cols, round((rho - result.cols * cos(theta)) / sin(theta)).toInt)
+        (p1, p2)
+      }
+      // draw a white line
+      line(result, pt1, pt2, new Scalar(0, 0, 255, 0), 2, LINE_8, 0)
+    }
+
+    result
+  }
+
+  def runAdaptiveThreshold(in: Mat): Task[Mat] = Task {
+    bitwise_not(in, in)
+    val out       = new Mat()
+    val maxVal    = 244
+    val blockSize = 15
+    val const     = -2
+    ImgProc.adaptiveThreshold(in, out, maxVal, ImgProc.ADAPTIVE_THRESH_GAUSSIAN_C, ImgProc.THRESH_BINARY, blockSize, const)
+    out
+
+  }
+
+  def runBinarize(in: Mat): Task[Mat] = Task {
+    bitwise_not(in, in)
+    val bw = new Mat()
+    ImgProc.adaptiveThreshold(in, bw, 244, ImgProc.ADAPTIVE_THRESH_MEAN_C, ImgProc.THRESH_BINARY, 15, -2)
+    bw
+  }
+  def combineMats(mat1: Mat, mat2: Mat): Task[Mat] = Task {
+    val matOut = new Mat()
+    addWeighted(mat1, 0.5, mat2, 0.5, 0, matOut)
+    matOut
+  }
+
+  def blend(mat1: Mat, alpha: Double, mat2: Mat): Task[Mat] = Task {
+    val matOut = new Mat()
+    val beta   = 1.0 - alpha
+    val gamma  = 0d
+    addWeighted(mat1, alpha, mat2, beta, gamma, matOut)
+    matOut
+  }
+
+  def runErode(in: Mat, kernel: Mat): Task[Mat] = Task {
+    val out = in.clone()
+    ImgProc.erode(in, out, kernel);
+    out
+  }
+
+  def runDilate(in: Mat, kernel: Mat): Task[Mat] = Task {
+    val out = in.clone()
+    ImgProc.dilate(in, out, kernel);
+    out
+  }
+
+  def runClose(in: Mat, kernel: Mat): Task[Mat] =
+    runDilate(in, kernel).flatMap(runErode(_, kernel))
+
+  def runOpen(in: Mat, kernel: Mat): Task[Mat] =
+    runErode(in, kernel).flatMap(runDilate(_, kernel))
+
+  def makeHLineKernel0(len: Int): Task[Mat] = Task {
+    ImgProc.getStructuringElement(ImgProc.MORPH_RECT, new Size(len, 1));
+  }
+  def makeHLineKernel(len: Int): Task[Mat] = Task {
+    val mat = new Mat(2, len, CV_8U)
+
+    val index = mat.createIndexer[UByteIndexer]()
+
+    for { col <- 0 until mat.cols() } {
+      index.put(0L, col.toLong, 0)
+      index.put(1L, col.toLong, 1)
+    }
+    mat
+  }
+
+  // val FlipX = 0
+  val FlipY = 1
+  // val FlipXY = -1
+  // flip(mat, mflip, FlipY)
+  def makeHLineKernelUp(len: Int): Task[Mat] =
+    makeHLineKernel(len)
+
+  def makeHLineKernelDown(len: Int): Task[Mat] =
+    makeHLineKernel(len).map { mat =>
+      val mflip = mat.clone()
+      flip(mat, mflip, FlipY)
+      mflip
+    }
+
+  def makeVLineKernel0(len: Int): Task[Mat] = Task {
+    ImgProc.getStructuringElement(ImgProc.MORPH_RECT, new Size(1, len));
+  }
+  def makeVLineKernel(len: Int): Task[Mat] = Task {
+    val mat = new Mat(len, 2, CV_8U)
+
+    val index = mat.createIndexer[UByteIndexer]()
+
+    for {
+      row <- 0 until mat.rows()
+    } {
+      index.put(row.toLong, 0L, 0)
+      index.put(row.toLong, 1L, 1)
+    }
+
+    mat
+  }
+
+  def makeRectKernel(h: Int, w: Int): Task[Mat] = Task {
+    ImgProc.getStructuringElement(ImgProc.MORPH_RECT, new Size(w, h));
+  }
+
+  val writePng: (Mat, String) => ZIO[Console, Any, Any] = (mat, path) => {
+    val finalPath = s"${path}.lines.png"
+    for {
+      _ <- putStrLn(s"Writing ${finalPath}")
+      _ <- writeImage(mat, finalPath)
+    } yield ()
+  }
 
   def runLineDetection(
     imgPath: String
@@ -45,208 +247,41 @@ object LineDetection {
 
     println(s"Segmenting page Image ${imgPath}")
 
-    println("Reading image..")
-    //  img = cv2.imread(img_for_box_extraction_path, 0)  # Read the image
-    val imgMatrix = imread(imgPath)
+    val cannyApp: ZIO[Console, Any, Any] = for {
+      initImg     <- readImageColor(imgPath)
+      _           <- putStrLn(s"Loaded ${imgPath} = ${initImg}")
+      kernelSize  <- Task(40)
+      threshed    <- runCanny(initImg)
+      hlineKernel <- makeHLineKernel(kernelSize)
+      vlineKernel <- makeVLineKernel(kernelSize)
+      rKernel     <- makeRectKernel(5, 5)
+      mOpenH      <- runOpen(threshed, hlineKernel)
+      mOpenV      <- runOpen(threshed, vlineKernel)
+      mVH         <- combineMats(mOpenV, mOpenH)
+      mVHDilate   <- runDilate(mVH, rKernel)
+      mDisplay    <- blend(initImg, 0.1, mVHDilate)
+      _           <- writePng(mDisplay, imgPath)
+    } yield ()
 
-    val thresholdOut = new Mat()
-    //  (thresh, img_bin) = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)  # Thresholding the image
-    val thresh = ImgProc.threshold(
-      imgMatrix,
-      thresholdOut,
-      128,
-      255,
-      ImgProc.THRESH_BINARY // | ImgProc.THRESH_OTSU
-    )
-    //>>  img_bin = 255-img_bin  # Invert the image
-    // Create inverted lookup table
+    val hvlineApp: ZIO[Console, Any, Any] = for {
+      initImg     <- readImage(imgPath)
+      _           <- putStrLn(s"Loaded ${imgPath} = ${initImg}")
+      kernelSize  <- Task(40)
+      thresh      <- runAdaptiveThreshold(initImg)
+      hlineKernel <- makeHLineKernel(kernelSize)
+      vlineKernel <- makeVLineKernel(kernelSize)
+      rKernel     <- makeRectKernel(5, 5)
+      mOpenH      <- runOpen(thresh, hlineKernel)
+      mOpenV      <- runOpen(thresh, vlineKernel)
+      mVH         <- combineMats(mOpenV, mOpenH)
+      mVHDilate   <- runDilate(mVH, rKernel)
+      mDisplay    <- blend(initImg, 0.1, mVHDilate)
+      _           <- writePng(mDisplay, imgPath)
+    } yield ()
 
-    show(imgMatrix, "inital image")
-    val dim  = 256
-    val lut  = new Mat(1, dim, CV_8U)
-    val lutI = lut.createIndexer().asInstanceOf[UByteIndexer]
-    for (i <- 0 until dim) {
-      lutI.put(i, (dim - 1 - i).toByte)
-    }
+    val runtime = Runtime.default
+    // runtime.unsafeRun(app)
+    runtime.unsafeRunSync(hvlineApp)
 
-    // Apply look-up
-    val dest = Histogram1D.applyLookUp(thresholdOut, lut)
-
-    //>>  print("Storing binary image to Images/Image_bin.jpg..")
-    //>>  cv2.imwrite("Images/Image_bin.jpg",img_bin)
-
-    //>>  print("Applying Morphological Operations..")
-    //>>  # Defining a kernel length
-    //>>  kernel_length = np.array(img).shape[1]//40
-
-    //>>  # A verticle kernel of (1 X kernel_length), which will detect all the verticle lines from the image.
-    //>>  verticle_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, kernel_length))
-    //>>  # A horizontal kernel of (kernel_length X 1), which will help to detect all the horizontal line from the image.
-    //>>  hori_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_length, 1))
-
-    // ImgProc.getStructuringElement()
-    //>>  # A kernel of (3 X 3) ones.
-    //>>  kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-
-    //>>  # Morphological operation to detect verticle lines from an image
-    //>>  img_temp1 = cv2.erode(img_bin, verticle_kernel, iterations=3)
-    //>>  verticle_lines_img = cv2.dilate(img_temp1, verticle_kernel, iterations=3)
-    //>>  cv2.imwrite("Images/verticle_lines.jpg",verticle_lines_img)
-
-    //>>  # Morphological operation to detect horizontal lines from an image
-    //>>  img_temp2 = cv2.erode(img_bin, hori_kernel, iterations=3)
-    //>>  horizontal_lines_img = cv2.dilate(img_temp2, hori_kernel, iterations=3)
-    //>>  cv2.imwrite("Images/horizontal_lines.jpg",horizontal_lines_img)
-
-    //>>  # Weighting parameters, this will decide the quantity of an image to be added to make a new image.
-    //>>  alpha = 0.5
-    //>>  beta = 1.0 - alpha
-    //>>  # This function helps to add two image with specific weight parameter to get a third image as summation of two image.
-    //>>  img_final_bin = cv2.addWeighted(verticle_lines_img, alpha, horizontal_lines_img, beta, 0.0)
-    //>>  img_final_bin = cv2.erode(~img_final_bin, kernel, iterations=2)
-    //>>  (thresh, img_final_bin) = cv2.threshold(img_final_bin, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-
-    //>>  # For Debugging
-    //>>  # Enable this line to see verticle and horizontal lines in the image which is used to find boxes
-    //>>  print("Binary image which only contains boxes: Images/img_final_bin.jpg")
-    //>>  cv2.imwrite("Images/img_final_bin.jpg",img_final_bin)
-    //>>  # Find contours for image, which will detect all the boxes
-    //>>  contours, hierarchy = cv2.findContours(
-    //>>      img_final_bin, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    //>>  # Sort all the contours by top to bottom.
-    //>>  (contours, boundingBoxes) = sort_contours(contours, method="top-to-bottom")
-
-    //>>  print("Output stored in Output directiory!")
-
-    //>>  idx = 0
-    //>>  for c in contours:
-    //>>      # Returns the location and width,height for every contour
-    //>>      x, y, w, h = cv2.boundingRect(c)
-
-    //>>      # If the box height is greater then 20, widht is >80, then only save it as a box in "cropped/" folder.
-    //>>      if (w > 80 and h > 20) and w > 3*h:
-    //>>          idx += 1
-    //>>          new_img = img[y:y+h, x:x+w]
-    //>>          cv2.imwrite(cropped_dir_path+str(idx) + '.png', new_img)
-
-    //>>  # For Debugging
-    //>>  # Enable this line to see all contours.
-    //>>  # cv2.drawContours(img, contours, -1, (0, 0, 255), 3)
-
-  }
-}
-
-/** Helper methods for performing histogram and look-up table operations, correspond to part of C++ class
-  * Histogram1D in the OpenCV Cookbook sample code.
-  */
-object Histogram1D {
-
-  /** Apply a look-up table to an image.
-    * It is a wrapper for OpenCV function `LUT`.
-    *
-    * @param image  input image
-    * @param lookup look-up table
-    * @return new image
-    */
-  def applyLookUp(image: Mat, lookup: Mat): Mat = {
-    val dest = new Mat()
-    LUT(image, lookup, dest)
-    dest
-  }
-
-  /** Equalize histogram of an image. The algorithm normalizes the brightness and increases the contrast of the image.
-    * It is a wrapper for OpenCV function `equalizeHist`.
-    *
-    * @param src input image
-    * @return new image
-    */
-  def equalize(src: Mat): Mat = {
-    val dest = new Mat()
-    equalizeHist(src, dest)
-    dest
-  }
-
-}
-
-/** Helper class that simplifies usage of OpenCV `calcHist` function for single channel images.
-  *
-  * See OpenCV [[http://opencv.itseez.com/modules/imgproc/doc/histograms.html?highlight=histogram]]
-  * documentation to learn backend details.
-  */
-class Histogram1D {
-
-  private val numberOfBins         = 256
-  private val channels: IntPointer = wrapInIntPointer(0)
-  private var _minRange            = 0.0f
-  private var _maxRange            = 255.0f
-
-  def setRanges(minRange: Float, maxRange: Float): Unit = {
-    _minRange = minRange
-    _maxRange = maxRange
-  }
-
-  def getHistogramImage(image: Mat): BufferedImage = {
-
-    // Output image size
-    val width  = numberOfBins
-    val height = numberOfBins
-
-    val hist = getHistogramAsArray(image)
-    // Set highest point to 90% of the number of bins
-    val scale = 0.9 / hist.max * height
-
-    // Create a color image to draw on
-    val canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-    val g      = canvas.createGraphics()
-
-    // Paint background
-    g.setPaint(Color.WHITE)
-    g.fillRect(0, 0, width, height)
-
-    // Draw a vertical line for each bin
-    g.setPaint(Color.BLUE)
-    for (bin <- 0 until numberOfBins) {
-      def h = math.round(hist(bin) * scale).toInt
-      g.drawLine(bin, height - 1, bin, height - h - 1)
-    }
-
-    // Cleanup
-    g.dispose()
-
-    canvas
-  }
-
-  /** Computes histogram of an image.
-    *
-    * @param image input image
-    * @return histogram represented as an array
-    */
-  def getHistogramAsArray(image: Mat): Array[Float] = {
-    // Create and calculate histogram object
-    val hist = getHistogram(image)
-
-    // Extract values to an array
-    val dest  = new Array[Float](numberOfBins)
-    val histI = hist.createIndexer().asInstanceOf[FloatRawIndexer]
-    for (bin <- 0 until numberOfBins) {
-      dest(bin) = histI.get(bin)
-    }
-
-    dest
-  }
-
-  /** Computes histogram of an image.
-    *
-    * @param image input image
-    * @param mask  optional mask
-    * @return OpenCV histogram object
-    */
-  def getHistogram(image: Mat, mask: Mat = new Mat()): Mat = {
-    val histSize = wrapInIntPointer(numberOfBins)
-    val ranges   = new FloatPointer(_minRange, _maxRange)
-    // Compute histogram
-    val hist = new Mat()
-    calcHist(wrapInMatVector(image), channels, mask, hist, histSize, ranges)
-    hist
   }
 }

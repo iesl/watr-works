@@ -34,33 +34,7 @@ object TraceVisConfig {
 }
 
 object TraceVis {
-  def config(filter: String): TraceVisConfig.Config = {
-    val config = TraceVisConfig.Config(
-      IOConfig(
-        inputMode = Option(
-          Processable.CorpusRoot(
-            nio.Paths.get("corpus.d").toAbsolutePath().normalize()
-          )
-        ),
-        pathFilter = Some(filter)
-      )
-    )
-    config
-  }
 
-  def corpusEntryStream(implicit
-    conf: TraceVisConfig.Config
-  ): Stream[ProcessableInput, CorpusEntry] = {
-    for {
-      maybeIn <- createMarkedInputStream(conf.ioConfig)
-      pinput <- Stream
-                  .fromEffect(ZIO.fromEither(maybeIn))
-                  .map(_ match {
-                    case Processable.CorpusFile(corpusEntry) => corpusEntry
-                    case _                                   => ???
-                  })
-    } yield pinput
-  }
 
   def listClusterings(transcript: Transcript): Stream[Nothing, ShapeClustering.Root] = for {
     label <- Stream.fromIterable(transcript.labels)
@@ -202,4 +176,5 @@ object TraceVis {
     val runtime = Runtime.default
     runtime.unsafeRun(appLogic)
   }
+
 }

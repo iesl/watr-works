@@ -1,7 +1,6 @@
 package org.watrworks
 package utils
 
-
 object TextOps {
   def trimQuotes(s: String): String = {
     val t = s.trim
@@ -13,5 +12,17 @@ object TextOps {
     } else s
   }
 
+  def showVector[A](aseq: Seq[A])(implicit
+    ShowA: scalaz.Show[A]
+  ): String = {
+    aseq
+      .map(ShowA.show(_))
+      .mkString("[", ", ", "]")
+  }
+  def showMatrix[A: scalaz.Show](amat: Seq[Seq[A]]): String = {
+    amat
+      .map(v => showVector(v))
+      .mkString("[\n   ", "\n   ", "\n]")
+  }
 
 }
