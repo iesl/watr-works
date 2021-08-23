@@ -33,14 +33,15 @@ lazy val watrmarks = (project in file("modules/watr-marks"))
         ++ TestLibs.testAndCheck
         ++ Lib.featran
         ++ Lib.smile
+        ++ Lib.cats
         ++ Lib.circeJson
         ++ Lib.zio
         ++ Lib.consoleUtils
         ++ Lib.rtrees
         ++ Lib.scalaz
+        ++ Lib.doodle
         ++ Seq(
           Lib.ammoniteOps,
-          Lib.doodle,
           Lib.guava
         )
   )
@@ -59,10 +60,12 @@ lazy val textworks = (project in file("modules/text-works"))
     libraryDependencies ++=
       LogLibs.logback
         ++ TestLibs.testAndCheck
+        ++ Lib.cats
         ++ Lib.zio
         ++ Lib.featran
         ++ Lib.smile
         ++ Lib.circeJson
+        ++ Lib.doodle
         ++ Seq(
           Lib.pdfbox,
           Lib.guava,
@@ -72,9 +75,6 @@ lazy val textworks = (project in file("modules/text-works"))
     "org.bytedeco"   % "javacv"     % "1.5.5"        withSources() withJavadoc(),
     "org.bytedeco"   % "opencv"     % "4.5.1-1.5.5"  withSources() withJavadoc(),
     "org.bytedeco"   % "opencv"     % "4.5.1-1.5.5"  classifier platform,
-
-
-
           Lib.scopt,
           Lib.ammoniteOps,
           Lib.scalaGraph,

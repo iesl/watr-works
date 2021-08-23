@@ -185,6 +185,7 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
           }
           rowProps.groupByWindow((window, elem) => {
 
+            ???
           })
 
 

@@ -22,41 +22,42 @@ trait CorpusListingServices extends Http4sDsl[IO] with ServiceCommons  { self =>
   // Mounted at /api/v1xx/corpus/entries/..
 
 
-  val corpusListingEndpoints = HttpService[IO] {
+  val corpusListingEndpoints = ???
+  //       HttpService[IO] {
 
-    case req @ GET -> Root :? StartQP(start) +& LengthQP(len) =>
+  //   case req @ GET -> Root :? StartQP(start) +& LengthQP(len) =>
 
-      val skip = start.getOrElse(0)
-      val get = len.getOrElse(100)
+  //     val skip = start.getOrElse(0)
+  //     val get = len.getOrElse(100)
 
-      // val docCount = docStore.getDocumentCount()
+  //     // val docCount = docStore.getDocumentCount()
 
-      // val entries = (for {
-      //   (stableId, i) <- docStore.getDocuments(get, skip).zipWithIndex
-      // } yield {
+  //     // val entries = (for {
+  //     //   (stableId, i) <- docStore.getDocuments(get, skip).zipWithIndex
+  //     // } yield {
 
-      //   val docLabels = (for {
-      //     docId <- docStore.getDocument(stableId).toList
-      //   } yield for {
-      //     labelId <- docStore.getZoneLabelsForDocument(docId)
-      //   } yield {
-      //     docStore.getLabel(labelId).asJson
-      //   }).asJson
+  //     //   val docLabels = (for {
+  //     //     docId <- docStore.getDocument(stableId).toList
+  //     //   } yield for {
+  //     //     labelId <- docStore.getZoneLabelsForDocument(docId)
+  //     //   } yield {
+  //     //     docStore.getLabel(labelId).asJson
+  //     //   }).asJson
 
-      //   Json.obj(
-      //     ("num", Json.fromInt(skip+i)),
-      //     ("stableId", Json.fromString(stableId.unwrap)),
-      //     ("labels", docLabels)
-      //   )
+  //     //   Json.obj(
+  //     //     ("num", Json.fromInt(skip+i)),
+  //     //     ("stableId", Json.fromString(stableId.unwrap)),
+  //     //     ("labels", docLabels)
+  //     //   )
 
-      // }).asJson
+  //     // }).asJson
 
-      Ok(
-        Json.obj(
-          // ("corpusSize", Json.fromInt(docCount)),
-          // ("entries", entries),
-          ("start", Json.fromInt(skip))
-        )
-      )
-  }
+  //     Ok(
+  //       Json.obj(
+  //         // ("corpusSize", Json.fromInt(docCount)),
+  //         // ("entries", entries),
+  //         ("start", Json.fromInt(skip))
+  //       )
+  //     )
+  // }
 }

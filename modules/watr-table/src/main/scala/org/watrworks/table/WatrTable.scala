@@ -39,16 +39,16 @@ object WatrTable extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
 
-    val fiber = WatrTableServer
-      .resource[IO]
-      .use(_ => IO.never)
-      .as(ExitCode.Success)
-      .start
-      .unsafeRunSync()
+    // val fiber = WatrTableServer
+    //   .resource[IO]
+    //   .use(_ => IO.never)
+    //   .as(ExitCode.Success)
+    //   .start
+    //   .unsafeRunSync()
 
-    replMain().run()
+    // replMain().run()
 
-    fiber.cancel.unsafeRunSync()
+    // fiber.cancel.unsafeRunSync()
     IO(ExitCode.Success)
   }
 

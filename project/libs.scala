@@ -2,8 +2,11 @@ import sbt._
 import Keys._
 
 trait LibVersions {
-  val catsV       = "2.0.0"
-  val catsEffectV = "2.1.3"
+  val cats = Seq(
+    // "org.typelevel" %% "cats-effect" % "3.2.2",
+    "org.typelevel" %% "cats-effect" % "2.5.2",
+    "org.typelevel" %% "cats-core" % "2.3.0"
+  )
 }
 
 object LibVersions extends LibVersions
@@ -15,7 +18,7 @@ object TestLibs extends LibVersions {
   )
 
   val scalacheck = Seq(
-    "org.scalaz"     %% "scalaz-scalacheck-binding" % "7.3.4"  % Test,
+    "org.scalaz"     %% "scalaz-scalacheck-binding" % "7.3.5"  % Test,
     "org.scalacheck" %% "scalacheck"                % "1.15.4" % "test" //  force()
   )
 
@@ -26,7 +29,7 @@ object LogLibs extends LibVersions {
   val logbackVersion = "1.7.32"
   val logback        = Seq(
     "org.log4s"     %% "log4s"           % "1.10.0",
-    "ch.qos.logback" % "logback-classic" % "1.2.4",
+    "ch.qos.logback" % "logback-classic" % "1.2.5",
     "org.slf4j"      % "slf4j-api"       % logbackVersion,
     "org.slf4j"      % "jul-to-slf4j"    % logbackVersion,
     "org.slf4j"      % "jcl-over-slf4j"  % logbackVersion
@@ -82,13 +85,13 @@ trait CommonLibs extends LibVersions {
     "com.spotify" %% "featran-core" % featranV
   )
 
-  val zioV = "1.0.9"
+  val zioV = "1.0.11"
   val zio  = Seq(
     "dev.zio" %% "zio"         % zioV,
     "dev.zio" %% "zio-streams" % zioV
   )
 
-  val scalazVersion = "7.3.4"
+  val scalazVersion = "7.3.5"
   val scalaz        = Seq(
     "org.scalaz" %% "scalaz-core" % scalazVersion
   )
@@ -111,7 +114,7 @@ trait CommonLibs extends LibVersions {
     "com.github.davidmoten" % "flatbuffers-java" % "1.10.0.2"
   )
 
-  val http4sVersion = "0.22.0"
+  val http4sVersion = "0.23.1"
   val http4s = Seq(
     "org.http4s" %% "http4s-core" % http4sVersion,
     "org.http4s" %% "http4s-dsl" % http4sVersion,
@@ -121,7 +124,22 @@ trait CommonLibs extends LibVersions {
     "org.http4s" %% "http4s-blaze-client" % http4sVersion
   )
 
-  val doodle = "org.creativescala" %% "doodle" % "0.9.23"
+  val doodleVersion = "0.9.25"
+  // val doodle = "org.creativescala" %% "doodle" % doodleVersion 
+  val doodle = Seq(
+       //"org.creativescala" %%  "doodle" % doodleVersion,
+       "org.creativescala" %%  "doodle-core" % doodleVersion,
+       "org.creativescala" %%  "doodle-java2d" % doodleVersion,
+        "org.creativescala" %%  "doodle-image" % doodleVersion
+       // "org.creativescala" %%  "doodle-explore" % doodleVersion,
+       //"org.creativescala" %%  "doodle-interact" % doodleVersion,
+       //"org.creativescala" %%  "doodle-reactor" % doodleVersion,
+       // "org.creativescala" %%  "doodle-svg" % doodleVersion,
+       // "org.creativescala" %%  "doodle-turtle" % doodleVersion,
+       // "org.creativescala" %%  "doodle-golden" % doodleVersion,
+    )
+
+
 
 
   lazy val javacppVersion = "1.5.5"

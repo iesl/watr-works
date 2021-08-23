@@ -5,42 +5,74 @@ import LabeledSequencePrinting._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-trait LabeledSequenceTestBasics
-  extends AnyFlatSpec
-  with Matchers
-  with LabeledSequenceThings
-  with TextGridTestExamples
+trait LabeledSequenceTestBasics extends AnyFlatSpec with Matchers with LabeledSequenceThings with TextGridTestExamples
 
 class LabeledSequenceTest extends TextGridSpec {
 
   info("behavior of label sequence labeling/unlabeling")
 
+  def assertLabeling(
+    labeledThings: LabeledSequence.Things[Char],
+    labelBox: String
+  ): Unit = {
+    val actualFmt = labeledSequenceBoxFormat(labeledThings)
+      .toString()
+      .trim()
+
+    val expectedFmt = labelBox.stripMargin.replaceAll("_", " ").trim()
+
+    actualFmt shouldEqual expectedFmt
+  }
+
   it should "application of labels" in {
     val thingCount = 10
 
-    val things = unlabeledThings(thingCount)
+    val things: LabeledSequence.Things[Char] = unlabeledThings(thingCount)
 
     things.addBioLabel(Journal)
     things.addBioLabel(Author)
     things.addBioLabel(FirstName, 0, 3)
     things.addBioLabel(MiddleName, 4, 1)
     things.addBioLabel(LastName, 6, 3)
-    println("added labels")
-    println(labeledSequenceBoxFormat(things))
-    // println(createRuler(84, 40))
+    assertLabeling(
+      things,
+      """|Fff M Lll_
+         |Aaaaaaaaaa
+         |Jjjjjjjjjj
+         |"""
+    )
 
     info("removing labels")
-    println("removed labels")
     things.unlabelNear(6, LastName)
-    println(labeledSequenceBoxFormat(things))
+    assertLabeling(
+      things,
+      """|Fff M_____
+         |Aaaaaaaaaa
+         |Jjjjjjjjjj
+         |"""
+    )
+
     things.unlabelNear(4, MiddleName)
-    println(labeledSequenceBoxFormat(things))
+    assertLabeling(
+      things,
+      """|Fff_______
+         |Aaaaaaaaaa
+         |Jjjjjjjjjj
+         |"""
+    )
+
     things.unlabelNear(2, FirstName)
-    println(labeledSequenceBoxFormat(things))
+    assertLabeling(
+      things,
+      """|__________
+         |Aaaaaaaaaa
+         |Jjjjjjjjjj
+         |"""
+    )
     info("removing all labels")
+
     things.unlabelNear(6, Journal)
-    println("removed all labels")
-    println(labeledSequenceBoxFormat(things))
+    assertLabeling(things, "")
   }
 
   it should "find the span of cells that have a particular label" in {

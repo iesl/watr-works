@@ -42,6 +42,7 @@ object GeometryTestUtils extends WatrSpec {
 
 object pngDrawing {
   import cats.implicits._
+
   import doodle.java2d.{Algebra => _, _}
   import doodle.syntax.{circle => circle_, text => text_, rectangle => rectangle_, _}
   import doodle.language.Basic
