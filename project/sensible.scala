@@ -116,7 +116,6 @@ object SensibleProject extends CommonLibs {
     ),
 
      ThisBuild / resolvers ++= List(
-      // Resolver.sonatypeRepo("snapshots"),
       Resolver.sonatypeRepo("releases"),
       Resolver.jcenterRepo,
       Resolver.bintrayRepo("jmcardon", "tsec")

@@ -4,8 +4,8 @@ import Keys._
 trait LibVersions {
   val cats = Seq(
     // "org.typelevel" %% "cats-effect" % "3.2.2",
-    "org.typelevel" %% "cats-effect" % "2.5.2",
-    "org.typelevel" %% "cats-core" % "2.3.0"
+    "org.typelevel" %% "cats-effect" % "2.5.3",
+    "org.typelevel" %% "cats-core" % "2.6.1"
   )
 }
 
@@ -114,7 +114,7 @@ trait CommonLibs extends LibVersions {
     "com.github.davidmoten" % "flatbuffers-java" % "1.10.0.2"
   )
 
-  val http4sVersion = "0.23.1"
+  val http4sVersion = "0.22.1"
   val http4s = Seq(
     "org.http4s" %% "http4s-core" % http4sVersion,
     "org.http4s" %% "http4s-dsl" % http4sVersion,

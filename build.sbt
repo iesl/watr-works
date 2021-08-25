@@ -75,6 +75,8 @@ lazy val textworks = (project in file("modules/text-works"))
     "org.bytedeco"   % "javacv"     % "1.5.5"        withSources() withJavadoc(),
     "org.bytedeco"   % "opencv"     % "4.5.1-1.5.5"  withSources() withJavadoc(),
     "org.bytedeco"   % "opencv"     % "4.5.1-1.5.5"  classifier platform,
+    "org.bytedeco"   % "openblas"     % "0.3.13-1.5.5"  withSources() withJavadoc(),
+    "org.bytedeco"   % "openblas"     % "0.3.13-1.5.5"  classifier platform,
           Lib.scopt,
           Lib.ammoniteOps,
           Lib.scalaGraph,

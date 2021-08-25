@@ -13,9 +13,7 @@ import zio._
 import zio.console._
 import ImgProc._
 import math._
-import org.bytedeco.opencv.opencv_dnn._
 import org.bytedeco.opencv.opencv_text._
-import org.bytedeco.opencv.global.opencv_text._
 
 object LineDetection {
 
@@ -281,7 +279,8 @@ object LineDetection {
 
     val runtime = Runtime.default
     // runtime.unsafeRun(app)
-    runtime.unsafeRunSync(hvlineApp)
+    // val sdf = runtime.unsafeRunSync(hvlineApp)
+    val sdf: Any = runtime.unsafeRun(hvlineApp)
 
   }
 }
