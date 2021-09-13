@@ -11,37 +11,81 @@ import scala.reflect._
 
 import tracing._
 import scala.collection.mutable
-import TraceLog._
 import transcripts.Transcript
 
 trait TraceLogEncoder[A] {
   def encode(a: A): TraceLog
 }
 
-sealed trait TraceLog {
-  def tagged(s: String): TraceLog
+case class TraceLog(
+  tags: List[String] = List(),
+  outline: List[String] = List(),
+  body: Seq[Transcript.Label]
+) {
+  def tagged(s: String) = copy(
+    tags = s :: tags
+  )
 }
 
-object TraceLog {
+trait TracelogCodecs {
+  this: ScopedTracing =>
 
-  case class LabelTraceLog(
-    tags: List[String] = List(),
-    body: Seq[Transcript.Label]
-  ) extends TraceLog {
-    def tagged(s: String) = copy(
-      tags = s :: tags
-    )
+  implicit val LabelTraceLogEncoder = new TraceLogEncoder[Transcript.Label] {
+    def encode(l: Transcript.Label): TraceLog = {
+      TraceLog(
+        body = List(l)
+      )
+    }
   }
+
+  implicit def FigureTraceLogEncoder[A <: GeometricFigure: ClassTag] = new TraceLogEncoder[A] {
+    def encode(l: A): TraceLog = {
+      figure(l)
+    }
+  }
+
+  implicit def IdentTraceLogEncoder[A <: TraceLog] = new TraceLogEncoder[A] {
+    def encode(l: A): TraceLog = {
+      l
+    }
+  }
+
+  implicit def Encode_TraceLog: Encoder[TraceLog]      = deriveEncoder
+  implicit def Encode_LabelTraceLog: Encoder[TraceLog] = deriveEncoder
+
 }
 
-trait ScopedTracing extends VisualTracer { self =>
+trait ScopedTracing extends VisualTracer with TracelogCodecs { self =>
 
-  def figure[T <: GeometricFigure: ClassTag](figure: T): LabelTraceLog = {
+  protected val traceLogs = mutable.ArrayBuffer[TraceLog]()
+
+  def traceAll[A](avals: => Seq[A])(implicit
+    Encoder: TraceLogEncoder[A]
+  ) = ifTrace {
+    avals.foreach { aval =>
+      trace(aval)(Encoder)
+    }
+  }
+
+  def trace[A](a: => A)(implicit
+    Encoder: TraceLogEncoder[A]
+  ) = ifTrace {
+    val log = Encoder.encode(a)
+    val taggedLog =
+      log.copy(
+        tags = log.tags ++ activeTags ++ scopeTags,
+        outline = taskOutline.to(List).reverse
+      )
+
+    traceLogs.append(taggedLog)
+  }
+
+  def figure[T <: GeometricFigure: ClassTag](figure: T): TraceLog = {
     figures(Seq(figure))
   }
 
-  def figures[T <: GeometricFigure: ClassTag](figures: Seq[T]): LabelTraceLog = {
-    LabelTraceLog(
+  def figures[T <: GeometricFigure: ClassTag](figures: Seq[T]): TraceLog = {
+    TraceLog(
       body = figures.map(figureToTransLabel(_))
     )
   }
@@ -58,26 +102,6 @@ trait ScopedTracing extends VisualTracer { self =>
       children = None
     )
   }
-  implicit val LabelTraceLogEncoder = new TraceLogEncoder[Transcript.Label] {
-    def encode(l: Transcript.Label): TraceLog = {
-      TraceLog.LabelTraceLog(
-        body = List(l)
-      )
-    }
-  }
-
-  implicit def FigureTraceLogEncoder[A <: GeometricFigure : ClassTag] = new TraceLogEncoder[A] {
-    def encode(l: A): TraceLog = {
-      figure(l)
-    }
-  }
-  implicit def IdentTraceLogEncoder[A <: TraceLog]= new TraceLogEncoder[A] {
-    def encode(l: A): TraceLog = {
-      l
-    }
-  }
-
-  protected val traceLogs = mutable.ArrayBuffer[TraceLog]()
 
   // override this to add context tags like page#, 'LineSegmentation', etc.
   protected def scopeTags: List[String]
@@ -88,8 +112,13 @@ trait ScopedTracing extends VisualTracer { self =>
   def popTag()             = activeTags.pop()
   def clearTags()          = activeTags.clear()
 
+  // Keep track of task names to help with visual tracing
+  protected val taskOutline = mutable.Stack[String]()
+  def startTask(s: String)  = taskOutline.push(s)
+  def endTask()             = taskOutline.pop()
+
   // Dynamically add/remove tags during processing
-  protected val activeLabels         = mutable.Stack[Transcript.Label]()
+  protected val activeLabels               = mutable.Stack[Transcript.Label]()
   def pushLabel(l: Transcript.Label): Unit = activeLabels.push(l)
   def modLabel(f: Transcript.Label => Transcript.Label): Unit = {
     val top = activeLabels.pop()
@@ -105,42 +134,17 @@ trait ScopedTracing extends VisualTracer { self =>
     }
   }
 
-  implicit def Encode_TraceLog: Encoder[TraceLog]           = deriveEncoder
-  implicit def Encode_LabelTraceLog: Encoder[LabelTraceLog] = deriveEncoder
-
-  def traceAll[A](avals: => Seq[A])(implicit
-    enclosing: sourcecode.Enclosing,
-    Encoder: TraceLogEncoder[A]
-  ) = ifTrace(tracemacros.VisualTraceLevel.JsonLogs) {
-    avals.foreach { aval =>
-      trace(aval)(enclosing, Encoder)
-    }
-  }
-
-  def trace[A](a: => A)(implicit
-    enclosing: sourcecode.Enclosing,
-    Encoder: TraceLogEncoder[A]
-  ) = ifTrace(tracemacros.VisualTraceLevel.JsonLogs) {
-    val log = Encoder.encode(a)
-
-    val methodFqn     = enclosing.value.split("\\.").toList.last
-    val rep1          = """.+[^#]#""".r
-    val rep2          = """\$anonfun""".r
-    val site0         = rep1.replaceFirstIn(methodFqn, "")
-    val site          = rep2.replaceAllIn(site0, "")
-    val qualifiedSite = s"@${site}()"
-    val allTags       = qualifiedSite +: (activeTags ++ scopeTags)
-    val taggedLog     = allTags.foldLeft(log) { case (acc, e) => acc.tagged(e) }
-
-    traceLogs.append(taggedLog)
-  }
-
   def getLogsAsLabels(): Seq[Transcript.Label] = {
     self.traceLogs
       .to(Seq)
       .flatMap({
-        case l: LabelTraceLog =>
-          l.body.map(_.withProps(("tags" -> l.tags)))
+        case l: TraceLog =>
+          l.body.map(
+            _.withProps(
+              ("tags"    -> l.tags),
+              ("outline" -> l.outline)
+            )
+          )
         case _ => List()
       })
   }
@@ -152,8 +156,7 @@ trait ScopedTracing extends VisualTracer { self =>
     )
   }
 
-
-  def shapes(lshapes: Seq[AnyShape]): LabelTraceLog = {
+  def shapes(lshapes: Seq[AnyShape]): TraceLog = {
     shape(lshapes: _*)
   }
 
@@ -173,8 +176,8 @@ trait ScopedTracing extends VisualTracer { self =>
     }
   }
 
-  def shape(lshapes: AnyShape*): LabelTraceLog = {
-    LabelTraceLog(
+  def shape(lshapes: AnyShape*): TraceLog = {
+    TraceLog(
       body = shapesToLabels(lshapes: _*)
     )
   }
@@ -188,9 +191,7 @@ trait DocumentScopeTracing extends ScopedTracing { self =>
 trait PageScopeTracing extends ScopedTracing { self: BasePageSegmenter =>
   lazy val traceLog: PageScopeTracing = this
 
-
-
-  def labeledShapes(labels: Label*): LabelTraceLog = {
+  def labeledShapes(labels: Label*): TraceLog = {
     def filterf(shape: AnyShape): Boolean = {
       labels.exists(shape.hasLabel(_))
     }
@@ -202,6 +203,5 @@ trait PageScopeTracing extends ScopedTracing { self: BasePageSegmenter =>
     val filtered = shapeIndex.shapeRIndex.getItems().filter(f)
     shape(filtered: _*)
   }
-
 
 }

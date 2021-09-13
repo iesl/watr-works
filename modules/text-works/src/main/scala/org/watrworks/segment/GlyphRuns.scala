@@ -11,14 +11,6 @@ import TypeTags._
 
 trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
 
-  def labelHomogenousFontRuns(): Unit = {
-
-    val natLangRuns = findNatLangBaselineRuns()
-    applyLabelToRun(LB.CharRunFontBaseline, findFontBaseline, natLangRuns)
-
-    val symbolCharRuns = findSymbolicCharRuns()
-    applyLabelToRun(LB.SymbolicGlyphLine, findCenterLine, symbolCharRuns)
-  }
 
   def findContiguousGlyphSpans(): Unit = {
     labelHomogenousFontRuns()
@@ -26,7 +18,19 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
     indexImageRegions()
   }
 
-  protected def findNatLangBaselineRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
+  private def labelHomogenousFontRuns(): Unit = {
+    traceLog.startTask("LabelFontRuns")
+
+    val natLangRuns = findNatLangBaselineRuns()
+    applyLabelToRun(LB.CharRunFontBaseline, findFontBaseline, natLangRuns)
+
+    val symbolCharRuns = findSymbolicCharRuns()
+    applyLabelToRun(LB.SymbolicGlyphLine, findCenterLine, symbolCharRuns)
+
+    traceLog.endTask()
+  }
+
+  private def findNatLangBaselineRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
     pageScope.pageItems.toSeq
       .collect { case item: ExtractedItem.CharItem => item }
       .filter(_.fontProps.isNatLangFont())
@@ -38,7 +42,7 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
       }
   }
 
-  protected def findSymbolicCharRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
+  private def findSymbolicCharRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
     pageScope.pageItems.toSeq
       .collect { case item: ExtractedItem.CharItem => item }
       .filterNot(_.fontProps.isNatLangFont())
@@ -57,6 +61,7 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
     makeLine: Seq[ExtractedItem.CharItem] => Line,
     natLangCharRuns: Seq[Seq[ExtractedItem.CharItem]]
   ): Unit = {
+    traceLog.startTask(spanLabel.fqn)
 
     natLangCharRuns.foreach { charItems =>
       val line     = makeLine(charItems)
@@ -87,12 +92,11 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
         createLabelOn(
           spanLabel.fqn,
           line
-        ) .withProp("Fonts", fontIdStr)
+        ).withProp("Fonts", fontIdStr)
       }
-
-      baseline
     }
 
+    traceLog.endTask()
   }
 
   private def findCenterLine(charRun: Seq[ExtractedItem.CharItem]): Line = {
@@ -110,27 +114,32 @@ trait GlyphRuns extends BasePageSegmenter with FontAndGlyphMetrics { self =>
   }
 
   private def indexPathRegions(): Unit = {
+    traceLog.startTask("LabelPathRegions")
+
     pageScope.pageItems.toSeq
       .filter { _.isInstanceOf[ExtractedItem.PathItem] }
       .foreach { item => indexShape(item.minBBox, LB.PathBounds) }
 
     traceLog.trace { labeledShapes(LB.PathBounds) }
+    traceLog.endTask()
   }
 
   // private def indexImageRegionsAndDeleteOverlaps(): Unit = {
   private def indexImageRegions(): Unit = {
+    traceLog.startTask("LabelImageRegions")
     // val deletedShapes =
-      pageScope.pageItems.toSeq
+    pageScope.pageItems.toSeq
       .filter { _.isInstanceOf[ExtractedItem.ImgItem] }
       .foreach { imageItem =>
         indexShape(imageItem.minBBox, LB.Image)
-        // val baseLines: Seq[LineShape] = searchForLines(imageItem.minBBox, LB.CharRunFontBaseline)
-        // deleteShapes(baseLines)
-        // baseLines
+      // val baseLines: Seq[LineShape] = searchForLines(imageItem.minBBox, LB.CharRunFontBaseline)
+      // deleteShapes(baseLines)
+      // baseLines
       }
 
     // traceLog.trace { shape(deletedShapes: _*) tagged "Deleted Intersect Image Bounds" }
     // traceLog.trace { labeledShapes(LB.Image) tagged "Image Regions" }
+    traceLog.endTask()
   }
 
 }

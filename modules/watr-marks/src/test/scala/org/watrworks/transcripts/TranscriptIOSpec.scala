@@ -5,7 +5,7 @@ import io.circe, circe._
 import circe.parser._
 import circe.syntax._
 
-class TranscriptionFormatTest extends WatrSpec {
+class TranscriptIOSpec extends WatrSpec {
 
   val JsonPrettyPrinter = circe.Printer(
     dropNullValues = false,

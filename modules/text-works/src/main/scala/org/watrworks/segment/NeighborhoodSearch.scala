@@ -111,6 +111,7 @@ trait NeighborhoodSearch extends BasePageSegmenter {
     fontId: String @@ ScaledFontID,
     callback: Seq[RectShape] => Unit
   ): Unit = {
+    traceLog.startTask(s"WithAdjacentSkyline/${facingDir}")
     // val focalRect = focalShape.shape
     // TODO rethink this maxDist value
     val chars   = focalShape.getAttr(ExtractedChars).getOrElse(Nil)
@@ -124,6 +125,7 @@ trait NeighborhoodSearch extends BasePageSegmenter {
       (hit) => hasFont(hit, fontId),
       callback
     )
+    traceLog.endTask()
   }
 
   protected def withUnoccludedShapes(

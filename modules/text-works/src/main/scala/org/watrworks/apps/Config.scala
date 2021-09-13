@@ -5,6 +5,8 @@ import java.nio.{file => nio}
 import corpora.filesys._
 import segment._
 
+sealed trait OutputOptions
+
 sealed trait Processable
 sealed trait ProcessableInput extends Processable
 sealed trait ProcessedInput extends Processable
@@ -16,11 +18,6 @@ object Processable {
 
   case class ExtractedFile(
     segmentation: DocumentSegmenter,
-    input: ProcessableInput
-  ) extends ProcessedInput
-
-  case class ExtractedTextGridFile(
-    textGridFile: nio.Path,
     input: ProcessableInput
   ) extends ProcessedInput
 

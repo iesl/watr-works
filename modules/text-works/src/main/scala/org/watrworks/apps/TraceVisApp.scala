@@ -3,7 +3,7 @@ package apps
 
 import scopt.Read
 import java.nio.{file => nio}
-import tracing.VisualTracer
+// import tracing.VisualTracer
 import ProcessPipelineSteps._
 import utils.{M3x3Position => M3}
 import scala.sys.process._
@@ -29,7 +29,7 @@ object TraceVisConfig {
   case class Config(
     ioConfig: IOConfig = IOConfig(),
     initCorpus: Option[nio.Path] = None,
-    runTraceLogging: Boolean = VisualTracer.tracingEnabled()
+    runTraceLogging: Boolean = true
   )
 }
 

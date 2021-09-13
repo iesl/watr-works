@@ -24,6 +24,8 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
     focalShape: RectShape,
     fontId: String @@ ScaledFontID
   ): Unit = {
+
+    traceLog.startTask(s"ConnectComponents")
     val graph           = pageScope.pageStats.connectedRunComponents.graph
     val fontVJumpByPage = docScope.docStats.fontVJumpByPage
     val GE              = LabeledShapeGraph.JumpEdge
@@ -33,6 +35,7 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
     runSearch(Dir.Up)
 
     def runSearch(facingDir: Dir) = {
+
       withAdjacentSkyline(
         facingDir,
         focalShape,
@@ -42,6 +45,7 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
     }
 
     def connectJumps(facingDir: Dir, shapes: Seq[RectShape]) = {
+      traceLog.startTask(s"ConnectJumps")
       shapes
         .groupBy(_.shape.bottom)
         .foreach { case (skylineGroupBottom, rects) =>
@@ -137,7 +141,9 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
             case _ =>
           }
         }
+      traceLog.endTask()
     }
+    traceLog.endTask()
   }
 
   import Interval._
@@ -153,12 +159,12 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
 
   }
 
-  def connectMonoFontBlocks(): Unit = {
+  def joinMonoFontBlocks(): Unit = {
+    traceLog.startTask("CreateMonoFontLattice")
     val maxClustered             = docScope.docStats.fontVJumpByPage.documentMaxClustered
     val graph: LabeledShapeGraph = pageScope.pageStats.connectedRunComponents.graph
 
-    val isValidJump: Interval.FloatExacts => graph.EdgeFilter = range =>
-      _.vJumpEvidence.exists(range.containsLCRC(_))
+    val isValidJump: Interval.FloatExacts => graph.EdgeFilter = range => _.vJumpEvidence.exists(range.containsLCRC(_))
 
     val isValidFont: String @@ ScaledFontID => graph.NodeFilter =
       queryFontId => node => node.fontId == queryFontId
@@ -268,6 +274,7 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
       }
     }
 
+    traceLog.endTask()
   }
 
 }
@@ -276,8 +283,6 @@ trait TextBlockGroupingDocScope extends BaseDocumentSegmenter { self =>
   import utils.GuavaHelpers._
   import utils.ExactFloats._
   import utils.Interval._
-
-
 
   val ClusterEpsilonWidth = 0.2.toFloatExact() // FloatRep(20)
 

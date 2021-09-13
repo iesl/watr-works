@@ -7,7 +7,6 @@ import TypeTags._
 import org.dianahep.{histogrammar => HST}
 import utils.Interval
 import Interval._
-import TraceLog.LabelTraceLog
 
 trait ShapeFunctions extends TrapezoidFinding with LineShapeClassification { self =>
   lazy val shapeFunctions = self
@@ -178,7 +177,7 @@ trait TrapezoidAnalysis extends BaseDocumentSegmenter { self =>
       .build(shapeMap)
 
     val clusteringLabel = ShapeClustering.toTranscriptLabel(clustering)
-    docTraceLogs.trace(LabelTraceLog(body = List(clusteringLabel)))
+    docTraceLogs.trace(TraceLog(body = List(clusteringLabel)))
 
     // val records = allTraps.map(t => TrapezoidFeatureRec(t)).toList
 

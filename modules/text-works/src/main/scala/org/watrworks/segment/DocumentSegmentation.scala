@@ -53,59 +53,53 @@ trait DocumentSegmenter
     docScope.docStats.initTable[Int @@ PageNum, String @@ ScaledFontID, Int @@ FloatRep](
       "PagewiseLineWidths"
     )
-    var stepNum = 0
-    def stepTag(msg: String): String = {
-      stepNum += 1
-      s"step:${stepNum}. ${msg}"
-    }
 
     def withPageSegmenters(stepName: String, f: PageSegmenter => Unit): Unit = {
-      val tags = stepTag(stepName)
       time(stepName) {
         pageSegmenters.foreach { p =>
-          p.traceLog.pushTag(tags)
+          p.traceLog.startTask(stepName)
           f(p)
-          p.traceLog.popTag()
+          p.traceLog.endTask()
         }
       }
     }
 
     def withDocumentSegmenter(stepName: String, f: => Unit): Unit = {
-      val tags = stepTag(stepName)
       time(stepName) {
-        self.pushTag(tags)
+        self.startTask(stepName)
         val _ = f
-        self.popTag()
+        self.endTask()
       }
     }
 
-    withPageSegmenters("findContiguousGlyphSpans", _.findContiguousGlyphSpans())
+    withPageSegmenters("FindContiguousGlyphRuns", _.findContiguousGlyphSpans())
 
     withDocumentSegmenter(
-      "computeFontMetrics", {
+      "ComputeFontMetrics", {
         computeScaledFontHeightMetrics(LB.CharRunFontBaseline)
         computeScaledSymbolicFontMetrics()
       }
     )
 
-    withPageSegmenters("findTextLineShapes", _.findTextLineShapesFromFontBaselines())
+    withPageSegmenters("FindTypographicUnits", _.findTypographicUnits())
 
-    withPageSegmenters("findMonoFontBlocks", _.findMonoFontBlocks())
+    withPageSegmenters("FindMonoFontBlocks", _.findMonoFontBlocks())
 
-    withDocumentSegmenter("collectMonoFontFeatures", { self.collectMonoFontFeatures() })
+    withDocumentSegmenter("CollectMonoFontFeatures", { self.collectMonoFontFeatures() })
 
-    withPageSegmenters("connectMonoFontBlocks", _.connectMonoFontBlocks())
+    withPageSegmenters("JoinMonoFontBlocks", _.joinMonoFontBlocks())
 
-    withPageSegmenters("findColumnEvidence", _.findColumnEvidence())
-    withDocumentSegmenter("findColumnClusters", { self.columnClustering() })
-    withPageSegmenters("applyColumnEvidence", _.applyColumnEvidence())
+    withPageSegmenters("FindColumnEvidence", _.findColumnEvidence())
+    withDocumentSegmenter("ComputeColumnClusters", { self.columnClustering() })
+
+    // withPageSegmenters("ApplyColumnEvidence", _.applyColumnEvidence())
 
     // withPageSegmenters("setTextForReprShapes", _.setTextForReprShapes())
     // withPageSegmenters("buildLinePairTrapezoids", _.buildLinePairTrapezoids())
     // withDocumentSegmenter("createFeatureVectors", { self.createFeatureVectors() })
     // withPageSegmenters("classifyLines", _.classifyLines())
 
-    withPageSegmenters("pageStanzaConstruction", _.createPageStanzas())
+    withPageSegmenters("CreateOutputStanzas", _.createPageStanzas())
 
   }
 }
@@ -237,25 +231,6 @@ trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
 
   def createTranscript(): Transcript = {
     val documentId = self.documentId
-    // val pages = self.pageAtomsAndGeometry.map {
-    //   case (pageItems, pageBounds) => {
-
-    //     val glyphs = pageItems.map(pageItem => {
-    //       Transcript.Glyph(
-    //         pageItem.strRepr(),
-    //         GlyphID(pageItem.id.unwrap),
-    //         pageItem.minBBox,
-    //         None
-    //       )
-    //     })
-
-    //     Transcript.Page(
-    //       pageBounds.pageNum,
-    //       pageBounds.bounds,
-    //       glyphs.to(List)
-    //     )
-    //   }
-    // }
 
     val pages = pageSegmenters.map { pageSegmenter =>
       val pageItems  = pageSegmenter.pageItems

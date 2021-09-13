@@ -38,6 +38,8 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
     val sortedShapes  = sortShapesByFontOccurrence(initShapes)
     val queryDistance = self.pageGeometry.width
 
+    traceLog.startTask("TwoColumnEvidence")
+
     sortedShapes.foreach({ case (focalShapes, fontId) =>
       focalShapes.foreach(focalShape =>
         withUnoccludedShapes(
@@ -53,6 +55,7 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
               hitShape <- hits
               hitRect = hitShape.shape
               (sepRect, pos @ _) <- focalRect.minSeparatingRect(hitRect)
+              _ = traceLog.startTask("FindGutters")
               pageBand <- sepRect
                             .withinRegion(pageGeometry)
                             .adjacentRegions(M3.Left, M3.Center, M3.Right)
@@ -67,8 +70,10 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
                                         .adjacentRegion(M3.Right)
                                         .map(_.shave(FloatExact.epsilon))
               _ = traceLog.trace { createLabelOn("RightGutterQuery", rightGutterQueryRect) }
+              _ = traceLog.endTask()
 
             } {
+              traceLog.startTask("SearchGutters")
               val leftGutterHits  = searchForShapes[GeometricFigure](leftGutterQueryRect)
               val leftGutterEmpty = leftGutterHits.isEmpty
 
@@ -110,14 +115,16 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
                         createLabelsOnShapes("RGHits", rightGutterHits)
                       )
                   )
-
               }
 
+              traceLog.endTask()
             }
           }
         )
       )
     })
+
+    traceLog.endTask()
   }
 
   def applyColumnEvidence(): Unit = {
@@ -158,7 +165,7 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
           })
           val queryRows = queryCols.transpose
           val rowProps: Seq[ColumnProps] = queryRows.map {
-            _ match {
+            _.toList match {
               case List(gutterL, col1, gutterC, col2, gutterR) =>
                 val gutterLEmpty  = hasNoOverlaps(gutterL)
                 val gutterCEmpty  = hasNoOverlaps(gutterC)
@@ -180,14 +187,17 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
                 // }
                 ColumnProps(guttersEmpty, col1Empty, col2Empty)
 
-              case _ => ???
+              case other =>
+                println(s"huh? ${other}")
+
+                ???
+
             }
           }
           rowProps.groupByWindow((window, elem) => {
 
             ???
           })
-
 
         case None =>
       }

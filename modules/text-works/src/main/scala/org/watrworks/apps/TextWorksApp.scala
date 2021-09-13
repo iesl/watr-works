@@ -29,7 +29,6 @@ object TextWorksConfig {
   case class Config(
     ioConfig          : IOConfig = IOConfig(),
     initCorpus        : Option[nio.Path] = None,
-    runTraceLogging   : Boolean = VisualTracer.tracingEnabled(),
     exec              : Option[(Config) => Unit] = Some((c) => runTextExtractionPipeline(c))
   )
 

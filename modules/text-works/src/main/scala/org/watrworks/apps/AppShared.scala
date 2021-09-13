@@ -40,7 +40,6 @@ object ProcessPipelineSteps {
              .via(dropSkipAndRun(conf.ioConfig))
              .via(cleanFileArtifacts(conf))
              .via(markUnextractedProcessables(conf))
-             // .via(segmentPageImages(conf))
              .via(runSegmentation(conf))
              .via(writeExtractedTextFile(conf))
              .runDrain
@@ -250,8 +249,6 @@ object ProcessPipelineSteps {
 
         val gridJsStr = writeable.asJson
           .printWith(JsonPrettyPrinter)
-
-        println(s"writing ${outputFile}")
 
         time(s"write transcript.json") {
           fs.write(outputFile.toFsPath(), gridJsStr)

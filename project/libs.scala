@@ -29,7 +29,7 @@ object LogLibs extends LibVersions {
   val logbackVersion = "1.7.32"
   val logback        = Seq(
     "org.log4s"     %% "log4s"           % "1.10.0",
-    "ch.qos.logback" % "logback-classic" % "1.2.5",
+    "ch.qos.logback" % "logback-classic" % "1.2.6",
     "org.slf4j"      % "slf4j-api"       % logbackVersion,
     "org.slf4j"      % "jul-to-slf4j"    % logbackVersion,
     "org.slf4j"      % "jcl-over-slf4j"  % logbackVersion
@@ -57,9 +57,7 @@ trait CommonLibs extends LibVersions {
   val ammonite        = "com.lihaoyi"  % "ammonite"     % ammoniteVersion cross CrossVersion.full
   val ammoniteOps     = "com.lihaoyi" %% "ammonite-ops" % ammoniteVersion
 
-  val scalaGraphVersion = "1.13.2"
-  val scalaGraph                 = "org.scala-graph" %% "graph-core" % scalaGraphVersion
-  val scalaGraphConstrained      = "org.scala-graph" %% "graph-constrained" % scalaGraphVersion
+  val scalaGraph                 = "org.scala-graph" %% "graph-core" % "1.13.3" 
 
   val scopt = "com.github.scopt" %% "scopt" % "4.0.1"
 

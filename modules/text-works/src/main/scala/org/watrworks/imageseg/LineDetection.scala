@@ -277,10 +277,7 @@ object LineDetection {
       _           <- writePng(mDisplay, imgPath)
     } yield ()
 
-    val runtime = Runtime.default
-    // runtime.unsafeRun(app)
-    // val sdf = runtime.unsafeRunSync(hvlineApp)
-    val sdf: Any = runtime.unsafeRun(hvlineApp)
+    Runtime.default.unsafeRun(hvlineApp)
 
   }
 }
