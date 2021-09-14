@@ -3,11 +3,11 @@ package watrcolors
 package services
 
 import org.http4s
-import http4s._
+// import http4s._
 import http4s.dsl._
-import http4s.circe._
+// import http4s.circe._
 import _root_.io.circe
-import circe._
+// import circe._
 // import circe.syntax._
 // import circe.literal._
 // import cats.effect._

@@ -1,5 +1,5 @@
 package org.watrworks
-package extract
+package pdfex
 
 
 object CharClasses {

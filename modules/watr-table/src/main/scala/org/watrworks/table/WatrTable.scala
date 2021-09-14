@@ -3,7 +3,7 @@ package table
 
 import cats.effect._
 import ammonite.{ops => fs}
-import watrcolors.WatrTableServer
+// import watrcolors.WatrTableServer
 
 object SharedInit extends {
 

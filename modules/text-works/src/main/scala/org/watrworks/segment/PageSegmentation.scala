@@ -7,7 +7,7 @@ import geometry._
 import geometry.syntax._
 import watrmarks.Label
 import utils.ExactFloats._
-import extract._
+import pdfex._
 import TypeTags._
 
 import scala.reflect._

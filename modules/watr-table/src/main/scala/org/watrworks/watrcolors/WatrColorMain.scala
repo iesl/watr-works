@@ -1,13 +1,13 @@
 package org.watrworks
 package watrcolors
 
-import services._
+// import services._
 import cats.effect._
-import org.http4s._
-import org.http4s.server.{ Router, Server }
+// import org.http4s._
+// import org.http4s.server.{ Router, Server }
 // import org.http4s.server.blaze._
-import org.http4s.syntax.all._
-import scala.concurrent.ExecutionContext.global
+// import org.http4s.syntax.all._
+// import scala.concurrent.ExecutionContext.global
 
 object WatrTableApp extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = ???

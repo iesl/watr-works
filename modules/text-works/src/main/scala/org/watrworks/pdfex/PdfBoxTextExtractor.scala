@@ -1,5 +1,5 @@
 package org.watrworks
-package extract
+package pdfex
 
 import java.awt.{Shape}
 import java.awt.geom._

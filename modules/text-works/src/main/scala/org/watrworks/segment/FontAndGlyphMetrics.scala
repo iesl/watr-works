@@ -1,7 +1,7 @@
 package org.watrworks
 package segment
 
-import extract._
+import pdfex._
 import utils.ExactFloats._
 import watrmarks._
 import scalaz.syntax.equal._

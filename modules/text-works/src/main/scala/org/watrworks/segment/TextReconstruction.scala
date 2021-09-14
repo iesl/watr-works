@@ -6,7 +6,7 @@ import geometry._
 import geometry.syntax._
 import utils.ExactFloats._
 import utils.QuickNearestNeighbors._
-import extract.ExtractedItem
+import pdfex.ExtractedItem
 import TypeTags._
 import utils.intervals._
 import watrmarks._

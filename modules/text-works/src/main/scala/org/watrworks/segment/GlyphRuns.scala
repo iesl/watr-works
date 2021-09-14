@@ -3,7 +3,7 @@ package segment
 
 import geometry._
 import geometry.syntax._
-import extract._
+import pdfex._
 import utils.ExactFloats._
 import watrmarks._
 import utils.SlicingAndDicing._
