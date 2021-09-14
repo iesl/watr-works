@@ -1,8 +1,8 @@
 package org.watrworks
 package textgrid
 
-import annots._
 import geometry._
+import annots.LabeledSequence
 
 trait TextGridConstruction extends GeometricOps {
   import geometry._

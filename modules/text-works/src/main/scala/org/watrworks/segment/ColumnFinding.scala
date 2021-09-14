@@ -3,6 +3,7 @@ package segment
 
 import geometry._
 import geometry.syntax._
+import prelude._
 
 import utils.{Direction => Dir}
 import utils.{M3x3Position => M3}
@@ -173,11 +174,11 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
                 val col1Empty     = hasNoOverlaps(col1)
                 val col2Empty     = hasNoOverlaps(col2)
                 val guttersEmpty  = gutterLEmpty && gutterREmpty && gutterCEmpty
-                val colsEmpty     = col1Empty && col2Empty
-                val blankStrip    = guttersEmpty && colsEmpty
-                val leftColStrip  = guttersEmpty && !col1Empty && col2Empty
-                val rightColStrip = guttersEmpty && col1Empty && !col2Empty
-                val lrColStrip    = guttersEmpty && !col1Empty && !col2Empty
+                // val colsEmpty     = col1Empty && col2Empty
+                // val blankStrip    = guttersEmpty && colsEmpty
+                // val leftColStrip  = guttersEmpty && !col1Empty && col2Empty
+                // val rightColStrip = guttersEmpty && col1Empty && !col2Empty
+                // val lrColStrip    = guttersEmpty && !col1Empty && !col2Empty
 
                 // traceLog.trace {
                 // val hitStr     = if (emptyQuery) "Empty" else "Nonempty"

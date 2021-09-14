@@ -1,5 +1,6 @@
 package org.watrworks
 package segment
+package prelude
 
 import geometry._
 

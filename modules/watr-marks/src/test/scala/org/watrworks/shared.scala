@@ -85,6 +85,7 @@ trait TextGridTestExamples extends TextGridConstruction {
       // 012345678901234567890123456789012345678901234567899 """
       """1. Bishop-Clark, C  and Wheeler, D; S.Eng. P-Hall"""
     }
+
     val documentId = DocumentID("Bishop-Clark")
     var textGrid = stringToPageTextGrid(documentId, unlabeledText,  PageNum(1), None)
     val labeledRow = addLabelsToGridRow(textGrid.rows().head, bishopClarkLabelSpans)

@@ -9,7 +9,6 @@ import org.apache.pdfbox.pdmodel.font._
 import utils.ExactFloats._
 import java.awt.{Shape}
 import java.awt.geom._
-import org.apache.pdfbox.pdmodel.common.PDRectangle
 import _root_.io.circe, circe._
 
 import scalaz.std.anyVal._

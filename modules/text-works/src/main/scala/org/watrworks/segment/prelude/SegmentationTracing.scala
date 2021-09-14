@@ -1,8 +1,8 @@
 package org.watrworks
 package segment
+package prelude
 
 import geometry._
-import watrmarks._
 
 import _root_.io.circe, circe._
 
@@ -27,8 +27,7 @@ case class TraceLog(
   )
 }
 
-trait TracelogCodecs {
-  this: ScopedTracing =>
+trait TracelogCodecs { this: ScopedTracing =>
 
   implicit val LabelTraceLogEncoder = new TraceLogEncoder[Transcript.Label] {
     def encode(l: Transcript.Label): TraceLog = {
@@ -181,27 +180,4 @@ trait ScopedTracing extends VisualTracer with TracelogCodecs { self =>
       body = shapesToLabels(lshapes: _*)
     )
   }
-}
-
-trait DocumentScopeTracing extends ScopedTracing { self =>
-  lazy val docTraceLogs = self
-
-}
-
-trait PageScopeTracing extends ScopedTracing { self: BasePageSegmenter =>
-  lazy val traceLog: PageScopeTracing = this
-
-  def labeledShapes(labels: Label*): TraceLog = {
-    def filterf(shape: AnyShape): Boolean = {
-      labels.exists(shape.hasLabel(_))
-    }
-
-    val f =
-      if (labels.nonEmpty) filterf(_)
-      else (_: AnyShape) => true
-
-    val filtered = shapeIndex.shapeRIndex.getItems().filter(f)
-    shape(filtered: _*)
-  }
-
 }

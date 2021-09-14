@@ -21,7 +21,10 @@ object Processable {
     input: ProcessableInput
   ) extends ProcessedInput
 
-  def getTextgridOutputFile(input: ProcessableInput, conf: IOConfig): nio.Path = {
+  def getTranscriptOutputFile(
+    input: ProcessableInput,
+    conf: IOConfig
+  ): nio.Path = {
     conf.outputPath.getOrElse {
       input match {
         case SingleFile(f) =>

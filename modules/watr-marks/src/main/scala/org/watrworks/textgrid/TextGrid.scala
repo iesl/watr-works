@@ -273,7 +273,7 @@ object TextGrid {
 
   object Row {
     def fromCells(init: Seq[GridCell]): Row = new Row {
-      override val labelTargets = init // labelTargets.appendAll(init)
+      override val labelTargets = init
     }
   }
 

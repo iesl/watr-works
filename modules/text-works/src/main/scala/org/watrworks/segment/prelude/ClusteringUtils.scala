@@ -1,14 +1,13 @@
 package org.watrworks
 package segment
+package prelude
 
 import smile.clustering.{hclust}
 
 import utils.ExactFloats._
 
 import utils.Interval
-import Interval._
 
-import TypeTags._
 
 case class Instance[A](
   a: A,

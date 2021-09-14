@@ -2,6 +2,7 @@ package org.watrworks
 package segment
 
 import ammonite.{ops => fs}, fs._
+import prelude._
 
 import geometry._
 import utils.Timer.time
@@ -14,7 +15,7 @@ import utils.IdGenerator
 import rsearch._
 
 import TypeTags._
-import org.watrworks.transcripts.Transcript
+import transcripts.Transcript
 
 object DocumentSegmenter {
 
@@ -103,6 +104,12 @@ trait DocumentSegmenter
 
   }
 }
+
+trait DocumentScopeTracing extends ScopedTracing { self =>
+  lazy val docTraceLogs: DocumentScopeTracing = self
+
+}
+
 
 trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
 

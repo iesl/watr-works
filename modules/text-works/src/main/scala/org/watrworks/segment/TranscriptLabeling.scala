@@ -35,9 +35,9 @@ trait TranscriptLabeling { self: BasePageSegmenter =>
       )
   }
 
-  def createOctoSearchLabel[Figure <: GeometricFigure](
-    bySearch: Neighbor.BySearch[Figure],
-    results: Seq[AnyShape]
+  def createOctoSearchLabel[F <: GeometricFigure](
+    bySearch: Neighbor.BySearch[F],
+    results: Seq[Shape[F]]
   ): Transcript.Label = {
 
     val BySearch(oct, _, _, _, _, tags) = bySearch

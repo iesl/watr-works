@@ -22,6 +22,7 @@ class OctothorpeTest extends WatrSpec with TextGridConstruction {
 
     val documentId = DocumentID("foo")
 
+
     val textGrid = stringToPageTextGrid(documentId, text, PageNum(1), None)
 
     val rtreeIndex = RTreeIndex.empty[GeometricFigure, RectShape]()
@@ -94,7 +95,7 @@ class OctothorpeTest extends WatrSpec with TextGridConstruction {
       Octothorpe.cellspan(M3.Left, M3.Right)
     )
 
-    val doSearch = (r: Rect) => rtreeIndex.search(r, _ => true)
+    // val doSearch = (r: Rect) => rtreeIndex.search(r, _ => true)
 
     val focused = plusShaped
       .withHorizon(Bounds5x3)

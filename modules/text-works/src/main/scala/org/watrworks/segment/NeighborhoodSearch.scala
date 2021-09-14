@@ -8,6 +8,7 @@ import rsearch.{Octothorpe}
 import watrmarks.Label
 import utils.ExactFloats._
 import utils.{Direction => Dir}
+import prelude._
 
 sealed trait Neighbor {
   def tags: List[String]
@@ -17,12 +18,12 @@ object Neighbor {
   case class SortWith[A, B: Ordering](
     f: A => B
   )
-  case class BySearch[Figure <: GeometricFigure](
+  case class BySearch[F <: GeometricFigure](
     oct: Oct,
-    search: Rect => Seq[DocSegShape[Figure]],
-    sortBy: SortWith[DocSegShape[Figure], Double],
-    filterResults: Seq[DocSegShape[Figure]] => Seq[DocSegShape[Figure]],
-    action: Seq[DocSegShape[Figure]] => Unit,
+    search: Rect => Seq[Shape[F]],
+    sortBy: SortWith[Shape[F], Double],
+    filterResults: Seq[Shape[F]] => Seq[Shape[F]],
+    action: Seq[Shape[F]] => Unit,
     tags: List[String]
   ) extends Neighbor
 
@@ -61,7 +62,7 @@ trait NeighborhoodSearch extends BasePageSegmenter {
 
     val tags = s"""Searching${facingDir}For(${forLabels.map(_.fqn).mkString(" & ")})""" :: Nil
 
-    val sortWithTop = Neighbor.SortWith[DocSegShape[Figure], Double](
+    val sortWithTop = Neighbor.SortWith[Shape[Figure], Double](
       _.shape.minBounds.getTop
     )
 
@@ -87,7 +88,7 @@ trait NeighborhoodSearch extends BasePageSegmenter {
   import Neighbor._
 
   protected def runNeighborBySearch[Figure <: GeometricFigure](bySearch: BySearch[Figure]): Unit = {
-    val BySearch(oct, search, sortBy, filterResults, cb, tags) = bySearch
+    val BySearch(oct, search, sortBy, filterResults, cb, tags @ _) = bySearch
 
     val res0     = oct.runSearch(search)
     val sorted   = res0.sortBy(sortBy.f)
@@ -138,11 +139,13 @@ trait NeighborhoodSearch extends BasePageSegmenter {
   ): Unit = {
     val focalRect = focalShape.shape
 
+
     val neighorhoodDef = lookAdjacentFor[Rect](
       facingDir,
       focalRect,
       queryMaxDist,
       (foundShapes: Seq[RectShape]) => {
+
 
         pushLabel(
           createLabel(s"Facing${facingDir}Find( ${queryLabel.fqn} )")

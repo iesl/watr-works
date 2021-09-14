@@ -176,8 +176,10 @@ trait TrapezoidAnalysis extends BaseDocumentSegmenter { self =>
     val clustering = lbAngleClustering
       .build(shapeMap)
 
+
+
     val clusteringLabel = ShapeClustering.toTranscriptLabel(clustering)
-    docTraceLogs.trace(TraceLog(body = List(clusteringLabel)))
+    docTraceLogs.trace(clusteringLabel)
 
     // val records = allTraps.map(t => TrapezoidFeatureRec(t)).toList
 

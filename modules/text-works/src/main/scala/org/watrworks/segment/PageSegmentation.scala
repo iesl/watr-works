@@ -1,6 +1,8 @@
 package org.watrworks
 package segment
 
+import prelude._
+
 import geometry._
 import geometry.syntax._
 import watrmarks.Label
@@ -55,6 +57,25 @@ trait AttributeTags {
   val WeightedLabels   = AttrWitness.Mk[WeightedLabeling]()
 
 }
+
+trait PageScopeTracing extends ScopedTracing { self: BasePageSegmenter =>
+  lazy val traceLog: PageScopeTracing = this
+
+  def labeledShapes(labels: Label*): TraceLog = {
+    def filterf(shape: AnyShape): Boolean = {
+      labels.exists(shape.hasLabel(_))
+    }
+
+    val f =
+      if (labels.nonEmpty) filterf(_)
+      else (_: AnyShape) => true
+
+    val filtered = shapeIndex.shapeRIndex.getItems().filter(f)
+    shape(filtered: _*)
+  }
+
+}
+
 
 // Trait from which other page-level segmentation trait can inherit
 trait BasePageSegmenter extends PageScopeTracing with AttributeTags with TranscriptLabeling {

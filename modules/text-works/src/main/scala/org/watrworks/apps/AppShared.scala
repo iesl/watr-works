@@ -113,7 +113,7 @@ object ProcessPipelineSteps {
     _.map {
       case Left(inputMode) => Left(inputMode)
       case Right(inputMode) =>
-        val output = Processable.getTextgridOutputFile(inputMode, conf.ioConfig)
+        val output = Processable.getTranscriptOutputFile(inputMode, conf.ioConfig)
 
         if (output.toFile().exists()) {
           if (conf.ioConfig.overwrite) {
@@ -236,7 +236,7 @@ object ProcessPipelineSteps {
   ): Pipe[MarkedOutput, MarkedOutput] = {
     _.map {
       case m @ Right(Processable.ExtractedFile(segmentation, input)) =>
-        val outputFile = Processable.getTextgridOutputFile(input, conf.ioConfig)
+        val outputFile = Processable.getTranscriptOutputFile(input, conf.ioConfig)
 
         val jsonOutput = time("build json output") {
           val transcript = segmentation.createTranscript()
@@ -274,7 +274,7 @@ object ProcessPipelineSteps {
         input match {
           case m @ Processable.CorpusFile(corpusEntry) =>
             val textGridFile =
-              Processable.getTextgridOutputFile(m, conf.ioConfig)
+              Processable.getTranscriptOutputFile(m, conf.ioConfig)
             val isProcessed = fs.exists(textGridFile.toFsPath())
             if (isProcessed) {
               log.info(s"Already processed ${corpusEntry}: ${textGridFile}")

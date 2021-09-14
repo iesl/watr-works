@@ -3,12 +3,9 @@ package apps
 
 import zio._
 import zio.console._
-import zio.{stream => zs}
 import java.io.{
   IOException
-  // EOFException
 }
-// import scala.io.StdIn
 
 import imageseg._
 import org.bytedeco.opencv.opencv_core._

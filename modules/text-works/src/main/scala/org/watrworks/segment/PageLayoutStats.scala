@@ -6,6 +6,7 @@ import TypeTags._
 import utils.DoOrDieHandlers._
 import utils.ExactFloats._
 import utils._
+import prelude._
 
 import org.dianahep.{histogrammar => HST}
 import scala.collection.mutable

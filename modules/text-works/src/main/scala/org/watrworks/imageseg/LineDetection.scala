@@ -245,21 +245,21 @@ object LineDetection {
 
     println(s"Segmenting page Image ${imgPath}")
 
-    val cannyApp: ZIO[Console, Any, Any] = for {
-      initImg     <- readImageColor(imgPath)
-      _           <- putStrLn(s"Loaded ${imgPath} = ${initImg}")
-      kernelSize  <- Task(40)
-      threshed    <- runCanny(initImg)
-      hlineKernel <- makeHLineKernel(kernelSize)
-      vlineKernel <- makeVLineKernel(kernelSize)
-      rKernel     <- makeRectKernel(5, 5)
-      mOpenH      <- runOpen(threshed, hlineKernel)
-      mOpenV      <- runOpen(threshed, vlineKernel)
-      mVH         <- combineMats(mOpenV, mOpenH)
-      mVHDilate   <- runDilate(mVH, rKernel)
-      mDisplay    <- blend(initImg, 0.1, mVHDilate)
-      _           <- writePng(mDisplay, imgPath)
-    } yield ()
+    // val cannyApp: ZIO[Console, Any, Any] = for {
+    //   initImg     <- readImageColor(imgPath)
+    //   _           <- putStrLn(s"Loaded ${imgPath} = ${initImg}")
+    //   kernelSize  <- Task(40)
+    //   threshed    <- runCanny(initImg)
+    //   hlineKernel <- makeHLineKernel(kernelSize)
+    //   vlineKernel <- makeVLineKernel(kernelSize)
+    //   rKernel     <- makeRectKernel(5, 5)
+    //   mOpenH      <- runOpen(threshed, hlineKernel)
+    //   mOpenV      <- runOpen(threshed, vlineKernel)
+    //   mVH         <- combineMats(mOpenV, mOpenH)
+    //   mVHDilate   <- runDilate(mVH, rKernel)
+    //   mDisplay    <- blend(initImg, 0.1, mVHDilate)
+    //   _           <- writePng(mDisplay, imgPath)
+    // } yield ()
 
     val hvlineApp: ZIO[Console, Any, Any] = for {
       initImg     <- readImage(imgPath)

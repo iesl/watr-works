@@ -16,7 +16,6 @@ import java.nio.IntBuffer
 import javax.swing.WindowConstants
 import scala.math.round
 import scala.util.Using
-import java.awt.event.KeyEvent
 
 
 trait Closeable {
@@ -103,7 +102,7 @@ object OpenCVUtils {
     val dest = image.clone()
     val radius = 5
     val red = new Scalar(0, 0, 255, 0)
-    for (i <- 0 until points.size.toInt) {
+    for (i <- 0L until points.size) {
       val p = points.get(i)
       circle(dest, new Point(round(p.x), round(p.y)), radius, red)
     }
@@ -145,7 +144,7 @@ object OpenCVUtils {
   def toArray(keyPoints: KeyPoint): Array[KeyPoint] = {
     val oldPosition = keyPoints.position()
     // Convert keyPoints to Scala sequence
-    val points = for (i <- Array.range(0, keyPoints.capacity.toInt)) yield new KeyPoint(keyPoints.position(i))
+    val points = for (i <- Array.range(0, keyPoints.capacity.toInt)) yield new KeyPoint(keyPoints.position(i.toLong))
     // Reset position explicitly to avoid issues from other uses of this position-based container.
     keyPoints.position(oldPosition)
 
@@ -162,7 +161,7 @@ object OpenCVUtils {
     val n = keyPoints.size().toInt
 
     // Convert keyPoints to Scala sequence
-    for (i <- Array.range(0, n)) yield new KeyPoint(keyPoints.get(i))
+    for (i <- Array.range(0, n)) yield new KeyPoint(keyPoints.get(i.toLong))
   }
 
   /** Convert native vector to JVM array.
@@ -176,7 +175,7 @@ object OpenCVUtils {
     val n = matches.size().toInt
 
     // Convert keyPoints to Scala sequence
-    for (i <- Array.range(0, n)) yield new DMatch(matches.get(i))
+    for (i <- Array.range(0, n)) yield new DMatch(matches.get(i.toLong))
   }
 
   def toBufferedImage(mat: Mat): BufferedImage = {
@@ -219,11 +218,11 @@ object OpenCVUtils {
   def toMatPoint2f(points: Seq[Point2f]): Mat = {
     // Create Mat representing a vector of Points3f
     val dest = new Mat(1, points.size, CV_32FC2)
-    val indx = dest.createIndexer().asInstanceOf[FloatIndexer]
+    val indx = dest.createIndexer[FloatIndexer]()
     for (i <- points.indices) {
       val p = points(i)
-      indx.put(0, i, 0, p.x)
-      indx.put(0, i, 1, p.y)
+      indx.put(0, i.toLong, 0, p.x)
+      indx.put(0, i.toLong, 1, p.y)
     }
     require(dest.checkVector(2) >= 0)
     dest
@@ -236,12 +235,12 @@ object OpenCVUtils {
   def toMatPoint3f(points: Seq[Point3f]): Mat = {
     // Create Mat representing a vector of Points3f
     val dest = new Mat(1, points.size, CV_32FC3)
-    val indx = dest.createIndexer().asInstanceOf[FloatIndexer]
+    val indx = dest.createIndexer[FloatIndexer]()
     for (i <- points.indices) {
       val p = points(i)
-      indx.put(0, i, 0, p.x)
-      indx.put(0, i, 1, p.y)
-      indx.put(0, i, 2, p.z)
+      indx.put(0, i.toLong, 0, p.x)
+      indx.put(0, i.toLong, 1, p.y)
+      indx.put(0, i.toLong, 2, p.z)
     }
     dest
   }
@@ -249,7 +248,7 @@ object OpenCVUtils {
   def toPoint2fArray(mat: Mat): Array[Point2f] = {
     require(mat.checkVector(2) >= 0, "Expecting a vector Mat")
 
-    val indexer = mat.createIndexer().asInstanceOf[FloatIndexer]
+    val indexer = mat.createIndexer[FloatIndexer]()
     val size = mat.total.toInt
     val dest = new Array[Point2f](size)
 
@@ -265,11 +264,12 @@ object OpenCVUtils {
     val size: Int = points.size.toInt
     // Argument to Mat constructor must be `Int` to mean sizes, otherwise it may be interpreted as content.
     val dest = new Mat(1, size, CV_32FC2)
-    val indx = dest.createIndexer().asInstanceOf[FloatIndexer]
+
+    val indx = dest.createIndexer[FloatIndexer]()
     for (i <- 0 until size) {
-      val p = points.get(i)
-      indx.put(0, i, 0, p.x)
-      indx.put(0, i, 1, p.y)
+      val p = points.get(i.toLong)
+      indx.put(0, i.toLong, 0, p.x)
+      indx.put(0, i.toLong, 1, p.y)
     }
     dest
   }
@@ -281,8 +281,8 @@ object OpenCVUtils {
     * @return JavaCV/native collection
     */
   def toVector(src: Array[DMatch]): DMatchVector = {
-    val dest = new DMatchVector(src.length)
-    for (i <- src.indices) dest.put(i, src(i))
+    val dest = new DMatchVector(src.length.toLong)
+    for (i <- src.indices) dest.put(i.toLong, src(i))
     dest
   }
 

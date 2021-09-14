@@ -7,7 +7,6 @@ import ammonite.{ops => fs} // , fs._
 import scopt.Read
 import shapeless._
 import java.nio.{file => nio}
-import tracing.VisualTracer
 import utils.PathUtils._
 import utils.TextOps._
 
@@ -120,7 +119,7 @@ object TextWorksConfig {
           case Processable.SingleFile(f) =>
             if (fs.exists(f.toFsPath())) success else failure(s"file ${f} not found")
 
-          case Processable.CorpusFile(entry) =>
+          case Processable.CorpusFile(entry @ _) =>
             ???
 
           case Processable.CorpusRoot(rootPath) =>

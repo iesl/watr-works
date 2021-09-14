@@ -1,6 +1,7 @@
 package org.watrworks
 package segment
 
+import prelude._
 import geometry._
 import geometry.syntax._
 import utils.ExactFloats._
@@ -288,18 +289,18 @@ trait TextBlockGroupingDocScope extends BaseDocumentSegmenter { self =>
 
   def collectMonoFontFeatures(): Unit = {
     val fontVJumpByPage = docScope.docStats.fontVJumpByPage
-    val asList          = fontVJumpByPage.table.showBox()
+    // val asList          = fontVJumpByPage.table.showBox()
 
     type AccT = (Int, Interval.FloatExacts)
     val zero: List[AccT] = List.empty
 
-    implicit val AccTShow = scalaz.Show.shows[AccT]({ case (i, fes) =>
-      val shfes = Interval.FloatExacts.FloatExactsShow.show(fes)
-      s"${shfes}x${i}"
-    })
-    implicit val ListAccTShow = scalaz.Show.shows[List[AccT]]({
-      _.map(AccTShow.show(_)).mkString(", ")
-    })
+    // implicit val AccTShow = scalaz.Show.shows[AccT]({ case (i, fes) =>
+    //   val shfes = Interval.FloatExacts.FloatExactsShow.show(fes)
+    //   s"${shfes}x${i}"
+    // })
+    // implicit val ListAccTShow = scalaz.Show.shows[List[AccT]]({
+    //   _.map(AccTShow.show(_)).mkString(", ")
+    // })
 
     val mapped = fontVJumpByPage.table.map({ countedJumps =>
       val sorted = countedJumps
@@ -364,12 +365,12 @@ trait TextBlockGroupingDocScope extends BaseDocumentSegmenter { self =>
 
     val sortedByOverallMax: List[(fontVJumpByPage.ColT, AccT)] = perPageMax.sortBy(_._2._1).reverse
 
-    val pprintPerPageMax = sortedByOverallMax
-      .map { case (fontId, (count, range)) =>
-        val rstr = Interval.FloatExacts.FloatExactsShow.show(range).toString()
-        s"${fontId}: ${count}x${rstr}"
-      }
-      .mkString(", ")
+    // val pprintPerPageMax = sortedByOverallMax
+    //   .map { case (fontId, (count, range)) =>
+    //     val rstr = Interval.FloatExacts.FloatExactsShow.show(range).toString()
+    //     s"${fontId}: ${count}x${rstr}"
+    //   }
+    //   .mkString(", ")
 
     fontVJumpByPage.documentMaxClustered = sortedByOverallMax
 

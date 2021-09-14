@@ -4,7 +4,11 @@ package imageseg
 import java.awt.Color
 import java.awt.image.BufferedImage
 
-import OpenCVUtils.{wrapInIntPointer, wrapInMatVector, show}
+import OpenCVUtils.{
+  wrapInIntPointer,
+  wrapInMatVector,
+  // show
+}
 import org.bytedeco.javacpp._
 import org.bytedeco.javacpp.indexer.FloatRawIndexer
 // import org.bytedeco.javacpp.indexer._
@@ -23,11 +27,11 @@ import org.bytedeco.javacpp.indexer.FloatRawIndexer
 // import org.opencv.imgproc.Imgproc
 // import org.opencv.objdetect.CascadeClassifier
 // import reflect._
-import org.bytedeco.javacpp.indexer.UByteIndexer
+// import org.bytedeco.javacpp.indexer.UByteIndexer
 import org.bytedeco.opencv.global.opencv_core._
-import org.bytedeco.opencv.global.opencv_imgcodecs._
+// import org.bytedeco.opencv.global.opencv_imgcodecs._
 import org.bytedeco.opencv.global.opencv_imgproc._
-import org.bytedeco.opencv.global.{opencv_imgproc => ImgProc}
+// import org.bytedeco.opencv.global.{opencv_imgproc => ImgProc}
 import org.bytedeco.opencv.opencv_core._
 // import org.opencv.core.Core
 
@@ -124,7 +128,8 @@ class Histogram1D {
 
     // Extract values to an array
     val dest  = new Array[Float](numberOfBins)
-    val histI = hist.createIndexer().asInstanceOf[FloatRawIndexer]
+    val histI = hist.createIndexer[FloatRawIndexer]()
+
     for (bin <- 0 until numberOfBins) {
       dest(bin) = histI.get(bin)
     }

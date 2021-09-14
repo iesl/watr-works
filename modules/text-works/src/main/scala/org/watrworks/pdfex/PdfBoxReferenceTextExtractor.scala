@@ -27,59 +27,57 @@ import java.util.ArrayList
 import java.{util => ju}
 import java.lang.{StringBuilder}
 
-/**
-  * Scala translation of the java pdftotext implemented in PdfBox.
+/** Scala translation of the java pdftotext implemented in PdfBox.
   * Here for reference and comparison, not actually used to extract text
   */
 class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
 
   private var _document: PDDocument = null
-  private var _output: Writer = null
+  private var _output: Writer       = null
 
   protected def document: PDDocument = _document
-  protected def output: Writer = _output
+  protected def output: Writer       = _output
 
   private def defaultIndentThreshold = 2.0f;
-  private def defaultDropThreshold = 2.5f;
-  private def useCustomQuickSort = true;
+  private def defaultDropThreshold   = 2.5f;
+  private def useCustomQuickSort     = true;
 
   protected var LINE_SEPARATOR = System.getProperty("line.separator");
 
-  private var lineSeparator = LINE_SEPARATOR;
-  private var wordSeparator = " ";
+  private var lineSeparator  = LINE_SEPARATOR;
+  private var wordSeparator  = " ";
   private var paragraphStart = "";
-  private var paragraphEnd = "";
-  private var pageStart = "";
-  private var pageEnd = LINE_SEPARATOR;
-  private var articleStart = "";
-  private var articleEnd = "";
+  private var paragraphEnd   = "";
+  private var pageStart      = "";
+  private var pageEnd        = LINE_SEPARATOR;
+  private var articleStart   = "";
+  private var articleEnd     = "";
 
-  private var currentPageNo = 0;
-  private var startPageNum = 1;
-  private var endPage = Integer.MAX_VALUE;
+  private var currentPageNo                = 0;
+  private var startPageNum                 = 1;
+  private var endPage                      = Integer.MAX_VALUE;
   private var startBookmark: PDOutlineItem = null;
 
   // 1-based bookmark pages
   private var startBookmarkPageNumber = -1;
-  private var endBookmarkPageNumber = -1;
+  private var endBookmarkPageNumber   = -1;
 
-  private var endBookmark: PDOutlineItem = null;
+  private var endBookmark: PDOutlineItem       = null;
   private var suppressDuplicateOverlappingText = true;
-  private var shouldSeparateByBeads = true;
-  private var sortByPosition = false;
-  private var addMoreFormatting = false;
+  private var shouldSeparateByBeads            = true;
+  private var sortByPosition                   = false;
+  private var addMoreFormatting                = false;
 
   private var indentThreshold = defaultIndentThreshold;
-  private var dropThreshold = defaultDropThreshold;
+  private var dropThreshold   = defaultDropThreshold;
 
   // we will need to estimate where to add spaces, these are used to help guess
-  private var spacingTolerance = .5f;
+  private var spacingTolerance     = .5f;
   private var averageCharTolerance = .3f;
 
   private var beadRectangles: ju.List[PDRectangle] = null
 
-  /**
-    * The charactersByArticle is used to extract text by article divisions. For example a PDF that has two columns like
+  /** The charactersByArticle is used to extract text by article divisions. For example a PDF that has two columns like
     * a newspaper, we want to extract the first column and then the second column. In this example the PDF would have 2
     * beads(or articles), one for each column. The size of the charactersByArticle would be 5, because not all text on
     * the screen will fall into one of the articles. The five divisions are shown below
@@ -98,8 +96,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   val characterListMapping: HashMap[String, TreeMap[Float, TreeSet[Float]]] =
     new HashMap[String, TreeMap[Float, TreeSet[Float]]]();
 
-  /**
-    * True if we started a paragraph but haven't ended it yet.
+  /** True if we started a paragraph but haven't ended it yet.
     */
   private var inParagraph: Boolean = false;
 
@@ -121,8 +118,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     }
   }
 
-  /**
-    * This will take a PDDocument and write the text of that document to the print writer.
+  /** This will take a PDDocument and write the text of that document to the print writer.
     *
     * @param doc The document to get the data from.
     * @param outputStream The location to put the text.
@@ -144,8 +140,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     endDocument(document);
   }
 
-  /**
-    * This will process all of the pages and the text that is in them.
+  /** This will process all of the pages and the text that is in them.
     *
     * @param pages The pages object in the document.
     *
@@ -173,9 +168,11 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
       endBookmarkPageNumber = -1;
     }
 
-    if (startBookmarkPageNumber == -1 && startBookmark != null && endBookmarkPageNumber == -1
-        && endBookmark != null
-        && startBookmark.getCOSObject() == endBookmark.getCOSObject()) {
+    if (
+      startBookmarkPageNumber == -1 && startBookmark != null && endBookmarkPageNumber == -1
+      && endBookmark != null
+      && startBookmark.getCOSObject() == endBookmark.getCOSObject()
+    ) {
       // this is a special case where both the start and end bookmark
       // are the same but point to nothing. In this case
       // we will not extract any text.
@@ -192,8 +189,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     }
   }
 
-  /**
-    * This method is available for subclasses of this class. It will be called before processing of the document start.
+  /** This method is available for subclasses of this class. It will be called before processing of the document start.
     *
     * @param document The PDF document that is being processed.
     * _throws IOException If an IO error occurs.
@@ -202,8 +198,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     println(s"startDocument")
   }
 
-  /**
-    * This method is available for subclasses of this class. It will be called after processing of the document
+  /** This method is available for subclasses of this class. It will be called after processing of the document
     * finishes.
     *
     * @param document The PDF document that is being processed.
@@ -213,17 +208,18 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     println(s"endDocument")
   }
 
-  /**
-    * This will process the contents of a page.
+  /** This will process the contents of a page.
     *
     * @param page The page to process.
     *
     * _throws IOException If there is an error processing the page.
     */
   override def processPage(page: PDPage): Unit = {
-    if (currentPageNo >= startPageNum && currentPageNo <= endPage
-        && (startBookmarkPageNumber == -1 || currentPageNo >= startBookmarkPageNumber)
-        && (endBookmarkPageNumber == -1 || currentPageNo <= endBookmarkPageNumber)) {
+    if (
+      currentPageNo >= startPageNum && currentPageNo <= endPage
+      && (startBookmarkPageNumber == -1 || currentPageNo >= startBookmarkPageNumber)
+      && (endBookmarkPageNumber == -1 || currentPageNo <= endBookmarkPageNumber)
+    ) {
 
       startPage(page);
 
@@ -231,8 +227,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
 
       if (shouldSeparateByBeads) {
         fillBeadRectangles(page);
-        numberOfArticleSections =
-          numberOfArticleSections + beadRectangles.size() * 2;
+        numberOfArticleSections = numberOfArticleSections + beadRectangles.size() * 2;
       }
 
       val originalSize: Int = charactersByArticle.size();
@@ -292,8 +287,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     }
   }
 
-  /**
-    * Start a new article, which is typically defined as a column on a single page (also referred to as a bead). This
+  /** Start a new article, which is typically defined as a column on a single page (also referred to as a bead). This
     * assumes that the primary direction of text is left to right. Default implementation is to do nothing. Subclasses
     * may provide additional information.
     *
@@ -303,8 +297,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     startArticle(true);
   }
 
-  /**
-    * Start a new article, which is typically defined as a column on a single page (also referred to as a bead).
+  /** Start a new article, which is typically defined as a column on a single page (also referred to as a bead).
     * Default implementation is to do nothing. Subclasses may provide additional information.
     *
     * @param isLTR true if primary direction of text is left to right.
@@ -314,8 +307,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     output.write(articleStart);
   }
 
-  /**
-    * End an article. Default implementation is to do nothing. Subclasses may provide additional information.
+  /** End an article. Default implementation is to do nothing. Subclasses may provide additional information.
     *
     * _throws IOException If there is any error writing to the stream.
     */
@@ -323,8 +315,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     output.write(articleEnd);
   }
 
-  /**
-    * Start a new page. Default implementation is to do nothing. Subclasses may provide additional information.
+  /** Start a new page. Default implementation is to do nothing. Subclasses may provide additional information.
     *
     * @param page The page we are about to process.
     *
@@ -334,8 +325,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     println(s"   Start page ${page}")
   }
 
-  /**
-    * End a page. Default implementation is to do nothing. Subclasses may provide additional information.
+  /** End a page. Default implementation is to do nothing. Subclasses may provide additional information.
     *
     * @param page The page we are about to process.
     *
@@ -345,31 +335,29 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     // default is to do nothing
   }
 
-  private val END_OF_LAST_TEXT_X_RESET_VALUE: Float = -1;
-  private val MAX_Y_FOR_LINE_RESET_VALUE: Float = -Float.MaxValue;
-  private val EXPECTED_START_OF_NEXT_WORD_X_RESET_VALUE
-    : Float = -Float.MaxValue;
-  private val MAX_HEIGHT_FOR_LINE_RESET_VALUE: Float = -1;
-  private val MIN_Y_TOP_FOR_LINE_RESET_VALUE: Float = Float.MaxValue
-  private val LAST_WORD_SPACING_RESET_VALUE: Float = -1;
+  private val END_OF_LAST_TEXT_X_RESET_VALUE: Float            = -1;
+  private val MAX_Y_FOR_LINE_RESET_VALUE: Float                = -Float.MaxValue;
+  private val EXPECTED_START_OF_NEXT_WORD_X_RESET_VALUE: Float = -Float.MaxValue;
+  private val MAX_HEIGHT_FOR_LINE_RESET_VALUE: Float           = -1;
+  private val MIN_Y_TOP_FOR_LINE_RESET_VALUE: Float            = Float.MaxValue
+  private val LAST_WORD_SPACING_RESET_VALUE: Float             = -1;
 
-  /**
-    * This will print the text of the processed page to "output". It will estimate, based on the coordinates of the
+  /** This will print the text of the processed page to "output". It will estimate, based on the coordinates of the
     * text, where newlines and word spacings should be placed. The text will be sorted only if that feature was
     * enabled.
     *
     * _throws IOException If there is an error writing the text.
     */
   def writePage(): Unit = {
-    var maxYForLine: Float = MAX_Y_FOR_LINE_RESET_VALUE;
-    var minYTopForLine: Float = MIN_Y_TOP_FOR_LINE_RESET_VALUE;
-    var endOfLastTextX: Float = END_OF_LAST_TEXT_X_RESET_VALUE;
-    var lastWordSpacing: Float = LAST_WORD_SPACING_RESET_VALUE;
-    var maxHeightForLine: Float = MAX_HEIGHT_FOR_LINE_RESET_VALUE;
-    var lastPosition: PositionWrapper = null;
+    var maxYForLine: Float                     = MAX_Y_FOR_LINE_RESET_VALUE;
+    var minYTopForLine: Float                  = MIN_Y_TOP_FOR_LINE_RESET_VALUE;
+    var endOfLastTextX: Float                  = END_OF_LAST_TEXT_X_RESET_VALUE;
+    var lastWordSpacing: Float                 = LAST_WORD_SPACING_RESET_VALUE;
+    var maxHeightForLine: Float                = MAX_HEIGHT_FOR_LINE_RESET_VALUE;
+    var lastPosition: PositionWrapper          = null;
     var lastLineStartPosition: PositionWrapper = null;
 
-    var startOfPage: Boolean = true; // flag to indicate start of page
+    var startOfPage: Boolean    = true; // flag to indicate start of page
     var startOfArticle: Boolean = false;
 
     if (charactersByArticle.size() > 0) {
@@ -411,22 +399,24 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
       // Keeps track of the previous average character width
       var previousAveCharWidth: Float = -1f;
       while (textIter.hasNext()) {
-        val position: TextPosition = textIter.next();
+        val position: TextPosition   = textIter.next();
         val current: PositionWrapper = new PositionWrapper(position);
-        val characterValue: String = position.getUnicode();
+        val characterValue: String   = position.getUnicode();
 
         // Resets the average character width when we see a change in font
         // or a change in the font size
-        if (lastPosition != null && (position
-              .getFont() != lastPosition.textPosition.getFont()
+        if (
+          lastPosition != null && (position
+            .getFont() != lastPosition.textPosition.getFont()
             || position
-              .getFontSize() != lastPosition.textPosition.getFontSize())) {
+              .getFontSize() != lastPosition.textPosition.getFontSize())
+        ) {
           previousAveCharWidth = -1;
         }
 
-        var positionX: Float = 0f
-        var positionY: Float = 0f
-        var positionWidth: Float = 0f
+        var positionX: Float      = 0f
+        var positionY: Float      = 0f
+        var positionWidth: Float  = 0f
         var positionHeight: Float = 0f
 
         // If we are sorting, then we need to use the text direction
@@ -448,7 +438,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
 
         // Estimate the expected width of the space based on the
         // space character with some margin.
-        val wordSpacing = position.getWidthOfSpace();
+        val wordSpacing       = position.getWidthOfSpace();
         var deltaSpace: Float = 0;
         if (wordSpacing == 0 || wordSpacing.nan) {
           deltaSpace = Float.MaxValue;
@@ -456,8 +446,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
           if (lastWordSpacing < 0) {
             deltaSpace = wordSpacing * getSpacingTolerance();
           } else {
-            deltaSpace =
-              (wordSpacing + lastWordSpacing) / 2f * getSpacingTolerance();
+            deltaSpace = (wordSpacing + lastWordSpacing) / 2f * getSpacingTolerance();
           }
         }
 
@@ -469,8 +458,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
         if (previousAveCharWidth < 0) {
           averageCharWidth = positionWidth / wordCharCount;
         } else {
-          averageCharWidth =
-            (previousAveCharWidth + positionWidth / wordCharCount) / 2f;
+          averageCharWidth = (previousAveCharWidth + positionWidth / wordCharCount) / 2f;
         }
         val deltaCharWidth: Float =
           averageCharWidth * getAverageCharTolerance();
@@ -502,12 +490,14 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
           // full range seen in this line. This is what I tried to do with minYTopForLine,
           // but this caused a lot of regression test failures. So, I'm leaving it be for
           // now
-          if (!overlap(
-                positionY,
-                positionHeight,
-                maxYForLine,
-                maxHeightForLine
-              )) {
+          if (
+            !overlap(
+              positionY,
+              positionHeight,
+              maxYForLine,
+              maxHeightForLine
+            )
+          ) {
             writeLine(normalize(line));
             line.clear();
             lastLineStartPosition = handleLineSeparation(
@@ -522,11 +512,13 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
             minYTopForLine = MIN_Y_TOP_FOR_LINE_RESET_VALUE;
           }
           // test if our TextPosition starts after a new word would be expected to start
-          if (expectedStartOfNextWordX != EXPECTED_START_OF_NEXT_WORD_X_RESET_VALUE
-              && expectedStartOfNextWordX < positionX &&
-              // only bother adding a space if the last character was not a space
-              lastPosition.textPosition.getUnicode() != null
-              && !lastPosition.textPosition.getUnicode().endsWith(" ")) {
+          if (
+            expectedStartOfNextWordX != EXPECTED_START_OF_NEXT_WORD_X_RESET_VALUE
+            && expectedStartOfNextWordX < positionX &&
+            // only bother adding a space if the last character was not a space
+            lastPosition.textPosition.getUnicode() != null
+            && !lastPosition.textPosition.getUnicode().endsWith(" ")
+          ) {
             line.add(LineItem.getWordSeparator());
           }
         }
@@ -575,8 +567,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     within(y1, y2, .1f) || y2 <= y1 && y2 >= y1 - height1 || y1 <= y2 && y1 >= y2 - height2;
   }
 
-  /**
-    * Write the line separator value to the output stream.
+  /** Write the line separator value to the output stream.
     *
     * _throws IOException If there is a problem writing out the lineseparator to the document.
     */
@@ -584,8 +575,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     output.write(getLineSeparator());
   }
 
-  /**
-    * Write the word separator value to the output stream.
+  /** Write the word separator value to the output stream.
     *
     * _throws IOException If there is a problem writing out the wordseparator to the document.
     */
@@ -593,8 +583,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     output.write(getWordSeparator());
   }
 
-  /**
-    * Write the string in TextPosition to the output stream.
+  /** Write the string in TextPosition to the output stream.
     *
     * @param text The text to write to the stream.
     * _throws IOException If there is an error when writing the text.
@@ -603,8 +592,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     output.write(text.getUnicode());
   }
 
-  /**
-    * Write a Java string to the output stream. The default implementation will ignore the <code>textPositions</code>
+  /** Write a Java string to the output stream. The default implementation will ignore the <code>textPositions</code>
     * and just calls { #writeString(String)}.
     *
     * @param text The text to write to the stream.
@@ -616,8 +604,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     writeString(text);
   }
 
-  /**
-    * Write a Java string to the output stream.
+  /** Write a Java string to the output stream.
     *
     * @param text The text to write to the stream.
     * _throws IOException If there is an error when writing the text.
@@ -626,8 +613,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     output.write(text);
   }
 
-  /**
-    * This will determine of two floating point numbers are within a specified variance.
+  /** This will determine of two floating point numbers are within a specified variance.
     *
     * @param first The first number to compare to.
     * @param second The second number to compare to.
@@ -641,8 +627,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     second < first + variance && second > first - variance;
   }
 
-  /**
-    * This will process a TextPosition object and add the text to the list of characters on a page. It takes care of
+  /** This will process a TextPosition object and add the text to the list of characters on a page. It takes care of
     * overlapping text.
     *
     * @param text The text to process.
@@ -652,8 +637,8 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     if (suppressDuplicateOverlappingText) {
       showCharacter = false;
       val textCharacter: String = text.getUnicode();
-      val textX: Float = text.getX();
-      val textY: Float = text.getY();
+      val textX: Float          = text.getX();
+      val textY: Float          = text.getY();
       var sameTextCharacters: TreeMap[Float, TreeSet[Float]] =
         characterListMapping.get(textCharacter);
       if (sameTextCharacters == null) {
@@ -671,12 +656,14 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
       // an amount to allow for kerning (a percentage of the width of the last
       // character).
       var suppressCharacter: Boolean = false;
-      val tolerance: Float = text.getWidth() / textCharacter.length() / 3.0f;
+      val tolerance: Float           = text.getWidth() / textCharacter.length() / 3.0f;
 
       val xMatches: ju.SortedMap[Float, TreeSet[Float]] =
         sameTextCharacters.subMap(textX - tolerance, textX + tolerance);
-      for (xMatch <- xMatches.values().iterator().asScala
-           if !suppressCharacter) {
+      for (
+        xMatch <- xMatches.values().iterator().asScala
+        if !suppressCharacter
+      ) {
         val yMatches: ju.SortedSet[Float] =
           xMatch.subSet(textY - tolerance, textY + tolerance);
         if (!yMatches.isEmpty()) {
@@ -697,30 +684,38 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
 
     if (showCharacter) {
       // if we are showing the character then we need to determine which article it belongs to
-      var foundArticleDivisionIndex: Int = -1;
+      var foundArticleDivisionIndex: Int                        = -1;
       var notFoundButFirstLeftAndAboveArticleDivisionIndex: Int = -1;
-      var notFoundButFirstLeftArticleDivisionIndex: Int = -1;
-      var notFoundButFirstAboveArticleDivisionIndex: Int = -1;
-      val x: Float = text.getX();
-      val y: Float = text.getY();
+      var notFoundButFirstLeftArticleDivisionIndex: Int         = -1;
+      var notFoundButFirstAboveArticleDivisionIndex: Int        = -1;
+      val x: Float                                              = text.getX();
+      val y: Float                                              = text.getY();
 
       if (shouldSeparateByBeads) {
         // for (int i = 0; i < beadRectangles.size() && foundArticleDivisionIndex == -1; i++)
-        for (i <- 0 until beadRectangles.size()
-             if foundArticleDivisionIndex == -1) {
+        for (
+          i <- 0 until beadRectangles.size()
+          if foundArticleDivisionIndex == -1
+        ) {
           val rect: PDRectangle = beadRectangles.get(i);
 
           if (rect != null) {
             if (rect.contains(x, y)) {
               foundArticleDivisionIndex = i * 2 + 1;
-            } else if ((x < rect.getLowerLeftX() || y < rect.getUpperRightY())
-                       && notFoundButFirstLeftAndAboveArticleDivisionIndex == -1) {
+            } else if (
+              (x < rect.getLowerLeftX() || y < rect.getUpperRightY())
+              && notFoundButFirstLeftAndAboveArticleDivisionIndex == -1
+            ) {
               notFoundButFirstLeftAndAboveArticleDivisionIndex = i * 2;
-            } else if (x < rect.getLowerLeftX()
-                       && notFoundButFirstLeftArticleDivisionIndex == -1) {
+            } else if (
+              x < rect.getLowerLeftX()
+              && notFoundButFirstLeftArticleDivisionIndex == -1
+            ) {
               notFoundButFirstLeftArticleDivisionIndex = i * 2;
-            } else if (y < rect.getUpperRightY()
-                       && notFoundButFirstAboveArticleDivisionIndex == -1) {
+            } else if (
+              y < rect.getUpperRightY()
+              && notFoundButFirstAboveArticleDivisionIndex == -1
+            ) {
               notFoundButFirstAboveArticleDivisionIndex = i * 2;
             }
           } else {
@@ -765,8 +760,10 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
         }
         // If the previous TextPosition was the diacritic, merge it into this
         // one and remove it from the list.
-        else if (previousTextPosition
-                   .isDiacritic() && text.contains(previousTextPosition)) {
+        else if (
+          previousTextPosition
+            .isDiacritic() && text.contains(previousTextPosition)
+        ) {
           text.mergeDiacritic(previousTextPosition);
           textList.remove(textList.size() - 1);
           textList.add(text);
@@ -777,8 +774,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     }
   }
 
-  /**
-    * This is the page that the text extraction will start on. The pages start at page 1. For example in a 5 page PDF
+  /** This is the page that the text extraction will start on. The pages start at page 1. For example in a 5 page PDF
     * document, if the start page is 1 then all pages will be extracted. If the start page is 4 then pages 4 and 5 will
     * be extracted. The default value is 1.
     *
@@ -788,8 +784,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return startPageNum;
   }
 
-  /**
-    * This will set the first page to be extracted by this class.
+  /** This will set the first page to be extracted by this class.
     *
     * @param startPageValue New value of 1-based startPage property.
     */
@@ -797,8 +792,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     startPageNum = startPageValue;
   }
 
-  /**
-    * This will get the last page that will be extracted. This is inclusive, for example if a 5 page PDF an endPage
+  /** This will get the last page that will be extracted. This is inclusive, for example if a 5 page PDF an endPage
     * value of 5 would extract the entire document, an end page of 2 would extract pages 1 and 2. This defaults to
     * Integer.MAX_VALUE such that all pages of the pdf will be extracted.
     *
@@ -808,8 +802,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     endPage;
   }
 
-  /**
-    * This will set the last page to be extracted by this class.
+  /** This will set the last page to be extracted by this class.
     *
     * @param endPageValue New value of 1-based endPage property.
     */
@@ -817,8 +810,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     endPage = endPageValue;
   }
 
-  /**
-    * Set the desired line separator for output text. The line.separator system property is used if the line separator
+  /** Set the desired line separator for output text. The line.separator system property is used if the line separator
     * preference is not set explicitly using this method.
     *
     * @param separator The desired line separator string.
@@ -827,8 +819,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     lineSeparator = separator;
   }
 
-  /**
-    * This will get the line separator.
+  /** This will get the line separator.
     *
     * @return The desired line separator string.
     */
@@ -836,8 +827,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return lineSeparator;
   }
 
-  /**
-    * This will get the word separator.
+  /** This will get the word separator.
     *
     * @return The desired word separator string.
     */
@@ -845,8 +835,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     wordSeparator;
   }
 
-  /**
-    * Set the desired word separator for output text. The PDFBox text extraction algorithm will output a space
+  /** Set the desired word separator for output text. The PDFBox text extraction algorithm will output a space
     * character if there is enough space between two words. By default a space character is used. If you need and
     * accurate count of characters that are found in a PDF document then you might want to set the word separator to
     * the empty string.
@@ -857,15 +846,13 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     wordSeparator = separator;
   }
 
-  /**
-    * @return Returns the suppressDuplicateOverlappingText.
+  /** @return Returns the suppressDuplicateOverlappingText.
     */
   def getSuppressDuplicateOverlappingText(): Boolean = {
     return suppressDuplicateOverlappingText;
   }
 
-  /**
-    * Get the current page number that is being processed.
+  /** Get the current page number that is being processed.
     *
     * @return A 1 based number representing the current page.
     */
@@ -873,8 +860,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return currentPageNo;
   }
 
-  /**
-    * The output stream that is being written to.
+  /** The output stream that is being written to.
     *
     * @return The stream that output is being written to.
     */
@@ -882,8 +868,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return output;
   }
 
-  /**
-    * Character strings are grouped by articles. It is quite common that there will only be a single article. This
+  /** Character strings are grouped by articles. It is quite common that there will only be a single article. This
     * returns a List that contains List objects, the inner lists will contain TextPosition objects.
     *
     * @return A double List of TextPositions for all text strings on the page.
@@ -892,8 +877,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return charactersByArticle;
   }
 
-  /**
-    * By default the text stripper will attempt to remove text that overlapps each other. Word paints the same
+  /** By default the text stripper will attempt to remove text that overlapps each other. Word paints the same
     * character several times in order to make it look bold. By setting this to false all text will be extracted, which
     * means that certain sections will be duplicated, but better performance will be noticed.
     *
@@ -905,8 +889,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     suppressDuplicateOverlappingText = suppressDuplicateOverlappingTextValue;
   }
 
-  /**
-    * This will tell if the text stripper should separate by beads.
+  /** This will tell if the text stripper should separate by beads.
     *
     * @return If the text will be grouped by beads.
     */
@@ -914,8 +897,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return shouldSeparateByBeads;
   }
 
-  /**
-    * Set if the text stripper should group the text output by a list of beads. The default value is true!
+  /** Set if the text stripper should group the text output by a list of beads. The default value is true!
     *
     * @param aShouldSeparateByBeads The new grouping of beads.
     */
@@ -923,8 +905,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     shouldSeparateByBeads = aShouldSeparateByBeads;
   }
 
-  /**
-    * Get the bookmark where text extraction should end, inclusive. Default is null.
+  /** Get the bookmark where text extraction should end, inclusive. Default is null.
     *
     * @return The ending bookmark.
     */
@@ -932,8 +913,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return endBookmark;
   }
 
-  /**
-    * Set the bookmark where the text extraction should stop.
+  /** Set the bookmark where the text extraction should stop.
     *
     * @param aEndBookmark The ending bookmark.
     */
@@ -941,8 +921,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     endBookmark = aEndBookmark;
   }
 
-  /**
-    * Get the bookmark where text extraction should start, inclusive. Default is null.
+  /** Get the bookmark where text extraction should start, inclusive. Default is null.
     *
     * @return The starting bookmark.
     */
@@ -950,8 +929,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return startBookmark;
   }
 
-  /**
-    * Set the bookmark where text extraction should start, inclusive.
+  /** Set the bookmark where text extraction should start, inclusive.
     *
     * @param aStartBookmark The starting bookmark.
     */
@@ -959,8 +937,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     startBookmark = aStartBookmark;
   }
 
-  /**
-    * This will tell if the text stripper should add some more text formatting.
+  /** This will tell if the text stripper should add some more text formatting.
     *
     * @return true if some more text formatting will be added
     */
@@ -968,8 +945,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return addMoreFormatting;
   }
 
-  /**
-    * There will some additional text formatting be added if addMoreFormatting is set to true. Default is false.
+  /** There will some additional text formatting be added if addMoreFormatting is set to true. Default is false.
     *
     * @param newAddMoreFormatting Tell PDFBox to add some more text formatting
     */
@@ -977,8 +953,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     addMoreFormatting = newAddMoreFormatting;
   }
 
-  /**
-    * This will tell if the text stripper should sort the text tokens before writing to the stream.
+  /** This will tell if the text stripper should sort the text tokens before writing to the stream.
     *
     * @return true If the text tokens will be sorted before being written.
     */
@@ -986,8 +961,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return sortByPosition;
   }
 
-  /**
-    * The order of the text tokens in a PDF file may not be in the same as they appear visually on the screen. For
+  /** The order of the text tokens in a PDF file may not be in the same as they appear visually on the screen. For
     * example, a PDF writer may write out all text by font, so all bold or larger text, then make a second pass and
     * write out the normal text.<br>
     * The default is to <b>not</b> sort by position.<br>
@@ -1001,8 +975,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     sortByPosition = newSortByPosition;
   }
 
-  /**
-    * Get the current space width-based tolerance value that is being used to estimate where spaces in text should be
+  /** Get the current space width-based tolerance value that is being used to estimate where spaces in text should be
     * added. Note that the default value for this has been determined from trial and error.
     *
     * @return The current tolerance / scaling factor
@@ -1011,8 +984,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return spacingTolerance;
   }
 
-  /**
-    * Set the space width-based tolerance value that is used to estimate where spaces in text should be added. Note
+  /** Set the space width-based tolerance value that is used to estimate where spaces in text should be added. Note
     * that the default value for this has been determined from trial and error. Setting this value larger will reduce
     * the number of spaces added.
     *
@@ -1022,8 +994,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     spacingTolerance = spacingToleranceValue;
   }
 
-  /**
-    * Get the current character width-based tolerance value that is being used to estimate where spaces in text should
+  /** Get the current character width-based tolerance value that is being used to estimate where spaces in text should
     * be added. Note that the default value for this has been determined from trial and error.
     *
     * @return The current tolerance / scaling factor
@@ -1032,8 +1003,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return averageCharTolerance;
   }
 
-  /**
-    * Set the character width-based tolerance value that is used to estimate where spaces in text should be added. Note
+  /** Set the character width-based tolerance value that is used to estimate where spaces in text should be added. Note
     * that the default value for this has been determined from trial and error. Setting this value larger will reduce
     * the number of spaces added.
     *
@@ -1043,8 +1013,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     averageCharTolerance = averageCharToleranceValue;
   }
 
-  /**
-    * returns the multiple of whitespace character widths for the current text which the current line start can be
+  /** returns the multiple of whitespace character widths for the current text which the current line start can be
     * indented from the previous line start beyond which the current line start is considered to be a paragraph start.
     *
     * @return the number of whitespace character widths to use when detecting paragraph indents.
@@ -1053,8 +1022,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return indentThreshold;
   }
 
-  /**
-    * sets the multiple of whitespace character widths for the current text which the current line start can be
+  /** sets the multiple of whitespace character widths for the current text which the current line start can be
     * indented from the previous line start beyond which the current line start is considered to be a paragraph start.
     * The default value is 2.0.
     *
@@ -1064,8 +1032,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     indentThreshold = indentThresholdValue;
   }
 
-  /**
-    * the minimum whitespace, as a multiple of the max height of the current characters beyond which the current line
+  /** the minimum whitespace, as a multiple of the max height of the current characters beyond which the current line
     * start is considered to be a paragraph start.
     *
     * @return the character height multiple for max allowed whitespace between lines in the same paragraph.
@@ -1074,8 +1041,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return dropThreshold;
   }
 
-  /**
-    * sets the minimum whitespace, as a multiple of the max height of the current characters beyond which the current
+  /** sets the minimum whitespace, as a multiple of the max height of the current characters beyond which the current
     * line start is considered to be a paragraph start. The default value is 2.5.
     *
     * @param dropThresholdValue the character height multiple for max allowed whitespace between lines in the same
@@ -1085,8 +1051,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     dropThreshold = dropThresholdValue;
   }
 
-  /**
-    * Returns the string which will be used at the beginning of a paragraph.
+  /** Returns the string which will be used at the beginning of a paragraph.
     *
     * @return the paragraph start string
     */
@@ -1094,8 +1059,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return paragraphStart;
   }
 
-  /**
-    * Sets the string which will be used at the beginning of a paragraph.
+  /** Sets the string which will be used at the beginning of a paragraph.
     *
     * @param s the paragraph start string
     */
@@ -1103,8 +1067,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     paragraphStart = s;
   }
 
-  /**
-    * Returns the string which will be used at the end of a paragraph.
+  /** Returns the string which will be used at the end of a paragraph.
     *
     * @return the paragraph end string
     */
@@ -1112,8 +1075,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return paragraphEnd;
   }
 
-  /**
-    * Sets the string which will be used at the end of a paragraph.
+  /** Sets the string which will be used at the end of a paragraph.
     *
     * @param s the paragraph end string
     */
@@ -1121,8 +1083,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     paragraphEnd = s;
   }
 
-  /**
-    * Returns the string which will be used at the beginning of a page.
+  /** Returns the string which will be used at the beginning of a page.
     *
     * @return the page start string
     */
@@ -1130,8 +1091,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return pageStart;
   }
 
-  /**
-    * Sets the string which will be used at the beginning of a page.
+  /** Sets the string which will be used at the beginning of a page.
     *
     * @param pageStartValue the page start string
     */
@@ -1139,8 +1099,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     pageStart = pageStartValue;
   }
 
-  /**
-    * Returns the string which will be used at the end of a page.
+  /** Returns the string which will be used at the end of a page.
     *
     * @return the page end string
     */
@@ -1148,8 +1107,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return pageEnd;
   }
 
-  /**
-    * Sets the string which will be used at the end of a page.
+  /** Sets the string which will be used at the end of a page.
     *
     * @param pageEndValue the page end string
     */
@@ -1197,8 +1155,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   //     articleEnd = articleEndValue;
   // }
 
-  /**
-    * handles the line separator for a new line given the specified current and previous TextPositions.
+  /** handles the line separator for a new line given the specified current and previous TextPositions.
     *
     * @param current the current text position
     * @param lastPosition the previous text position
@@ -1239,8 +1196,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return lastLineStartPosition;
   }
 
-  /**
-    * tests the relationship between the last text position, the current text position and the last text position that
+  /** tests the relationship between the last text position, the current text position and the last text position that
     * followed a line separator to decide if the gap represents a paragraph separation. This should <i>only</i> be
     * called for consecutive text positions that first pass the line separation test.
     * <p>
@@ -1331,8 +1287,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return Math.round(value1 * value2 * 1000) / 1000f;
   }
 
-  /**
-    * writes the paragraph separator string to the output.
+  /** writes the paragraph separator string to the output.
     *
     * _throws IOException if something went wrong
     */
@@ -1341,8 +1296,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     writeParagraphStart();
   }
 
-  /**
-    * Write something (if defined) at the start of a paragraph.
+  /** Write something (if defined) at the start of a paragraph.
     *
     * _throws IOException if something went wrong
     */
@@ -1355,8 +1309,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     inParagraph = true;
   }
 
-  /**
-    * Write something (if defined) at the end of a paragraph.
+  /** Write something (if defined) at the end of a paragraph.
     *
     * _throws IOException if something went wrong
     */
@@ -1368,8 +1321,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     inParagraph = false;
   }
 
-  /**
-    * Write something (if defined) at the start of a page.
+  /** Write something (if defined) at the start of a page.
     *
     * _throws IOException if something went wrong
     */
@@ -1377,8 +1329,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     output.write(getPageStart());
   }
 
-  /**
-    * Write something (if defined) at the end of a page.
+  /** Write something (if defined) at the end of a page.
     *
     * _throws IOException if something went wrong
     */
@@ -1386,8 +1337,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     output.write(getPageEnd());
   }
 
-  /**
-    * returns the list item Pattern object that matches the text at the specified PositionWrapper or null if the text
+  /** returns the list item Pattern object that matches the text at the specified PositionWrapper or null if the text
     * does not match such a pattern. The list of Patterns tested against is given by the { #getListItemPatterns()}
     * method. To add to the list, simply override that method (if sub-classing) or explicitly supply your own list
     * using { #setListItemPatterns(List)}.
@@ -1397,12 +1347,11 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     */
   def matchListItemPattern(pw: PositionWrapper): Pattern = {
     val tp: TextPosition = pw.textPosition;
-    val txt: String = tp.getUnicode();
+    val txt: String      = tp.getUnicode();
     return matchPattern(txt, getListItemPatterns());
   }
 
-  /**
-    * a list of regular expressions that match commonly used list item formats, i.e. bullets, numbers, letters, Roman
+  /** a list of regular expressions that match commonly used list item formats, i.e. bullets, numbers, letters, Roman
     * numerals, etc. Not meant to be comprehensive.
     */
   val LIST_ITEM_EXPRESSIONS: List[String] = List(
@@ -1420,8 +1369,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
 
   var listOfPatterns: ju.List[Pattern] = null;
 
-  /**
-    * use to supply a different set of regular expression patterns for matching list item starts.
+  /** use to supply a different set of regular expression patterns for matching list item starts.
     *
     * @param patterns list of patterns
     */
@@ -1429,8 +1377,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     listOfPatterns = patterns;
   }
 
-  /**
-    * returns a list of regular expression Patterns representing different common list item formats. For example
+  /** returns a list of regular expression Patterns representing different common list item formats. For example
     * numbered items of form:
     * <ol>
     * <li>some text</li>
@@ -1459,8 +1406,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return listOfPatterns;
   }
 
-  /**
-    * iterates over the specified list of Patterns until it finds one that matches the specified string. Then returns
+  /** iterates over the specified list of Patterns until it finds one that matches the specified string. Then returns
     * the Pattern.
     * <p>
     * Order of the supplied list of patterns is important as most common patterns should come first. Patterns should be
@@ -1480,8 +1426,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return null;
   }
 
-  /**
-    * Write a list of string containing a whole line of a document.
+  /** Write a list of string containing a whole line of a document.
     *
     * @param line a list with the words of the given line
     * _throws IOException if something went wrong
@@ -1498,8 +1443,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     }
   }
 
-  /**
-    * Normalize the given list of TextPositions.
+  /** Normalize the given list of TextPositions.
     *
     * @param line list of TextPositions
     * @return a list of strings, one string for every word
@@ -1507,7 +1451,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   def normalize(line: ju.List[LineItem]): ju.List[WordWithTextPositions] = {
     val normalized: ju.List[WordWithTextPositions] =
       new ju.LinkedList[WordWithTextPositions]();
-    var lineBuilder: StringBuilder = new StringBuilder();
+    var lineBuilder: StringBuilder           = new StringBuilder();
     val wordPositions: ju.List[TextPosition] = new ArrayList[TextPosition]();
 
     for (item <- line.iterator().asScala) {
@@ -1520,8 +1464,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return normalized;
   }
 
-  /**
-    * Handles the LTR and RTL direction of the given words. The whole implementation stands and falls with the given
+  /** Handles the LTR and RTL direction of the given words. The whole implementation stands and falls with the given
     * word. If the word is a full line, the results will be the best. If the word contains of single words or
     * characters, the order of the characters in a word or words in a line may wrong, due to RTL and LTR marks and
     * characters!
@@ -1535,15 +1478,17 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     val bidi: Bidi = new Bidi(word, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
 
     // if there is pure LTR text no need to process further
-    if (!bidi
-          .isMixed() && bidi.getBaseLevel() == Bidi.DIRECTION_LEFT_TO_RIGHT) {
+    if (
+      !bidi
+        .isMixed() && bidi.getBaseLevel() == Bidi.DIRECTION_LEFT_TO_RIGHT
+    ) {
       return word;
     }
 
     // collect individual bidi information
     val runCount: Int = bidi.getRunCount();
     // Array.fill
-    val levels: Array[Byte] = Array.ofDim[Byte](runCount)
+    val levels: Array[Byte]  = Array.ofDim[Byte](runCount)
     val runs: Array[Integer] = Array.ofDim[Integer](runCount)
 
     for (i <- 0 until runCount) {
@@ -1566,7 +1511,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     for (i <- 0 until runCount) {
       val index: Int = runs(i)
       val start: Int = bidi.getRunStart(index);
-      var end: Int = bidi.getRunLimit(index);
+      var end: Int   = bidi.getRunLimit(index);
 
       val level: Int = levels(index).toInt
 
@@ -1595,8 +1540,8 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
   val MIRRORING_CHAR_MAP = new ju.HashMap[Character, Character]();
 
   {
-    val path = "org/apache/pdfbox/resources/text/BidiMirroring.txt";
-    val cls = classOf[PDFTextStripper]
+    val path               = "org/apache/pdfbox/resources/text/BidiMirroring.txt";
+    val cls                = classOf[PDFTextStripper]
     val input: InputStream = cls.getClassLoader().getResourceAsStream(path);
     try {
       parseBidiFile(input);
@@ -1617,8 +1562,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     }
   }
 
-  /**
-    * This method parses the bidi file provided as inputstream.
+  /** This method parses the bidi file provided as inputstream.
     *
     * @param inputStream - The bidi file as inputstream
     * _throws IOException if any line could not be read by the LineNumberReader
@@ -1628,8 +1572,8 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     for {
       l <- source.getLines()
     } {
-      val (chars, comment) = l.span(_ != '#')
-      val line = chars.mkString
+      val (chars, comment @ _) = l.span(_ != '#')
+      val line                 = chars.mkString
 
       if (line.nonEmpty) {
         val fields =
@@ -1646,8 +1590,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
 
   }
 
-  /**
-    * Used within { #normalize(List)} to create a single { WordWithTextPositions} entry.
+  /** Used within { #normalize(List)} to create a single { WordWithTextPositions} entry.
     */
   def createWord(
     word: String,
@@ -1656,8 +1599,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     return new WordWithTextPositions(normalizeWord(word), wordPositions);
   }
 
-  /**
-    * Normalize certain Unicode characters. For example, convert the single "fi" ligature to "f" and "i". Also
+  /** Normalize certain Unicode characters. For example, convert the single "fi" ligature to "f" and "i". Also
     * normalises Arabic and Hebrew presentation forms.
     *
     * @param word Word to normalize
@@ -1665,9 +1607,9 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     */
   def normalizeWord(word: String): String = {
     var builder: StringBuilder = null;
-    var p: Int = 0;
-    val strLength: Int = word.length();
-    val q = strLength
+    var p: Int                 = 0;
+    val strLength: Int         = word.length();
+    val q                      = strLength
 
     for (q <- 0 until strLength) {
       // We only normalize if the codepoint is in a given range.
@@ -1676,7 +1618,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
       // extended Latin to the value in the Greek script. We normalize
       // the Unicode Alphabetic and Arabic A&B Presentation forms.
       val c: Char = word.charAt(q);
-      if (0xFB00 <= c && c <= 0xFDFF || 0xFE70 <= c && c <= 0xFEFF) {
+      if (0xfb00 <= c && c <= 0xfdff || 0xfe70 <= c && c <= 0xfeff) {
         if (builder == null) {
           builder = new StringBuilder(strLength * 2);
         }
@@ -1684,8 +1626,10 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
         // Some fonts map U+FDF2 differently than the Unicode spec.
         // They add an extra U+0627 character to compensate.
         // This removes the extra character for those fonts.
-        if (c == 0xFDF2 && q > 0
-            && (word.charAt(q - 1) == 0x0627 || word.charAt(q - 1) == 0xFE8D)) {
+        if (
+          c == 0xfdf2 && q > 0
+          && (word.charAt(q - 1) == 0x0627 || word.charAt(q - 1) == 0xfe8d)
+        ) {
           builder.append("\u0644\u0644\u0647");
         } else {
           // Trim because some decompositions have an extra space, such as U+FC5E
@@ -1707,8 +1651,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     }
   }
 
-  /**
-    * Used within { #normalize(List)} to handle a { TextPosition}.
+  /** Used within { #normalize(List)} to handle a { TextPosition}.
     *
     * @return The StringBuilder that must be used when calling this method.
     */
@@ -1761,8 +1704,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
 
 }
 
-/**
-  * internal marker class. Used as a place holder in a line of TextPositions.
+/** internal marker class. Used as a place holder in a line of TextPositions.
   */
 object LineItem {
 
@@ -1783,14 +1725,13 @@ class LineItem(var textPosition: TextPosition = null) {
   }
 }
 
-/**
-  * Internal class that maps strings to lists of { TextPosition} arrays. Note that the number of entries in that
+/** Internal class that maps strings to lists of { TextPosition} arrays. Note that the number of entries in that
   * list may differ from the number of characters in the string due to normalization.
   *
   * @author Axel Dörfler
   */
 class WordWithTextPositions(word: String, positions: ju.List[TextPosition]) {
-  var text: String = word;
+  var text: String                         = word;
   var textPositions: ju.List[TextPosition] = positions
 
   def getText(): String = {
@@ -1802,8 +1743,7 @@ class WordWithTextPositions(word: String, positions: ju.List[TextPosition]) {
   }
 }
 
-/**
-  * wrapper of TextPosition that adds flags to track status as linestart and paragraph start positions.
+/** wrapper of TextPosition that adds flags to track status as linestart and paragraph start positions.
   * <p>
   * This is implemented as a wrapper since the TextPosition class doesn't provide complete access to its state fields
   * to subclasses. Also, conceptually TextPosition is immutable while these flags need to be set post-creation so it
@@ -1813,11 +1753,11 @@ class WordWithTextPositions(word: String, positions: ju.List[TextPosition]) {
   * @author m.martinez@ll.mit.edu
   */
 class PositionWrapper(val textPosition: TextPosition) {
-  var isLineStart: Boolean = false;
+  var isLineStart: Boolean      = false;
   var isParagraphStart: Boolean = false;
-  var isPageBreak: Boolean = false;
-  var isHangingIndent: Boolean = false;
-  var isArticleStart: Boolean = false;
+  var isPageBreak: Boolean      = false;
+  var isHangingIndent: Boolean  = false;
+  var isArticleStart: Boolean   = false;
 
   def getTextPosition(): TextPosition = {
     return textPosition;
