@@ -1,6 +1,8 @@
 package org.watrworks
 package segment
 
+import prelude._
+
 import geometry._
 import geometry.syntax._
 import TypeTags._

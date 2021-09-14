@@ -57,7 +57,7 @@ trait CommonLibs extends LibVersions {
   val ammonite        = "com.lihaoyi"  % "ammonite"     % ammoniteVersion cross CrossVersion.full
   val ammoniteOps     = "com.lihaoyi" %% "ammonite-ops" % ammoniteVersion
 
-  val scalaGraph                 = "org.scala-graph" %% "graph-core" % "1.13.3" 
+  val scalaGraph                 = "org.scala-graph" %% "graph-core" % "1.13.3"
 
   val scopt = "com.github.scopt" %% "scopt" % "4.0.1"
 
@@ -123,25 +123,32 @@ trait CommonLibs extends LibVersions {
   )
 
   val doodleVersion = "0.9.25"
-  // val doodle = "org.creativescala" %% "doodle" % doodleVersion 
+  // val doodle = "org.creativescala" %% "doodle" % doodleVersion
   val doodle = Seq(
-       //"org.creativescala" %%  "doodle" % doodleVersion,
-       "org.creativescala" %%  "doodle-core" % doodleVersion,
-       "org.creativescala" %%  "doodle-java2d" % doodleVersion,
-        "org.creativescala" %%  "doodle-image" % doodleVersion
-       // "org.creativescala" %%  "doodle-explore" % doodleVersion,
-       //"org.creativescala" %%  "doodle-interact" % doodleVersion,
-       //"org.creativescala" %%  "doodle-reactor" % doodleVersion,
-       // "org.creativescala" %%  "doodle-svg" % doodleVersion,
-       // "org.creativescala" %%  "doodle-turtle" % doodleVersion,
-       // "org.creativescala" %%  "doodle-golden" % doodleVersion,
-    )
+    "org.creativescala" %%  "doodle-core" % doodleVersion,
+    "org.creativescala" %%  "doodle-java2d" % doodleVersion,
+    "org.creativescala" %%  "doodle-image" % doodleVersion,
+    //"org.creativescala" %%  "doodle" % doodleVersion,
+    // "org.creativescala" %%  "doodle-explore" % doodleVersion,
+    //"org.creativescala" %%  "doodle-interact" % doodleVersion,
+    //"org.creativescala" %%  "doodle-reactor" % doodleVersion,
+    // "org.creativescala" %%  "doodle-svg" % doodleVersion,
+    // "org.creativescala" %%  "doodle-turtle" % doodleVersion,
+    // "org.creativescala" %%  "doodle-golden" % doodleVersion,
+  )
 
 
+  val platform = org.bytedeco.javacpp.Loader.Detector.getPlatform
 
-
-  lazy val javacppVersion = "1.5.5"
-  lazy val javacv        = "org.bytedeco"      % "javacv-platform"         % javacppVersion 
+  val javacvLibs = Seq(
+    "org.bytedeco"   % "javacpp"    % "1.5.5"        withSources() withJavadoc(),
+    "org.bytedeco"   % "javacpp"    % "1.5.5"        classifier platform,
+    "org.bytedeco"   % "javacv"     % "1.5.5"        withSources() withJavadoc(),
+    "org.bytedeco"   % "opencv"     % "4.5.1-1.5.5"  withSources() withJavadoc(),
+    "org.bytedeco"   % "opencv"     % "4.5.1-1.5.5"  classifier platform,
+    "org.bytedeco"   % "openblas"     % "0.3.13-1.5.5"  withSources() withJavadoc(),
+    "org.bytedeco"   % "openblas"     % "0.3.13-1.5.5"  classifier platform
+  )
 
 
 }

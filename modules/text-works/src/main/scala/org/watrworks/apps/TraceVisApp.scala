@@ -7,7 +7,7 @@ import java.nio.{file => nio}
 import ProcessPipelineSteps._
 import utils.{M3x3Position => M3}
 import scala.sys.process._
-import segment._
+import segment.prelude._
 import transcripts.Transcript
 import geometry._
 import geometry.syntax._
