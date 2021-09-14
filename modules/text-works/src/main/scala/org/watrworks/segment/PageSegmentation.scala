@@ -22,7 +22,6 @@ trait PageSegmenter
   with GlyphRuns
   with TextBlockGrouping
   with ShapeFunctions
-  with ReferenceBlockConverter
   with TrapezoidPagewiseAnalysis
 
 object PageSegmenter {
