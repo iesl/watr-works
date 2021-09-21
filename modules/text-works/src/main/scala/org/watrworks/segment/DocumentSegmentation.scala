@@ -94,7 +94,6 @@ trait DocumentSegmenter
     withDocumentSegmenter("ComputeColumnClusters", { self.columnClustering() })
 
     // withPageSegmenters("ApplyColumnEvidence", _.applyColumnEvidence())
-
     // withPageSegmenters("setTextForReprShapes", _.setTextForReprShapes())
     // withPageSegmenters("buildLinePairTrapezoids", _.buildLinePairTrapezoids())
     // withDocumentSegmenter("createFeatureVectors", { self.createFeatureVectors() })

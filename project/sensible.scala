@@ -90,7 +90,7 @@ object SensibleProject extends CommonLibs {
       scalaVersion,
       git.gitHeadCommit,
       git.gitCurrentBranch,
-      BuildInfoKey.constant("timezone" -> "UTC")
+     // BuildInfoKey.constant("timezone" -> "UTC")
     ),
     buildInfoOptions ++= Seq(
       BuildInfoOption.ToMap,

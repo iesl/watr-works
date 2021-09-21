@@ -5,15 +5,13 @@ import java.nio.{file => nio}
 import corpora.filesys._
 import segment._
 
-sealed trait OutputOptions
-
 sealed trait Processable
 sealed trait ProcessableInput extends Processable
-sealed trait ProcessedInput extends Processable
+sealed trait ProcessedInput   extends Processable
 
 object Processable {
-  case class SingleFile(f: nio.Path) extends ProcessableInput
-  case class CorpusRoot(root: nio.Path) extends ProcessableInput
+  case class SingleFile(f: nio.Path)              extends ProcessableInput
+  case class CorpusRoot(root: nio.Path)           extends ProcessableInput
   case class CorpusFile(corpusEntry: CorpusEntry) extends ProcessableInput
 
   case class ExtractedFile(
@@ -44,7 +42,7 @@ object Processable {
   def withCorpusEntry(input: Processable)(f: CorpusEntry => Unit): Unit = {
     input match {
       case CorpusFile(corpusEntry) => f(corpusEntry)
-      case _ =>
+      case _                       =>
     }
   }
 }
@@ -56,4 +54,12 @@ case class IOConfig(
   pathFilter: Option[String] = None,
   numToRun: Int = Int.MaxValue,
   numToSkip: Int = 0
-)
+) extends CorpusRoot.Like[IOConfig] {
+
+    def withCorpusRoot(value: String) = copy(inputMode = Some(Processable.CorpusRoot(
+      nio.Paths.get(value).toAbsolutePath().normalize()
+    )))
+    def withPathFilter(value: String) = copy(pathFilter = Some(value))
+    def withNumToRun(value: Int) =  copy(numToRun = value)
+    def withNumToSkip(value: Int) =  copy(numToSkip = value)
+}

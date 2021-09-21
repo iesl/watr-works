@@ -220,15 +220,4 @@ trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self 
     // TODO create individual stanzas (body text, references, captions, etc.) and store them on the page
   }
 
-  def createPageLevelTranscript(): Transcript = {
-    // val lines = searchForRects(pageGeometry, TextLineReprShape)
-
-    Transcript(
-      docScope.documentId,
-      pages = List(), // pages.toList,
-      labels = List(),
-      stanzas = List()
-    )
-  }
-
 }

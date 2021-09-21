@@ -28,10 +28,10 @@ object ProcessPipelineSteps {
     _.map { Right(_) }
   }
 
-  def runTextExtractionPipeline(conf: TextWorksConfig.Config): Unit = {
+  def runTextExtractionPipeline(conf: TextWorks.ConfT.ExtractCorpus): Unit = {
 
     val prog = for {
-      _ <- createMarkedInputStream(conf.ioConfig)
+      _ <- createMarkedInputStream(conf.corpusRoot)
              .via(dropSkipAndRun(conf.ioConfig))
              .via(cleanFileArtifacts(conf))
              .runDrain
@@ -49,7 +49,7 @@ object ProcessPipelineSteps {
     runtime.unsafeRun(prog)
   }
 
-  def runImageSegPipeline(conf: TextWorksConfig.Config): Unit = {
+  def runImageSegPipeline(conf: TextWorks.Config): Unit = {
     val prog = for {
       _ <- createMarkedInputStream(conf.ioConfig)
              .via(dropSkipAndRun(conf.ioConfig))
@@ -62,7 +62,7 @@ object ProcessPipelineSteps {
 
   }
 
-  def createInputStream(conf: IOConfig): Stream[Nothing, ProcessableInput] = {
+  def createInputStream(conf: CorpusRoot.Like[_]): Stream[Nothing, ProcessableInput] = {
     conf.inputMode
       .map { mode =>
         mode match {
@@ -86,7 +86,8 @@ object ProcessPipelineSteps {
       .orDie("inputStream(): Invalid input options")
   }
 
-  def createMarkedInputStream(conf: IOConfig): UStream[MarkedInput] = {
+
+  def createMarkedInputStream(conf: CorpusRoot.Like[_]): UStream[MarkedInput] = {
     createInputStream(conf)
       .map(Right(_))
   }
@@ -108,7 +109,7 @@ object ProcessPipelineSteps {
   }
 
   def cleanFileArtifacts(
-    conf: TextWorksConfig.Config
+    conf: TextWorks.Config
   ): Pipe[MarkedInput, MarkedInput] = {
     _.map {
       case Left(inputMode) => Left(inputMode)
@@ -134,7 +135,7 @@ object ProcessPipelineSteps {
   }
 
   def generatePageImages(
-    conf: TextWorksConfig.Config
+    conf: TextWorks.Config
   ): Pipe[MarkedInput, MarkedInput] = _.map {
     case l @ Left(_) => l
     case r @ Right(inputMode @ _) =>
@@ -142,7 +143,7 @@ object ProcessPipelineSteps {
   }
 
   def segmentPageImages(
-    conf: TextWorksConfig.Config
+    conf: TextWorks.Config
   ): Pipe[MarkedInput, MarkedInput] = _.map {
     case l @ Left(_) => l
     case Right(input) =>
@@ -164,7 +165,7 @@ object ProcessPipelineSteps {
   }
   def doSegment1(
     input: Processable,
-    conf: TextWorksConfig.Config
+    conf: TextWorks.Config
   ): Either[String, ProcessedInput] = {
     try {
       input match {
@@ -232,7 +233,7 @@ object ProcessPipelineSteps {
   }
 
   def writeExtractedTextFile(
-    conf: TextWorksConfig.Config
+    conf: TextWorks.Config
   ): Pipe[MarkedOutput, MarkedOutput] = {
     _.map {
       case m @ Right(Processable.ExtractedFile(segmentation, input)) =>
@@ -260,14 +261,14 @@ object ProcessPipelineSteps {
   }
 
   def runSegmentation(
-    conf: TextWorksConfig.Config
+    conf: TextWorks.Config
   ): Pipe[MarkedInput, MarkedOutput] = _.map {
     case Right(input) => doSegment1(input, conf)
     case Left(input)  => Left(s"Skipping ${input}")
   }
 
   def markUnextractedProcessables(
-    conf: TextWorksConfig.Config
+    conf: TextWorks.Config
   ): Pipe[MarkedInput, MarkedInput] = _.map { markedInput =>
     markedInput match {
       case Right(input) =>

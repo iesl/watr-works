@@ -194,7 +194,6 @@ object TextGrid {
     private def isSpace(gc: GridCell) = gc.char == ' '
     private def trimRight(cs: Seq[GridCell]) = cs.reverse.dropWhile(isSpace(_)).reverse
 
-    // Text reshaping:
     def trimRight(): Row = {
       Row.fromCells(trimRight(cells()))
     }
