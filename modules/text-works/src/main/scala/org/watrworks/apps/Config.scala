@@ -54,12 +54,13 @@ case class IOConfig(
   pathFilter: Option[String] = None,
   numToRun: Int = Int.MaxValue,
   numToSkip: Int = 0
-) extends CorpusRoot.Like[IOConfig] {
+)
+//     extends CorpusRoot.Like[IOConfig] {
 
-    def withCorpusRoot(value: String) = copy(inputMode = Some(Processable.CorpusRoot(
-      nio.Paths.get(value).toAbsolutePath().normalize()
-    )))
-    def withPathFilter(value: String) = copy(pathFilter = Some(value))
-    def withNumToRun(value: Int) =  copy(numToRun = value)
-    def withNumToSkip(value: Int) =  copy(numToSkip = value)
-}
+//     def withCorpusRoot(value: String) = copy(inputMode = Some(Processable.CorpusRoot(
+//       nio.Paths.get(value).toAbsolutePath().normalize()
+//     )))
+//     def withPathFilter(value: String) = copy(pathFilter = Some(value))
+//     def withNumToRun(value: Int) =  copy(numToRun = value)
+//     def withNumToSkip(value: Int) =  copy(numToSkip = value)
+// }

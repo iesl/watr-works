@@ -10,7 +10,8 @@ import geometry._
 import java.net.URL
 import TypeTags._
 
-trait SegmentationTest extends AnyFlatSpec with Matchers with Diagrams
+trait SimpleTest extends AnyFlatSpec with Matchers with Diagrams
+trait SegmentationTest extends SimpleTest
 
 trait SegmentationTestUtils extends SegmentationTest {
 

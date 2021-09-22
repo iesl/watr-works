@@ -28,10 +28,10 @@ object ProcessPipelineSteps {
     _.map { Right(_) }
   }
 
-  def runTextExtractionPipeline(conf: TextWorks.ConfT.ExtractCorpus): Unit = {
+  def runTextExtractionPipeline(conf: TextWorks.Config): Unit = {
 
     val prog = for {
-      _ <- createMarkedInputStream(conf.corpusRoot)
+      _ <- createMarkedInputStream(conf.ioConfig)
              .via(dropSkipAndRun(conf.ioConfig))
              .via(cleanFileArtifacts(conf))
              .runDrain
@@ -62,7 +62,7 @@ object ProcessPipelineSteps {
 
   }
 
-  def createInputStream(conf: CorpusRoot.Like[_]): Stream[Nothing, ProcessableInput] = {
+  def createInputStream(conf: IOConfig): Stream[Nothing, ProcessableInput] = {
     conf.inputMode
       .map { mode =>
         mode match {
@@ -87,7 +87,7 @@ object ProcessPipelineSteps {
   }
 
 
-  def createMarkedInputStream(conf: CorpusRoot.Like[_]): UStream[MarkedInput] = {
+  def createMarkedInputStream(conf: IOConfig): UStream[MarkedInput] = {
     createInputStream(conf)
       .map(Right(_))
   }
