@@ -12,7 +12,7 @@ trait LibVersions {
 object LibVersions extends LibVersions
 
 object TestLibs extends LibVersions {
-  val scalatestVersion = "3.2.9"
+  val scalatestVersion = "3.2.10"
   val scalatest        = Seq(
     "org.scalatest" %% "scalatest" % scalatestVersion % "test"
   )
@@ -61,6 +61,8 @@ trait CommonLibs extends LibVersions {
 
   val scopt = "com.github.scopt" %% "scopt" % "4.0.1"
 
+  val decline = "com.monovore" %% "decline" % "2.2.0"
+
   val shapelessV = "2.3.7"
   val shapeless  = "com.chuusai" %% "shapeless" % shapelessV
 
@@ -68,7 +70,7 @@ trait CommonLibs extends LibVersions {
   val acyclic        = "com.lihaoyi" %% "acyclic" % acyclicVersion % "provided"
 
   // val guavaV = "23.0"
-  val guavaV = "30.1.1-jre"
+  val guavaV = "31.0.1-jre"
   val guava  = "com.google.guava" % "guava" % guavaV
 
   // val lucene4s         = "com.outr"                %% "lucene4s"         % luceneV
@@ -83,7 +85,7 @@ trait CommonLibs extends LibVersions {
     "com.spotify" %% "featran-core" % featranV
   )
 
-  val zioV = "1.0.11"
+  val zioV = "1.0.12"
   val zio  = Seq(
     "dev.zio" %% "zio"         % zioV,
     "dev.zio" %% "zio-streams" % zioV

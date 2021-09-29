@@ -27,31 +27,6 @@ object TextWorks extends SharedConfig {
     exec: Option[(Config) => Unit] = Some((c) => runTextExtractionPipeline(c))
   )
 
-  // sealed trait ConfT
-  // object ConfT {
-  //   case class Empty(
-  //   ) extends ConfT
-
-  //   case class InitCorpus(
-  //   ) extends ConfT
-
-  //   case class ExtractCorpus(
-  //     override val corpusRoot: String = "",
-  //     override val pathFilter: Option[String] = None,
-  //     override val numToRun: Int = Int.MaxValue,
-  //     override val numToSkip: Int = 0
-  //   ) extends ConfT
-  //     with CorpusRoot.Like[ExtractCorpus] {
-  //     def withCorpusRoot(value: String) = copy(corpusRoot = value)
-  //     def withPathFilter(value: String) = copy(pathFilter = Some(value))
-  //     def withNumToRun(value: Int)      = copy(numToRun = value)
-  //     def withNumToSkip(value: Int)     = copy(numToSkip = value)
-  //   }
-  // }
-  // case class Config(
-  //   mode: ConfT = ConfT.Empty()
-  // )
-
   val parser = new scopt.OptionParser[Config]("text-works") {
     import scopt._
 
@@ -136,41 +111,9 @@ object TextWorks extends SharedConfig {
   }
 
   def main(args: Array[String]) = {
-    // import scopt._
-    // val builder = OParser.builder[Config]
-    // import builder._
-
-    // OParser.sequence(
-    //   programName("TextWorks"),
-    //   head("TextWorks"),
-    //   cmd("init-corpus")
-    //     .text("Initialize a new corpus directory")
-    //     .action((_, c) => c.copy(mode = Mode.InitCorpus())),
-    //   cmd("extract")
-    //     .text("Run text extraction")
-    //     .action((_, c) => {
-    //       val sdf = OParser.parse[CorpusRoot.Conf](CorpusRoot.parseToCC, args, CorpusRoot.Conf())
-    //       println(s"sdf: ${sdf}")
-
-    //       // OParser.parse(CorpusRoot.parseToCC, args, Mode.ExtractCorpus() )
-    //       // c.copy(mode = Mode.ExtractCorpus())
-    //       ???
-    //     })
-    // )
     // parser.parse(args, Config()).foreach { config =>
     //   config.exec.foreach { _.apply(config) }
     // }
   }
 }
 
-// opt[nio.Path]("init-corpus") action { (v, conf) =>
-//   val conf1 = lens[Config].initCorpus.modify(conf) { m =>
-//     Some(v)
-//   }
-//   setAction(conf1, initCorpus(_))
-// } text ("initialize dir of pdfs to corpus structure")
-// opt[Unit]("image-seg") action { (v, conf) =>
-//   setAction(conf, runImageSegPipeline(_))
-// } text ("run image-based segmentation")
-
-// note("\nOutput text layout options: \n")

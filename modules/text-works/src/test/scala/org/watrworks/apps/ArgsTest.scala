@@ -3,18 +3,38 @@ package apps
 
 import scopt._
 import shapeless._
+import scala.util.matching.Regex
 
-trait RootT {
-  def mod[C[_], A]: Lens[C[A], A] // = lens[Root.Config[A]].cmd
-  // def mod = Root.mod[Config]
-  // val b = Root.buildCmd[Config]; import b._
+object Args {
+  def embedConfig[ParentC, ChildC](
+    childC: => ChildC,
+    setter: (ParentC, ChildC) => ParentC,
+    mk: => OParser[_, ChildC]
+  ): OParser[Unit, ParentC] = {
+    // val childParser = mk
+    // setter()
+    ???
+  }
+
+  def embedCmd[ParentC, ChildC](
+    name: String,
+    initConfig: => ChildC
+  )(
+    mk: OParser[_, ChildC] => OParser[_, ChildC],
+    // view: Lens[ParentC, ChildC]
+    embedChild: ChildC => ChildC
+  ): OParser[Unit, ParentC] = {
+    val b = OParser.builder[ChildC]
+    val initSeq: OParser[_, ChildC] = OParser.sequence(
+      b.cmd(name)
+        .action((value, c) => embedChild(initConfig))
+    )
+
+    val ps = mk(initSeq)
+    ps.asInstanceOf[OParser[Unit, ParentC]]
+  }
 
 }
-// trait SubCmd[RootT, CmdT] {
-//   val mod = Root.mod[Config]
-//   val b = Root.buildCmd[Config]; import b._
-
-// }
 
 object Root {
   case class Config[+A](
@@ -34,12 +54,8 @@ object Root {
       head("TextWorks")
     )
 
-  def mkParser[A](
-    name: String,
-    initConfig: A
-  )(
+  def parseCmd[A](name: String, initConfig: => A)(
     mk: OParser[_, Config[A]] => OParser[_, Config[A]]
-    // mk: (OParser[_, Config[_]], OParserBuilder[Config[A]], Lens[Config[A], A]) => OParser[_, Config[_]]
   ): OParser[Unit, Config[_]] = {
     val bcmd = buildCmd[A]
     val initSeq: OParser[_, Config[A]] = OParser.sequence(
@@ -50,99 +66,161 @@ object Root {
 
     val ps = mk(initSeq)
     ps.asInstanceOf[OParser[Unit, Config[_]]]
-
-    // ps match {
-    //   case Nil => ???
-    //   case List(phead) =>
-    //     OParser
-    //       .sequence(
-    //         cmd(name)
-    //           .action((_, c) => c.copy(cmd = Config()))
-    //           .children(
-    //             phead
-    //           )
-    //       )
-    //       .asInstanceOf[OParser[Unit, Config[_]]]
-    //   case p0 +: ptail =>
-    //     OParser
-    //       .sequence(
-    //         p0,
-    //         ptail: _*
-    //       )
-    //       .asInstanceOf[OParser[Unit, Config[_]]]
-    // }
-    // ???
-  }
-
-  def mkParser2[A](
-    mk: (OParserBuilder[Config[A]], Lens[Config[A], A]) => (
-      OParser[Unit, Config[A]],
-      Seq[OParser[_, Config[A]]]
-    )
-  ): OParser[Unit, Config[_]] = {
-    val (p0, ptail) = mk(buildCmd[A], mod)
-    OParser
-      .sequence(
-        p0,
-        ptail: _*
-      )
-      .asInstanceOf[OParser[Unit, Config[_]]]
-    // ???
   }
 
 }
+
+object GenOpts {
+
+  // def init(): OParser[Unit, HNil] = {
+  //   val bopt = OParser.builder[HNil]
+
+  //   val wer: OParser[Unit, HNil] = bopt
+  //     .action((value, c) => HNil)
+
+  //   wer
+  // }
+
+  def boolX(): OParser[Boolean, Boolean] = {
+    val bopt = OParser.builder[Boolean]
+
+    val wer: OParser[Boolean, Boolean] = bopt
+      .opt[Boolean]("overwrite")
+      .text("overwrite existing files")
+      // .action((value, c) => c)
+
+    wer
+  }
+
+  def boolU[T <: HList](): OParser[Unit, Boolean :: T] = {
+    val bopt = OParser.builder[Boolean :: T]
+
+
+    val wer: OParser[Unit, Boolean :: HNil] = bopt
+      .opt[Boolean]("overwrite")
+      .text("overwrite existing files")
+      .action((value, c) => value :: HNil)
+
+    wer
+  }
+
+  def bool[H <: Boolean, T <: HList](): OParser[Boolean, H :: T] = {
+    val bopt = OParser.builder[H :: T]
+
+    val wer: OParser[Boolean, H :: T] = bopt
+      .opt[Boolean]("overwrite")
+      .text("overwrite existing files")
+      .action((value, c) => c)
+
+    wer
+  }
+
+  def regex[H <: String, T <: HList](): OParser[String, H :: T] = {
+    val bopt = OParser.builder[H :: T]
+
+    val wer: OParser[String, H :: T] = bopt
+      .opt[String]("filter")
+      .text("path regex for filtering")
+      .action((value, c) => c)
+
+    wer
+  }
+
+
+  def optParser0(): OParser[Unit, HList] = OParser.sequence(
+    bool[Boolean, HNil](),
+    // regex[String, Boolean :: HNil]()
+  )
+
+  val optParser1 = for {
+    b0   <- boolX()
+    b1   <- boolX().validate(_ => Right((): Unit))
+    // re0 <- regex()
+  } yield ()
+
+}
+
+object CmdA0 {}
+
 object CmdA {
   case class Config(
     verbose: Boolean = false
   )
 
-  val parser = Root.mkParser[Config]("cmd-a", Config()) { case (initCmd) =>
-    // import bld._
-    val update = Root.mod[Config]
-    val b      = Root.buildCmd[Config]; import b._
+  val update = Root.mod[Config]
+  val b      = Root.buildCmd[Config]; import b._
 
+  val parser = Root.parseCmd[Config]("cmd-a", Config()) { case (initCmd) =>
     initCmd.children(
       opt[Boolean]("verbose")
         .text("verbosity level")
         .action((value, c) => update.verbose.modify(c)(_ => value))
     )
   }
-
-  // val mod = Root.mod[Config]
-  // val b   = Root.buildCmd[Config]; import b._
-
-  // val parser = OParser
-  //   .sequence(
-  //     cmd("cmd-a")
-  //       .action((_, c) => c.copy(cmd = Config()))
-  //       .children(
-  //         opt[Boolean]("verbose")
-  //           .text("verbosity level")
-  //           .action((value, c) => mod.verbose.modify(c)(_ => value))
-  //       )
-  //   )
-  //   .asInstanceOf[OParser[Unit, Root.Config[_]]]
 }
 
 object CmdB {
+
   case class Config(
-    filepath: String = ""
+    filepath: String = "",
+    filters: Filtering.Config = Filtering.Config()
   )
 
-  val mod = Root.mod[Config]
-  val b   = Root.buildCmd[Config]; import b._
+  val update = Root.mod[Config]
+  val b      = Root.buildCmd[Config]; import b._
 
-  val parser: OParser[Unit, Root.Config[_]] = OParser
-    .sequence(
-      cmd("cmd-b")
-        .action((_, c) => c.copy(cmd = Config()))
-        .children(
-          opt[String]("file")
-            .text("file path")
-            .action((value, c) => mod.filepath.modify(c)(_ => value))
-        )
+  // val filterConf: OParser[Unit, Root.Config[Filtering.Config]] =
+  //   Filtering.parser[Config]((conf, c0) => conf.copy(filters = c0))
+
+  val parser = Root.parseCmd[Config]("cmd-b", Config()) { case (initCmd) =>
+    initCmd.children(
+      opt[String]("file")
+        .text("file path")
+        .action((value, c) => update.filepath.modify(c)(_ => value))
     )
-    .asInstanceOf[OParser[Unit, Root.Config[_]]]
+  }
+}
+
+object Filtering {
+  case class Config(
+    pathFilter: Option[String] = None,
+    numToRun: Int = Int.MaxValue,
+    numToSkip: Int = 0
+  )
+
+  val update = lens[Config]
+  // val b      = Root.buildCmd[Config]; import b._
+  val b = OParser.builder[Config]
+  import b._
+
+  def validateRegex(str: String): Either[String, Unit] = try {
+    new Regex(str)
+    Right((): Unit)
+  } catch {
+    case err: Error =>
+      Left(err.getMessage())
+  }
+
+  val optParser: OParser[String, Config] = OParser.sequence(
+    opt[String]("filter")
+      .validate(validateRegex(_))
+      .action((value, c) => update.pathFilter.modify(c)(_ => Some(value))),
+    opt[Int]("num-to-run")
+      .action((value, c) => update.numToRun.modify(c)(_ => value)),
+    opt[Int]("num-to-skip")
+      .action((value, c) => update.numToSkip.modify(c)(_ => value))
+  )
+
+  def embed[ParentC](setter: (ParentC, Config) => ParentC): OParser[Unit, Config] = {
+
+    // Args.embedConfig[ParentC, Config](
+    //   Config(),
+    //   setter,
+    //   optParser
+    // )
+
+    ???
+  }
 }
 
 class ArgsTest extends utils.SimpleTest {
@@ -163,8 +241,8 @@ class ArgsTest extends utils.SimpleTest {
     )
     val examples = List(
       List("cmd-a", "--verbose", "true"),
-      List("cmd-b", "--file", "/some/file/path"),
-      List("bogus")
+      List("cmd-b", "--file", "/some/file/path", "--filter", "zz.*")
+      // List("bogus")
     )
 
     for {
@@ -189,32 +267,6 @@ class ArgsTest extends utils.SimpleTest {
       pprint.pprintln(s"args = ${example}")
       pprint.pprintln(result)
     }
-
   }
 
-  // it should "factor out subcommands" in {
-
-  //   val builder = OParser.builder[RootConfig[Any]]
-  //   import builder._
-
-  //   val parser = OParser.sequence(
-  //     programName("MyApp"),
-  //     head("MyApp is This", "version 1.0"),
-  //     cmd("cmd-a")
-  //       .action((_, c) => c.copy(commandConfig = CmdAConfig()))
-  //       .children(
-  //         opt[Boolean]("verbose")
-  //           .text("verbosity level")
-  //           // .action((_, c) => c.copy( = false))
-  //       ),
-  //     cmd("cmd-b")
-  //       .action((_, c) => c.copy(commandConfig = CmdBConfig())),
-  //   )
-
-  //   val args = List("cmd-a")
-  //   val init = RootConfig[Any]()
-  //   val result = OParser.parse(parser, args, init)
-
-  //   pprint.pprintln(result)
-  // }
 }
