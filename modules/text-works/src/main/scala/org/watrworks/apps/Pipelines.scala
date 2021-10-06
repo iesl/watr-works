@@ -2,7 +2,6 @@ package org.watrworks
 package apps
 
 import segment._
-import java.nio.{file => nio}
 import corpora.filesys._
 import utils.DoOrDieHandlers._
 import ammonite.{ops => fs} // , fs._
@@ -11,37 +10,39 @@ import TypeTags._
 import utils.Timer.time
 import _root_.io.circe, circe._, circe.syntax._
 import imageseg._
+import java.nio.file.{
+  Paths => JPaths
+}
 
 import zio._
 import zio.stream._
 
-object ProcessPipelineSteps {
+object Pipelines {
   private[this] val log = org.log4s.getLogger
 
   val PrettyPrint2Spaces = circe.Printer.spaces2
 
-  type MarkedInput  = Either[ProcessableInput, ProcessableInput]
-  type MarkedOutput = Either[String, ProcessedInput]
+  type MarkedInput  = Either[PipeInput, PipeInput]
+  type MarkedOutput = Either[String, PipeOutput]
   type Pipe[A, B]   = Stream[Unit, A] => Stream[Unit, B]
 
-  def initMarkedInput(): Pipe[ProcessableInput, MarkedInput] = {
+  def initMarkedInput(): Pipe[PipeInput, MarkedInput] = {
     _.map { Right(_) }
   }
 
-  def runTextExtractionPipeline(conf: TextWorks.Config): Unit = {
-
+  def runTextExtractionPipeline(conf: Action.ExtractCorpus): Unit = {
     val prog = for {
-      _ <- createMarkedInputStream(conf.ioConfig)
-             .via(dropSkipAndRun(conf.ioConfig))
-             .via(cleanFileArtifacts(conf))
+      _ <- createMarkedInputStream(conf.filteredCorpus)
+             .via(dropSkipAndRun(conf.filteredCorpus))
+             .via(cleanFileArtifacts(conf.filteredCorpus))
              .runDrain
 
-      _ <- createMarkedInputStream(conf.ioConfig)
-             .via(dropSkipAndRun(conf.ioConfig))
-             .via(cleanFileArtifacts(conf))
-             .via(markUnextractedProcessables(conf))
-             .via(runSegmentation(conf))
-             .via(writeExtractedTextFile(conf))
+      _ <- createMarkedInputStream(conf.filteredCorpus)
+             .via(dropSkipAndRun(conf.filteredCorpus))
+             .via(cleanFileArtifacts(conf.filteredCorpus))
+             .via(markUnextractedPipeables(conf.filteredCorpus))
+             .via(runSegmentation(conf.filteredCorpus))
+             .via(writeExtractedTextFile(conf.filteredCorpus))
              .runDrain
     } yield ()
 
@@ -49,11 +50,11 @@ object ProcessPipelineSteps {
     runtime.unsafeRun(prog)
   }
 
-  def runImageSegPipeline(conf: TextWorks.Config): Unit = {
+  def runImageSegPipeline(conf: Action.ImageSeg): Unit = {
     val prog = for {
-      _ <- createMarkedInputStream(conf.ioConfig)
-             .via(dropSkipAndRun(conf.ioConfig))
-             .via(segmentPageImages(conf))
+      _ <- createMarkedInputStream(conf.filteredCorpus)
+             .via(dropSkipAndRun(conf.filteredCorpus))
+             .via(segmentPageImages(conf.filteredCorpus))
              .runDrain
     } yield ()
 
@@ -62,46 +63,37 @@ object ProcessPipelineSteps {
 
   }
 
-  def createInputStream(conf: IOConfig): Stream[Nothing, ProcessableInput] = {
-    conf.inputMode
-      .map { mode =>
-        mode match {
-          case in @ Processable.SingleFile(_) =>
-            Stream(in)
+  def createInputStream(conf: InputConfig): Stream[Nothing, PipeInput] = {
+    conf match {
+      case InputConfig.FilteredCorpus(corpusRoot, pathFilters) =>
+        Corpus(corpusRoot)
+          .entryStream()
+          .filter { entry =>
+            pathFilters.pathFilter
+              .map { filter => entry.entryDescriptor.matches(filter) }
+              .getOrElse { true }
+          }
+          .map { entry => Pipeable.CorpusFile(entry) }
 
-          case Processable.CorpusRoot(corpusRoot) =>
-            Corpus(corpusRoot)
-              .entryStream()
-              .filter { entry =>
-                conf.pathFilter
-                  .map { filter => entry.entryDescriptor.matches(filter) }
-                  .getOrElse { true }
-              }
-              .map { entry => Processable.CorpusFile(entry) }
-
-          case p @ Processable.CorpusFile(_) =>
-            Stream(p)
-        }
-      }
-      .orDie("inputStream(): Invalid input options")
+    }
   }
 
-
-  def createMarkedInputStream(conf: IOConfig): UStream[MarkedInput] = {
+  def createMarkedInputStream(conf: InputConfig): UStream[MarkedInput] = {
     createInputStream(conf)
       .map(Right(_))
   }
 
-  def dropSkipAndRun(conf: IOConfig): Pipe[MarkedInput, MarkedInput] = {
-    var skipCount = conf.numToSkip
-    var runCount  = conf.numToRun
+  def dropSkipAndRun(conf: InputConfig.FilteredCorpus): Pipe[MarkedInput, MarkedInput] = {
+    var numToSkip = conf.pathFilters.numToSkip
+    var numToRun  = conf.pathFilters.numToRun
+
     _.map {
-      case r @ Right(p @ Processable.CorpusFile(corpusEntry @ _)) =>
-        if (skipCount > 0) {
-          skipCount -= 1;
+      case r @ Right(p @ Pipeable.CorpusFile(corpusEntry @ _)) =>
+        if (numToSkip > 0) {
+          numToSkip -= 1;
           Left(p)
-        } else if (runCount > 0) {
-          runCount -= 1
+        } else if (numToRun > 0) {
+          numToRun -= 1
           r
         } else Left(p)
       case x => x
@@ -109,33 +101,36 @@ object ProcessPipelineSteps {
   }
 
   def cleanFileArtifacts(
-    conf: TextWorks.Config
+    inConf: InputConfig
   ): Pipe[MarkedInput, MarkedInput] = {
     _.map {
       case Left(inputMode) => Left(inputMode)
       case Right(inputMode) =>
-        val output = Processable.getTranscriptOutputFile(inputMode, conf.ioConfig)
+        inConf match {
+          case InputConfig.FilteredCorpus(_, pathFilters) =>
+            val output = Pipeable.getTranscriptOutputFile(inputMode, inConf)
 
-        if (output.toFile().exists()) {
-          if (conf.ioConfig.overwrite) {
-            log.info(s"Overwriting ${output}")
-            fs.rm(nioToAmm(output))
-            Right(inputMode)
-          } else {
-            log.info(
-              s"Skipping ${inputMode}, output path ${output} already exists"
-            )
-            log.info(s"use --overwrite to force overwrite")
-            Left(inputMode)
-          }
-        } else {
-          Right(inputMode)
+            if (output.toFile().exists()) {
+              if (pathFilters.overwrite) {
+                log.info(s"Overwriting ${output}")
+                fs.rm(nioToAmm(output))
+                Right(inputMode)
+              } else {
+                log.info(
+                  s"Skipping ${inputMode}, output path ${output} already exists"
+                )
+                log.info(s"use --overwrite to force overwrite")
+                Left(inputMode)
+              }
+            } else {
+              Right(inputMode)
+            }
         }
     }
   }
 
   def generatePageImages(
-    conf: TextWorks.Config
+    conf: InputConfig
   ): Pipe[MarkedInput, MarkedInput] = _.map {
     case l @ Left(_) => l
     case r @ Right(inputMode @ _) =>
@@ -143,12 +138,12 @@ object ProcessPipelineSteps {
   }
 
   def segmentPageImages(
-    conf: TextWorks.Config
+    conf: InputConfig
   ): Pipe[MarkedInput, MarkedInput] = _.map {
     case l @ Left(_) => l
     case Right(input) =>
       input match {
-        case m @ Processable.CorpusFile(corpusEntry) =>
+        case m @ Pipeable.CorpusFile(corpusEntry) =>
           for {
             group     <- corpusEntry.getArtifactGroup("page-images")
             pageImage <- group.getArtifacts()
@@ -164,22 +159,20 @@ object ProcessPipelineSteps {
       }
   }
   def doSegment1(
-    input: Processable,
-    conf: TextWorks.Config
-  ): Either[String, ProcessedInput] = {
+    input: Pipeable,
+    conf: InputConfig
+  ): Either[String, PipeOutput] = {
     try {
       input match {
-        case m @ Processable.SingleFile(f) =>
+        case m @ Pipeable.SingleFile(f) =>
           val pdfName    = f.getFileName.toString()
           val documentId = DocumentID(pdfName)
           val input      = nioToAmm(f)
 
-          val output = conf.ioConfig.outputPath.getOrElse {
-            nio.Paths.get(f.getFileName().toString() + ".transcript.json")
-          }
+          val output = Pipeable.getTranscriptOutputFile(m, conf)
 
           if (!output.toFile().exists()) {
-            Right(Processable.ExtractedFile(extractText(documentId, input), m))
+            Right(Pipeable.ExtractedFile(extractText(documentId, input), m))
           } else {
             val msg =
               s"File ${output} already exists. Move file or use --overwrite"
@@ -187,7 +180,7 @@ object ProcessPipelineSteps {
             Left(msg)
           }
 
-        case m @ Processable.CorpusFile(corpusEntry) =>
+        case m @ Pipeable.CorpusFile(corpusEntry) =>
           val documentId = DocumentID(corpusEntry.entryDescriptor)
 
           println(s"Processing ${documentId}")
@@ -207,14 +200,14 @@ object ProcessPipelineSteps {
               println(s"Error: ${s}")
               s
             }
-            .map { s => Processable.ExtractedFile(s, m) }
+            .map { s => Pipeable.ExtractedFile(s, m) }
 
-        case m => Left(s"Unsupported Processable ${m}")
+        case m => Left(s"Unsupported Pipeable ${m}")
       }
     } catch {
       case t: Throwable =>
         utils.Debugging.printAndSwallow(t)
-        Left[String, ProcessedInput](t.toString())
+        Left[String, PipeOutput](t.toString())
     }
   }
 
@@ -223,7 +216,7 @@ object ProcessPipelineSteps {
       buildinfo.BuildInfo.toJson.jsonOrDie("BuildInfo produced invalid Json")
     val now = System.currentTimeMillis()
     val dtf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
-    dtf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
+    // dtf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
     val nowStr = dtf.format(new java.util.Date(now))
 
     buildInfoMap.asObject.get
@@ -233,11 +226,11 @@ object ProcessPipelineSteps {
   }
 
   def writeExtractedTextFile(
-    conf: TextWorks.Config
+    conf: InputConfig
   ): Pipe[MarkedOutput, MarkedOutput] = {
     _.map {
-      case m @ Right(Processable.ExtractedFile(segmentation, input)) =>
-        val outputFile = Processable.getTranscriptOutputFile(input, conf.ioConfig)
+      case m @ Right(Pipeable.ExtractedFile(segmentation, input)) =>
+        val outputFile = Pipeable.getTranscriptOutputFile(input, conf)
 
         val jsonOutput = time("build json output") {
           val transcript = segmentation.createTranscript()
@@ -261,21 +254,21 @@ object ProcessPipelineSteps {
   }
 
   def runSegmentation(
-    conf: TextWorks.Config
+    conf: InputConfig
   ): Pipe[MarkedInput, MarkedOutput] = _.map {
     case Right(input) => doSegment1(input, conf)
     case Left(input)  => Left(s"Skipping ${input}")
   }
 
-  def markUnextractedProcessables(
-    conf: TextWorks.Config
-  ): Pipe[MarkedInput, MarkedInput] = _.map { markedInput =>
-    markedInput match {
+  def markUnextractedPipeables(
+    conf: InputConfig
+  ): Pipe[MarkedInput, MarkedInput] = _.map {
+    _ match {
       case Right(input) =>
         input match {
-          case m @ Processable.CorpusFile(corpusEntry) =>
+          case m @ Pipeable.CorpusFile(corpusEntry) =>
             val textGridFile =
-              Processable.getTranscriptOutputFile(m, conf.ioConfig)
+              Pipeable.getTranscriptOutputFile(m, conf)
             val isProcessed = fs.exists(textGridFile.toFsPath())
             if (isProcessed) {
               log.info(s"Already processed ${corpusEntry}: ${textGridFile}")
@@ -284,7 +277,7 @@ object ProcessPipelineSteps {
               Right(input)
             }
 
-          case _ @Processable.SingleFile(filePath @ _) =>
+          case _ @Pipeable.SingleFile(filePath @ _) =>
             ???
           case _ => ???
         }
@@ -324,27 +317,28 @@ object ProcessPipelineSteps {
     segmenter
   }
 
-  def config(filter: String): IOConfig = {
-    IOConfig(
-      inputMode = Option(
-        Processable.CorpusRoot(
-          nio.Paths.get("corpus.d").toAbsolutePath().normalize()
-        )
-      ),
-      pathFilter = Some(filter)
+  def config(filter: String): InputConfig.FilteredCorpus = {
+    InputConfig.FilteredCorpus(
+      corpusRoot = JPaths.get("corpus.d").toAbsolutePath().normalize(),
+      pathFilters = InputConfig.PathFilters(
+        Some(filter),
+        numToRun = Int.MaxValue,
+        numToSkip = 0,
+        overwrite = true
+      )
     )
   }
 
   def corpusEntryStream(implicit
-    conf: IOConfig
-  ): Stream[ProcessableInput, CorpusEntry] = {
+    conf: InputConfig.FilteredCorpus
+  ): Stream[PipeInput, CorpusEntry] = {
     for {
       maybeIn <- createMarkedInputStream(conf)
       pinput <- Stream
                   .fromEffect(ZIO.fromEither(maybeIn))
                   .map(_ match {
-                    case Processable.CorpusFile(corpusEntry) => corpusEntry
-                    case _                                   => ???
+                    case Pipeable.CorpusFile(corpusEntry) => corpusEntry
+                    case _                                => ???
                   })
     } yield pinput
   }

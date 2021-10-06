@@ -1,10 +1,7 @@
 package org.watrworks
 package apps
 
-import scopt.Read
-import java.nio.{file => nio}
-// import tracing.VisualTracer
-import ProcessPipelineSteps._
+import Pipelines._
 import utils.{M3x3Position => M3}
 import scala.sys.process._
 import segment.prelude._
@@ -18,20 +15,6 @@ import zio.stream._
 import zio.console._
 import corpora.filesys.CorpusEntry
 import java.io.IOException
-
-object TraceVisConfig {
-
-  implicit val NioPath: Read[nio.Path] =
-    Read.reads { v =>
-      nio.Paths.get(v).toAbsolutePath().normalize()
-    }
-
-  case class Config(
-    ioConfig: IOConfig = IOConfig(),
-    initCorpus: Option[nio.Path] = None,
-    runTraceLogging: Boolean = true
-  )
-}
 
 object TraceVis {
 

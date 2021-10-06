@@ -6,7 +6,7 @@ import geometry._
 import rsearch.{Octothorpe => Oct}
 import Neighbor._
 
-trait TranscriptLabeling { self: BasePageSegmenter =>
+trait LabelMakers { self: BasePageSegmenter =>
 
   val createLabel = Transcript.Label.create(_)
 

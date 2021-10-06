@@ -72,7 +72,12 @@ object FontAndGlyphMetrics {
 trait FontAndGlyphMetricsDocWide extends BaseDocumentSegmenter { self =>
   import FontAndGlyphMetrics._
 
-  def computeScaledSymbolicFontMetrics(): Unit = {
+  def computeFontMetrics(): Unit = {
+    computeScaledFontHeightMetrics()
+    computeScaledSymbolicFontMetrics()
+  }
+
+  private def computeScaledSymbolicFontMetrics(): Unit = {
     val natLangFontIds = docScope.fontDefs.getFontIdentifiers(isNatLang = true)
 
     val natLangVariantNames = natLangFontIds.flatMap { scaledFontId =>
@@ -87,9 +92,8 @@ trait FontAndGlyphMetricsDocWide extends BaseDocumentSegmenter { self =>
       val symVariants     = createFontNameVariants(scaledSymFontId)
       val symVariantNames = symVariants.map(_._1)
 
-      val matchingVariantName = natLangVariantNames.find {
-        case (name, scalingFactor @ _, natScaledFontId @ _) =>
-          symVariantNames.contains(name)
+      val matchingVariantName = natLangVariantNames.find { case (name, scalingFactor @ _, natScaledFontId @ _) =>
+        symVariantNames.contains(name)
       }
 
       matchingVariantName.fold[Unit](())({ case (variantName, scalingFactor @ _, natScaledFontId) =>
@@ -106,7 +110,8 @@ trait FontAndGlyphMetricsDocWide extends BaseDocumentSegmenter { self =>
     }
   }
 
-  def computeScaledFontHeightMetrics(lineLabel: Label): Unit = {
+  private def computeScaledFontHeightMetrics(): Unit = {
+    val lineLabel: Label = LB.CharRunFontBaseline
     // Requires that lineLabel (e.g. LB.CharRunFontBaseline) has linked glyphs (getCharsForShape())
     val offsetEvidences = for {
       pageSeg   <- pageSegmenters

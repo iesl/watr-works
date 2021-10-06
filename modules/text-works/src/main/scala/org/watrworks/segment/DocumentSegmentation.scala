@@ -45,11 +45,6 @@ trait DocumentSegmenter
   with TextBlockGroupingDocScope { self =>
 
   def runDocumentSegmentation(): Unit = {
-    // TODO pass in extraction features:
-    //   e.g., Per-page text, super/subscript escapes, dehyphenation, ...
-
-    // TODO it would be useful to have font info written somewhere
-    // docScope.docTraceLogs.trace { boxText(docScope.fontDefs.report()) }
 
     docScope.docStats.initTable[Int @@ PageNum, String @@ ScaledFontID, Int @@ FloatRep](
       "PagewiseLineWidths"
@@ -75,31 +70,28 @@ trait DocumentSegmenter
 
     withPageSegmenters("FindContiguousGlyphRuns", _.findContiguousGlyphSpans())
 
-    withDocumentSegmenter(
-      "ComputeFontMetrics", {
-        computeScaledFontHeightMetrics(LB.CharRunFontBaseline)
-        computeScaledSymbolicFontMetrics()
-      }
-    )
+    withDocumentSegmenter("ComputeFontMetrics", computeFontMetrics())
 
     withPageSegmenters("FindTypographicUnits", _.findTypographicUnits())
 
     withPageSegmenters("FindMonoFontBlocks", _.findMonoFontBlocks())
 
-    withDocumentSegmenter("CollectMonoFontFeatures", { self.collectMonoFontFeatures() })
+    withDocumentSegmenter("CollectMonoFontFeatures", self.collectMonoFontFeatures())
 
     withPageSegmenters("JoinMonoFontBlocks", _.joinMonoFontBlocks())
 
     withPageSegmenters("FindColumnEvidence", _.findColumnEvidence())
-    withDocumentSegmenter("ComputeColumnClusters", { self.columnClustering() })
 
-    // withPageSegmenters("ApplyColumnEvidence", _.applyColumnEvidence())
+    withDocumentSegmenter("ComputeColumnClusters", self.columnClustering())
+
+    withPageSegmenters("ApplyColumnEvidence", _.applyColumnEvidence())
+
     // withPageSegmenters("setTextForReprShapes", _.setTextForReprShapes())
     // withPageSegmenters("buildLinePairTrapezoids", _.buildLinePairTrapezoids())
     // withDocumentSegmenter("createFeatureVectors", { self.createFeatureVectors() })
     // withPageSegmenters("classifyLines", _.classifyLines())
 
-    withPageSegmenters("CreateOutputStanzas", _.createPageStanzas())
+    withPageSegmenters("CreatePageStanzas", _.createPageStanzas())
 
   }
 }
@@ -108,7 +100,6 @@ trait DocumentScopeTracing extends ScopedTracing { self =>
   lazy val docTraceLogs: DocumentScopeTracing = self
 
 }
-
 
 trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
 
@@ -235,6 +226,7 @@ trait BaseDocumentSegmenter extends DocumentScopeTracing { self =>
     println(docScope.fontDefs.report())
   }
 
+  // TextFlow=MirrorPDF
   def createTranscript(): Transcript = {
     val documentId = self.documentId
 

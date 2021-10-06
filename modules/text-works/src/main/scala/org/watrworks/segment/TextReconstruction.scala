@@ -11,7 +11,6 @@ import TypeTags._
 import utils.intervals._
 import watrmarks._
 import utils.SlicingAndDicing._
-import org.watrworks.transcripts.Transcript
 
 trait TextReconstruction extends BasePageSegmenter with LineSegmentation { self =>
 

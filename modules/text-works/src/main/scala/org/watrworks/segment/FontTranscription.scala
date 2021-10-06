@@ -5,9 +5,9 @@ import segment._
 import _root_.io.circe, circe._, circe.syntax._
 import circe.generic.auto._
 
-object TextGridOutputFormats {
+object FontTranscription {
 
-  def fontDescription(docSeg: DocumentSegmenter): Seq[Json] = {
+  def asJson(docSeg: DocumentSegmenter): Seq[Json] = {
 
     val fontDefs = docSeg.docScope.fontDefs
 

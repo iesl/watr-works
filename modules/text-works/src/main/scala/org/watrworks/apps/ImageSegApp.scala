@@ -12,7 +12,7 @@ import org.bytedeco.opencv.opencv_core._
 import org.watrworks.corpora.filesys.CorpusEntry
 
 object ImageSegApp {
-  import ProcessPipelineSteps._
+  import Pipelines._
   val LD = LineDetection
 
   val userPrompt: String => ZIO[Console, Throwable, String] = (prompt: String) =>

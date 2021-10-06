@@ -77,7 +77,7 @@ trait PageScopeTracing extends ScopedTracing { self: BasePageSegmenter =>
 
 
 // Trait from which other page-level segmentation trait can inherit
-trait BasePageSegmenter extends PageScopeTracing with AttributeTags with TranscriptLabeling {
+trait BasePageSegmenter extends PageScopeTracing with AttributeTags with LabelMakers {
   self =>
 
   lazy val pageScope = self

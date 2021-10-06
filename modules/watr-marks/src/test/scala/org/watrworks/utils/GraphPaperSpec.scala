@@ -29,7 +29,7 @@ class GraphPaperSpec extends WatrSpec {
       hjoinWith(top, hspace(3),group)
     }
 
-    val grid = vjoinWith(left, vspace(2), rows.toList)
+    vjoinWith(left, vspace(2), rows.toList)
 
     // println(grid.toString())
   }
