@@ -154,7 +154,6 @@ object Transcript {
         props = None,
         children = None
       )
-
     }
   }
 

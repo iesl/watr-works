@@ -10,7 +10,6 @@ class LineTokenizationTest extends utils.SegmentationTestUtils {
   import smile.sequence.{CRF, crf}
   import smile.data.{Tuple, DataFrame}
   import smile.clustering.{hclust, HierarchicalClustering}
-  import smile.math.distance.Distance
 
   import scala.jdk.StreamConverters._
   import com.spotify.featran._

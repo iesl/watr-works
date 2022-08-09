@@ -102,10 +102,10 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
 
               traceLog.trace {
                 createLabel(s"ColumnEvidence: ${leftRightGuttersEmpty}")
-                  .withProp("class", ">lazy")
+                  .withProp("display", "icon")
                   .withChildren(
                     createLabelOn("PageBand", pageBand)
-                      .withProp("class", "=eager"),
+                      .withProp("role", "icon"),
                     createLabelOn("LeftGutter", leftGutterQueryRect)
                       .withChildren(
                         createLabelsOnShapes("LGHits", leftGutterHits)
@@ -165,6 +165,15 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
             r.withinRegion(pageGeometry).slidingRects(Dir.Down)
           })
           val queryRows = queryCols.transpose
+
+          traceLog.trace {
+            mkLabel.onShapeGrid("ColumnQueriesSlidingDown", queryCols)
+          }
+
+          traceLog.trace {
+            mkLabel.onShapeGrid("ColumnQueriesTranspose", queryRows)
+          }
+
           val rowProps: Seq[ColumnProps] = queryRows.map {
             _.toList match {
               case List(gutterL, col1, gutterC, col2, gutterR) =>
@@ -174,19 +183,19 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
                 val col1Empty    = hasNoOverlaps(col1)
                 val col2Empty    = hasNoOverlaps(col2)
                 val guttersEmpty = gutterLEmpty && gutterREmpty && gutterCEmpty
-                // val colsEmpty     = col1Empty && col2Empty
-                // val blankStrip    = guttersEmpty && colsEmpty
-                // val leftColStrip  = guttersEmpty && !col1Empty && col2Empty
-                // val rightColStrip = guttersEmpty && col1Empty && !col2Empty
-                // val lrColStrip    = guttersEmpty && !col1Empty && !col2Empty
+              // val colsEmpty     = col1Empty && col2Empty
+              // val blankStrip    = guttersEmpty && colsEmpty
+              // val leftColStrip  = guttersEmpty && !col1Empty && col2Empty
+              // val rightColStrip = guttersEmpty && col1Empty && !col2Empty
+              // val lrColStrip    = guttersEmpty && !col1Empty && !col2Empty
 
-                // traceLog.trace {
-                // val hitStr     = if (emptyQuery) "Empty" else "Nonempty"
-                // val gutterStr  = if (isGutter) "Gutter" else "Text"
-                //   createLabelOn(s"ColSlice${hitStr}${gutterStr}", queryRect)
-                //     .withProp("coord", s"[${rowNum}, ${colNum}]")
-                // }
-                ColumnProps(guttersEmpty, col1Empty, col2Empty)
+              // traceLog.trace {
+              // val hitStr     = if (emptyQuery) "Empty" else "Nonempty"
+              // val gutterStr  = if (isGutter) "Gutter" else "Text"
+              //   createLabelOn(s"ColSlice${hitStr}${gutterStr}", queryRect)
+              //     .withProp("coord", s"[${rowNum}, ${colNum}]")
+              // }
+              ColumnProps(guttersEmpty, col1Empty, col2Empty)
 
               case other =>
                 println(s"huh? ${other}")
@@ -195,10 +204,9 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
 
             }
           }
-          rowProps.groupByWindow((window, elem) => {
-
-            ???
-          })
+        // rowProps.groupByWindow((window, elem) => {
+        //   ???
+        // })
 
         case None =>
       }

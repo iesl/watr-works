@@ -149,10 +149,10 @@ trait NeighborhoodSearch extends BasePageSegmenter {
 
         pushLabel(
           createLabel(s"Facing${facingDir}Find( ${queryLabel.fqn} )")
-            .withProp("class", ">lazy")
+            .withProp("display", "icon")
             .withChildren(
               createLabelOn("FocalRect", focalShape.shape)
-                .withProp("class", "=eager")
+                .withProp("role", "icon")
             )
         )
 

@@ -69,8 +69,6 @@ object App {
         println(help.toString())
 
       case Right(cmd) =>
-        println(s"Success! ${cmd}")
-
         cmd match {
           case action: Action.ExtractCorpus =>
             Pipe.runTextExtractionPipeline(action)

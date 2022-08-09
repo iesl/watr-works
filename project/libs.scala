@@ -3,8 +3,8 @@ import Keys._
 
 trait LibVersions {
   val cats = Seq(
-    // "org.typelevel" %% "cats-effect" % "3.2.2",
-    "org.typelevel" %% "cats-effect" % "2.5.3",
+     "org.typelevel" %% "cats-effect" % "3.2.9",
+//    "org.typelevel" %% "cats-effect" % "2.5.3",
     "org.typelevel" %% "cats-core" % "2.6.1"
   )
 }
@@ -124,7 +124,7 @@ trait CommonLibs extends LibVersions {
     "org.http4s" %% "http4s-blaze-client" % http4sVersion
   )
 
-  val doodleVersion = "0.9.25"
+  val doodleVersion = "0.10.0"
   // val doodle = "org.creativescala" %% "doodle" % doodleVersion
   val doodle = Seq(
     "org.creativescala" %%  "doodle-core" % doodleVersion,

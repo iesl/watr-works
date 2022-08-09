@@ -77,14 +77,14 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
                     val shape2Font     = shape2.getAttr(PrimaryFont).get
 
                     createLabel(s"Facing${facingDir}DoJumpRight")
-                      .withProp("class", ">lazy")
+                      .withProp("display", "icon")
                       .withProp("Font", fontId.toString())
                       .withProp("JumpVDist", jumpVDist.pp())
                       .withProp("EvidenceDir", evidenceDir.toString())
                       .withChildren(
                         createLabelOn(s"FocalShape${evidenceDir}", focalShape.shape)
                           .withProp("Font", focalShapeFont.toString())
-                          .withProp("class", "=eager"),
+                          .withProp("role", "icon"),
                         createLabelOn("Shape1", shape1.shape)
                           .withProp("Font", shape1Font.toString()),
                         createLabelOn("Shape2", shape2.shape)
@@ -125,13 +125,13 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
                 val shape1Font     = firstRect.getAttr(PrimaryFont).get
 
                 createLabel(s"Facing${facingDir}DoJumpDown")
-                  .withProp("class", ">lazy")
+                  .withProp("display", "icon")
                   .withProp("Font", fontId.toString())
                   .withProp("JumpVDist", jumpVDist.pp())
                   .withChildren(
                     createLabelOn(s"FocalShape", focalShape.shape)
                       .withProp("Font", focalShapeFont.toString())
-                      .withProp("class", "=eager"),
+                      .withProp("role", "icon"),
                     createLabelOn("FoundShape", firstRect.shape)
                       .withProp("Font", shape1Font.toString()),
                     createLabelOn("Jump", l12)
@@ -265,11 +265,11 @@ trait TextBlockGrouping extends NeighborhoodSearch { self =>
         }
 
         createLabel(s"MonoFontLattice")
-          .withProp("class", ">lazy")
+          .withProp("display", "icon")
           .withProp("Font", fontId.toString())
           .withChildren(
             createLabelOn(s"ComponentBounds", ccBounds)
-              .withProp("class", "=eager")
+              .withProp("role", "icon")
           )
           .withChildren(bandLabels: _*)
       }

@@ -18,7 +18,7 @@ object SensibleProject extends CommonLibs {
     libraryDependencies ++= Seq(acyclic)
   )
 
-  lazy val scalaV = "2.13.6"
+  lazy val scalaV = "2.13.7"
 
   val scala_2_13_RecommendedOptionList = Seq(
     "-Xcheckinit",                      // Wrap field accessors to throw an exception on uninitialized access.

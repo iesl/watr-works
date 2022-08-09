@@ -79,6 +79,21 @@ object pngDrawing {
       )
   }
 
+  import cats.effect.unsafe.implicits.global
+  /*
+TODO [error] Instead of calling unsafe methods directly, consider using cats.effect.IOApp, which
+[error] runs your IO. If integrating with non-functional code or experimenting in a REPL / Worksheet,
+[error] add the following import:
+[error]
+[error] import cats.effect.unsafe.implicits.global
+[error]
+[error] Alternatively, you can create an explicit IORuntime value and put it in implicit scope.
+[error] This may be useful if you have a pre-existing fixed thread pool and/or scheduler which you
+[error] wish to use to execute IO programs. Please be sure to review thread pool best practices to
+[error] avoid unintentionally degrading your application performance.
+[error]       self.write[Png](fpath)
+   */
+
   implicit class RicherPicture(self: MyPicture) {
     def save(fpath: String) = {
       self.write[Png](fpath)
