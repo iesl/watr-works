@@ -14,12 +14,12 @@ object zip {
       }
     }
 
-    val closeDirStream = (dirStream: DirectoryStream[Path]) => IO.succeed(dirStream.close)
-    val acquire = IO.succeed(Files.newDirectoryStream(dir))
+    val closeDirStream = (dirStream: DirectoryStream[Path]) => ZIO.succeed(dirStream.close)
+    val acquire = ZIO.succeed(Files.newDirectoryStream(dir))
     val release = closeDirStream(_)
 
 
-    ZStream.bracket(acquire)(release)
+    ZStream.acquireReleaseWith(acquire)(release)
       .flatMap(ds => useDirStream(ds))
       .filter(include)
   }

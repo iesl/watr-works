@@ -335,7 +335,7 @@ object Pipelines {
     for {
       maybeIn <- createMarkedInputStream(conf)
       pinput <- Stream
-                  .fromEffect(ZIO.fromEither(maybeIn))
+                  .fromZIO(ZIO.fromEither(maybeIn))
                   .map(_ match {
                     case Pipeable.CorpusFile(corpusEntry) => corpusEntry
                     case _                                => ???

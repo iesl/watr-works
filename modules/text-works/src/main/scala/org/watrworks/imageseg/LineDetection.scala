@@ -10,50 +10,52 @@ import org.bytedeco.javacpp.indexer.UByteIndexer
 
 import OpenCVUtils._
 import zio._
-import zio.console._
+
 import ImgProc._
 import math._
 import org.bytedeco.opencv.opencv_text._
+import zio.Console
+import zio.Console.{ printLine, _ }
 
 object LineDetection {
 
-  def readImage(imgPath: String): Task[Mat] = Task {
+  def readImage(imgPath: String): Task[Mat] = ZIO.attempt {
     val r        = imread(imgPath, IMREAD_GRAYSCALE)
     val channels = r.channels()
     println(s"Image Channels = ${channels}")
     r
   }
-  def readImageColor(imgPath: String): Task[Mat] = Task {
+  def readImageColor(imgPath: String): Task[Mat] = ZIO.attempt {
     val r        = imread(imgPath)
     val channels = r.channels()
     println(s"Image Channels = ${channels}")
     r
   }
-  def writeImage(mat: Mat, imgPath: String): Task[Unit] = Task {
+  def writeImage(mat: Mat, imgPath: String): Task[Unit] = ZIO.attempt {
     imwrite(imgPath, mat)
   }
 
-  def showImage(mat: Mat, caption: String): Task[Closeable] = Task {
+  def showImage(mat: Mat, caption: String): Task[Closeable] = ZIO.attempt {
     show(mat, caption)
   }
-  def showImageUntilKeypress(mat: Mat, caption: String): Task[Unit] = Task {
+  def showImageUntilKeypress(mat: Mat, caption: String): Task[Unit] = ZIO.attempt {
     showUntilKeypress(mat, caption)
   }
 
-  def runThreshold(in: Mat): Task[Mat] = Task {
+  def runThreshold(in: Mat): Task[Mat] = ZIO.attempt {
     val out = new Mat()
     // ImgProc.threshold(in, out, 128, 255, ImgProc.THRESH_BINARY_INV)
     ImgProc.threshold(in, out, 128, 255, ImgProc.THRESH_OTSU)
     out
   }
 
-  def runTextDetectionUsingSWT(in: Mat): Task[Mat] = Task {
+  def runTextDetectionUsingSWT(in: Mat): Task[Mat] = ZIO.attempt {
     // detectTextSWT
 
     ???
   }
 
-  def runTextDetectionUsingTextBoxesCNN(in: Mat): Task[Mat] = Task {
+  def runTextDetectionUsingTextBoxesCNN(in: Mat): Task[Mat] = ZIO.attempt {
     // Load model weights
     val detector = TextDetectorCNN.create(
       "./models.d/textbox.prototxt",
@@ -76,7 +78,7 @@ object LineDetection {
 
   }
 
-  def runCanny(in: Mat): Task[Mat] = Task {
+  def runCanny(in: Mat): Task[Mat] = ZIO.attempt {
     val canny        = new Mat()
     val threshold1   = 125d
     val threshold2   = 350d
@@ -85,7 +87,7 @@ object LineDetection {
     canny
   }
 
-  def runHough(in: Mat): Task[Mat] = Task {
+  def runHough(in: Mat): Task[Mat] = ZIO.attempt {
     // Hough transform for line detection
     // val storage                    = cvCreateMemStorage(0)
     // val method                     = HOUGH_STANDARD
@@ -131,7 +133,7 @@ object LineDetection {
     result
   }
 
-  def runAdaptiveThreshold(in: Mat): Task[Mat] = Task {
+  def runAdaptiveThreshold(in: Mat): Task[Mat] = ZIO.attempt {
     bitwise_not(in, in)
     val out       = new Mat()
     val maxVal    = 244
@@ -142,19 +144,19 @@ object LineDetection {
 
   }
 
-  def runBinarize(in: Mat): Task[Mat] = Task {
+  def runBinarize(in: Mat): Task[Mat] = ZIO.attempt {
     bitwise_not(in, in)
     val bw = new Mat()
     ImgProc.adaptiveThreshold(in, bw, 244, ImgProc.ADAPTIVE_THRESH_MEAN_C, ImgProc.THRESH_BINARY, 15, -2)
     bw
   }
-  def combineMats(mat1: Mat, mat2: Mat): Task[Mat] = Task {
+  def combineMats(mat1: Mat, mat2: Mat): Task[Mat] = ZIO.attempt {
     val matOut = new Mat()
     addWeighted(mat1, 0.5, mat2, 0.5, 0, matOut)
     matOut
   }
 
-  def blend(mat1: Mat, alpha: Double, mat2: Mat): Task[Mat] = Task {
+  def blend(mat1: Mat, alpha: Double, mat2: Mat): Task[Mat] = ZIO.attempt {
     val matOut = new Mat()
     val beta   = 1.0 - alpha
     val gamma  = 0d
@@ -162,13 +164,13 @@ object LineDetection {
     matOut
   }
 
-  def runErode(in: Mat, kernel: Mat): Task[Mat] = Task {
+  def runErode(in: Mat, kernel: Mat): Task[Mat] = ZIO.attempt {
     val out = in.clone()
     ImgProc.erode(in, out, kernel);
     out
   }
 
-  def runDilate(in: Mat, kernel: Mat): Task[Mat] = Task {
+  def runDilate(in: Mat, kernel: Mat): Task[Mat] = ZIO.attempt {
     val out = in.clone()
     ImgProc.dilate(in, out, kernel);
     out
@@ -180,10 +182,10 @@ object LineDetection {
   def runOpen(in: Mat, kernel: Mat): Task[Mat] =
     runErode(in, kernel).flatMap(runDilate(_, kernel))
 
-  def makeHLineKernel0(len: Int): Task[Mat] = Task {
+  def makeHLineKernel0(len: Int): Task[Mat] = ZIO.attempt {
     ImgProc.getStructuringElement(ImgProc.MORPH_RECT, new Size(len, 1));
   }
-  def makeHLineKernel(len: Int): Task[Mat] = Task {
+  def makeHLineKernel(len: Int): Task[Mat] = ZIO.attempt {
     val mat = new Mat(2, len, CV_8U)
 
     val index = mat.createIndexer[UByteIndexer]()
@@ -209,10 +211,10 @@ object LineDetection {
       mflip
     }
 
-  def makeVLineKernel0(len: Int): Task[Mat] = Task {
+  def makeVLineKernel0(len: Int): Task[Mat] = ZIO.attempt {
     ImgProc.getStructuringElement(ImgProc.MORPH_RECT, new Size(1, len));
   }
-  def makeVLineKernel(len: Int): Task[Mat] = Task {
+  def makeVLineKernel(len: Int): Task[Mat] = ZIO.attempt {
     val mat = new Mat(len, 2, CV_8U)
 
     val index = mat.createIndexer[UByteIndexer]()
@@ -227,14 +229,14 @@ object LineDetection {
     mat
   }
 
-  def makeRectKernel(h: Int, w: Int): Task[Mat] = Task {
+  def makeRectKernel(h: Int, w: Int): Task[Mat] = ZIO.attempt {
     ImgProc.getStructuringElement(ImgProc.MORPH_RECT, new Size(w, h));
   }
 
   val writePng: (Mat, String) => ZIO[Console, Any, Any] = (mat, path) => {
     val finalPath = s"${path}.lines.png"
     for {
-      _ <- putStrLn(s"Writing ${finalPath}")
+      _ <- printLine(s"Writing ${finalPath}")
       _ <- writeImage(mat, finalPath)
     } yield ()
   }
@@ -263,8 +265,8 @@ object LineDetection {
 
     val hvlineApp: ZIO[Console, Any, Any] = for {
       initImg     <- readImage(imgPath)
-      _           <- putStrLn(s"Loaded ${imgPath} = ${initImg}")
-      kernelSize  <- Task(40)
+      _           <- printLine(s"Loaded ${imgPath} = ${initImg}")
+      kernelSize  <- ZIO.attempt(40)
       thresh      <- runAdaptiveThreshold(initImg)
       hlineKernel <- makeHLineKernel(kernelSize)
       vlineKernel <- makeVLineKernel(kernelSize)

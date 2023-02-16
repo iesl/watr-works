@@ -3,6 +3,7 @@ package apps
 
 import zio._
 import zio.console._
+
 import java.io.{
   IOException
 }
@@ -10,6 +11,8 @@ import java.io.{
 import imageseg._
 import org.bytedeco.opencv.opencv_core._
 import org.watrworks.corpora.filesys.CorpusEntry
+// import zio.console.Console.{ printLine, readLine, _ }
+
 
 object ImageSegApp {
   import Pipelines._
@@ -17,8 +20,9 @@ object ImageSegApp {
 
   val userPrompt: String => ZIO[Console, Throwable, String] = (prompt: String) =>
     for {
-      _      <- putStrLn(s":> ${prompt}")
-      filter <- getStrLn
+      // _      <- Console.printLine(s":> ${prompt}")
+      _      <- Unsafe.unsafe { implicit unsafe =>   Console.printLine(s":> ${prompt}") }
+      filter <- readLine
     } yield filter
 
   // val imgPath = "./corpus.d/cmp-lg9503025.pdf.d/page-images/page-4.opt.png"
@@ -42,7 +46,7 @@ object ImageSegApp {
   val tryKernelSizes = (mBin: Mat) =>
     for {
       kernelSize  <- userPrompt("Kernel Size> ").map(_.toInt)
-      _           <- putStrLn(s"Using Kernel Size ${kernelSize}")
+      _           <- printLine(s"Using Kernel Size ${kernelSize}")
       hlineKernel <- LD.makeHLineKernel(kernelSize)
       vlineKernel <- LD.makeVLineKernel(kernelSize)
       mOpenH      <- LD.runOpen(mBin, hlineKernel)
@@ -57,8 +61,8 @@ object ImageSegApp {
       for {
         entries: Chunk[CorpusEntry] <- corpusEntryStream(config(filter)).runCollect
                                          .absorbWith(_ => new IOException(""))
-        _ <- putStrLn(s"Entries:")
-        _ <- putStrLn(entries.map(e => e.entryDescriptor.split("/").last).mkString("\n"))
+        _ <- printLine(s"Entries:")
+        _ <- printLine(entries.map(e => e.entryDescriptor.split("/").last).mkString("\n"))
       } yield entries
 
     var fstr = ".*"
@@ -74,17 +78,17 @@ object ImageSegApp {
 
   val loadImage: String => ZIO[Console, Any, Mat] = (path) =>
     for {
-      _       <- putStrLn(s"___ ImageSeg ___")
+      _       <- printLine(s"___ ImageSeg ___")
       initImg <- LD.readImageColor(path)
-      _       <- putStrLn(s"Loaded ${path} = ${initImg}")
+      _       <- printLine(s"Loaded ${path} = ${initImg}")
       _       <- showImageMat(initImg, "Initial Image")
     } yield initImg
 
   val loadImageGrayscale: String => ZIO[Console, Any, Mat] = (path) =>
     for {
-      _       <- putStrLn(s"___ ImageSeg ___")
+      _       <- printLine(s"___ ImageSeg ___")
       initImg <- LD.readImage(path)
-      _       <- putStrLn(s"Loaded ${path} = ${initImg}")
+      _       <- printLine(s"Loaded ${path} = ${initImg}")
       _       <- showImageMat(initImg, "Initial Image")
     } yield initImg
 
