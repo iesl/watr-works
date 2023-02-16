@@ -11,7 +11,8 @@ import utils.ExactFloats._
 import utils.Interval
 import Interval._
 import cats.implicits._
-import utils.SlicingAndDicing._
+// import utils.SlicingAndDicing._
+
 
 case class ColumnInst(
   pageBand: Rect,
@@ -174,7 +175,7 @@ trait ColumnFinding extends NeighborhoodSearch { self =>
             mkLabel.onShapeGrid("ColumnQueriesTranspose", queryRows)
           }
 
-          val rowProps: Seq[ColumnProps] = queryRows.map {
+          queryRows.foreach {
             _.toList match {
               case List(gutterL, col1, gutterC, col2, gutterR) =>
                 val gutterLEmpty = hasNoOverlaps(gutterL)

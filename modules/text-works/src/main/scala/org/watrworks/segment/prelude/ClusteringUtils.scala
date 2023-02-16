@@ -8,7 +8,6 @@ import utils.ExactFloats._
 
 import utils.Interval
 
-
 case class Instance[A](
   a: A,
   vec: Array[Double]
@@ -37,6 +36,7 @@ object clusteringUtils {
     if (data.isEmpty) List()
     else {
       val clust     = hclust(data, "complete")
+      clust.getTree()
       val maxHeight = clust.getHeight().max
 
       val clusteredPoints: List[Cluster[A, Unit]] =

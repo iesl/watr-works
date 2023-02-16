@@ -1,7 +1,7 @@
 import sbt.Keys._
-import ReleaseTransformations._
+// import ReleaseTransformations._
 
-Release.settings
+// Release.settings
 Global / onChangedBuildSource := ReloadOnSourceChanges // | IgnoreSourceChanges
 
 val Lib = CommonLibs
@@ -44,8 +44,8 @@ lazy val watrmarks = (project in file("modules/watr-marks"))
       )
   )
 
+// .enablePlugins(JavaAppPackaging)
 lazy val textworks = (project in file("modules/text-works"))
-  .enablePlugins(JavaAppPackaging)
   .enablePlugins(BuildInfoPlugin)
   .settings(SensibleProject.settings: _*)
   .settings(SensibleProject.runForked: _*)

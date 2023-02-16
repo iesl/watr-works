@@ -3,33 +3,33 @@ import Keys._
 
 trait LibVersions {
   val cats = Seq(
-     "org.typelevel" %% "cats-effect" % "3.2.9",
-//    "org.typelevel" %% "cats-effect" % "2.5.3",
-    "org.typelevel" %% "cats-core" % "2.6.1"
+    "org.typelevel" %% "cats-effect" % "3.4.7",
+    "org.typelevel" %% "cats-core" % "2.9.0"
   )
 }
 
 object LibVersions extends LibVersions
 
 object TestLibs extends LibVersions {
-  val scalatestVersion = "3.2.10"
+  val scalatestVersion = "3.2.15"
   val scalatest        = Seq(
     "org.scalatest" %% "scalatest" % scalatestVersion % "test"
   )
 
   val scalacheck = Seq(
-    "org.scalaz"     %% "scalaz-scalacheck-binding" % "7.3.5"  % Test,
-    "org.scalacheck" %% "scalacheck"                % "1.15.4" % "test" //  force()
+    "org.scalaz"     %% "scalaz-scalacheck-binding" % "7.3.7"  % Test,
+    "org.scalacheck" %% "scalacheck"                % "1.17.0" % "test" //  force()
   )
 
   val testAndCheck = scalatest ++ scalacheck
 }
 
 object LogLibs extends LibVersions {
-  val logbackVersion = "1.7.32"
+  // val logbackVersion = "1.7.32"
+  val logbackVersion = "2.0.6"
   val logback        = Seq(
     "org.log4s"     %% "log4s"           % "1.10.0",
-    "ch.qos.logback" % "logback-classic" % "1.2.6",
+    "ch.qos.logback" % "logback-classic" % "1.4.5",
     "org.slf4j"      % "slf4j-api"       % logbackVersion,
     "org.slf4j"      % "jul-to-slf4j"    % logbackVersion,
     "org.slf4j"      % "jcl-over-slf4j"  % logbackVersion
@@ -53,50 +53,51 @@ object DatabaseLibs extends LibVersions {
 }
 
 trait CommonLibs extends LibVersions {
-  val ammoniteVersion = "2.4.0"
+  val ammoniteVersion = "2.4.1"
   val ammonite        = "com.lihaoyi"  % "ammonite"     % ammoniteVersion cross CrossVersion.full
   val ammoniteOps     = "com.lihaoyi" %% "ammonite-ops" % ammoniteVersion
 
-  val scalaGraph                 = "org.scala-graph" %% "graph-core" % "1.13.3"
+  val scalaGraph                 = "org.scala-graph" %% "graph-core" % "1.13.5"
 
-  val scopt = "com.github.scopt" %% "scopt" % "4.0.1"
+  val scopt = "com.github.scopt" %% "scopt" % "4.1.0"
 
-  val decline = "com.monovore" %% "decline" % "2.2.0"
+  val decline = "com.monovore" %% "decline" % "2.4.1"
 
-  val shapelessV = "2.3.7"
+  val shapelessV = "2.3.10"
   val shapeless  = "com.chuusai" %% "shapeless" % shapelessV
 
   val acyclicVersion = "0.1.7"
   val acyclic        = "com.lihaoyi" %% "acyclic" % acyclicVersion % "provided"
 
   // val guavaV = "23.0"
-  val guavaV = "31.0.1-jre"
+  val guavaV = "31.1-jre"
   val guava  = "com.google.guava" % "guava" % guavaV
 
   // val lucene4s         = "com.outr"                %% "lucene4s"         % luceneV
-  val pdfbox = "org.apache.pdfbox" % "pdfbox" % "2.0.24"
+  val pdfbox = "org.apache.pdfbox" % "pdfbox" % "2.0.27"
 
   val smile = Seq(
     "com.github.haifengl" %% "smile-scala" % "2.6.0"
+    // "com.github.haifengl" %% "smile-scala" % "3.0.0"
   )
 
-  val featranV = "0.7.0"
+  val featranV = "0.8.0"
   val featran  = Seq(
     "com.spotify" %% "featran-core" % featranV
   )
 
-  val zioV = "1.0.12"
+  val zioV = "1.0.18"
   val zio  = Seq(
     "dev.zio" %% "zio"         % zioV,
     "dev.zio" %% "zio-streams" % zioV
   )
 
-  val scalazVersion = "7.3.5"
+  val scalazVersion = "7.3.7"
   val scalaz        = Seq(
     "org.scalaz" %% "scalaz-core" % scalazVersion
   )
 
-  val circeJsonVersion = "0.14.1"
+  val circeJsonVersion = "0.14.4"
   val circeJson        = Seq(
     "io.circe" %% "circe-generic" % circeJsonVersion,
     "io.circe" %% "circe-parser"  % circeJsonVersion,
@@ -104,13 +105,13 @@ trait CommonLibs extends LibVersions {
   )
 
   val consoleUtils = Seq(
-    "com.lihaoyi" %% "fansi"      % "0.2.14",
-    "com.lihaoyi" %% "sourcecode" % "0.2.7",
-    "com.lihaoyi" %% "pprint"     % "0.6.6"
+    "com.lihaoyi" %% "fansi"      % "0.4.0",
+    "com.lihaoyi" %% "sourcecode" % "0.3.0",
+    "com.lihaoyi" %% "pprint"     % "0.8.1"
   )
 
   val rtrees = Seq(
-    "com.github.davidmoten" % "rtree"            % "0.8.7",
+    "com.github.davidmoten" % "rtree"            % "0.10",
     "com.github.davidmoten" % "flatbuffers-java" % "1.10.0.2"
   )
 
@@ -124,7 +125,7 @@ trait CommonLibs extends LibVersions {
     "org.http4s" %% "http4s-blaze-client" % http4sVersion
   )
 
-  val doodleVersion = "0.10.0"
+  val doodleVersion = "0.14.0"
   // val doodle = "org.creativescala" %% "doodle" % doodleVersion
   val doodle = Seq(
     "org.creativescala" %%  "doodle-core" % doodleVersion,
@@ -143,13 +144,13 @@ trait CommonLibs extends LibVersions {
   val platform = org.bytedeco.javacpp.Loader.Detector.getPlatform
 
   val javacvLibs = Seq(
-    "org.bytedeco"   % "javacpp"    % "1.5.5"        withSources() withJavadoc(),
-    "org.bytedeco"   % "javacpp"    % "1.5.5"        classifier platform,
-    "org.bytedeco"   % "javacv"     % "1.5.5"        withSources() withJavadoc(),
-    "org.bytedeco"   % "opencv"     % "4.5.1-1.5.5"  withSources() withJavadoc(),
-    "org.bytedeco"   % "opencv"     % "4.5.1-1.5.5"  classifier platform,
-    "org.bytedeco"   % "openblas"     % "0.3.13-1.5.5"  withSources() withJavadoc(),
-    "org.bytedeco"   % "openblas"     % "0.3.13-1.5.5"  classifier platform
+    "org.bytedeco"   % "javacpp"    % "1.5.8"        withSources() withJavadoc(),
+    "org.bytedeco"   % "javacpp"    % "1.5.8"        classifier platform,
+    "org.bytedeco"   % "javacv"     % "1.5.8"        withSources() withJavadoc(),
+    "org.bytedeco"   % "opencv"     % "4.6.0-1.5.8"  withSources() withJavadoc(),
+    "org.bytedeco"   % "opencv"     % "4.6.0-1.5.8"  classifier platform,
+    "org.bytedeco"   % "openblas"     % "0.3.21-1.5.8"  withSources() withJavadoc(),
+    "org.bytedeco"   % "openblas"     % "0.3.21-1.5.8"  classifier platform
   )
 
 
